@@ -76,3 +76,9 @@ logs/
 
 # Local postgres data (if using docker)
 postgres-data/
+
+# Auto-generated GraphQL schema (NestJS)
+schema.gql
+
+# Claude Code
+.claude/

@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
 
 export enum SubscriptionPlan {
   FREE = 'free',
@@ -20,23 +21,38 @@ export enum BillingStatus {
   CANCELLED = 'cancelled',
 }
 
+registerEnumType(SubscriptionPlan, {
+  name: 'SubscriptionPlan',
+});
+
+registerEnumType(BillingStatus, {
+  name: 'BillingStatus',
+});
+
+@ObjectType()
 @Entity('tenants')
 export class Tenant {
+  @Field()
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Field()
   @Column({ unique: true })
   name: string;
 
+  @Field()
   @Column({ unique: true })
   domain: string;
 
+  @Field()
   @Column({ unique: true })
   subdomain: string;
 
+  @Field(() => String, { nullable: true })
   @Column({ type: 'jsonb', nullable: true })
   settings: Record<string, any>;
 
+  @Field(() => SubscriptionPlan, { nullable: true })
   @Column({
     type: 'enum',
     enum: SubscriptionPlan,
@@ -44,6 +60,7 @@ export class Tenant {
   })
   subscriptionPlan: SubscriptionPlan;
 
+  @Field(() => BillingStatus, { nullable: true })
   @Column({
     type: 'enum',
     enum: BillingStatus,
@@ -51,9 +68,11 @@ export class Tenant {
   })
   billingStatus: BillingStatus;
 
+  @Field()
   @CreateDateColumn()
   createdAt: Date;
 
+  @Field()
   @UpdateDateColumn()
   updatedAt: Date;
 }
