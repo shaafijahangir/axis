@@ -14,6 +14,42 @@ That's the moment NexusEd became necessary.
 
 ---
 
+## The Deeper Why
+
+### The System That Should Help You, Doesn't
+
+The frustration isn't just about software. Software can be replaced. The deeper problem is a support system that exists on paper but fails in practice.
+
+At UVic, academic advising is supposed to guide students through one of the most consequential decisions of their early lives — what to study, when, and in what order. Instead, the reality is emails that go unanswered for weeks. An appointment system that's perpetually booked out. Drop-in sessions where a student walks in carrying genuine anxiety about their future and walks out feeling like a ticket number that got processed.
+
+These aren't edge cases. This is the system working as designed — understaffed, overwhelmed, and structurally incapable of giving each student the time they need.
+
+### Building Something That Could Help
+
+The AI course planner wasn't an abstract idea. It was built from a specific need: a student staring at a course catalog, unsure whether they had the right prerequisites, unsure how many credits stood between them and graduation, unsure whether changing direction would cost them an extra year.
+
+The concept was straightforward — an intelligent assistant that understands a student's major, their completed courses, their remaining requirements, and can answer real questions: "What should I take next semester?" "How many credits do I have left?" "What happens if I switch to a minor in this?" Not a chatbot reciting policy pages. A tool that actually understands a student's academic position and gives them clarity.
+
+It was the kind of tool that could absorb the work that advisors can't keep up with — the routine questions, the path planning, the "am I on track?" anxiety — and give students an answer in seconds instead of weeks.
+
+### The Institutional Wall
+
+The idea was proposed directly to UVic. The head software engineer understood it. He saw the value. He liked it. But he was honest about the reality: he couldn't push it forward. It was a business decision, not a technical one. The people who control what gets built don't experience the problem. The people who experience the problem don't control what gets built.
+
+That conversation made something clear. The barrier to better educational technology is not capability. The tools exist. The models exist. The infrastructure exists. The barrier is institutional willingness — committees, budgets, risk aversion, and a comfort with "good enough" that students don't share.
+
+### Why Keep Going
+
+The problem comes from within the institution. But the solution doesn't have to.
+
+There is something that happens when you realize the system won't fix itself — a mix of frustration and clarity. The frustration is obvious. The clarity is this: waiting for institutions to change is not a viable strategy. They move on decade-long timescales. Students graduate in four years. The math doesn't work.
+
+So you build the thing yourself. Not because it's easy, but because every semester that passes without it means more students are sitting alone wondering if they're on the right track, with no one answering.
+
+NexusEd is the answer to a question no institution bothered to ask: what would it look like if we actually built technology that served students first?
+
+---
+
 ## The Problem
 
 Modern Learning Management Systems have three fundamental flaws:
