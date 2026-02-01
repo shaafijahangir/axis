@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
 import { Tenant } from './tenant.entity';
 
 export enum UserRole {
@@ -24,11 +25,17 @@ export enum UserStatus {
   PENDING = 'pending',
 }
 
+registerEnumType(UserRole, { name: 'UserRole' });
+registerEnumType(UserStatus, { name: 'UserStatus' });
+
+@ObjectType()
 @Entity('users')
 export class User {
+  @Field()
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Field()
   @Column()
   tenantId: string;
 
@@ -36,18 +43,22 @@ export class User {
   @JoinColumn({ name: 'tenantId' })
   tenant: Tenant;
 
+  @Field()
   @Column({ unique: true })
   email: string;
 
   @Column({ nullable: true })
   passwordHash: string;
 
+  @Field()
   @Column()
   firstName: string;
 
+  @Field()
   @Column()
   lastName: string;
 
+  @Field(() => [UserRole])
   @Column({
     type: 'enum',
     enum: UserRole,
@@ -56,12 +67,15 @@ export class User {
   })
   roles: UserRole[];
 
+  @Field(() => String, { nullable: true })
   @Column({ type: 'jsonb', nullable: true })
   profile: Record<string, any>;
 
+  @Field(() => String, { nullable: true })
   @Column({ type: 'jsonb', nullable: true })
   preferences: Record<string, any>;
 
+  @Field(() => UserStatus)
   @Column({
     type: 'enum',
     enum: UserStatus,
@@ -69,15 +83,18 @@ export class User {
   })
   status: UserStatus;
 
+  @Field({ nullable: true })
   @Column({ nullable: true })
   lastLoginAt: Date;
 
   @Column({ nullable: true })
   googleId: string;
 
+  @Field()
   @CreateDateColumn()
   createdAt: Date;
 
+  @Field()
   @UpdateDateColumn()
   updatedAt: Date;
 }
