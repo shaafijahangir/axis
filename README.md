@@ -15,6 +15,7 @@ Traditional LMS platforms are file cabinets with a gradebook. NexusEd is a **fee
 
 > See [MISSION.md](./MISSION.md) for the full origin story and design philosophy.
 > See [ROADMAP.md](./ROADMAP.md) for where this project is heading.
+> See [CLAUDE.md](./CLAUDE.md) for development workflow and AI collaboration rules.
 
 ---
 
