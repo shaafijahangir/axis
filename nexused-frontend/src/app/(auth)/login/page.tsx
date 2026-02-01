@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authApi } from '@/lib/api/auth';
-import { UserRole } from '@/types/auth';
+import { useAuthStore, getRoleDashboardPath } from '@/stores/auth.store';
 
 export default function LoginPage() {
   const router = useRouter();
+  const setAuth = useAuthStore((s) => s.setAuth);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,29 +24,8 @@ export default function LoginPage() {
 
     try {
       const response = await authApi.login({ email, password });
-
-      // Store auth token
-      localStorage.setItem('token', response.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.user));
-
-      // Redirect based on role
-      const primaryRole = response.user.roles[0];
-      switch (primaryRole) {
-        case UserRole.STUDENT:
-          router.push('/student');
-          break;
-        case UserRole.INSTRUCTOR:
-          router.push('/instructor');
-          break;
-        case UserRole.ADMIN:
-          router.push('/admin');
-          break;
-        case UserRole.PARENT:
-          router.push('/parent');
-          break;
-        default:
-          router.push('/student');
-      }
+      setAuth(response.accessToken, response.user);
+      router.push(getRoleDashboardPath(response.user.roles));
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -58,9 +38,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold tracking-tight">NexusEd</h1>
-          <p className="mt-2 text-muted-foreground">
-            Sign in to your account
-          </p>
+          <p className="mt-2 text-muted-foreground">Sign in to your account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -104,7 +82,10 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-muted-foreground">
             Don't have an account?{' '}
-            <Link href="/register" className="font-medium text-primary hover:underline">
+            <Link
+              href="/register"
+              className="font-medium text-primary hover:underline"
+            >
               Sign up
             </Link>
           </p>

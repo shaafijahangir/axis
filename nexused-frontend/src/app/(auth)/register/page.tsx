@@ -8,15 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authApi } from '@/lib/api/auth';
 import { UserRole } from '@/types/auth';
+import { useAuthStore, getRoleDashboardPath } from '@/stores/auth.store';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const setAuth = useAuthStore((s) => s.setAuth);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     firstName: '',
     lastName: '',
-    tenantId: 'default', // For MVP, use a default tenant
+    tenantId: 'default',
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -29,15 +31,10 @@ export default function RegisterPage() {
     try {
       const response = await authApi.register({
         ...formData,
-        roles: [UserRole.STUDENT], // Default to student role
+        roles: [UserRole.STUDENT],
       });
-
-      // Store auth token
-      localStorage.setItem('token', response.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.user));
-
-      // Redirect to student dashboard
-      router.push('/student');
+      setAuth(response.accessToken, response.user);
+      router.push(getRoleDashboardPath(response.user.roles));
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -57,9 +54,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold tracking-tight">NexusEd</h1>
-          <p className="mt-2 text-muted-foreground">
-            Create your account
-          </p>
+          <p className="mt-2 text-muted-foreground">Create your account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -139,7 +134,10 @@ export default function RegisterPage() {
 
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <Link href="/login" className="font-medium text-primary hover:underline">
+            <Link
+              href="/login"
+              className="font-medium text-primary hover:underline"
+            >
               Sign in
             </Link>
           </p>
