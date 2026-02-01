@@ -1,0 +1,66 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'nexused-backend/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'nexused-backend/**'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: nexused_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: nexused-backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: nexused-backend
+
+      - name: Lint
+        run: npm run lint
+        working-directory: nexused-backend
+
+      - name: Type check
+        run: npx tsc --noEmit
+        working-directory: nexused-backend
+
+      - name: Test
+        run: npm test
+        working-directory: nexused-backend
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_USERNAME: test
+          DATABASE_PASSWORD: test
+          DATABASE_NAME: nexused_test
+          JWT_SECRET: test-secret
+
+      - name: Build
+        run: npm run build
+        working-directory: nexused-backend
