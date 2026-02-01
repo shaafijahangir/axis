@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@apollo/client/react';
@@ -36,7 +36,7 @@ const createAssignmentSchema = z.object({
   description: z.string().optional(),
   type: z.enum(['assignment', 'quiz', 'exam', 'discussion', 'project']),
   pointsPossible: z.coerce
-    .number({ invalid_type_error: 'Must be a number' })
+    .number({ error: 'Must be a number' })
     .min(0, 'Points cannot be negative'),
   dueAt: z.string().optional(),
   unlockAt: z.string().optional(),
@@ -70,21 +70,24 @@ export function CreateAssignmentForm({
     control,
     formState: { errors },
   } = useForm<CreateAssignmentValues>({
-    resolver: zodResolver(createAssignmentSchema),
+    // WHY: Zod v4 z.coerce infers `unknown` input type, which breaks Resolver generics.
+    // Type assertion is the documented workaround until @hookform/resolvers ships Zod v4 types.
+    resolver: zodResolver(
+      createAssignmentSchema,
+    ) as Resolver<CreateAssignmentValues>,
     defaultValues: {
       type: 'assignment',
       pointsPossible: 100,
     },
   });
 
-  const [createAssignment, { loading, error }] = useMutation(
-    CREATE_ASSIGNMENT_MUTATION,
-    {
-      refetchQueries: [
-        { query: SECTION_TIMELINE_QUERY, variables: { sectionId } },
-      ],
-    },
-  );
+  const [createAssignment, { loading, error }] = useMutation<{
+    createAssignment: { id: string };
+  }>(CREATE_ASSIGNMENT_MUTATION, {
+    refetchQueries: [
+      { query: SECTION_TIMELINE_QUERY, variables: { sectionId } },
+    ],
+  });
 
   const onSubmit = async (values: CreateAssignmentValues) => {
     const result = await createAssignment({

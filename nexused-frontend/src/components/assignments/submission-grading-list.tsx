@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CheckCircle, Clock } from 'lucide-react';
@@ -30,7 +30,7 @@ import { GRADE_SUBMISSION_MUTATION } from '@/lib/graphql/mutations/assignments';
  */
 const gradeSchema = z.object({
   score: z.coerce
-    .number({ invalid_type_error: 'Enter a number' })
+    .number({ error: 'Enter a number' })
     .min(0, 'Score cannot be negative'),
   feedback: z.string().optional(),
 });
@@ -239,21 +239,20 @@ function InlineGradeForm({
     handleSubmit,
     formState: { errors },
   } = useForm<GradeFormValues>({
-    resolver: zodResolver(gradeSchema),
+    resolver: zodResolver(gradeSchema) as Resolver<GradeFormValues>,
     defaultValues: {
       score: currentScore ?? undefined,
       feedback: currentFeedback ?? '',
     },
   });
 
-  const [gradeSubmission, { loading, error, data }] = useMutation(
-    GRADE_SUBMISSION_MUTATION,
-    {
-      refetchQueries: [
-        { query: ASSIGNMENT_SUBMISSIONS_QUERY, variables: { assignmentId } },
-      ],
-    },
-  );
+  const [gradeSubmission, { loading, error, data }] = useMutation<{
+    gradeSubmission: { gradedAt: string };
+  }>(GRADE_SUBMISSION_MUTATION, {
+    refetchQueries: [
+      { query: ASSIGNMENT_SUBMISSIONS_QUERY, variables: { assignmentId } },
+    ],
+  });
 
   const saved = data?.gradeSubmission?.gradedAt != null;
 
