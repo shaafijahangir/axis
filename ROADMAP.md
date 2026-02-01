@@ -19,35 +19,35 @@ The scaffolding is in place. Both frontend and backend are wired up, authenticat
 
 ---
 
-## Phase 1: The Feed and Navigation (Next)
+## Phase 1: The Feed and Navigation ✓
 
 **Goal:** Build the skeleton that every future feature plugs into. The home feed, the navigation architecture, and the course timeline view. This phase defines what NexusEd *feels* like.
 
 ### Navigation Shell
-- [ ] Role-based layout system (student, instructor, admin, parent get different shells)
-- [ ] Student nav: Home, Courses, Messages + Profile avatar
-- [ ] Instructor nav: Home, Courses, Messages + Profile avatar
-- [ ] Admin nav: Home, People, Academics + Settings gear
-- [ ] Parent nav: Home, Messages + Profile avatar
-- [ ] Mobile-responsive navigation (bottom bar on mobile, sidebar on desktop)
+- [x] Role-based layout system (student, instructor, admin, parent get different shells)
+- [x] Student nav: Home, Courses, Messages + Profile avatar
+- [x] Instructor nav: Home, Courses, Messages + Profile avatar
+- [x] Admin nav: Home, People, Academics + Settings gear
+- [x] Parent nav: Home, Messages + Profile avatar
+- [x] Mobile-responsive navigation (bottom bar on mobile, sidebar on desktop)
 
 ### Home Feed (Student)
-- [ ] Feed component architecture
-- [ ] Static feed with hardcoded priority items (deadlines, grades, announcements)
-- [ ] Feed card types: deadline, grade posted, announcement, course update
-- [ ] Empty state and loading states
-- [ ] Relative time displays ("due in 4 hours", "graded yesterday")
+- [x] Feed component architecture
+- [x] Static feed with hardcoded priority items (deadlines, grades, announcements)
+- [x] Feed card types: deadline, grade posted, announcement, course update
+- [x] Empty state and loading states
+- [x] Relative time displays ("due in 4 hours", "graded yesterday")
 
 ### Home Feed (Instructor)
-- [ ] Submissions-to-grade queue
-- [ ] Upcoming deadline reminders for courses you teach
+- [x] Submissions-to-grade queue
+- [x] Upcoming deadline reminders for courses you teach
 - [ ] Student flag alerts (placeholder for Phase 3 AI)
 
 ### Course Timeline View
-- [ ] Unified course view: content + assignments + discussions in one chronological stream
-- [ ] Course header with key info (instructor, schedule, progress)
-- [ ] Timeline entry types: lesson, assignment, discussion, announcement
-- [ ] Assignment detail view with submission
+- [x] Unified course view: content + assignments + discussions in one chronological stream
+- [x] Course header with key info (instructor, schedule, progress)
+- [x] Timeline entry types: lesson, assignment, discussion, announcement
+- [x] Assignment detail view with submission
 
 ---
 
@@ -57,20 +57,20 @@ The scaffolding is in place. Both frontend and backend are wired up, authenticat
 
 ### Course Management (Instructor)
 - [ ] Course content builder (rich text + file uploads)
-- [ ] Assignment creation with due dates, rubrics, point values
-- [ ] Assignment types: standard, quiz, discussion, project
-- [ ] Course roster view
+- [x] Assignment creation with due dates, rubrics, point values
+- [x] Assignment types: standard, quiz, discussion, project
+- [x] Course roster view
 - [ ] Bulk operations (extend deadline, send announcement to section)
 
 ### Student Experience
-- [ ] Assignment submission (file upload, text entry)
-- [ ] Submission confirmation and status tracking
+- [x] Assignment submission (file upload, text entry)
+- [x] Submission confirmation and status tracking
 - [ ] Grades view within course timeline
 - [ ] Overall grades summary (accessible from profile)
 
 ### Gradebook (Instructor)
 - [ ] Gradebook as a view *inside* a course, not a standalone section
-- [ ] Inline grading with rubric support
+- [x] Inline grading with rubric support
 - [ ] Grade statistics (mean, median, distribution)
 - [ ] Export grades (CSV)
 
@@ -198,5 +198,5 @@ Things we haven't decided yet and need to resolve:
 
 ---
 
-*Last updated: January 2025*
+*Last updated: January 2026*
 *This is a living document. Updated as decisions are made and priorities shift.*

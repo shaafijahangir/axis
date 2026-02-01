@@ -1,29 +1,28 @@
 ---
 name: Bug Report
-about: Something isn't working correctly
-title: "bug: "
+about: Report a bug
+title: 'bug: '
 labels: bug
 ---
 
 ## Description
-
-[What's broken]
+<!-- What's happening? -->
 
 ## Steps to Reproduce
-
-1. [Step 1]
-2. [Step 2]
+1.
+2.
+3.
 
 ## Expected Behavior
-
-[What should happen]
+<!-- What should happen? -->
 
 ## Actual Behavior
-
-[What actually happens]
+<!-- What actually happens? -->
 
 ## Environment
-
 - Browser:
-- OS:
 - Node version:
+- OS:
+
+## Screenshots
+<!-- If applicable -->

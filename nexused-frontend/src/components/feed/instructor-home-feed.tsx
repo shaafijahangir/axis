@@ -1,0 +1,116 @@
+'use client';
+
+import { useQuery } from '@apollo/client/react';
+import Link from 'next/link';
+import { Clock, ClipboardList, Megaphone } from 'lucide-react';
+import { useAuthStore } from '@/stores/auth.store';
+import { INSTRUCTOR_FEED_QUERY } from '@/lib/graphql/queries/feed';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyFeed } from './empty-feed';
+import { formatRelativeTime } from '@/lib/utils/relative-time';
+
+interface InstructorFeedItemData {
+  type: string;
+  id: string;
+  title: string;
+  subtitle?: string;
+  courseCode: string;
+  courseTitle: string;
+  sectionId: string;
+  assignmentId?: string;
+  ungradedCount?: number;
+  dueAt?: string;
+  timestamp: string;
+}
+
+const typeConfig: Record<
+  string,
+  { icon: typeof Clock; borderColor: string; iconColor: string }
+> = {
+  ungraded: {
+    icon: ClipboardList,
+    borderColor: 'border-l-red-500',
+    iconColor: 'text-red-500',
+  },
+  upcoming_deadline: {
+    icon: Clock,
+    borderColor: 'border-l-amber-500',
+    iconColor: 'text-amber-500',
+  },
+  announcement: {
+    icon: Megaphone,
+    borderColor: 'border-l-blue-500',
+    iconColor: 'text-blue-500',
+  },
+};
+
+export function InstructorHomeFeed() {
+  const { user } = useAuthStore();
+  const { data, loading } = useQuery<{
+    instructorFeed: InstructorFeedItemData[];
+  }>(INSTRUCTOR_FEED_QUERY);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Welcome back, {user?.firstName}</h1>
+        <p className="text-muted-foreground">Here's your teaching overview.</p>
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
+      ) : data?.instructorFeed && data.instructorFeed.length > 0 ? (
+        <div className="space-y-3">
+          {data.instructorFeed.map((item) => {
+            const config =
+              typeConfig[item.type] ?? typeConfig.upcoming_deadline;
+            const Icon = config.icon;
+            return (
+              <Card
+                key={item.id}
+                className={`border-l-4 ${config.borderColor}`}
+              >
+                <CardContent className="flex items-start gap-4 p-4">
+                  <div className={`mt-0.5 shrink-0 ${config.iconColor}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {item.courseCode}
+                      </Badge>
+                      {item.ungradedCount != null && (
+                        <Badge variant="destructive" className="text-xs">
+                          {item.ungradedCount} to grade
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 font-medium">{item.title}</p>
+                    {item.subtitle && (
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {item.subtitle}
+                      </p>
+                    )}
+                    {item.dueAt && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Due {formatRelativeTime(item.dueAt)}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <EmptyFeed />
+      )}
+    </div>
+  );
+}

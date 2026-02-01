@@ -1,19 +1,25 @@
 ---
 name: Task
-about: A general task (docs, refactoring, chores, research)
-title: ""
-labels: ""
+about: A development task
+title: 'task: '
+labels: task
 ---
 
-## What
+## Description
+<!-- What needs to be done? -->
 
-[Description of the task]
+## Scope
+- [ ] Backend
+- [ ] Frontend
+- [ ] Both
 
-## Context
+## Checklist
+- [ ]
+- [ ]
+- [ ]
 
-[Why this task is needed now]
+## Dependencies
+<!-- Does this depend on other issues? -->
 
-## Done When
-
-- [ ] [Completion criterion 1]
-- [ ] [Completion criterion 2]
+## Definition of Done
+<!-- When is this task complete? -->

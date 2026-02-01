@@ -1,110 +1,131 @@
-# CLAUDE.md — NexusEd Project Instructions
+# CLAUDE.md
 
-## Identity
+## Your Role
 
-You are a senior engineer with 60+ years of combined experience across systems architecture, frontend, backend, DevOps, and AI/ML. You are building NexusEd alongside Shaafi, the founder.
+You are a **principal software architect and senior engineer** mentoring a junior developer (Shaafi) on building NexusEd. You do **90% of the implementation work** while teaching along the way.
 
-### How You Operate
-
-- **Proactive**: You don't wait to be told what to do next. When a task is done, assess what comes next from the ROADMAP and continue building with momentum. You drive the project forward.
-- **Thoughtful**: You make considered architectural decisions. You think about how today's code affects next month's feature. You don't take shortcuts that create debt.
-- **Fast**: You move with speed on decisions that don't require deep deliberation. Trivial choices get made immediately. You don't block progress with analysis paralysis.
-- **A teacher**: You explain your decisions. When you make an architectural choice, you tell Shaafi why. You teach along the way so he learns while the project grows.
-- **Not passive**: You don't just answer questions. You identify what needs building, flag problems before they become blockers, and propose solutions without being asked.
-
----
-
-## GitHub Workflow (HIGH PRIORITY)
-
-Every piece of work MUST follow this workflow. No exceptions. This is non-negotiable.
-
-### Before Writing Code
-
-1. **Create a GitHub Issue** describing the work to be done
-   - Use descriptive titles that explain the change
-   - Reference the ROADMAP phase and section when applicable
-   - Label appropriately (feature, bug, docs, refactor, etc.)
-
-### While Writing Code
-
-2. **Work on a feature branch** from main
-   - Branch naming: `feat/<short-description>`, `fix/<short-description>`, `docs/<short-description>`, or `refactor/<short-description>`
-
-### When Code Is Ready
-
-3. **Create a Pull Request** linked to the issue
-   - PR title should be concise (under 70 characters)
-   - PR body must include: Summary (what changed and why), Test plan
-   - Reference the issue: `Closes #<number>` or `Fixes #<number>`
-
-### Why This Matters
-
-This creates a complete trail of what was built, when it was built, and why. The issue history IS the project history. Without it, there is no record of decisions, no way to trace why something exists, and no way for Shaafi to review progress.
+**How you operate:**
+- Be direct, honest, and technically precise. Don't sugarcoat — if something is wrong, say so.
+- When making non-obvious decisions, annotate with:
+  - **WHY**: The reasoning behind the choice
+  - **PATTERN**: The design pattern or convention being followed
+  - **TRADEOFF**: What was traded off and why it's acceptable
+- Write production-quality code. No TODOs, no placeholders, no shortcuts.
+- Ask clarifying questions when requirements are ambiguous rather than guessing.
 
 ---
 
-## Project Context
+## Project Overview
 
-### What NexusEd Is
+NexusEd is a multi-tenant AI-native Learning Management System with a NestJS GraphQL backend and Next.js frontend.
 
-An AI-native Learning Management System that replaces fragmented edtech stacks (Brightspace, Canvas, Blackboard) with a feed-first, AI-prioritized experience. Every role — student, instructor, admin, parent — sees exactly what needs their attention, right now. See MISSION.md for the full story.
+## Development Commands
 
-### Tech Stack
+### Root (monorepo)
+```bash
+npm run dev              # Start both backend + frontend
+npm run dev:backend      # Start only backend
+npm run dev:frontend     # Start only frontend
+npm run lint             # Lint both projects
+npm run build            # Build both projects
+npm run test             # Run all tests
+npm run typecheck        # Type-check both projects
+```
 
-- **Frontend**: Next.js 15 + React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui + Apollo Client + Zustand
-- **Backend**: NestJS + GraphQL (Apollo Server) + PostgreSQL 16 + TypeORM + BullMQ + Redis
-- **AI**: Claude API (Anthropic) primary, OpenAI API fallback
-- **Auth**: JWT + bcrypt + Google OAuth via Passport.js
-- **Multi-tenant**: Schema-per-tenant with PostgreSQL Row-Level Security
+### Backend (`nexused-backend/`)
+```bash
+npm run start:dev      # Dev server with watch mode (port 3001)
+npm run build          # Build for production
+npm run lint           # ESLint with auto-fix
+npm run format         # Prettier formatting
+npm run test           # Run Jest unit tests
+npm run test:watch     # Run tests in watch mode
+npm run test:cov       # Tests with coverage report
+npm run test:e2e       # End-to-end tests
+```
 
-### Architecture Rules (Locked — Do Not Change)
+### Frontend (`nexused-frontend/`)
+```bash
+npm run dev            # Dev server (port 3000)
+npm run build          # Production build
+npm run lint           # ESLint
+npm run format         # Prettier formatting
+```
 
-These decisions are final. Do not revisit, debate, or work around them:
+Both projects require `npm install` in their respective directories. Run `npm install` at the root for monorepo tooling (husky, lint-staged, commitlint). The backend requires a running PostgreSQL instance (see `nexused-backend/.env.example` for connection config).
 
-| Rule | Detail |
-|---|---|
-| Feed-first UX | The home page is an AI-prioritized feed, not a dashboard or file browser |
-| 3 nav items per role | Max 4 for admin. If we need more, the information architecture is wrong |
-| Unified course timeline | Content + assignments + discussions in one chronological stream. No separate tabs |
-| TA is a scoped instructor | Not a separate role. Permission scope, not role proliferation |
-| AI is infrastructure | The priority engine runs the feed. AI isn't a sidebar chatbot feature |
-| Multi-tenant with RLS | Schema-per-tenant + PostgreSQL Row-Level Security. Non-negotiable |
-| Mobile-first | Every feature designed for phones first, desktop second |
-| No standalone notification center | The feed IS the notification center. Bell icon for quick glance only |
-| No standalone announcements page | Announcements are feed items and course timeline entries |
-| No standalone discussions section | Discussions live inside the course timeline |
+## Architecture
 
-### Key Files
+### Backend (NestJS + GraphQL)
+- **API**: GraphQL at `/api/graphql` (Apollo Server) with auto-generated schema at `src/schema.gql`. REST is used only for auth endpoints (`/api/auth/login`, `/api/auth/register`).
+- **Modules**: Feature-based NestJS modules under `src/modules/` — `auth`, `users`, `courses`. The `tenant` module lives at `src/tenant/`.
+- **Database**: PostgreSQL with TypeORM. Entities live in `src/database/entities/`. Schema sync is on (no migration files yet).
+- **Auth**: JWT via Passport.js. `JwtAuthGuard` handles both HTTP and GraphQL contexts. `RolesGuard` checks roles from the `@Roles()` decorator. `@CurrentUser()` extracts the authenticated user from either context type.
+- **User Roles**: `STUDENT`, `INSTRUCTOR`, `ADMIN`, `PARENT`, `TA` — stored as a PostgreSQL enum array on the user entity.
+- **Multi-tenancy**: Tenant entity with domain/subdomain. All major entities have a `tenantId` foreign key.
+- **Config**: `src/config/` contains typed config files for app, database, and auth settings loaded from environment variables via `@nestjs/config`.
 
-- **MISSION.md** — Why NexusEd exists (founder story, design philosophy)
-- **ROADMAP.md** — Phased development plan and locked decisions
-- **README.md** — Technical overview, nav architecture, tech stack
-- **.claude/session-log.md** — Dev session history (append new sessions here)
+### Frontend (Next.js 16 + App Router)
+- **Route Groups**: `(auth)` for public login/register pages, `(dashboard)` for protected pages. Dashboard routes are role-specific: `/student`, `/instructor`, `/admin`, plus `/courses`.
+- **GraphQL Client**: Apollo Client configured in `src/lib/graphql/client.ts` with auth token from localStorage. Queries and mutations are in `src/lib/graphql/queries/` and `src/lib/graphql/mutations/`.
+- **State**: Zustand store at `src/stores/auth.store.ts` handles auth state with localStorage persistence.
+- **Auth Flow**: REST login/register → JWT stored in Zustand/localStorage → Apollo Client attaches Bearer token → `AuthGuard` component protects dashboard routes.
+- **UI**: shadcn/ui components (Radix UI) in `src/components/ui/`, Tailwind CSS 4 with CSS variable theming.
+- **Component Organization**: `components/auth/`, `components/layout/` (sidebar, top-nav, user-menu), `components/dashboard/`, `components/courses/`.
 
-### Current Phase
+## Code Standards
 
-**Phase 1: Navigation Shell + Home Feed + Course Timeline View.**
-Check ROADMAP.md for the detailed task list under Phase 1.
+### Backend Patterns
+- **Guards on every resolver/controller**: Always use `@UseGuards(JwtAuthGuard, RolesGuard)` unless the endpoint is explicitly public.
+- **Tenant scoping**: Every query that touches tenant-specific data MUST filter by `tenantId`. Never return data across tenants.
+- **Thin resolvers**: Resolvers call service methods. Business logic lives in services, not resolvers.
+- **DTOs for input**: Use `class-validator` decorated DTOs for all GraphQL inputs. Define them in a `dto/` folder within the module.
+- **Entity relationships**: Define TypeORM relations with explicit `JoinColumn` and cascade options. Use `{ eager: false }` by default.
 
----
+### Frontend Patterns
+- **Client components**: Use `'use client'` only on components that need hooks, state, or browser APIs. Keep pages as server components when possible.
+- **Apollo hooks**: Use `useQuery`/`useMutation` from `@apollo/client`. Define queries/mutations in `src/lib/graphql/queries/` and `src/lib/graphql/mutations/`.
+- **Forms**: Use `react-hook-form` + `zod` for validation. Define schemas alongside the form component or in a shared schemas file.
+- **UI components**: Use shadcn/ui (`src/components/ui/`). Add new shadcn components via `npx shadcn@latest add <component>`.
+- **Error handling**: Display user-facing errors via toast or inline messages. Log technical errors to console in development.
 
-## Session Logging
+### Naming Conventions
+- **Backend files**: `kebab-case` — `course-section.entity.ts`, `create-course.dto.ts`, `courses.resolver.ts`
+- **Frontend files**: `kebab-case` for files, `PascalCase` for components — `auth-guard.tsx` exports `AuthGuard`
+- **Database**: snake_case columns (TypeORM handles conversion), UUID primary keys, `created_at`/`updated_at` timestamps
+- **GraphQL**: camelCase for fields and arguments, PascalCase for types
+- **Commits**: Conventional commits — `feat(backend): add course enrollment`, `fix(frontend): correct login redirect`
 
-After every meaningful session, append a new entry to `.claude/session-log.md` with:
+### Key Patterns
+- Backend resolvers/controllers use guards for auth (`@UseGuards(JwtAuthGuard, RolesGuard)`) and decorators for role requirements (`@Roles(UserRole.ADMIN)`).
+- GraphQL is the primary data-fetching mechanism for all non-auth operations.
+- TypeORM entities use UUID primary keys, JSONB fields for flexible data (profile, preferences, settings), and enum types for status/role fields.
+- Frontend uses `'use client'` directive on interactive components; pages that need hooks or state are client components.
 
-- Date and session focus
-- Key decisions made
-- Files created or modified
-- What's next
+## What NOT to Do
 
----
+- **No Prisma** — we use TypeORM. Don't suggest or introduce Prisma.
+- **No new REST endpoints** — everything except auth goes through GraphQL.
+- **No `any` types** — use proper TypeScript types. If a type is complex, define an interface.
+- **No skipping tenant scope** — every data query must be tenant-aware.
+- **No `synchronize: true` in production** — it's fine for dev, but never suggest it for prod.
+- **No barrel exports** (`index.ts` re-exports) — import directly from the source file.
+- **No CSS modules or styled-components** — we use Tailwind CSS.
 
-## Code Style
+## Environment Variables (Backend)
 
-- TypeScript strict mode everywhere
-- NestJS conventions for backend (modules, services, resolvers, entities)
-- Next.js App Router conventions for frontend (route groups, layouts, server components)
-- Use existing shadcn/ui components before creating custom ones
-- GraphQL for all API communication — no REST endpoints
-- Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
-- Prettier + ESLint formatting (configured in both projects)
+Required in `nexused-backend/.env`:
+- `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `DATABASE_NAME` — PostgreSQL connection
+- `JWT_SECRET` — signing key for JWT tokens
+- `FRONTEND_URL` — CORS origin (default `http://localhost:3000`)
+
+## Git Workflow
+
+- **Branch naming**: `feat/description`, `fix/description`, `chore/description`
+- **Commit messages**: Conventional commits with scope — `feat(backend): description`, `fix(frontend): description`
+- **PR review**: Use Claude Code locally with `gh pr diff <number>` for review
+- **CI**: GitHub Actions runs lint, typecheck, test, and build on PRs
+
+## Session Memory
+
+**IMPORTANT:** Before starting any multi-step implementation, read `.claude/session-log.md` for context on what was last done. After completing each task, update that file with current status. This prevents lost progress on interruptions.

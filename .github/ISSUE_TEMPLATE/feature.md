@@ -1,24 +1,22 @@
 ---
 name: Feature
-about: A new feature or enhancement to NexusEd
-title: "feat: "
-labels: feature
+about: Propose a new feature
+title: 'feat: '
+labels: enhancement
 ---
 
-## What
-
-[One-sentence description of the feature]
-
-## Why
-
-[Why this feature matters. Reference ROADMAP.md phase if applicable.]
+## User Story
+As a [role], I want to [action] so that [benefit].
 
 ## Acceptance Criteria
+- [ ]
+- [ ]
+- [ ]
 
-- [ ] [Criterion 1]
-- [ ] [Criterion 2]
+## Scope
+- [ ] Backend
+- [ ] Frontend
+- [ ] Both
 
-## Roadmap Reference
-
-Phase: [1/2/3/4]
-Section: [e.g., "Navigation Shell", "Home Feed (Student)"]
+## Additional Context
+<!-- Screenshots, mockups, or references -->

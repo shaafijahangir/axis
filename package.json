@@ -1,0 +1,38 @@
+{
+  "name": "nexused",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd nexused-backend && npm run start:dev",
+    "dev:frontend": "cd nexused-frontend && npm run dev",
+    "lint:backend": "cd nexused-backend && npm run lint",
+    "lint:frontend": "cd nexused-frontend && npm run lint",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "build:backend": "cd nexused-backend && npm run build",
+    "build:frontend": "cd nexused-frontend && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "test:backend": "cd nexused-backend && npm run test",
+    "test": "npm run test:backend",
+    "typecheck:backend": "cd nexused-backend && npx tsc --noEmit",
+    "typecheck:frontend": "cd nexused-frontend && npx tsc --noEmit",
+    "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "nexused-backend/src/**/*.ts": [
+      "prettier --write"
+    ],
+    "nexused-frontend/src/**/*.{ts,tsx}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "concurrently": "^9.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.4.0"
+  }
+}

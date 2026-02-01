@@ -32,7 +32,6 @@ lerna-debug.log*
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
@@ -82,3 +81,4 @@ schema.gql
 
 # Claude Code
 .claude/
+prompt.md

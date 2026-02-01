@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ObjectType, Field, Int, registerEnumType } from '@nestjs/graphql';
 import { Course } from './course.entity';
 import { AcademicTerm } from './academic-term.entity';
 import { User } from './user.entity';
@@ -18,18 +19,25 @@ export enum SectionStatus {
   CANCELLED = 'cancelled',
 }
 
+registerEnumType(SectionStatus, { name: 'SectionStatus' });
+
+@ObjectType()
 @Entity('course_sections')
 export class CourseSection {
+  @Field()
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Field()
   @Column()
   courseId: string;
 
+  @Field(() => Course)
   @ManyToOne(() => Course)
   @JoinColumn({ name: 'courseId' })
   course: Course;
 
+  @Field()
   @Column()
   termId: string;
 
@@ -37,22 +45,28 @@ export class CourseSection {
   @JoinColumn({ name: 'termId' })
   term: AcademicTerm;
 
+  @Field()
   @Column()
   instructorId: string;
 
+  @Field(() => User)
   @ManyToOne(() => User)
   @JoinColumn({ name: 'instructorId' })
   instructor: User;
 
+  @Field(() => String, { nullable: true })
   @Column({ type: 'jsonb', nullable: true })
   schedule: Record<string, any>;
 
+  @Field({ nullable: true })
   @Column({ nullable: true })
   location: string;
 
+  @Field(() => Int, { nullable: true })
   @Column({ type: 'int', nullable: true })
   capacity: number;
 
+  @Field(() => SectionStatus)
   @Column({
     type: 'enum',
     enum: SectionStatus,
@@ -60,9 +74,11 @@ export class CourseSection {
   })
   status: SectionStatus;
 
+  @Field()
   @CreateDateColumn()
   createdAt: Date;
 
+  @Field()
   @UpdateDateColumn()
   updatedAt: Date;
 }
