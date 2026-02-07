@@ -1,37 +1,51 @@
 import { create } from 'zustand';
 import { User, UserRole } from '@/types/auth';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
 interface AuthState {
   user: User | null;
-  token: string | null;
+  isAuthenticated: boolean;
   isHydrated: boolean;
-  setAuth: (token: string, user: User) => void;
-  logout: () => void;
+  setAuth: (user: User) => void;
+  logout: () => Promise<void>;
   hydrate: () => void;
 }
 
+/**
+ * WHY: Token is now stored in httpOnly cookie, not localStorage.
+ * PATTERN: Only store user info for UI state. The browser manages the cookie.
+ * TRADEOFF: We can't check token expiry client-side, but that's fine - the
+ * server will reject expired tokens and we handle 401s in Apollo error link.
+ */
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  token: null,
+  isAuthenticated: false,
   isHydrated: false,
 
-  setAuth: (token: string, user: User) => {
-    localStorage.setItem('token', token);
+  setAuth: (user: User) => {
     localStorage.setItem('user', JSON.stringify(user));
-    set({ token, user });
+    set({ user, isAuthenticated: true });
   },
 
-  logout: () => {
-    localStorage.removeItem('token');
+  logout: async () => {
+    try {
+      // Call backend to clear the httpOnly cookie
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch {
+      // Ignore network errors - clear local state anyway
+    }
     localStorage.removeItem('user');
-    set({ token: null, user: null });
+    set({ user: null, isAuthenticated: false });
   },
 
   hydrate: () => {
-    const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
     const user = userStr ? (JSON.parse(userStr) as User) : null;
-    set({ token, user, isHydrated: true });
+    set({ user, isAuthenticated: !!user, isHydrated: true });
   },
 }));
 

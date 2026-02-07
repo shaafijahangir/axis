@@ -22,8 +22,8 @@ export function UserMenu() {
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
     : '?';
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     apolloClient.clearStore();
     router.replace('/login');
   };

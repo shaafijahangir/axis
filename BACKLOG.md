@@ -54,10 +54,15 @@
 - **Acceptance:** Students cannot access `assignmentSubmissions` query. Instructors can only see submissions for assignments in their sections.
 
 ### SEC-003: Migrate JWT from localStorage to httpOnly cookies
-- **Status:** `TODO`
-- **Files:** `auth.controller.ts`, `auth.service.ts`, `graphql/client.ts`, `auth.store.ts`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
+- **Files:** `auth.controller.ts`, `jwt.strategy.ts`, `main.ts`, `graphql/client.ts`, `auth.store.ts`, `auth-guard.tsx`
 - **Problem:** JWT in localStorage is vulnerable to XSS attacks. Any injected script can steal the token.
 - **Fix:** Set JWT as httpOnly cookie on login response. Remove localStorage token management. Update Apollo Client to use `credentials: 'include'`. Update Zustand store to remove token persistence.
+- **Implementation:**
+  - Backend: Added cookie-parser middleware, set httpOnly cookie on login/register, added logout endpoint that clears cookie
+  - JWT Strategy: Extracts token from cookie first, falls back to Authorization header for backward compatibility
+  - Frontend: Apollo Client uses `credentials: 'include'`, auth store no longer persists token (only user info for UI)
 - **Acceptance:** No token in localStorage. No token in JavaScript-accessible storage. Cookie is httpOnly, secure, sameSite: 'lax'. Apollo Client sends cookies automatically.
 
 ### SEC-004: Add database indexes to all entities
@@ -343,5 +348,5 @@
 
 ---
 
-*Last updated: 2026-02-06 (Session 9 — Code Audit)*
+*Last updated: 2026-02-07 (Session 10 — Security Fixes)*
 *This file is the primary task reference for all development sessions.*

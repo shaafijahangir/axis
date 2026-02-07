@@ -2,6 +2,10 @@ import { AuthResponse, LoginCredentials, RegisterData } from '@/types/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
+/**
+ * WHY: credentials: 'include' is required for the browser to accept
+ * and send httpOnly cookies from cross-origin requests.
+ */
 export const authApi = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await fetch(`${API_URL}/auth/login`, {
@@ -10,6 +14,7 @@ export const authApi = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(credentials),
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -27,6 +32,7 @@ export const authApi = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
+      credentials: 'include',
     });
 
     if (!response.ok) {

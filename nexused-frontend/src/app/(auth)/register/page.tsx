@@ -33,7 +33,7 @@ export default function RegisterPage() {
         ...formData,
         roles: [UserRole.STUDENT],
       });
-      setAuth(response.accessToken, response.user);
+      setAuth(response.user);
       router.push(getRoleDashboardPath(response.user.roles));
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
