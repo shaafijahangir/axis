@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CourseContent } from './course-content.entity';
 import { CreateContentInput, UpdateContentInput } from './dto/content.types';
 
@@ -14,26 +14,32 @@ export class ContentService {
   /**
    * For instructors: all content (drafts + published).
    * For students: only published content (publishedAt IS NOT NULL).
+   * Tenant-scoped via the tenantId column on CourseContent.
    */
   async findBySectionId(
     sectionId: string,
+    tenantId: string,
     publishedOnly = false,
   ): Promise<CourseContent[]> {
-    const where: Record<string, unknown> = { sectionId };
+    const qb = this.contentRepo
+      .createQueryBuilder('content')
+      .leftJoinAndSelect('content.author', 'author')
+      .where('content.sectionId = :sectionId', { sectionId })
+      .andWhere('content.tenantId = :tenantId', { tenantId });
+
     if (publishedOnly) {
-      where.publishedAt = Not(IsNull());
+      qb.andWhere('content.publishedAt IS NOT NULL');
     }
 
-    return this.contentRepo.find({
-      where,
-      relations: ['author'],
-      order: { position: 'ASC', createdAt: 'DESC' },
-    });
+    return qb
+      .orderBy('content.position', 'ASC')
+      .addOrderBy('content.createdAt', 'DESC')
+      .getMany();
   }
 
-  async findById(id: string): Promise<CourseContent> {
+  async findById(id: string, tenantId: string): Promise<CourseContent> {
     const content = await this.contentRepo.findOne({
-      where: { id },
+      where: { id, tenantId },
       relations: ['author'],
     });
     if (!content) throw new NotFoundException('Content not found');
@@ -54,9 +60,12 @@ export class ContentService {
     return this.contentRepo.save(content);
   }
 
-  async update(input: UpdateContentInput): Promise<CourseContent> {
+  async update(
+    tenantId: string,
+    input: UpdateContentInput,
+  ): Promise<CourseContent> {
     const content = await this.contentRepo.findOne({
-      where: { id: input.id, sectionId: input.sectionId },
+      where: { id: input.id, sectionId: input.sectionId, tenantId },
     });
     if (!content) {
       throw new NotFoundException('Content not found in the specified section');
@@ -69,9 +78,13 @@ export class ContentService {
     return this.contentRepo.save(content);
   }
 
-  async publish(id: string, sectionId: string): Promise<CourseContent> {
+  async publish(
+    id: string,
+    sectionId: string,
+    tenantId: string,
+  ): Promise<CourseContent> {
     const content = await this.contentRepo.findOne({
-      where: { id, sectionId },
+      where: { id, sectionId, tenantId },
     });
     if (!content) {
       throw new NotFoundException('Content not found in the specified section');
@@ -81,9 +94,13 @@ export class ContentService {
     return this.contentRepo.save(content);
   }
 
-  async unpublish(id: string, sectionId: string): Promise<CourseContent> {
+  async unpublish(
+    id: string,
+    sectionId: string,
+    tenantId: string,
+  ): Promise<CourseContent> {
     const content = await this.contentRepo.findOne({
-      where: { id, sectionId },
+      where: { id, sectionId, tenantId },
     });
     if (!content) {
       throw new NotFoundException('Content not found in the specified section');
@@ -93,9 +110,13 @@ export class ContentService {
     return this.contentRepo.save(content);
   }
 
-  async delete(id: string, sectionId: string): Promise<boolean> {
+  async delete(
+    id: string,
+    sectionId: string,
+    tenantId: string,
+  ): Promise<boolean> {
     const content = await this.contentRepo.findOne({
-      where: { id, sectionId },
+      where: { id, sectionId, tenantId },
     });
     if (!content) {
       throw new NotFoundException('Content not found in the specified section');

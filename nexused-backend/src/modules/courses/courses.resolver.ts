@@ -25,39 +25,53 @@ export class CoursesResolver {
   }
 
   @Query(() => Course)
-  async course(@Args('id') id: string): Promise<Course> {
-    return this.coursesService.findById(id);
+  async course(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<Course> {
+    return this.coursesService.findById(id, user.tenantId);
   }
 
   @Query(() => [Enrollment])
   async myEnrollments(@CurrentUser() user: User): Promise<Enrollment[]> {
-    return this.coursesService.findEnrollmentsForUser(user.id);
+    return this.coursesService.findEnrollmentsForUser(user.id, user.tenantId);
   }
 
   @Query(() => [CourseSection])
   async mySections(@CurrentUser() user: User): Promise<CourseSection[]> {
-    return this.coursesService.findSectionsForInstructor(user.id);
+    return this.coursesService.findSectionsForInstructor(
+      user.id,
+      user.tenantId,
+    );
   }
 
   @Query(() => CourseSection)
-  async section(@Args('id') id: string): Promise<CourseSection> {
-    return this.coursesService.findSectionById(id);
+  async section(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<CourseSection> {
+    return this.coursesService.findSectionById(id, user.tenantId);
   }
 
   @Query(() => [CourseSection])
   async courseSections(
+    @CurrentUser() user: User,
     @Args('courseId') courseId: string,
   ): Promise<CourseSection[]> {
-    return this.coursesService.findSectionsForCourse(courseId);
+    return this.coursesService.findSectionsForCourse(courseId, user.tenantId);
   }
 
   @Query(() => [Enrollment])
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN, UserRole.TA)
   async sectionEnrollments(
+    @CurrentUser() user: User,
     @Args('sectionId') sectionId: string,
   ): Promise<Enrollment[]> {
-    return this.coursesService.findEnrollmentsForSection(sectionId);
+    return this.coursesService.findEnrollmentsForSection(
+      sectionId,
+      user.tenantId,
+    );
   }
 
   @Query(() => Int)

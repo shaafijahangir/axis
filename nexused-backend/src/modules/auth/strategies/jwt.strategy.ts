@@ -19,7 +19,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    const user = await this.usersService.findById(payload.sub);
+    // Verify user exists AND belongs to the tenant claimed in the JWT
+    // This prevents token reuse if a user is moved between tenants
+    const user = await this.usersService.findById(
+      payload.sub,
+      payload.tenantId,
+    );
 
     if (!user) {
       throw new UnauthorizedException();

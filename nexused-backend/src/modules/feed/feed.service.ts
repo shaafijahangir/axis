@@ -285,9 +285,12 @@ export class FeedService {
    *
    * isInstructor controls whether drafts are included. Students only see
    * published content; instructors see everything with draft badges.
+   *
+   * tenantId is required for content service tenant scoping.
    */
   async getSectionTimeline(
     sectionId: string,
+    tenantId: string,
     userId?: string,
     isInstructor = false,
   ): Promise<TimelineEntry[]> {
@@ -368,6 +371,7 @@ export class FeedService {
     // Course content (publishedOnly = !isInstructor)
     const contents = await this.contentService.findBySectionId(
       sectionId,
+      tenantId,
       !isInstructor,
     );
 

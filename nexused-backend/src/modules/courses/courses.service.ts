@@ -47,8 +47,10 @@ export class CoursesService {
     });
   }
 
-  async findById(id: string): Promise<Course> {
-    const course = await this.coursesRepository.findOne({ where: { id } });
+  async findById(id: string, tenantId: string): Promise<Course> {
+    const course = await this.coursesRepository.findOne({
+      where: { id, tenantId },
+    });
     if (!course) throw new NotFoundException('Course not found');
     return course;
   }
@@ -68,29 +70,44 @@ export class CoursesService {
     return saved;
   }
 
-  async findSectionsForCourse(courseId: string): Promise<CourseSection[]> {
-    return this.sectionsRepository.find({
-      where: { courseId },
-      relations: ['course', 'instructor'],
-      order: { createdAt: 'DESC' },
-    });
+  async findSectionsForCourse(
+    courseId: string,
+    tenantId: string,
+  ): Promise<CourseSection[]> {
+    // Join through course to verify tenant ownership
+    return this.sectionsRepository
+      .createQueryBuilder('section')
+      .innerJoinAndSelect('section.course', 'course')
+      .leftJoinAndSelect('section.instructor', 'instructor')
+      .where('section.courseId = :courseId', { courseId })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .orderBy('section.createdAt', 'DESC')
+      .getMany();
   }
 
   async findSectionsForInstructor(
     instructorId: string,
+    tenantId: string,
   ): Promise<CourseSection[]> {
-    return this.sectionsRepository.find({
-      where: { instructorId },
-      relations: ['course', 'instructor'],
-      order: { createdAt: 'DESC' },
-    });
+    // Join through course to verify tenant ownership
+    return this.sectionsRepository
+      .createQueryBuilder('section')
+      .innerJoinAndSelect('section.course', 'course')
+      .leftJoinAndSelect('section.instructor', 'instructor')
+      .where('section.instructorId = :instructorId', { instructorId })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .orderBy('section.createdAt', 'DESC')
+      .getMany();
   }
 
-  async findSectionById(id: string): Promise<CourseSection> {
-    const section = await this.sectionsRepository.findOne({
-      where: { id },
-      relations: ['course', 'instructor'],
-    });
+  async findSectionById(id: string, tenantId: string): Promise<CourseSection> {
+    const section = await this.sectionsRepository
+      .createQueryBuilder('section')
+      .innerJoinAndSelect('section.course', 'course')
+      .leftJoinAndSelect('section.instructor', 'instructor')
+      .where('section.id = :id', { id })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .getOne();
     if (!section) throw new NotFoundException('Section not found');
     return section;
   }
@@ -122,12 +139,20 @@ export class CoursesService {
     return saved;
   }
 
-  async findEnrollmentsForUser(userId: string): Promise<Enrollment[]> {
-    return this.enrollmentsRepository.find({
-      where: { userId },
-      relations: ['section', 'section.course', 'section.instructor'],
-      order: { enrolledAt: 'DESC' },
-    });
+  async findEnrollmentsForUser(
+    userId: string,
+    tenantId: string,
+  ): Promise<Enrollment[]> {
+    // Join through section → course to verify tenant ownership
+    return this.enrollmentsRepository
+      .createQueryBuilder('enrollment')
+      .innerJoinAndSelect('enrollment.section', 'section')
+      .innerJoinAndSelect('section.course', 'course')
+      .leftJoinAndSelect('section.instructor', 'instructor')
+      .where('enrollment.userId = :userId', { userId })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .orderBy('enrollment.enrolledAt', 'DESC')
+      .getMany();
   }
 
   async enrollStudent(userId: string, sectionId: string): Promise<Enrollment> {
@@ -155,12 +180,20 @@ export class CoursesService {
     return saved;
   }
 
-  async findEnrollmentsForSection(sectionId: string): Promise<Enrollment[]> {
-    return this.enrollmentsRepository.find({
-      where: { sectionId },
-      relations: ['user'],
-      order: { enrolledAt: 'ASC' },
-    });
+  async findEnrollmentsForSection(
+    sectionId: string,
+    tenantId: string,
+  ): Promise<Enrollment[]> {
+    // Join through section → course to verify tenant ownership
+    return this.enrollmentsRepository
+      .createQueryBuilder('enrollment')
+      .innerJoinAndSelect('enrollment.user', 'user')
+      .innerJoinAndSelect('enrollment.section', 'section')
+      .innerJoin('section.course', 'course')
+      .where('enrollment.sectionId = :sectionId', { sectionId })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .orderBy('enrollment.enrolledAt', 'ASC')
+      .getMany();
   }
 
   async countCourses(tenantId: string): Promise<number> {

@@ -13,7 +13,8 @@
 > These are **blocking**. Any of these could expose user data across tenants or allow unauthorized access. Fix before writing another line of feature code.
 
 ### SEC-001: Add tenant scoping to all findById methods
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
 - **Files:** `users.service.ts`, `courses.service.ts`, `assignments.service.ts`
 - **Problem:** `findById(id)` queries have no tenant filter. An authenticated user could access another tenant's data by guessing UUIDs.
 - **Fix:** Change `findById(id)` → `findById(id, tenantId)` in every service. Update all resolver callers to pass `tenantId` from `@CurrentUser()`.
@@ -32,7 +33,8 @@
 - **Acceptance:** Every `findById`/`findOne` call in the codebase includes a `tenantId` filter. No service method returns data without tenant scoping.
 
 ### SEC-002: Add authorization to assignmentSubmissions query
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07 — Added @Roles guard (INSTRUCTOR/TA/ADMIN) + tenant scoping
 - **File:** `assignments.resolver.ts` (line 39-43)
 - **Problem:** Any authenticated user can query ALL submissions for ANY assignment. Students can see other students' work.
 - **Fix:** Add role check — instructors/TAs see all submissions for their sections; students see only their own.
@@ -249,18 +251,16 @@
 - **Acceptance:** Submitting an assignment triggers FeedbackCopilot to draft feedback. Enrolling triggers a Study Coach welcome. These happen asynchronously via BullMQ.
 
 ### FEAT-003: Build messaging system (from Session 7 spec)
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** HIGH
-- **Note:** Session 7 documented this as complete, but the code does NOT exist on main. Build from scratch using the Session 7 spec as a design guide.
+- **Completed:** 2026-02-07 — Merged in `feat(root): complete Phase 2` commit
 - **Details:** Conversation, ConversationParticipant, DirectMessage entities. MessagingService with enrollment-based contacts, cursor pagination, read tracking. Frontend with two-panel layout, conversation list, message thread, new message dialog.
-- **Acceptance:** Two users in the same section can exchange direct messages. Unread count appears in navigation. Messages paginate correctly.
 
 ### FEAT-004: Build content builder (from Session 8 spec)
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** HIGH
-- **Note:** Session 8 documented this as complete, but the code does NOT exist on main. Build from scratch using the Session 8 spec as a design guide.
+- **Completed:** 2026-02-07 — Merged in `feat(root): complete Phase 2` commit
 - **Details:** Content entity with rich text (Tiptap editor), draft/published workflow, integration into course timeline. Instructor creates content → appears as timeline entry.
-- **Acceptance:** Instructor can create rich text content, save as draft, publish, unpublish, edit, delete. Published content appears in student timeline.
 
 ### FEAT-005: Activate Socket.IO for real-time
 - **Status:** `TODO`

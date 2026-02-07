@@ -26,23 +26,37 @@ export class AssignmentsResolver {
 
   @Query(() => [Assignment])
   async sectionAssignments(
+    @CurrentUser() user: User,
     @Args('sectionId') sectionId: string,
   ): Promise<Assignment[]> {
-    return this.assignmentsService.findBySectionId(sectionId);
+    return this.assignmentsService.findBySectionId(sectionId, user.tenantId);
   }
 
   @Query(() => Assignment)
-  async assignment(@Args('id') id: string): Promise<Assignment> {
-    return this.assignmentsService.findById(id);
+  async assignment(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<Assignment> {
+    return this.assignmentsService.findById(id, user.tenantId);
   }
 
   // ─── Submission Queries ─────────────────────────────────────────────
 
+  /**
+   * SEC-002 FIX: Now requires INSTRUCTOR/TA/ADMIN role.
+   * Students cannot see other students' submissions.
+   */
   @Query(() => [Submission])
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.TA, UserRole.ADMIN)
   async assignmentSubmissions(
+    @CurrentUser() user: User,
     @Args('assignmentId') assignmentId: string,
   ): Promise<Submission[]> {
-    return this.assignmentsService.findSubmissionsByAssignment(assignmentId);
+    return this.assignmentsService.findSubmissionsByAssignment(
+      assignmentId,
+      user.tenantId,
+    );
   }
 
   @Query(() => [Submission])
@@ -50,12 +64,19 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('assignmentId') assignmentId: string,
   ): Promise<Submission[]> {
-    return this.assignmentsService.findSubmissionsByUser(assignmentId, user.id);
+    return this.assignmentsService.findSubmissionsByUser(
+      assignmentId,
+      user.id,
+      user.tenantId,
+    );
   }
 
   @Query(() => Submission)
-  async submission(@Args('id') id: string): Promise<Submission> {
-    return this.assignmentsService.findSubmissionById(id);
+  async submission(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<Submission> {
+    return this.assignmentsService.findSubmissionById(id, user.tenantId);
   }
 
   // ─── Gradebook ─────────────────────────────────────────────────────
@@ -64,9 +85,13 @@ export class AssignmentsResolver {
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.TA, UserRole.ADMIN)
   async sectionGradebook(
+    @CurrentUser() user: User,
     @Args('sectionId') sectionId: string,
   ): Promise<SectionGradebook> {
-    return this.assignmentsService.getSectionGradebook(sectionId);
+    return this.assignmentsService.getSectionGradebook(
+      sectionId,
+      user.tenantId,
+    );
   }
 
   // ─── Mutations ──────────────────────────────────────────────────────
@@ -103,7 +128,11 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('input') input: CreateSubmissionInput,
   ): Promise<Submission> {
-    return this.assignmentsService.createSubmission(user.id, input);
+    return this.assignmentsService.createSubmission(
+      user.id,
+      user.tenantId,
+      input,
+    );
   }
 
   @Mutation(() => Submission)
@@ -113,6 +142,10 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('input') input: GradeSubmissionInput,
   ): Promise<Submission> {
-    return this.assignmentsService.gradeSubmission(user.id, input);
+    return this.assignmentsService.gradeSubmission(
+      user.id,
+      user.tenantId,
+      input,
+    );
   }
 }

@@ -13,7 +13,7 @@ export class UsersResolver {
   @Query(() => User)
   @UseGuards(JwtAuthGuard)
   async me(@CurrentUser() user: User): Promise<User> {
-    const found = await this.usersService.findById(user.id);
+    const found = await this.usersService.findById(user.id, user.tenantId);
     if (!found) throw new NotFoundException('User not found');
     return found;
   }
@@ -33,7 +33,11 @@ export class UsersResolver {
     if (input.preferences !== undefined)
       updateData.preferences = JSON.parse(input.preferences);
 
-    const updated = await this.usersService.update(user.id, updateData);
+    const updated = await this.usersService.update(
+      user.id,
+      user.tenantId,
+      updateData,
+    );
     if (!updated) throw new NotFoundException('User not found');
     return updated;
   }

@@ -36,15 +36,30 @@ export class AssignmentsService {
 
   // ─── Assignments ────────────────────────────────────────────────────
 
-  async findBySectionId(sectionId: string): Promise<Assignment[]> {
-    return this.assignmentRepo.find({
-      where: { sectionId },
-      order: { dueAt: 'ASC', createdAt: 'DESC' },
-    });
+  async findBySectionId(
+    sectionId: string,
+    tenantId: string,
+  ): Promise<Assignment[]> {
+    // Join through section → course to verify tenant ownership
+    return this.assignmentRepo
+      .createQueryBuilder('assignment')
+      .innerJoin('assignment.section', 'section')
+      .innerJoin('section.course', 'course')
+      .where('assignment.sectionId = :sectionId', { sectionId })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .orderBy('assignment.dueAt', 'ASC')
+      .addOrderBy('assignment.createdAt', 'DESC')
+      .getMany();
   }
 
-  async findById(id: string): Promise<Assignment> {
-    const assignment = await this.assignmentRepo.findOne({ where: { id } });
+  async findById(id: string, tenantId: string): Promise<Assignment> {
+    const assignment = await this.assignmentRepo
+      .createQueryBuilder('assignment')
+      .innerJoin('assignment.section', 'section')
+      .innerJoin('section.course', 'course')
+      .where('assignment.id = :id', { id })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .getOne();
     if (!assignment) throw new NotFoundException('Assignment not found');
     return assignment;
   }
@@ -123,37 +138,61 @@ export class AssignmentsService {
 
   async findSubmissionsByAssignment(
     assignmentId: string,
+    tenantId: string,
   ): Promise<Submission[]> {
-    return this.submissionRepo.find({
-      where: { assignmentId },
-      relations: ['user'],
-      order: { submittedAt: 'DESC' },
-    });
+    // Join through assignment → section → course to verify tenant ownership
+    return this.submissionRepo
+      .createQueryBuilder('submission')
+      .innerJoin('submission.assignment', 'assignment')
+      .innerJoin('assignment.section', 'section')
+      .innerJoin('section.course', 'course')
+      .innerJoinAndSelect('submission.user', 'user')
+      .where('submission.assignmentId = :assignmentId', { assignmentId })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .orderBy('submission.submittedAt', 'DESC')
+      .getMany();
   }
 
   async findSubmissionsByUser(
     assignmentId: string,
     userId: string,
+    tenantId: string,
   ): Promise<Submission[]> {
-    return this.submissionRepo.find({
-      where: { assignmentId, userId },
-      order: { attempt: 'DESC' },
-    });
+    // Join through assignment → section → course to verify tenant ownership
+    return this.submissionRepo
+      .createQueryBuilder('submission')
+      .innerJoin('submission.assignment', 'assignment')
+      .innerJoin('assignment.section', 'section')
+      .innerJoin('section.course', 'course')
+      .where('submission.assignmentId = :assignmentId', { assignmentId })
+      .andWhere('submission.userId = :userId', { userId })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .orderBy('submission.attempt', 'DESC')
+      .getMany();
   }
 
-  async findSubmissionById(id: string): Promise<Submission> {
-    const submission = await this.submissionRepo.findOne({
-      where: { id },
-      relations: ['assignment', 'user'],
-    });
+  async findSubmissionById(id: string, tenantId: string): Promise<Submission> {
+    const submission = await this.submissionRepo
+      .createQueryBuilder('submission')
+      .innerJoinAndSelect('submission.assignment', 'assignment')
+      .innerJoin('assignment.section', 'section')
+      .innerJoin('section.course', 'course')
+      .innerJoinAndSelect('submission.user', 'user')
+      .where('submission.id = :id', { id })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .getOne();
     if (!submission) throw new NotFoundException('Submission not found');
     return submission;
   }
 
   async createSubmission(
     userId: string,
+    tenantId: string,
     input: CreateSubmissionInput,
   ): Promise<Submission> {
+    // Verify assignment belongs to this tenant
+    const assignment = await this.findById(input.assignmentId, tenantId);
+
     // Determine attempt number
     const existingCount = await this.submissionRepo.count({
       where: { assignmentId: input.assignmentId, userId },
@@ -168,17 +207,11 @@ export class AssignmentsService {
     });
     const saved = await this.submissionRepo.save(submission);
 
-    // Get tenantId via assignment → section → course
-    const assignment = await this.assignmentRepo.findOne({
-      where: { id: input.assignmentId },
-      relations: ['section', 'section.course'],
-    });
-
     this.eventEmitter.emit(NexusEvents.SUBMISSION_CREATED, {
       submissionId: saved.id,
       assignmentId: input.assignmentId,
       userId,
-      tenantId: assignment?.section?.course?.tenantId || '',
+      tenantId,
     });
 
     return saved;
@@ -188,9 +221,13 @@ export class AssignmentsService {
 
   async gradeSubmission(
     graderId: string,
+    tenantId: string,
     input: GradeSubmissionInput,
   ): Promise<Submission> {
-    const submission = await this.findSubmissionById(input.submissionId);
+    const submission = await this.findSubmissionById(
+      input.submissionId,
+      tenantId,
+    );
     const oldScore = submission.score;
 
     submission.score = input.score;
@@ -201,13 +238,6 @@ export class AssignmentsService {
     }
 
     const saved = await this.submissionRepo.save(submission);
-
-    // Get tenantId
-    const assignment = await this.assignmentRepo.findOne({
-      where: { id: submission.assignmentId },
-      relations: ['section', 'section.course'],
-    });
-    const tenantId = assignment?.section?.course?.tenantId || '';
 
     this.eventEmitter.emit(NexusEvents.SUBMISSION_GRADED, {
       submissionId: saved.id,
@@ -228,16 +258,24 @@ export class AssignmentsService {
 
   // ─── Gradebook ──────────────────────────────────────────────────────
 
-  async getSectionGradebook(sectionId: string): Promise<SectionGradebook> {
-    // 1. Active student enrollments
-    const enrollments = await this.enrollmentRepo.find({
-      where: {
-        sectionId,
+  async getSectionGradebook(
+    sectionId: string,
+    tenantId: string,
+  ): Promise<SectionGradebook> {
+    // 1. Active student enrollments (verify tenant through section → course)
+    const enrollments = await this.enrollmentRepo
+      .createQueryBuilder('enrollment')
+      .innerJoinAndSelect('enrollment.user', 'user')
+      .innerJoin('enrollment.section', 'section')
+      .innerJoin('section.course', 'course')
+      .where('enrollment.sectionId = :sectionId', { sectionId })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .andWhere('enrollment.status = :status', {
         status: EnrollmentStatus.ACTIVE,
-        role: EnrollmentRole.STUDENT,
-      },
-      relations: ['user'],
-    });
+      })
+      .andWhere('enrollment.role = :role', { role: EnrollmentRole.STUDENT })
+      .getMany();
+
     // Sort by last name, first name in memory (avoids TypeORM join-order quirks)
     enrollments.sort((a, b) =>
       `${a.user.lastName} ${a.user.firstName}`.localeCompare(
@@ -245,11 +283,8 @@ export class AssignmentsService {
       ),
     );
 
-    // 2. All assignments for the section
-    const assignments = await this.assignmentRepo.find({
-      where: { sectionId },
-      order: { dueAt: 'ASC', createdAt: 'ASC' },
-    });
+    // 2. All assignments for the section (tenant-scoped)
+    const assignments = await this.findBySectionId(sectionId, tenantId);
 
     if (assignments.length === 0) {
       return {

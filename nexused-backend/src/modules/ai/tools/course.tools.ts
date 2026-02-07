@@ -50,8 +50,11 @@ export function createCourseTools(
         },
         required: ['courseId'],
       },
-      handler: async (input, _ctx) => {
-        const course = await coursesService.findById(input.courseId as string);
+      handler: async (input, ctx) => {
+        const course = await coursesService.findById(
+          input.courseId as string,
+          ctx.tenantId,
+        );
         return {
           id: course.id,
           code: course.code,
@@ -79,9 +82,10 @@ export function createCourseTools(
         },
         required: ['courseId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
         const sections = await coursesService.findSectionsForCourse(
           input.courseId as string,
+          ctx.tenantId,
         );
         return sections.map((s) => ({
           id: s.id,
@@ -110,9 +114,10 @@ export function createCourseTools(
         },
         required: ['sectionId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
         const section = await coursesService.findSectionById(
           input.sectionId as string,
+          ctx.tenantId,
         );
         return {
           id: section.id,

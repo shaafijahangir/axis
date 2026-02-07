@@ -22,12 +22,19 @@ export class ContentResolver {
     const isInstructor = user.roles.some((r) =>
       [UserRole.INSTRUCTOR, UserRole.ADMIN, UserRole.TA].includes(r),
     );
-    return this.contentService.findBySectionId(sectionId, !isInstructor);
+    return this.contentService.findBySectionId(
+      sectionId,
+      user.tenantId,
+      !isInstructor,
+    );
   }
 
   @Query(() => CourseContent)
-  async content(@Args('id') id: string): Promise<CourseContent> {
-    return this.contentService.findById(id);
+  async content(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<CourseContent> {
+    return this.contentService.findById(id, user.tenantId);
   }
 
   @Mutation(() => CourseContent)
@@ -44,38 +51,42 @@ export class ContentResolver {
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
   async updateContent(
+    @CurrentUser() user: User,
     @Args('input') input: UpdateContentInput,
   ): Promise<CourseContent> {
-    return this.contentService.update(input);
+    return this.contentService.update(user.tenantId, input);
   }
 
   @Mutation(() => CourseContent)
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
   async publishContent(
+    @CurrentUser() user: User,
     @Args('id') id: string,
     @Args('sectionId') sectionId: string,
   ): Promise<CourseContent> {
-    return this.contentService.publish(id, sectionId);
+    return this.contentService.publish(id, sectionId, user.tenantId);
   }
 
   @Mutation(() => CourseContent)
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
   async unpublishContent(
+    @CurrentUser() user: User,
     @Args('id') id: string,
     @Args('sectionId') sectionId: string,
   ): Promise<CourseContent> {
-    return this.contentService.unpublish(id, sectionId);
+    return this.contentService.unpublish(id, sectionId, user.tenantId);
   }
 
   @Mutation(() => Boolean)
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
   async deleteContent(
+    @CurrentUser() user: User,
     @Args('id') id: string,
     @Args('sectionId') sectionId: string,
   ): Promise<boolean> {
-    return this.contentService.delete(id, sectionId);
+    return this.contentService.delete(id, sectionId, user.tenantId);
   }
 }

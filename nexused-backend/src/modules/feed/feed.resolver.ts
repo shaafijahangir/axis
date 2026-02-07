@@ -38,6 +38,7 @@ export class FeedResolver {
     );
     return this.feedService.getSectionTimeline(
       sectionId,
+      user.tenantId,
       user.id,
       isInstructor,
     );

@@ -22,12 +22,34 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async findById(id: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { id } });
+  /**
+   * Find user by ID with tenant scoping.
+   * @param id - User ID
+   * @param tenantId - Optional tenant ID for security scoping. When provided,
+   *                   ensures the user belongs to the specified tenant.
+   *                   Should ALWAYS be provided except in auth token validation
+   *                   where the tenantId comes from the JWT itself.
+   */
+  async findById(id: string, tenantId?: string): Promise<User | null> {
+    const where: { id: string; tenantId?: string } = { id };
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
+    return this.usersRepository.findOne({ where });
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+  /**
+   * Find user by email within a tenant.
+   * @param email - User email
+   * @param tenantId - Optional tenant ID. When provided, scopes lookup to that tenant.
+   *                   Without it, returns the first matching user (legacy behavior for auth).
+   */
+  async findByEmail(email: string, tenantId?: string): Promise<User | null> {
+    const where: { email: string; tenantId?: string } = { email };
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
+    return this.usersRepository.findOne({ where });
   }
 
   async create(userData: Partial<User>): Promise<User> {
@@ -41,9 +63,18 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async update(id: string, userData: Partial<User>): Promise<User | null> {
+  async update(
+    id: string,
+    tenantId: string,
+    userData: Partial<User>,
+  ): Promise<User | null> {
+    // First verify the user belongs to this tenant
+    const user = await this.findById(id, tenantId);
+    if (!user) {
+      throw new NotFoundException('User not found in this institution');
+    }
     await this.usersRepository.update(id, userData);
-    return this.findById(id);
+    return this.findById(id, tenantId);
   }
 
   async validatePassword(

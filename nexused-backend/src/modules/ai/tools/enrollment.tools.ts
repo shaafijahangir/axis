@@ -22,9 +22,10 @@ export function createEnrollmentTools(
         },
         required: ['userId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
         const enrollments = await coursesService.findEnrollmentsForUser(
           input.userId as string,
+          ctx.tenantId,
         );
         return enrollments.map((e) => ({
           id: e.id,

@@ -33,8 +33,8 @@ export class AdminUsersResolver {
     @CurrentUser() currentUser: User,
     @Args('id') id: string,
   ): Promise<User> {
-    const user = await this.usersService.findById(id);
-    if (!user || user.tenantId !== currentUser.tenantId) {
+    const user = await this.usersService.findById(id, currentUser.tenantId);
+    if (!user) {
       throw new Error('User not found in this institution');
     }
     return user;
