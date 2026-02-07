@@ -193,7 +193,8 @@
 - **Acceptance:** Service methods don't receive `tenantId` as a parameter. Tenant scoping happens automatically at the interceptor level.
 
 ### ARCH-003: Remove unused @tanstack/react-query
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
 - **File:** `nexused-frontend/package.json`
 - **Problem:** `@tanstack/react-query` is installed but never imported. Adds ~30KB to bundle and confuses contributors.
 - **Fix:** `npm uninstall @tanstack/react-query` from the frontend project.
