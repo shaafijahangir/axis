@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto, LoginDto, AuthResponseDto } from './dto/auth.dto';
@@ -50,7 +54,7 @@ export class AuthService {
 
     const isPasswordValid = await this.usersService.validatePassword(
       password,
-      user.passwordHash!,
+      user.passwordHash,
     );
 
     if (!isPasswordValid) {

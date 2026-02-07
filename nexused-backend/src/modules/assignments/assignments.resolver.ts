@@ -10,8 +10,11 @@ import { Roles } from '../../decorators/roles.decorator';
 import { AssignmentsService } from './assignments.service';
 import {
   CreateAssignmentInput,
+  UpdateAssignmentInput,
+  ExtendDeadlinesInput,
   CreateSubmissionInput,
   GradeSubmissionInput,
+  SectionGradebook,
 } from './dto/assignment.types';
 
 @Resolver()
@@ -55,6 +58,17 @@ export class AssignmentsResolver {
     return this.assignmentsService.findSubmissionById(id);
   }
 
+  // ─── Gradebook ─────────────────────────────────────────────────────
+
+  @Query(() => SectionGradebook)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.TA, UserRole.ADMIN)
+  async sectionGradebook(
+    @Args('sectionId') sectionId: string,
+  ): Promise<SectionGradebook> {
+    return this.assignmentsService.getSectionGradebook(sectionId);
+  }
+
   // ─── Mutations ──────────────────────────────────────────────────────
 
   @Mutation(() => Assignment)
@@ -64,6 +78,24 @@ export class AssignmentsResolver {
     @Args('input') input: CreateAssignmentInput,
   ): Promise<Assignment> {
     return this.assignmentsService.create(input);
+  }
+
+  @Mutation(() => Assignment)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async updateAssignment(
+    @Args('input') input: UpdateAssignmentInput,
+  ): Promise<Assignment> {
+    return this.assignmentsService.updateAssignment(input);
+  }
+
+  @Mutation(() => [Assignment])
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async extendDeadlines(
+    @Args('input') input: ExtendDeadlinesInput,
+  ): Promise<Assignment[]> {
+    return this.assignmentsService.extendDeadlines(input);
   }
 
   @Mutation(() => Submission)

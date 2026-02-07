@@ -34,3 +34,25 @@ export const SUBMIT_ASSIGNMENT_MUTATION = gql`
     }
   }
 `;
+
+export const UPDATE_ASSIGNMENT_MUTATION = gql`
+  mutation UpdateAssignment($input: UpdateAssignmentInput!) {
+    updateAssignment(input: $input) {
+      id
+      title
+      description
+      dueAt
+      pointsPossible
+    }
+  }
+`;
+
+export const EXTEND_DEADLINES_MUTATION = gql`
+  mutation ExtendDeadlines($input: ExtendDeadlinesInput!) {
+    extendDeadlines(input: $input) {
+      id
+      title
+      dueAt
+    }
+  }
+`;

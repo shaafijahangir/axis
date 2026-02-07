@@ -3,6 +3,7 @@ import { ObjectType, Field, Float, registerEnumType } from '@nestjs/graphql';
 export enum TimelineEntryType {
   ASSIGNMENT = 'assignment',
   ANNOUNCEMENT = 'announcement',
+  CONTENT = 'content',
 }
 
 registerEnumType(TimelineEntryType, { name: 'TimelineEntryType' });
@@ -41,6 +42,11 @@ export class TimelineEntry {
 
   @Field()
   timestamp: Date;
+
+  // ── Content fields ──
+
+  @Field({ nullable: true })
+  publishedAt?: Date;
 
   // ── Grade fields (populated for assignment entries when userId is provided) ──
 

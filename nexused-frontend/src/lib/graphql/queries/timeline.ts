@@ -14,6 +14,7 @@ export const SECTION_TIMELINE_QUERY = gql`
       priority
       pinned
       timestamp
+      publishedAt
       score
       gradedAt
       feedback

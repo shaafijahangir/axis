@@ -21,19 +21,30 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
+  badgeKey?: string;
 }
 
 const studentNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Courses', href: '/courses', icon: BookOpen },
   { label: 'Grades', href: '/grades', icon: GraduationCap },
-  { label: 'Messages', href: '/messages', icon: MessageSquare },
+  {
+    label: 'Messages',
+    href: '/messages',
+    icon: MessageSquare,
+    badgeKey: 'messages',
+  },
 ];
 
 const instructorNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Courses', href: '/courses', icon: BookOpen },
-  { label: 'Messages', href: '/messages', icon: MessageSquare },
+  {
+    label: 'Messages',
+    href: '/messages',
+    icon: MessageSquare,
+    badgeKey: 'messages',
+  },
 ];
 
 const adminNav: NavItem[] = [
@@ -44,7 +55,12 @@ const adminNav: NavItem[] = [
 
 const parentNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
-  { label: 'Messages', href: '/messages', icon: MessageSquare },
+  {
+    label: 'Messages',
+    href: '/messages',
+    icon: MessageSquare,
+    badgeKey: 'messages',
+  },
 ];
 
 const navByRole: Record<string, NavItem[]> = {

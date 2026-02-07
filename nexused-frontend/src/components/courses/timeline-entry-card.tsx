@@ -1,13 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { FileText, Megaphone, Pin, CheckCircle, Clock } from 'lucide-react';
+import {
+  FileText,
+  Megaphone,
+  BookOpen,
+  Pin,
+  CheckCircle,
+  Clock,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime } from '@/lib/utils/relative-time';
 
 interface TimelineEntryCardProps {
-  type: 'assignment' | 'announcement';
+  type: 'assignment' | 'announcement' | 'content';
   id: string;
   title: string;
   body?: string;
@@ -23,6 +32,7 @@ interface TimelineEntryCardProps {
   score?: number;
   gradedAt?: string;
   feedback?: string;
+  publishedAt?: string;
 }
 
 export function TimelineEntryCard({
@@ -41,13 +51,23 @@ export function TimelineEntryCard({
   sectionId,
   score,
   gradedAt,
+  publishedAt,
 }: TimelineEntryCardProps) {
   const isAssignment = type === 'assignment';
-  const Icon = isAssignment ? FileText : Megaphone;
-  const borderColor = isAssignment
-    ? 'border-l-violet-500'
-    : 'border-l-blue-500';
-  const iconColor = isAssignment ? 'text-violet-500' : 'text-blue-500';
+  const isContent = type === 'content';
+  const isDraft = isContent && !publishedAt;
+
+  const Icon = isContent ? BookOpen : isAssignment ? FileText : Megaphone;
+  const borderColor = isContent
+    ? 'border-l-emerald-500'
+    : isAssignment
+      ? 'border-l-violet-500'
+      : 'border-l-blue-500';
+  const iconColor = isContent
+    ? 'text-emerald-500'
+    : isAssignment
+      ? 'text-violet-500'
+      : 'text-blue-500';
 
   const isGraded = isAssignment && gradedAt != null && score != null;
   const isPastDueUngraded =
@@ -64,6 +84,21 @@ export function TimelineEntryCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {pinned && <Pin className="h-3 w-3 text-amber-500" />}
+            {isDraft && (
+              <Badge variant="secondary" className="text-xs">
+                <EyeOff className="mr-1 h-3 w-3" />
+                Draft
+              </Badge>
+            )}
+            {isContent && publishedAt && (
+              <Badge
+                variant="outline"
+                className="text-xs text-emerald-600 dark:text-emerald-400"
+              >
+                <Eye className="mr-1 h-3 w-3" />
+                Published
+              </Badge>
+            )}
             {assignmentType && (
               <Badge variant="outline" className="text-xs capitalize">
                 {assignmentType}
@@ -114,6 +149,14 @@ export function TimelineEntryCard({
   if (isAssignment) {
     return (
       <Link href={`/courses/${courseId}/section/${sectionId}/assignment/${id}`}>
+        {content}
+      </Link>
+    );
+  }
+
+  if (isContent) {
+    return (
+      <Link href={`/courses/${courseId}/section/${sectionId}/content/${id}`}>
         {content}
       </Link>
     );

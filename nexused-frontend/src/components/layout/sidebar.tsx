@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
 import { getNavForRole } from '@/lib/navigation';
 import { Separator } from '@/components/ui/separator';
+import { useUnreadCount } from '@/hooks/use-unread-count';
 
 /**
  * WHY: Role-specific nav pulled from centralised `navigation.ts`.
@@ -16,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuthStore();
+  const { unreadCount } = useUnreadCount();
 
   const items = user ? getNavForRole(user.roles) : [];
 
@@ -43,7 +45,12 @@ export function Sidebar() {
               )}
             >
               <item.icon className="h-4 w-4" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.badgeKey === 'messages' && unreadCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-semibold text-destructive-foreground">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Link>
           );
         })}

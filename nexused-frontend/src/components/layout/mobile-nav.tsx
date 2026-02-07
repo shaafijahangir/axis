@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
 import { getNavForRole } from '@/lib/navigation';
+import { useUnreadCount } from '@/hooks/use-unread-count';
 
 /**
  * WHY: Fixed bottom bar for mobile. Mirrors the sidebar nav items per role.
@@ -14,6 +15,7 @@ import { getNavForRole } from '@/lib/navigation';
 export function MobileNav() {
   const pathname = usePathname();
   const { user } = useAuthStore();
+  const { unreadCount } = useUnreadCount();
 
   if (!user) return null;
 
@@ -31,13 +33,20 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors',
+                'relative flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              <item.icon className="h-5 w-5" />
+              <div className="relative">
+                <item.icon className="h-5 w-5" />
+                {item.badgeKey === 'messages' && unreadCount > 0 && (
+                  <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </div>
               {item.label}
             </Link>
           );

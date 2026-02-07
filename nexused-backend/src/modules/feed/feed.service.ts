@@ -6,6 +6,7 @@ import { Assignment } from '../../database/entities/assignment.entity';
 import { Submission } from '../../database/entities/submission.entity';
 import { CourseSection } from '../../database/entities/course-section.entity';
 import { AnnouncementsService } from '../announcements/announcements.service';
+import { ContentService } from '../content/content.service';
 import {
   FeedItem,
   FeedItemType,
@@ -36,6 +37,7 @@ export class FeedService {
     @InjectRepository(CourseSection)
     private sectionRepo: Repository<CourseSection>,
     private announcementsService: AnnouncementsService,
+    private contentService: ContentService,
   ) {}
 
   // ─── Student Feed ─────────────────────────────────────────────────────
@@ -280,10 +282,14 @@ export class FeedService {
    * WHY: userId is optional so instructors/admins still see the timeline
    * without grade overlays. When provided, we batch-fetch the student's
    * graded submissions for this section in one query (no N+1).
+   *
+   * isInstructor controls whether drafts are included. Students only see
+   * published content; instructors see everything with draft badges.
    */
   async getSectionTimeline(
     sectionId: string,
     userId?: string,
+    isInstructor = false,
   ): Promise<TimelineEntry[]> {
     const entries: TimelineEntry[] = [];
 
@@ -356,6 +362,27 @@ export class FeedService {
         priority: ann.priority,
         pinned: ann.pinned,
         timestamp: ann.createdAt,
+      });
+    }
+
+    // Course content (publishedOnly = !isInstructor)
+    const contents = await this.contentService.findBySectionId(
+      sectionId,
+      !isInstructor,
+    );
+
+    for (const c of contents) {
+      entries.push({
+        type: TimelineEntryType.CONTENT,
+        id: c.id,
+        title: c.title,
+        body: c.body,
+        authorName: c.author
+          ? `${c.author.firstName} ${c.author.lastName}`
+          : undefined,
+        pinned: false,
+        timestamp: c.publishedAt ?? c.createdAt,
+        publishedAt: c.publishedAt ?? undefined,
       });
     }
 

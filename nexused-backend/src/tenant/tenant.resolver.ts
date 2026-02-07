@@ -1,7 +1,23 @@
-import { Resolver, Query, Mutation, Args, InputType, Field } from '@nestjs/graphql';
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  InputType,
+  Field,
+} from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
+import { IsString, IsOptional } from 'class-validator';
 import { TenantService } from './tenant.service';
-import { Tenant, SubscriptionPlan, BillingStatus } from '../database/entities/tenant.entity';
+import {
+  Tenant,
+  SubscriptionPlan,
+  BillingStatus,
+} from '../database/entities/tenant.entity';
+import { UserRole } from '../database/entities/user.entity';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { RolesGuard } from '../guards/roles.guard';
+import { Roles } from '../decorators/roles.decorator';
 
 @InputType()
 export class CreateTenantInput {
@@ -35,12 +51,12 @@ export class CreateTenantInput {
 
 @Resolver(() => Tenant)
 export class TenantResolver {
-  constructor(private readonly tenantService: TenantService) { }
+  constructor(private readonly tenantService: TenantService) {}
 
   @Mutation(() => Tenant)
-  async createTenant(
-    @Args('input') input: CreateTenantInput,
-  ): Promise<Tenant> {
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async createTenant(@Args('input') input: CreateTenantInput): Promise<Tenant> {
     const settings = input.settings ? JSON.parse(input.settings) : {};
     return await this.tenantService.create({
       name: input.name,
@@ -53,16 +69,19 @@ export class TenantResolver {
   }
 
   @Query(() => [Tenant])
+  @UseGuards(JwtAuthGuard)
   async tenants(): Promise<Tenant[]> {
     return await this.tenantService.findAll();
   }
 
   @Query(() => Tenant, { nullable: true })
+  @UseGuards(JwtAuthGuard)
   async tenant(@Args('id') id: string): Promise<Tenant | null> {
     return await this.tenantService.findOne(id);
   }
 
   @Query(() => Number)
+  @UseGuards(JwtAuthGuard)
   async tenantCount(): Promise<number> {
     return await this.tenantService.count();
   }

@@ -1,16 +1,45 @@
 'use client';
 
-import { GraduationCap } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TermsTable } from '@/components/admin/terms-table';
+import { CoursesTable } from '@/components/admin/courses-table';
+import { SectionsTable } from '@/components/admin/sections-table';
+import { EnrollmentsTable } from '@/components/admin/enrollments-table';
 
 export default function AcademicsPage() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-      <GraduationCap className="mb-4 h-12 w-12 text-muted-foreground" />
-      <h1 className="text-lg font-medium">Academics</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Manage courses, terms, departments, and academic configuration. Coming
-        soon.
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Academics</h1>
+        <p className="text-muted-foreground">
+          Manage terms, courses, sections, and enrollments.
+        </p>
+      </div>
+
+      <Tabs defaultValue="terms">
+        <TabsList>
+          <TabsTrigger value="terms">Terms</TabsTrigger>
+          <TabsTrigger value="courses">Courses</TabsTrigger>
+          <TabsTrigger value="sections">Sections</TabsTrigger>
+          <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="terms" className="mt-4">
+          <TermsTable />
+        </TabsContent>
+
+        <TabsContent value="courses" className="mt-4">
+          <CoursesTable />
+        </TabsContent>
+
+        <TabsContent value="sections" className="mt-4">
+          <SectionsTable />
+        </TabsContent>
+
+        <TabsContent value="enrollments" className="mt-4">
+          <EnrollmentsTable />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

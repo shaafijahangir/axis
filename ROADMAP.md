@@ -29,15 +29,17 @@
 - [x] Unified course timeline (content + assignments + announcements in one stream)
 - [x] Assignment detail view with submission
 
-**Phase 2 — Core Academic (Partial)** ⚠️
+**Phase 2 — Core Academic** ✅
 - [x] Assignment creation (5 types: standard, quiz, exam, discussion, project)
 - [x] Assignment submission (text entry)
 - [x] Inline grading with rubric support
 - [x] Course roster view
 - [x] Gradebook with statistics (mean, median, distribution)
 - [x] CSV grade export
-- [ ] ~~Messaging system~~ *(Session 7 log claimed complete, but code doesn't exist on main)*
-- [ ] ~~Content builder~~ *(Session 8 log claimed complete, but code doesn't exist on main)*
+- [x] Messaging system (DMs, threads, unread badges, enrollment-based contacts)
+- [x] Content builder (Tiptap rich text, draft/publish workflow, timeline integration)
+- [x] Admin panel (user/term/catalog/enrollment management)
+- [x] Bulk operations (extend deadline, send announcement)
 
 **AI Module (Backend Only)** ✅
 - [x] AgentExecutor — Production-grade agentic loop with multi-turn tool use
@@ -48,10 +50,6 @@
 - [x] AiEventListener — 4 event handler stubs (logging-only, needs FEAT-002 to wire up)
 - [x] ContextService — Snapshot system to prevent hallucination
 - [ ] No frontend UI for AI features
-
-### What's NOT Built (Despite Session Log Claims)
-
-The session log documented Sessions 7 (messaging) and 8 (content builder) as COMPLETE, but the code does not exist on the main branch. These need to be built from scratch. The session log specs can be used as design references.
 
 ### Infrastructure Audit Findings (Session 9)
 
@@ -282,5 +280,5 @@ These architectural and design decisions are final and should not be revisited:
 
 ---
 
-*Last updated: 2026-02-06 (Session 9 — Code Audit & Documentation Overhaul)*
-*Companion documents: [BACKLOG.md](./BACKLOG.md) | [STORY.md](./STORY.md) | [TECH_STACK.md](./TECH_STACK.md) | [MISSION.md](./MISSION.md)*
+*Last updated: 2026-02-07 (Phase 2 completion — Messaging + Content Builder merged)*
+*Companion documents: [BACKLOG.md](./BACKLOG.md) | [STORY.md](./STORY.md) | [TECH_STACK.md](./TECH_STACK.md)*

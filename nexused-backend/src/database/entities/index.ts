@@ -29,6 +29,14 @@ import { AiConversation } from '../../modules/ai/entities/ai-conversation.entity
 import { AiMessage } from '../../modules/ai/entities/ai-message.entity';
 import { AiUsageLog } from '../../modules/ai/entities/ai-usage-log.entity';
 
+// Content entities
+import { CourseContent } from '../../modules/content/course-content.entity';
+
+// Messaging entities
+import { Conversation } from '../../modules/messaging/entities/conversation.entity';
+import { ConversationParticipant } from '../../modules/messaging/entities/conversation-participant.entity';
+import { DirectMessage } from '../../modules/messaging/entities/direct-message.entity';
+
 // Array of entity classes for TypeORM
 export const entities = [
   Tenant,
@@ -43,4 +51,8 @@ export const entities = [
   AiConversation,
   AiMessage,
   AiUsageLog,
+  CourseContent,
+  Conversation,
+  ConversationParticipant,
+  DirectMessage,
 ];

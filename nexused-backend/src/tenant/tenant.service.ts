@@ -1,14 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Tenant, SubscriptionPlan, BillingStatus } from '../database/entities/tenant.entity';
+import {
+  Tenant,
+  SubscriptionPlan,
+  BillingStatus,
+} from '../database/entities/tenant.entity';
 
 @Injectable()
 export class TenantService {
   constructor(
     @InjectRepository(Tenant)
     private tenantRepository: Repository<Tenant>,
-  ) { }
+  ) {}
 
   async create(input: {
     name: string;

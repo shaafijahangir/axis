@@ -9,4 +9,4 @@ import { Tenant } from '../database/entities/tenant.entity';
   providers: [TenantResolver, TenantService],
   exports: [TenantService],
 })
-export class TenantModule { }
+export class TenantModule {}

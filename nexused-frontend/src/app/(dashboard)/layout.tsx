@@ -1,5 +1,6 @@
 'use client';
 
+import { Toaster } from 'sonner';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { GraphQLProvider } from '@/lib/graphql/provider';
 import { Sidebar } from '@/components/layout/sidebar';
@@ -24,6 +25,7 @@ export default function DashboardLayout({
           </div>
           <MobileNav />
         </div>
+        <Toaster position="bottom-right" richColors />
       </AuthGuard>
     </GraphQLProvider>
   );

@@ -3,12 +3,15 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
-import { Plus, Users } from 'lucide-react';
+import { BarChart3, Plus, Users } from 'lucide-react';
 import { SECTION_QUERY } from '@/lib/graphql/queries/courses';
 import { SECTION_TIMELINE_QUERY } from '@/lib/graphql/queries/timeline';
 import { CourseHeader } from '@/components/courses/course-header';
 import { TimelineEntryCard } from '@/components/courses/timeline-entry-card';
 import { TimelineSkeleton } from '@/components/courses/timeline-skeleton';
+import { ExtendDeadlineDialog } from '@/components/courses/extend-deadline-dialog';
+import { SendAnnouncementDialog } from '@/components/courses/send-announcement-dialog';
+import { ContentEditorDialog } from '@/components/courses/content-editor-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth.store';
@@ -22,7 +25,7 @@ interface SectionData {
 }
 
 interface TimelineEntryData {
-  type: 'assignment' | 'announcement';
+  type: 'assignment' | 'announcement' | 'content';
   id: string;
   title: string;
   body?: string;
@@ -36,6 +39,7 @@ interface TimelineEntryData {
   score?: number;
   gradedAt?: string;
   feedback?: string;
+  publishedAt?: string;
 }
 
 export default function SectionTimelinePage() {
@@ -58,6 +62,11 @@ export default function SectionTimelinePage() {
 
   const section = sectionData?.section;
 
+  // Extract assignment entries for the extend deadline dialog
+  const assignmentEntries = (timelineData?.sectionTimeline ?? [])
+    .filter((e) => e.type === 'assignment')
+    .map((e) => ({ id: e.id, title: e.title, dueAt: e.dueAt }));
+
   return (
     <div className="-m-6">
       {sectionLoading ? (
@@ -77,13 +86,27 @@ export default function SectionTimelinePage() {
 
       <div className="space-y-3 p-6">
         {canCreate && (
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button asChild size="sm" variant="outline">
               <Link href={`/courses/${courseId}/section/${sectionId}/roster`}>
                 <Users className="mr-1 h-4 w-4" />
                 Roster
               </Link>
             </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link
+                href={`/courses/${courseId}/section/${sectionId}/gradebook`}
+              >
+                <BarChart3 className="mr-1 h-4 w-4" />
+                Gradebook
+              </Link>
+            </Button>
+            <ExtendDeadlineDialog
+              sectionId={sectionId}
+              assignments={assignmentEntries}
+            />
+            <SendAnnouncementDialog sectionId={sectionId} />
+            <ContentEditorDialog sectionId={sectionId} />
             <Button asChild size="sm">
               <Link
                 href={`/courses/${courseId}/section/${sectionId}/assignment/create`}
@@ -118,6 +141,7 @@ export default function SectionTimelinePage() {
               score={entry.score}
               gradedAt={entry.gradedAt}
               feedback={entry.feedback}
+              publishedAt={entry.publishedAt}
             />
           ))
         ) : (

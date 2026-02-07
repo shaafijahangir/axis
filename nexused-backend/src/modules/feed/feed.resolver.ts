@@ -1,6 +1,6 @@
 import { Resolver, Query, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
-import { User } from '../../database/entities/user.entity';
+import { User, UserRole } from '../../database/entities/user.entity';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { FeedService } from './feed.service';
@@ -33,7 +33,14 @@ export class FeedResolver {
     @Args('sectionId') sectionId: string,
     @CurrentUser() user: User,
   ): Promise<TimelineEntry[]> {
-    return this.feedService.getSectionTimeline(sectionId, user.id);
+    const isInstructor = user.roles.some((r) =>
+      [UserRole.INSTRUCTOR, UserRole.ADMIN, UserRole.TA].includes(r),
+    );
+    return this.feedService.getSectionTimeline(
+      sectionId,
+      user.id,
+      isInstructor,
+    );
   }
 
   @Query(() => [CourseSectionGrades])
