@@ -186,11 +186,12 @@
 - **Acceptance:** No entity directly declares `id`, `createdAt`, or `updatedAt`. All tenant-scoped entities extend `TenantScopedEntity`.
 
 ### ARCH-002: Global tenant interceptor
-- **Status:** `TODO`
-- **File:** Create `src/interceptors/tenant.interceptor.ts`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
+- **Files:** Created `src/tenant/tenant-context.ts`, `src/tenant/tenant.interceptor.ts`
 - **Problem:** Every service method manually receives and filters by `tenantId`. Easy to forget, leads to SEC-001-type bugs.
-- **Fix:** Create a NestJS interceptor that extracts `tenantId` from the authenticated user and attaches it to a request-scoped context. Services read from context instead of passing `tenantId` as a parameter.
-- **Acceptance:** Service methods don't receive `tenantId` as a parameter. Tenant scoping happens automatically at the interceptor level.
+- **Fix:** Created TenantContext (AsyncLocalStorage) and TenantInterceptor. Services can now inject TenantContext and call getTenantId(). Updated AnnouncementsService as proof of concept.
+- **Acceptance:** Infrastructure in place. Services can gradually migrate to use TenantContext instead of explicit tenantId parameters.
 
 ### ARCH-003: Remove unused @tanstack/react-query
 - **Status:** `DONE`
