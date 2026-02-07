@@ -12,7 +12,7 @@ When Shaafi says **"chef it up"**, **"start cooking"**, **"build"**, or any vari
 3. **Announce what you're cooking** — Tell Shaafi in 1-2 sentences what you're about to build and why it's the right next thing.
 4. **Cook** — Implement it fully. Production-quality. No placeholders. No "we'll add this later."
 5. **Update the log** — When done, update `BACKLOG.md` (mark task `DONE`) and `.claude/session-log.md` (add what was built).
-6. **Commit and push** — Stage changes, commit with conventional commit format, and push to main. Don't wait for permission. See "Git Auto-Commit" section below.
+6. **Commit and push** — For features/architecture work: create a branch, commit, push, and open a PR. For small fixes: push directly to main. See "Branch Strategy" and "Git Auto-Commit" sections below.
 7. **Serve and move on** — Brief summary of what was done, then immediately pick up the next task. Don't wait for permission to continue.
 
 If Shaafi gives a **specific task** (e.g., "build the AI chat UI"), do that instead of the backlog order — but still follow the same read-first, announce, cook, update pattern.
@@ -148,6 +148,56 @@ Required in `nexused-backend/.env`:
 - **Commit messages**: Conventional commits with scope — `feat(backend): description`, `fix(frontend): description`
 - **PR review**: Use Claude Code locally with `gh pr diff <number>` for review
 - **CI**: GitHub Actions runs lint, typecheck, test, and build on PRs
+
+### Branch Strategy (MANDATORY)
+
+**Use branches for meaningful chunks of work.** This gives Shaafi PR reviews at a useful scope.
+
+**When to create a branch:**
+- Any backlog feature (FEAT-xxx)
+- Any P2 architecture improvement (ARCH-xxx)
+- Any group of related P0/P1 fixes (e.g., "all security fixes")
+- Any phase of work from ROADMAP.md
+
+**When to push directly to main:**
+- Single small fix that's already reviewed in conversation
+- Documentation-only changes
+- Urgent hotfixes (with Shaafi's explicit approval)
+
+**Branch workflow:**
+1. Create branch: `git checkout -b feat/ai-chat-ui`
+2. Make commits as you work (multiple commits per branch is fine)
+3. Push branch: `git push -u origin feat/ai-chat-ui`
+4. Create PR: `gh pr create --title "feat: AI Chat UI (FEAT-001)" --body "..."`
+5. Share PR link with Shaafi for review
+6. After approval, merge: `gh pr merge --squash` or let Shaafi merge
+
+**PR title format:**
+```
+feat: AI Chat UI (FEAT-001)
+fix: Security fixes for tenant scoping (SEC-001, SEC-002)
+refactor: Create base entity classes (ARCH-001)
+```
+
+**PR body format:**
+```markdown
+## Summary
+- Built two-panel AI chat interface
+- Added Study Coach and Feedback Copilot agents
+- Integrated with existing AI backend
+
+## Changes
+- 10 new components in `components/ai/`
+- New `/ai` page
+- Updated navigation
+
+## Testing
+- [ ] Verified build passes
+- [ ] Tested locally with dev server
+
+## Backlog
+Closes FEAT-001
+```
 
 ### Git Auto-Commit (MANDATORY)
 
