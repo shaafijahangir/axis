@@ -21,6 +21,9 @@ export class AnnouncementsResolver {
     return this.announcementsService.findBySectionId(sectionId);
   }
 
+  /**
+   * ARCH-002: tenantId no longer passed - service reads from TenantContext
+   */
   @Mutation(() => Announcement)
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
@@ -28,6 +31,6 @@ export class AnnouncementsResolver {
     @CurrentUser() user: User,
     @Args('input') input: CreateAnnouncementInput,
   ): Promise<Announcement> {
-    return this.announcementsService.create(user.tenantId, user.id, input);
+    return this.announcementsService.create(user.id, input);
   }
 }

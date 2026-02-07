@@ -3,12 +3,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Announcement } from '../../database/entities/announcement.entity';
 import { CreateAnnouncementInput } from './dto/announcement.types';
+import { TenantContext } from '../../tenant/tenant-context';
 
+/**
+ * ARCH-002: Updated to use TenantContext for automatic tenant scoping.
+ * Methods no longer need tenantId as a parameter - it's read from the
+ * request context automatically.
+ */
 @Injectable()
 export class AnnouncementsService {
   constructor(
     @InjectRepository(Announcement)
     private announcementRepo: Repository<Announcement>,
+    private tenantContext: TenantContext,
   ) {}
 
   async findBySectionId(sectionId: string): Promise<Announcement[]> {
@@ -47,11 +54,15 @@ export class AnnouncementsService {
       .getMany();
   }
 
+  /**
+   * ARCH-002: tenantId is now read from TenantContext instead of being
+   * passed as a parameter. This prevents forgetting to pass tenantId.
+   */
   async create(
-    tenantId: string,
     authorId: string,
     input: CreateAnnouncementInput,
   ): Promise<Announcement> {
+    const tenantId = this.tenantContext.getTenantId();
     const announcement = this.announcementRepo.create({
       ...input,
       tenantId,
