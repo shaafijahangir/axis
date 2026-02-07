@@ -5,6 +5,7 @@ import {
   Users,
   GraduationCap,
   Settings,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
@@ -28,6 +29,7 @@ const studentNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Courses', href: '/courses', icon: BookOpen },
   { label: 'Grades', href: '/grades', icon: GraduationCap },
+  { label: 'AI', href: '/ai', icon: Sparkles },
   {
     label: 'Messages',
     href: '/messages',
@@ -39,6 +41,7 @@ const studentNav: NavItem[] = [
 const instructorNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Courses', href: '/courses', icon: BookOpen },
+  { label: 'AI', href: '/ai', icon: Sparkles },
   {
     label: 'Messages',
     href: '/messages',
