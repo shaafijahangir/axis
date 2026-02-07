@@ -705,3 +705,143 @@ Sessions 7 (messaging) and 8 (content builder) are documented as COMPLETE but th
 1. Fix P0 security issues (SEC-001 through SEC-004) — See BACKLOG.md
 2. Fix P1 data issues (DATA-001 through DATA-007) — See BACKLOG.md
 3. Begin FEAT-001 (AI Chat UI) — The differentiator must be demo-able
+
+---
+
+## Session 10 — P0 Security Fixes
+
+**Started:** 2026-02-07
+**Goal:** Complete remaining P0 security issues from BACKLOG.md
+**Status:** IN PROGRESS
+
+### Work Done
+
+**SEC-001: Tenant scoping on findById (DONE — prior commit)**
+- All `findById` methods now require `tenantId` parameter
+- All resolvers pass `user.tenantId` to service methods
+- AI tools pass `ctx.tenantId` to service methods
+
+**SEC-002: Authorization on assignmentSubmissions (DONE — prior commit)**
+- Added `@UseGuards(RolesGuard)` and `@Roles(UserRole.INSTRUCTOR, UserRole.TA, UserRole.ADMIN)`
+- Students can no longer see other students' submissions
+
+**SEC-003: Migrate JWT from localStorage to httpOnly cookies (DONE)**
+- **Backend:**
+  - Installed `cookie-parser` package
+  - Added cookie-parser middleware to `main.ts`
+  - Updated `jwt.strategy.ts` to extract token from cookie first, fallback to Authorization header
+  - Updated `auth.controller.ts` to set httpOnly cookie on login/register, added logout endpoint
+- **Frontend:**
+  - Updated Apollo Client to use `credentials: 'include'` instead of Bearer token
+  - Updated auth store to stop storing token in localStorage (only user info for UI)
+  - Updated auth API to include `credentials: 'include'` on all requests
+  - Updated login/register pages to use new `setAuth(user)` signature
+  - Updated user-menu to await async logout
+  - Updated auth-guard to use `isAuthenticated` instead of `token`
+
+### Files Created
+None
+
+### Files Modified (10)
+```
+# Backend
+nexused-backend/src/main.ts — Added cookie-parser middleware
+nexused-backend/src/modules/auth/auth.controller.ts — Set httpOnly cookie, added logout endpoint
+nexused-backend/src/modules/auth/strategies/jwt.strategy.ts — Extract from cookie first
+
+# Frontend
+nexused-frontend/src/lib/graphql/client.ts — credentials: 'include' instead of auth link
+nexused-frontend/src/stores/auth.store.ts — Removed token storage, async logout calls backend
+nexused-frontend/src/lib/api/auth.ts — Added credentials: 'include'
+nexused-frontend/src/app/(auth)/login/page.tsx — setAuth(user) instead of setAuth(token, user)
+nexused-frontend/src/app/(auth)/register/page.tsx — setAuth(user) instead of setAuth(token, user)
+nexused-frontend/src/components/layout/user-menu.tsx — await async logout
+nexused-frontend/src/components/auth/auth-guard.tsx — Use isAuthenticated instead of token
+BACKLOG.md — Updated SEC-003 to DONE
+```
+
+### Build Status
+- Backend: ✓ Builds successfully
+- Frontend: ✓ Builds successfully
+
+### Remaining P0 Items
+- All P0 items complete
+
+### Next Steps
+- Test AI Chat UI end-to-end
+
+---
+
+## Session 11 — FEAT-001: AI Chat UI
+
+**Started:** 2026-02-07
+**Goal:** Build the frontend AI chat interface to expose the existing AI backend
+**Status:** COMPLETE
+
+### Work Done
+
+**Phase 1: GraphQL Layer**
+- Created `lib/graphql/queries/ai.ts` — AVAILABLE_AGENTS_QUERY, MY_AI_CONVERSATIONS_QUERY, AI_CONVERSATION_MESSAGES_QUERY
+- Created `lib/graphql/mutations/ai.ts` — START_AI_CONVERSATION_MUTATION, SEND_AI_MESSAGE_MUTATION
+
+**Phase 2: Core Components**
+- `ai-message-bubble.tsx` — Role-based message styling (user right-aligned, assistant left-aligned), tool call indicator integration
+- `ai-thinking-indicator.tsx` — Animated three-dot loader while AI responds
+- `ai-tool-indicator.tsx` — Collapsible badge showing which tools AI used with human-friendly labels
+- `ai-agent-selector.tsx` — Card-based agent picker with gradient backgrounds and icons
+
+**Phase 3: Chat Thread**
+- `ai-chat-thread.tsx` — Full message thread with Apollo query/mutation, date separators, auto-scroll, Enter key submit
+
+**Phase 4: Conversation List + New Conversation**
+- `ai-conversation-list.tsx` — Sidebar showing past AI conversations with agent badges, timestamps
+- `ai-empty-state.tsx` — Welcome screen with agent selector
+- `ai-new-conversation.tsx` — Two-step flow: select agent → type initial message
+
+**Phase 5: Main Page**
+- `app/(dashboard)/ai/page.tsx` — Two-panel layout matching messaging page pattern, URL param deep linking, mobile toggle
+
+**Phase 6: Navigation**
+- Added AI nav item with Sparkles icon to `studentNav` and `instructorNav` in `navigation.ts`
+
+### Files Created (10)
+```
+nexused-frontend/src/lib/graphql/queries/ai.ts
+nexused-frontend/src/lib/graphql/mutations/ai.ts
+nexused-frontend/src/components/ai/ai-message-bubble.tsx
+nexused-frontend/src/components/ai/ai-thinking-indicator.tsx
+nexused-frontend/src/components/ai/ai-tool-indicator.tsx
+nexused-frontend/src/components/ai/ai-agent-selector.tsx
+nexused-frontend/src/components/ai/ai-chat-thread.tsx
+nexused-frontend/src/components/ai/ai-conversation-list.tsx
+nexused-frontend/src/components/ai/ai-empty-state.tsx
+nexused-frontend/src/components/ai/ai-new-conversation.tsx
+nexused-frontend/src/app/(dashboard)/ai/page.tsx
+```
+
+### Files Modified (2)
+```
+nexused-frontend/src/lib/navigation.ts — Added Sparkles import, AI nav item to studentNav and instructorNav
+BACKLOG.md — Updated FEAT-001 to DONE
+```
+
+### Build Status
+- Backend: ✓ Builds successfully
+- Frontend: ✓ Builds successfully
+
+### AI Chat UI Features
+- Two-panel responsive layout (conversation list + thread)
+- Mobile: toggle between list and thread views
+- URL param `?conversation=<id>` for deep linking
+- Agent selector with Study Coach and Feedback Copilot
+- Message bubbles with user/assistant styling
+- Tool usage indicators with human-friendly labels
+- Thinking animation while waiting for AI response
+- Date separators for message grouping
+- Auto-scroll to new messages
+- Enter key to send (Shift+Enter for newline)
+- Polling for live updates (10s list, 5s thread)
+
+### Next Session Priorities
+- Test the AI Chat UI end-to-end with real AI backend
+- Consider FEAT-002: Wire AI event listener to invoke agents

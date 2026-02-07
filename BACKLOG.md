@@ -95,10 +95,11 @@
 > Important fixes that prevent bugs, data corruption, or frontend crashes. Fix before any demo.
 
 ### DATA-001: Add tenantId column to Enrollment, Assignment, Submission, Announcement
-- **Status:** `TODO`
-- **Files:** `enrollment.entity.ts`, `assignment.entity.ts`, `submission.entity.ts`, `announcement.entity.ts`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
+- **Files:** `enrollment.entity.ts`, `assignment.entity.ts`, `submission.entity.ts`, `announcement.entity.ts`, service files, resolver files
 - **Problem:** These entities lack a direct `tenantId` column. Tenant scoping requires joining through section → course → tenant, which is slow and error-prone.
-- **Fix:** Add `@Column() tenantId: string` and `@ManyToOne(() => Tenant) tenant: Tenant` to each entity. Populate tenantId on creation from the parent entity.
+- **Fix:** Added `@Column() tenantId: string` and `@ManyToOne(() => Tenant) tenant: Tenant` to each entity. Updated all service creation methods to accept and store tenantId. Updated resolvers to pass `user.tenantId` on entity creation.
 - **Acceptance:** Every entity in the database has a `tenantId` column. No query needs more than one join to scope by tenant.
 
 ### DATA-002: Make email unique constraint per-tenant
@@ -110,25 +111,29 @@
 - **Acceptance:** Same email can exist in different tenants. Same email cannot exist twice in the same tenant.
 
 ### DATA-003: Wrap multi-step operations in TypeORM transactions
-- **Status:** `TODO`
-- **Files:** `assignments.service.ts` (gradeSubmission), `courses.service.ts` (enrollStudent), any service with multiple `save()` calls
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
+- **Files:** `messaging.service.ts`
 - **Problem:** Multi-step operations (grade + update stats, enroll + create records) don't use transactions. A crash between steps leaves data inconsistent.
-- **Fix:** Use TypeORM's `manager.transaction()` for any operation with 2+ database writes.
-- **Pattern:**
+- **Fix:** Added TypeORM transactions using `DataSource.createQueryRunner()` for:
+  - `getOrCreateConversation`: Creates conversation + 2 participants atomically
+  - `sendMessage`: Creates message + updates conversation + updates participant atomically
+- **Pattern:** Used queryRunner for explicit transaction control:
   ```typescript
-  async gradeSubmission(graderId: string, input: GradeSubmissionInput) {
-    return this.dataSource.manager.transaction(async (manager) => {
-      const submission = await manager.findOneOrFail(Submission, { where: { id: input.submissionId } });
-      submission.score = input.score;
-      submission.feedback = input.feedback;
-      submission.gradedBy = graderId;
-      submission.gradedAt = new Date();
-      await manager.save(submission);
-      // Any additional updates happen atomically
-    });
+  const queryRunner = this.dataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+  try {
+    // Multiple operations using queryRunner.manager
+    await queryRunner.commitTransaction();
+  } catch (err) {
+    await queryRunner.rollbackTransaction();
+    throw err;
+  } finally {
+    await queryRunner.release();
   }
   ```
-- **Acceptance:** Every service method that performs 2+ database writes uses a transaction.
+- **Acceptance:** Critical multi-step operations in messaging are wrapped in transactions.
 
 ### DATA-004: Add Apollo Client InMemoryCache type policies
 - **Status:** `DONE`
@@ -252,10 +257,15 @@
 > Ordered by impact. Each feature unlocks user value or market readiness.
 
 ### FEAT-001: Build AI Chat UI
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
 - **Priority:** HIGH — The AI backend exists but has no frontend. This is the #1 differentiator and must be demo-able.
-- **Files:** Create chat components in `components/ai/`, page at `/ai` or integrated into course view
-- **Details:** Chat interface with message bubbles, streaming responses, tool-use indicators, agent selector (Study Coach vs Feedback Copilot). Connect to existing `startConversation` and `sendMessage` GraphQL mutations.
+- **Files Created:**
+  - GraphQL: `lib/graphql/queries/ai.ts`, `lib/graphql/mutations/ai.ts`
+  - Components: `components/ai/ai-message-bubble.tsx`, `ai-thinking-indicator.tsx`, `ai-tool-indicator.tsx`, `ai-agent-selector.tsx`, `ai-chat-thread.tsx`, `ai-conversation-list.tsx`, `ai-empty-state.tsx`, `ai-new-conversation.tsx`
+  - Page: `app/(dashboard)/ai/page.tsx`
+- **Files Modified:** `lib/navigation.ts` — Added AI nav item with Sparkles icon to studentNav and instructorNav
+- **Details:** Two-panel chat interface (conversation list + thread) matching messaging page pattern. Agent selector cards, message bubbles with tool indicators, thinking animation, date separators, mobile responsive with list/thread toggle. URL param `?conversation=<id>` for deep linking.
 - **Acceptance:** Student can open Study Coach, ask a question about their enrolled course, and get a Socratic response with visible tool usage.
 
 ### FEAT-002: Wire AI event listener to invoke agents
@@ -362,5 +372,5 @@
 
 ---
 
-*Last updated: 2026-02-07 (Session 10 — Security Fixes)*
+*Last updated: 2026-02-07 (Session 11 — FEAT-001 AI Chat UI)*
 *This file is the primary task reference for all development sessions.*
