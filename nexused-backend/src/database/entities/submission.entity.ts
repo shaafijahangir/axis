@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { ObjectType, Field, Float, Int } from '@nestjs/graphql';
 import { Assignment } from './assignment.entity';
@@ -13,6 +14,9 @@ import { User } from './user.entity';
 
 @ObjectType()
 @Entity('submissions')
+@Index(['assignmentId'])
+@Index(['userId'])
+@Index(['assignmentId', 'userId'])
 export class Submission {
   @Field()
   @PrimaryGeneratedColumn('uuid')

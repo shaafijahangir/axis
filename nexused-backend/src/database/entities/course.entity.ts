@@ -6,12 +6,14 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { ObjectType, Field, Float } from '@nestjs/graphql';
 import { Tenant } from './tenant.entity';
 
 @ObjectType()
 @Entity('courses')
+@Index(['tenantId'])
 export class Course {
   @Field()
   @PrimaryGeneratedColumn('uuid')

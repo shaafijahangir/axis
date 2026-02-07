@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
 import { Tenant } from './tenant.entity';
@@ -28,8 +29,15 @@ export enum UserStatus {
 registerEnumType(UserRole, { name: 'UserRole' });
 registerEnumType(UserStatus, { name: 'UserStatus' });
 
+/**
+ * SEC-004: Database indexes for performance.
+ * WHY: Without indexes, every query is a sequential scan.
+ * DATA-002: Email unique per tenant, not globally.
+ */
 @ObjectType()
 @Entity('users')
+@Index(['tenantId'])
+@Index(['email', 'tenantId'], { unique: true })
 export class User {
   @Field()
   @PrimaryGeneratedColumn('uuid')
@@ -44,7 +52,7 @@ export class User {
   tenant: Tenant;
 
   @Field()
-  @Column({ unique: true })
+  @Column()
   email: string;
 
   @Column({ nullable: true })

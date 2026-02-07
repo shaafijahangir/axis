@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { ObjectType, Field } from '@nestjs/graphql';
 import { Conversation } from './conversation.entity';
@@ -14,6 +15,8 @@ import { User } from '../../../database/entities/user.entity';
 @ObjectType()
 @Entity('conversation_participants')
 @Unique(['conversationId', 'userId'])
+@Index(['userId'])
+@Index(['conversationId'])
 export class ConversationParticipant {
   @Field()
   @PrimaryGeneratedColumn('uuid')

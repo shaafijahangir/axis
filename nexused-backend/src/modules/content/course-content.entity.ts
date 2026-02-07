@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { CourseSection } from '../../database/entities/course-section.entity';
@@ -24,6 +25,8 @@ import { Tenant } from '../../database/entities/tenant.entity';
  */
 @ObjectType()
 @Entity('course_contents')
+@Index(['sectionId'])
+@Index(['tenantId'])
 export class CourseContent {
   @Field()
   @PrimaryGeneratedColumn('uuid')

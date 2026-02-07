@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
 import { Tenant } from '../../../database/entities/tenant.entity';
@@ -23,6 +24,9 @@ registerEnumType(ConversationStatus, { name: 'ConversationStatus' });
 
 @ObjectType()
 @Entity('ai_conversations')
+@Index(['tenantId'])
+@Index(['userId'])
+@Index(['status'])
 export class AiConversation {
   @Field()
   @PrimaryGeneratedColumn('uuid')

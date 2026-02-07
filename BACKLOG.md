@@ -66,17 +66,26 @@
 - **Acceptance:** No token in localStorage. No token in JavaScript-accessible storage. Cookie is httpOnly, secure, sameSite: 'lax'. Apollo Client sends cookies automatically.
 
 ### SEC-004: Add database indexes to all entities
-- **Status:** `TODO`
-- **Files:** All `*.entity.ts` in `src/database/entities/` and `src/modules/ai/entities/`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
+- **Files:** All `*.entity.ts` in `src/database/entities/` and `src/modules/*/entities/`
 - **Problem:** Zero `@Index` decorators on any entity. Every query is a sequential scan. Performance degrades linearly with data size.
-- **Fix:** Add `@Index` on: `tenantId` (every entity), `userId` (enrollments, submissions, messages), `sectionId` (enrollments, assignments), `assignmentId` (submissions), `email + tenantId` (composite unique), `dueAt` (assignments), `createdAt` (messages, announcements), `status` (enrollments, submissions).
-- **Pattern:**
-  ```typescript
-  @Entity('users')
-  @Index(['tenantId'])
-  @Index(['email', 'tenantId'], { unique: true })
-  export class User extends BaseEntity { ... }
-  ```
+- **Fix:** Added `@Index` decorators to all entities:
+  - User: `tenantId`, `email+tenantId` (unique composite, also fixes DATA-002)
+  - Course: `tenantId`
+  - CourseSection: `courseId`, `instructorId`, `termId`
+  - Enrollment: `userId`, `sectionId`, `userId+sectionId` (unique), `status`
+  - Assignment: `sectionId`, `dueAt`
+  - Submission: `assignmentId`, `userId`, `assignmentId+userId`
+  - Announcement: `sectionId`, `createdAt`
+  - AcademicTerm: `tenantId`, `tenantId+isCurrent`
+  - AiConversation: `tenantId`, `userId`, `status`
+  - AiMessage: `conversationId`, `createdAt`
+  - AiUsageLog: `tenantId`, `userId`, `createdAt`
+  - CourseContent: `sectionId`, `tenantId`
+  - Conversation: `tenantId`
+  - ConversationParticipant: `userId`, `conversationId`
+  - DirectMessage: `conversationId`, `createdAt`
 - **Acceptance:** Every entity has at least a `tenantId` index. Every foreign key used in WHERE clauses has an index. Explain plans show index usage on all common queries.
 
 ---
@@ -93,10 +102,11 @@
 - **Acceptance:** Every entity in the database has a `tenantId` column. No query needs more than one join to scope by tenant.
 
 ### DATA-002: Make email unique constraint per-tenant
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07 (as part of SEC-004)
 - **File:** `user.entity.ts`
 - **Problem:** `@Column({ unique: true }) email` is globally unique. A user with `john@gmail.com` at University A blocks the same email at University B.
-- **Fix:** Remove `unique: true` from `@Column`. Add `@Index(['email', 'tenantId'], { unique: true })` to the entity class.
+- **Fix:** Removed `unique: true` from `@Column`. Added `@Index(['email', 'tenantId'], { unique: true })` to the entity class.
 - **Acceptance:** Same email can exist in different tenants. Same email cannot exist twice in the same tenant.
 
 ### DATA-003: Wrap multi-step operations in TypeORM transactions

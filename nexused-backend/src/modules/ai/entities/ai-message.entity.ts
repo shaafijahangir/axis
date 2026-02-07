@@ -5,6 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
 import { AiConversation } from './ai-conversation.entity';
@@ -21,6 +22,8 @@ registerEnumType(MessageRole, { name: 'MessageRole' });
 
 @ObjectType()
 @Entity('ai_messages')
+@Index(['conversationId'])
+@Index(['createdAt'])
 export class AiMessage {
   @Field()
   @PrimaryGeneratedColumn('uuid')

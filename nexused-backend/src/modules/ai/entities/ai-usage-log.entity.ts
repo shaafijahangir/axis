@@ -5,6 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { ObjectType, Field } from '@nestjs/graphql';
 import { Tenant } from '../../../database/entities/tenant.entity';
@@ -13,6 +14,9 @@ import { AiConversation } from './ai-conversation.entity';
 
 @ObjectType()
 @Entity('ai_usage_logs')
+@Index(['tenantId'])
+@Index(['userId'])
+@Index(['createdAt'])
 export class AiUsageLog {
   @Field()
   @PrimaryGeneratedColumn('uuid')

@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
 import { User } from './user.entity';
@@ -29,6 +30,10 @@ registerEnumType(EnrollmentStatus, { name: 'EnrollmentStatus' });
 
 @ObjectType()
 @Entity('enrollments')
+@Index(['userId'])
+@Index(['sectionId'])
+@Index(['userId', 'sectionId'], { unique: true })
+@Index(['status'])
 export class Enrollment {
   @Field()
   @PrimaryGeneratedColumn('uuid')

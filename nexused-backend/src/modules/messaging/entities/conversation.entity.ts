@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { ObjectType, Field } from '@nestjs/graphql';
 import { Tenant } from '../../../database/entities/tenant.entity';
@@ -15,6 +16,7 @@ import { DirectMessage } from './direct-message.entity';
 
 @ObjectType()
 @Entity('conversations')
+@Index(['tenantId'])
 export class Conversation {
   @Field()
   @PrimaryGeneratedColumn('uuid')
