@@ -1,10 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, In, IsNull, Repository } from 'typeorm';
-import { Enrollment } from '../../database/entities/enrollment.entity';
+import {
+  Enrollment,
+  EnrollmentStatus,
+} from '../../database/entities/enrollment.entity';
 import { Assignment } from '../../database/entities/assignment.entity';
 import { Submission } from '../../database/entities/submission.entity';
-import { CourseSection } from '../../database/entities/course-section.entity';
+import {
+  CourseSection,
+  SectionStatus,
+} from '../../database/entities/course-section.entity';
 import { AnnouncementsService } from '../announcements/announcements.service';
 import { ContentService } from '../content/content.service';
 import {
@@ -45,7 +51,7 @@ export class FeedService {
   async getStudentFeed(userId: string, tenantId: string): Promise<FeedItem[]> {
     // 1. Get active enrollments → sectionIds
     const enrollments = await this.enrollmentRepo.find({
-      where: { userId, status: 'active' as any },
+      where: { userId, status: EnrollmentStatus.ACTIVE },
       relations: ['section', 'section.course'],
     });
 
@@ -178,7 +184,7 @@ export class FeedService {
   ): Promise<InstructorFeedItem[]> {
     // 1. Get teaching sections
     const sections = await this.sectionRepo.find({
-      where: { instructorId: userId, status: 'active' as any },
+      where: { instructorId: userId, status: SectionStatus.ACTIVE },
       relations: ['course'],
     });
 
@@ -418,7 +424,7 @@ export class FeedService {
   ): Promise<CourseSectionGrades[]> {
     // 1. Active enrollments with section → course + instructor
     const enrollments = await this.enrollmentRepo.find({
-      where: { userId, status: 'active' as any },
+      where: { userId, status: EnrollmentStatus.ACTIVE },
       relations: ['section', 'section.course', 'section.instructor'],
     });
 

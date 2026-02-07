@@ -138,10 +138,11 @@
 - **Acceptance:** Apollo DevTools shows correctly normalized cache entries. Mutations that update entities reflect immediately in all views.
 
 ### DATA-005: Add Apollo error link for 401 auto-logout
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
 - **File:** `graphql/client.ts`
 - **Problem:** When JWT expires, GraphQL queries silently fail. User sees empty states instead of being redirected to login.
-- **Fix:** Add `onError` link that checks for 401 status or `UNAUTHENTICATED` GraphQL error, calls `logout()`, and redirects to `/login`.
+- **Fix:** Added `ErrorLink` that checks for 401 status or `UNAUTHENTICATED` GraphQL error, calls `logout()`, and redirects to `/login`. Updated to Apollo Client 4.0 API using `CombinedGraphQLErrors.is()`.
 - **Acceptance:** Expired token → automatic redirect to login page with no user confusion.
 
 ### DATA-006: Add frontend error boundaries
@@ -152,10 +153,11 @@
 - **Acceptance:** Any uncaught error in a route group shows a recoverable error page instead of a white screen.
 
 ### DATA-007: Fix `as any` casts in feed.service.ts
-- **Status:** `TODO`
-- **File:** `feed.service.ts` (lines ~46, ~179, ~390)
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
+- **File:** `feed.service.ts`
 - **Problem:** `status: 'active' as any` bypasses TypeScript. If the `EnrollmentStatus` enum value changes, this silently breaks.
-- **Fix:** Import and use `EnrollmentStatus.ACTIVE` from the enrollment entity.
+- **Fix:** Imported and used `EnrollmentStatus.ACTIVE` for enrollments and `SectionStatus.ACTIVE` for sections.
 - **Acceptance:** Zero `as any` casts in `feed.service.ts`. All enum references use the imported enum type.
 
 ---
