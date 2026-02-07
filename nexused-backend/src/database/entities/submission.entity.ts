@@ -1,15 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ObjectType, Field, Float, Int } from '@nestjs/graphql';
-import { Tenant } from './tenant.entity';
+import { TenantScopedEntity } from './base.entity';
 import { Assignment } from './assignment.entity';
 import { User } from './user.entity';
 
@@ -23,19 +14,7 @@ import { User } from './user.entity';
 @Index(['assignmentId'])
 @Index(['userId'])
 @Index(['assignmentId', 'userId'])
-export class Submission {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field()
-  @Column()
-  tenantId: string;
-
-  @ManyToOne(() => Tenant)
-  @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
-
+export class Submission extends TenantScopedEntity {
   @Field()
   @Column()
   assignmentId: string;
@@ -79,12 +58,4 @@ export class Submission {
   @Field({ nullable: true })
   @Column({ type: 'text', nullable: true })
   feedback: string;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

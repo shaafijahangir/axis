@@ -1,33 +1,12 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 import { ObjectType, Field } from '@nestjs/graphql';
-import { Tenant } from './tenant.entity';
+import { TenantScopedEntity } from './base.entity';
 
 @ObjectType()
 @Entity('academic_terms')
 @Index(['tenantId'])
 @Index(['tenantId', 'isCurrent'])
-export class AcademicTerm {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field()
-  @Column()
-  tenantId: string;
-
-  @ManyToOne(() => Tenant)
-  @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
-
+export class AcademicTerm extends TenantScopedEntity {
   @Field()
   @Column()
   name: string;
@@ -47,12 +26,4 @@ export class AcademicTerm {
   @Field(() => String, { nullable: true })
   @Column({ type: 'jsonb', nullable: true })
   settings: Record<string, any>;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

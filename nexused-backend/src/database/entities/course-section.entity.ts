@@ -1,14 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ObjectType, Field, Int, registerEnumType } from '@nestjs/graphql';
+import { BaseEntity } from './base.entity';
 import { Course } from './course.entity';
 import { AcademicTerm } from './academic-term.entity';
 import { User } from './user.entity';
@@ -27,11 +19,7 @@ registerEnumType(SectionStatus, { name: 'SectionStatus' });
 @Index(['courseId'])
 @Index(['instructorId'])
 @Index(['termId'])
-export class CourseSection {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class CourseSection extends BaseEntity {
   @Field()
   @Column()
   courseId: string;
@@ -77,12 +65,4 @@ export class CourseSection {
     default: SectionStatus.DRAFT,
   })
   status: SectionStatus;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

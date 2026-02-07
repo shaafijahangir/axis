@@ -1,16 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  OneToMany,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
-import { Tenant } from '../../../database/entities/tenant.entity';
+import { TenantScopedEntity } from '../../../database/entities/base.entity';
 import { User } from '../../../database/entities/user.entity';
 import { Course } from '../../../database/entities/course.entity';
 
@@ -27,19 +17,7 @@ registerEnumType(ConversationStatus, { name: 'ConversationStatus' });
 @Index(['tenantId'])
 @Index(['userId'])
 @Index(['status'])
-export class AiConversation {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field()
-  @Column()
-  tenantId: string;
-
-  @ManyToOne(() => Tenant)
-  @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
-
+export class AiConversation extends TenantScopedEntity {
   @Field()
   @Column()
   userId: string;
@@ -71,12 +49,4 @@ export class AiConversation {
   @Field(() => String, { nullable: true })
   @Column({ type: 'jsonb', nullable: true })
   contextSnapshot: Record<string, any>;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

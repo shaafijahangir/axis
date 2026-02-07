@@ -174,10 +174,15 @@
 > Structural improvements that make future development faster and more reliable.
 
 ### ARCH-001: Create BaseEntity and TenantScopedEntity abstract classes
-- **Status:** `TODO`
-- **Files:** Create `src/database/entities/base.entity.ts`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
+- **Files:** Created `src/database/entities/base.entity.ts`, updated 11 entities
 - **Problem:** Every entity duplicates `id`, `createdAt`, `updatedAt`. Most duplicate `tenantId` and tenant relation. No enforcement of common patterns.
-- **Fix:** Create `BaseEntity` (id, createdAt, updatedAt) and `TenantScopedEntity extends BaseEntity` (tenantId, tenant relation). Have all entities extend one of these.
+- **Fix:** Created `BaseEntity` (id, createdAt, updatedAt) and `TenantScopedEntity extends BaseEntity` (tenantId, tenant relation).
+- **Updated entities:**
+  - `BaseEntity`: Tenant, CourseSection
+  - `TenantScopedEntity`: User, Course, AcademicTerm, Enrollment, Assignment, Submission, Announcement, AiConversation, Conversation
+  - Log entities (unchanged - only have createdAt): AiMessage, AiUsageLog, DirectMessage, ConversationParticipant
 - **Acceptance:** No entity directly declares `id`, `createdAt`, or `updatedAt`. All tenant-scoped entities extend `TenantScopedEntity`.
 
 ### ARCH-002: Global tenant interceptor

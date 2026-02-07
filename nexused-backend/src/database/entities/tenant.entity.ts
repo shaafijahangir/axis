@@ -1,11 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column } from 'typeorm';
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
+import { BaseEntity } from './base.entity';
 
 export enum SubscriptionPlan {
   FREE = 'free',
@@ -31,11 +26,7 @@ registerEnumType(BillingStatus, {
 
 @ObjectType()
 @Entity('tenants')
-export class Tenant {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Tenant extends BaseEntity {
   @Field()
   @Column({ unique: true })
   name: string;
@@ -67,12 +58,4 @@ export class Tenant {
     default: BillingStatus.ACTIVE,
   })
   billingStatus: BillingStatus;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

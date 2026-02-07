@@ -1,15 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
-import { Tenant } from './tenant.entity';
+import { TenantScopedEntity } from './base.entity';
 
 export enum UserRole {
   STUDENT = 'student',
@@ -38,19 +29,7 @@ registerEnumType(UserStatus, { name: 'UserStatus' });
 @Entity('users')
 @Index(['tenantId'])
 @Index(['email', 'tenantId'], { unique: true })
-export class User {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field()
-  @Column()
-  tenantId: string;
-
-  @ManyToOne(() => Tenant)
-  @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
-
+export class User extends TenantScopedEntity {
   @Field()
   @Column()
   email: string;
@@ -97,12 +76,4 @@ export class User {
 
   @Column({ nullable: true })
   googleId: string;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

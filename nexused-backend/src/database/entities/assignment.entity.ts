@@ -1,15 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ObjectType, Field, Float, registerEnumType } from '@nestjs/graphql';
-import { Tenant } from './tenant.entity';
+import { TenantScopedEntity } from './base.entity';
 import { CourseSection } from './course-section.entity';
 
 export enum AssignmentType {
@@ -31,19 +22,7 @@ registerEnumType(AssignmentType, { name: 'AssignmentType' });
 @Index(['tenantId'])
 @Index(['sectionId'])
 @Index(['dueAt'])
-export class Assignment {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field()
-  @Column()
-  tenantId: string;
-
-  @ManyToOne(() => Tenant)
-  @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
-
+export class Assignment extends TenantScopedEntity {
   @Field()
   @Column()
   sectionId: string;
@@ -95,12 +74,4 @@ export class Assignment {
   @Field(() => String, { nullable: true })
   @Column({ type: 'jsonb', nullable: true })
   settings: Record<string, any>;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
