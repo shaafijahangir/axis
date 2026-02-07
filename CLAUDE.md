@@ -12,7 +12,8 @@ When Shaafi says **"chef it up"**, **"start cooking"**, **"build"**, or any vari
 3. **Announce what you're cooking** — Tell Shaafi in 1-2 sentences what you're about to build and why it's the right next thing.
 4. **Cook** — Implement it fully. Production-quality. No placeholders. No "we'll add this later."
 5. **Update the log** — When done, update `BACKLOG.md` (mark task `DONE`) and `.claude/session-log.md` (add what was built).
-6. **Serve and move on** — Brief summary of what was done, then immediately pick up the next task. Don't wait for permission to continue.
+6. **Commit and push** — Stage changes, commit with conventional commit format, and push to main. Don't wait for permission. See "Git Auto-Commit" section below.
+7. **Serve and move on** — Brief summary of what was done, then immediately pick up the next task. Don't wait for permission to continue.
 
 If Shaafi gives a **specific task** (e.g., "build the AI chat UI"), do that instead of the backlog order — but still follow the same read-first, announce, cook, update pattern.
 
@@ -147,6 +148,47 @@ Required in `nexused-backend/.env`:
 - **Commit messages**: Conventional commits with scope — `feat(backend): description`, `fix(frontend): description`
 - **PR review**: Use Claude Code locally with `gh pr diff <number>` for review
 - **CI**: GitHub Actions runs lint, typecheck, test, and build on PRs
+
+### Git Auto-Commit (MANDATORY)
+
+**After completing any task, immediately commit and push to main.** Don't wait for Shaafi to ask. This is part of the standard workflow.
+
+**When to commit:**
+- After completing any backlog item (P0, P1, P2, P3, or feature)
+- After fixing a bug
+- After implementing a feature
+- After making documentation updates (except `.claude/` which is gitignored)
+
+**Commit protocol:**
+1. Run `git status` to see what changed
+2. Stage files by name (avoid `git add -A` to prevent accidental inclusions)
+3. Group related changes into logical commits:
+   - Backend fixes in one commit
+   - Frontend features in another
+   - Documentation updates separately
+4. Use conventional commit format with scope and backlog ID:
+   ```
+   feat(frontend): add AI Chat UI (FEAT-001)
+   fix(backend): add tenant scoping to findById methods (SEC-001)
+   docs(root): update backlog for completed tasks
+   ```
+5. Push to main: `git push origin main`
+
+**Commit message rules (enforced by commitlint):**
+- Must have scope: `feat(backend):`, `fix(frontend):`, `docs(root):`
+- Body lines max 100 characters
+- Reference backlog ID when applicable
+- End with `Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>`
+
+**Example commit flow:**
+```bash
+git status
+git add nexused-frontend/src/components/ai/ nexused-frontend/src/app/\(dashboard\)/ai/
+git commit -m "feat(frontend): add AI Chat UI (FEAT-001)
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+git push origin main
+```
 
 ---
 
