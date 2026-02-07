@@ -131,10 +131,11 @@
 - **Acceptance:** Every service method that performs 2+ database writes uses a transaction.
 
 ### DATA-004: Add Apollo Client InMemoryCache type policies
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
 - **File:** `graphql/client.ts`
 - **Problem:** `new InMemoryCache()` with no configuration. Apollo can't correctly merge or deduplicate cached entities. Stale data and incorrect cache updates are likely.
-- **Fix:** Add `typePolicies` for all major types (User, Assignment, Submission, Conversation) with `keyFields: ['id']`. Add field policies for feed queries (`merge: false`).
+- **Fix:** Added `typePolicies` for all entity types (User, Course, CourseSection, Assignment, Submission, Enrollment, Announcement, Conversation, DirectMessage, AiConversation, AiMessage, CourseContent) with `keyFields: ['id']`. Added field policies for feed queries (`merge: false`) to replace rather than merge arrays.
 - **Acceptance:** Apollo DevTools shows correctly normalized cache entries. Mutations that update entities reflect immediately in all views.
 
 ### DATA-005: Add Apollo error link for 401 auto-logout

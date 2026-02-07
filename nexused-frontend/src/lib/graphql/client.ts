@@ -54,9 +54,54 @@ const errorLink = new ErrorLink(({ error }) => {
   }
 });
 
+/**
+ * DATA-004: Type policies for proper cache normalization.
+ * WHY: Without keyFields, Apollo can't correctly merge or deduplicate entities.
+ * PATTERN: All entities use 'id' as their primary key.
+ * Feed queries use merge: false to replace rather than merge arrays.
+ */
+const cache = new InMemoryCache({
+  typePolicies: {
+    // Core entities - all use UUID 'id' as key
+    User: { keyFields: ['id'] },
+    Course: { keyFields: ['id'] },
+    CourseSection: { keyFields: ['id'] },
+    Assignment: { keyFields: ['id'] },
+    Submission: { keyFields: ['id'] },
+    Enrollment: { keyFields: ['id'] },
+    Announcement: { keyFields: ['id'] },
+
+    // Messaging entities
+    Conversation: { keyFields: ['id'] },
+    DirectMessage: { keyFields: ['id'] },
+    ConversationParticipant: { keyFields: ['id'] },
+
+    // AI entities
+    AiConversation: { keyFields: ['id'] },
+    AiMessage: { keyFields: ['id'] },
+
+    // Content
+    CourseContent: { keyFields: ['id'] },
+
+    // Query-level policies for feeds (replace, don't merge)
+    Query: {
+      fields: {
+        studentFeed: { merge: false },
+        instructorFeed: { merge: false },
+        sectionTimeline: { merge: false },
+        myConversations: { merge: false },
+        myEnrollments: { merge: false },
+        mySubmissions: { merge: false },
+        sectionAssignments: { merge: false },
+        sectionAnnouncements: { merge: false },
+      },
+    },
+  },
+});
+
 export const apolloClient = new ApolloClient({
   link: from([errorLink, httpLink]),
-  cache: new InMemoryCache(),
+  cache,
   defaultOptions: {
     watchQuery: { fetchPolicy: 'cache-and-network' },
   },
