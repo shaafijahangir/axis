@@ -15,6 +15,9 @@ Traditional LMS platforms are file cabinets with a gradebook. NexusEd is a **fee
 
 > See [MISSION.md](./MISSION.md) for the full origin story and design philosophy.
 > See [ROADMAP.md](./ROADMAP.md) for where this project is heading.
+> See [BACKLOG.md](./BACKLOG.md) for the prioritized task list.
+> See [STORY.md](./STORY.md) for the project narrative and architecture diagram.
+> See [TECH_STACK.md](./TECH_STACK.md) for technology decisions and rationale.
 > See [CLAUDE.md](./CLAUDE.md) for development workflow and AI collaboration rules.
 
 ---
@@ -76,7 +79,7 @@ These are non-negotiable and inform every decision:
 ## Tech Stack
 
 ### Frontend
-- **Next.js 15** with App Router
+- **Next.js 16** with App Router
 - **React 19** with server components
 - **TypeScript**
 - **Tailwind CSS 4**
@@ -103,42 +106,55 @@ These are non-negotiable and inform every decision:
 
 ```
 nexused/
-├── nexused-frontend/             # Next.js 15 frontend
+├── nexused-frontend/             # Next.js 16 frontend
 │   └── src/
 │       ├── app/
 │       │   ├── (auth)/           # Login, registration
 │       │   └── (dashboard)/      # Role-based views
-│       │       ├── student/
-│       │       ├── instructor/
-│       │       ├── parent/
-│       │       └── admin/
+│       │       ├── home/         # Unified feed (role-adaptive)
+│       │       ├── courses/      # Course timeline, assignments, grading
+│       │       ├── messages/     # Messaging (placeholder — needs FEAT-003)
+│       │       ├── people/       # Admin user management
+│       │       └── academics/    # Admin term/catalog management
 │       ├── components/
 │       │   ├── ui/               # shadcn/ui base components
-│       │   ├── feed/             # Home feed components
-│       │   ├── course/           # Course timeline components
-│       │   └── shared/           # Cross-role shared components
-│       ├── lib/                  # Utilities, API clients
-│       └── types/                # TypeScript definitions
+│       │   ├── feed/             # Home feed (student, instructor, admin, parent)
+│       │   ├── courses/          # Course timeline, roster, content
+│       │   ├── assignments/      # Assignment detail, submission, grading
+│       │   ├── auth/             # Auth guard, login/register forms
+│       │   └── layout/           # Sidebar, top-nav, mobile-nav, user-menu
+│       ├── lib/
+│       │   ├── graphql/          # Apollo queries & mutations
+│       │   ├── navigation.ts     # Centralized nav config
+│       │   └── utils/            # Utilities (relative-time, etc.)
+│       └── stores/               # Zustand state (auth)
 │
 ├── nexused-backend/              # NestJS GraphQL API
 │   └── src/
 │       ├── modules/
-│       │   ├── auth/             # Authentication
+│       │   ├── auth/             # Authentication (JWT + Google OAuth)
 │       │   ├── users/            # User management
-│       │   ├── tenants/          # Multi-tenant operations
-│       │   ├── courses/          # Course management
-│       │   ├── enrollments/      # Enrollment logic
-│       │   ├── assignments/      # Assignments & submissions
-│       │   ├── feed/             # AI-prioritized home feed
-│       │   ├── messaging/        # Direct messaging
+│       │   ├── courses/          # Courses, sections, enrollments
+│       │   ├── assignments/      # Assignments, submissions, grading
+│       │   ├── announcements/    # Priority announcements
+│       │   ├── feed/             # Server-side feed aggregation & ranking
 │       │   └── ai/               # AI infrastructure
-│       ├── database/entities/    # TypeORM entities
-│       ├── config/               # Configuration
-│       ├── guards/               # Auth guards
-│       └── decorators/           # Custom decorators
+│       │       ├── agents/       # Agent definitions (Study Coach, Feedback Copilot)
+│       │       ├── tools/        # 16 AI-callable tools
+│       │       ├── events/       # Event listener + typed events
+│       │       └── entities/     # AI conversations, messages, usage logs
+│       ├── database/entities/    # 9 core TypeORM entities
+│       ├── tenant/               # Multi-tenant operations
+│       ├── config/               # App, DB, auth, AI configuration
+│       ├── guards/               # JWT auth + roles guards
+│       └── decorators/           # @CurrentUser, @Roles
 │
-├── MISSION.md                    # Why NexusEd exists
-├── ROADMAP.md                    # Where we're heading
+├── MISSION.md                    # Why NexusEd exists (origin story)
+├── ROADMAP.md                    # Development trajectory (Phases 2.5→5)
+├── BACKLOG.md                    # Prioritized task list (P0→P3 + features)
+├── STORY.md                      # Project narrative with architecture diagram
+├── TECH_STACK.md                 # Technology decisions and rationale
+├── CLAUDE.md                     # AI collaboration rules and standards
 └── README.md                     # This file
 ```
 
@@ -146,15 +162,21 @@ nexused/
 
 ## Database Schema
 
-### Core Entities
-- **Tenants** — Multi-tenant institutions (schema-per-tenant with RLS)
-- **Users** — All roles: student, instructor, admin, parent
+### Core Entities (9)
+- **Tenants** — Multi-tenant institutions with subscription plans and billing
+- **Users** — All roles: student, instructor, admin, parent, TA
 - **Academic Terms** — Semesters and periods
 - **Courses** — Course catalog with prerequisites
-- **Course Sections** — Specific instances per term
-- **Enrollments** — Student-to-section relationships
-- **Assignments** — All types: assignment, quiz, exam, discussion, project
-- **Submissions** — Student work and grades
+- **Course Sections** — Specific instances per term with schedule and capacity
+- **Enrollments** — Student-to-section relationships with role and status
+- **Assignments** — 5 types: assignment, quiz, exam, discussion, project
+- **Submissions** — Student work, grades, and feedback
+- **Announcements** — Priority-ranked (normal/urgent) with pinning
+
+### AI Entities (3)
+- **AI Conversations** — Context-scoped with academic state snapshot
+- **AI Messages** — Conversation history with role tracking
+- **AI Usage Logs** — Per-tenant cost tracking (tokens, estimated USD)
 
 ### Multi-Tenancy
 Each institution gets its own PostgreSQL schema. Row-Level Security provides defense-in-depth. Shared infrastructure for operational efficiency.
@@ -203,20 +225,36 @@ GraphQL Playground: http://localhost:3001/api/graphql
 
 ## Current Status
 
-### Done
+### Complete
 - [x] Project scaffolding (frontend + backend)
 - [x] Authentication system (JWT + Google OAuth)
 - [x] Multi-tenant foundation with RLS
-- [x] Core database schema (8 entities)
+- [x] Core database schema (12 entities: 9 core + 3 AI)
 - [x] Base UI components (shadcn/ui)
 - [x] GraphQL API with tenant CRUD
 - [x] Login and registration pages
+- [x] Role-based navigation shell (3 nav items per role)
+- [x] Mobile-responsive layout (bottom bar + sidebar)
+- [x] AI-prioritized home feed (student, instructor, admin, parent views)
+- [x] Unified course timeline (assignments + announcements in one stream)
+- [x] Assignment creation, submission, and inline grading
+- [x] Gradebook with statistics and CSV export
+- [x] Course roster view
+- [x] AI agentic loop, governance engine, tool registry (backend only)
 
-### In Progress
-- [ ] Design system and navigation architecture
-- [ ] Role-based dashboard foundations
+### In Progress — Phase 2.5: Infrastructure Hardening
+- [ ] Fix 4 P0 security issues (tenant scoping, auth, JWT storage, indexes)
+- [ ] Fix 7 P1 data integrity issues (tenantId, transactions, Apollo config)
+- [ ] Architecture improvements (base entities, Turborepo, cleanup)
+
+### Not Yet Built
+- [ ] AI Chat UI (backend exists, no frontend)
+- [ ] Messaging system (documented but code not on main)
+- [ ] Content builder (documented but code not on main)
+- [ ] Real-time features (Socket.IO configured but unused)
 
 > See [ROADMAP.md](./ROADMAP.md) for the full development plan.
+> See [BACKLOG.md](./BACKLOG.md) for the prioritized task list.
 
 ---
 

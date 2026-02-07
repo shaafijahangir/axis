@@ -1,0 +1,707 @@
+# Claude Session Log
+
+> This file is updated by Claude before and after each task execution.
+> If a session is interrupted, Claude reads this file to resume from the correct point.
+
+---
+
+## Current Session
+
+**Started:** 2026-01-30
+**Goal:** Implement AI-native architecture foundation (Phase 1, Month 1 priorities)
+**Status:** COMPLETE — Foundation + GraphQL API layer done
+
+---
+
+## Session 2 (same day)
+
+**Goal:** Add GraphQL resolvers to make AI + Assignments usable from frontend
+**Status:** COMPLETE
+
+### Work Done
+1. **AI GraphQL Resolver** (`src/modules/ai/ai.resolver.ts`) — startConversation, sendMessage, myConversations, conversationMessages, availableAgents
+2. **Assignment + Submission entities** — Added @ObjectType/@Field decorators, registered AssignmentType enum with GraphQL
+3. **Assignments Module** — Full module with service, resolver, DTOs
+   - `src/modules/assignments/assignments.module.ts`
+   - `src/modules/assignments/assignments.service.ts`
+   - `src/modules/assignments/assignments.resolver.ts`
+   - `src/modules/assignments/dto/assignment.types.ts`
+4. **AppModule** — Added AssignmentsModule import
+5. **Build verified** — 0 errors from new code
+
+### GraphQL API Now Available
+**AI:**
+- `mutation startConversation(input)` → AgentResponseDto
+- `mutation sendMessage(input)` → AgentResponseDto
+- `query availableAgents` → [AgentInfoDto]
+- `query myConversations` → [AiConversation]
+- `query conversationMessages(conversationId)` → [AiMessage]
+
+**Assignments:**
+- `query sectionAssignments(sectionId)` → [Assignment]
+- `query assignment(id)` → Assignment
+- `query assignmentSubmissions(assignmentId)` → [Submission]
+- `query mySubmissions(assignmentId)` → [Submission]
+- `query submission(id)` → Submission
+- `mutation createAssignment(input)` → Assignment (INSTRUCTOR/ADMIN)
+- `mutation submitAssignment(input)` → Submission
+- `mutation gradeSubmission(input)` → Submission (INSTRUCTOR/TA/ADMIN)
+
+### Next Session Priorities
+- Frontend chat UI for AI agents
+- Frontend assignment create/submit/view/grade pages
+- Frontend gradebook view
+- Wire event listener to actually invoke agents (not just log)
+
+### Task Queue (ordered by priority)
+
+| # | Task | Status |
+|---|------|--------|
+| 1 | Wire EventEmitterModule + BullModule in AppModule | done |
+| 2 | Create AI config file (`src/config/ai.config.ts`) | done |
+| 3 | Create AI entities (conversation, message, usage log) | done |
+| 4 | Create tool interface and tool registry | done |
+| 5 | Create agent interface and agent registry | done |
+| 6 | Implement AiService (Claude API wrapper) | done |
+| 7 | Implement ContextService | done |
+| 8 | Implement GovernanceService + UsageTrackingService | done |
+| 9 | Implement AgentExecutor service | done |
+| 10 | Define first tools (course, assignment, grading, enrollment, analytics) | done |
+| 11 | Create event type definitions + AI event listener | done |
+| 12 | Create DTOs for chat messages and agent responses | done |
+| 13 | Create StudyCoach + FeedbackCopilot agent definitions | done |
+| 14 | Create AiModule and wire everything together | done |
+| 15 | Add events to existing CourseService | done |
+| 16 | Verify build compiles (0 errors from AI module) | done |
+
+### Last Action
+
+**Status:** ALL TASKS COMPLETE
+**What was done:** Full AI foundation implemented and type-checked. Zero TypeScript errors from AI module code. Pre-existing auth module type errors remain (not related).
+**Next session priorities:**
+- GraphQL resolver for AI chat (expose startConversation/sendMessage mutations)
+- Chat UI component on the frontend
+- Assignment system frontend (create/submit/view)
+- Wire real agent reactions in AiEventListener (currently logging only)
+
+### Files Created (20 new files)
+
+```
+nexused-backend/src/config/ai.config.ts
+nexused-backend/src/modules/ai/ai.module.ts
+nexused-backend/src/modules/ai/ai.service.ts
+nexused-backend/src/modules/ai/context.service.ts
+nexused-backend/src/modules/ai/agent-executor.service.ts
+nexused-backend/src/modules/ai/governance.service.ts
+nexused-backend/src/modules/ai/usage-tracking.service.ts
+nexused-backend/src/modules/ai/tools/tool.interface.ts
+nexused-backend/src/modules/ai/tools/tool-registry.ts
+nexused-backend/src/modules/ai/tools/course.tools.ts
+nexused-backend/src/modules/ai/tools/enrollment.tools.ts
+nexused-backend/src/modules/ai/tools/assignment.tools.ts
+nexused-backend/src/modules/ai/tools/grading.tools.ts
+nexused-backend/src/modules/ai/tools/analytics.tools.ts
+nexused-backend/src/modules/ai/agents/agent.interface.ts
+nexused-backend/src/modules/ai/agents/agent-registry.service.ts
+nexused-backend/src/modules/ai/agents/study-coach.agent.ts
+nexused-backend/src/modules/ai/agents/feedback-copilot.agent.ts
+nexused-backend/src/modules/ai/events/ai-events.ts
+nexused-backend/src/modules/ai/events/ai-event.listener.ts
+nexused-backend/src/modules/ai/dto/chat-message.dto.ts
+nexused-backend/src/modules/ai/dto/agent-response.dto.ts
+nexused-backend/src/modules/ai/entities/ai-conversation.entity.ts
+nexused-backend/src/modules/ai/entities/ai-message.entity.ts
+nexused-backend/src/modules/ai/entities/ai-usage-log.entity.ts
+```
+
+### Files Modified (3 files)
+
+```
+nexused-backend/src/app.module.ts          — Added EventEmitterModule, BullModule, aiConfig, AiModule
+nexused-backend/src/database/entities/index.ts — Added AI entities to TypeORM entity array
+nexused-backend/src/modules/courses/courses.service.ts — Added event emission on create/createSection/enrollStudent
+```
+
+### Architecture Summary
+
+```
+                    INTERFACES
+        ┌──────────┬──────────┬─────────────┐
+        │ Next.js  │  Agent   │   Natural   │
+        │    UI    │   API    │  Language   │
+        └────┬─────┴────┬─────┴──────┬──────┘
+             │          │            │
+             ▼          ▼            ▼
+        ┌────────────────────────────────────┐
+        │        OPERATION LAYER             │
+        │  GraphQL + Agent Tool Handlers     │
+        │  (ToolRegistry + AgentExecutor)    │
+        └──────────────────┬─────────────────┘
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │ Services │ │  Event   │ │ Context  │
+        │ (Logic)  │ │   Bus    │ │ Assembly │
+        └──────────┘ └────┬─────┘ └──────────┘
+                          │
+                ┌─────────┼─────────┐
+                ▼         ▼         ▼
+           ┌─────────┐ ┌─────┐ ┌────────┐
+           │  Agent  │ │Audit│ │Notify  │
+           │Reactions│ │ Log │ │        │
+           └─────────┘ └─────┘ └────────┘
+```
+
+### Registered Tools (16)
+
+| Tool | Action Type | Source |
+|------|-------------|--------|
+| list_courses | auto | course.tools |
+| get_course | auto | course.tools |
+| get_course_sections | auto | course.tools |
+| get_section | auto | course.tools |
+| get_course_stats | auto | course.tools |
+| get_student_enrollments | auto | enrollment.tools |
+| enroll_student | suggest | enrollment.tools |
+| list_section_assignments | auto | assignment.tools |
+| get_assignment | auto | assignment.tools |
+| get_student_submissions | auto | assignment.tools |
+| get_assignment_submissions | auto | assignment.tools |
+| get_submission_details | auto | grading.tools |
+| draft_feedback | suggest | grading.tools |
+| get_grade_distribution | auto | analytics.tools |
+| get_student_performance | auto | analytics.tools |
+| get_section_enrollment_count | auto | analytics.tools |
+
+### Registered Agents (2)
+
+| Agent | Roles | Tools | Max Turns |
+|-------|-------|-------|-----------|
+| study-coach | student, ta | 8 read-only tools | 15 |
+| feedback-copilot | instructor, ta, admin | 7 tools (incl. draft_feedback) | 10 |
+
+### Notes
+
+- Pre-existing auth module type errors not caused by our changes
+- BullModule requires Redis running — will fail gracefully if Redis not available
+- ANTHROPIC_API_KEY must be set in .env for AI to work (warns if missing)
+- Event listener reactions are logging-only for now — agent invocations come in Month 2
+
+---
+
+## Session 3 — Phase 1: Navigation Shell + Home Feed + Course Timeline
+
+**Started:** 2026-01-30
+**Goal:** Implement core Phase 1 features — role-based navigation, AI-prioritized home feed, course timeline view
+**Status:** COMPLETE — All 6 blocks implemented
+
+### Work Done
+
+**Block 1: Navigation Shell Refactor (Frontend)**
+- Created centralised nav config (`src/lib/navigation.ts`) with per-role nav items
+- Rewrote sidebar to use shared nav config
+- Added mobile bottom navigation bar (`components/layout/mobile-nav.tsx`)
+- Created unified `/home` route with role-based rendering
+- Added placeholder pages: `/messages`, `/people`, `/academics`
+- Converted old `/student`, `/instructor`, `/admin` pages to redirects → `/home`
+- Updated `getRoleDashboardPath()` to return `/home` for all roles
+- Updated dashboard layout with mobile nav and bottom padding
+
+**Block 2: Announcement Entity (Backend)**
+- Created `Announcement` entity with priority (NORMAL/URGENT), pinned flag, author/section relations
+- Created announcements module, service, resolver, and DTOs
+- Service methods: `findBySectionId()`, `findBySectionIds()`, `findRecentBySectionIds()`, `create()`
+- Resolver: `sectionAnnouncements` query, `createAnnouncement` mutation (INSTRUCTOR/ADMIN only)
+- Registered entity in `entities/index.ts` and module in `app.module.ts`
+
+**Block 3: Feed Module (Backend)**
+- Created feed service with server-side aggregation for student and instructor feeds
+- `studentFeed`: Merges upcoming deadlines, recent grades, announcements → ranked by urgency
+- `instructorFeed`: Shows ungraded submissions per assignment + upcoming deadlines
+- `sectionTimeline`: Chronological view of assignments + announcements for a section
+- Created GraphQL types: `FeedItem`, `InstructorFeedItem`, `TimelineEntry` with type enums
+- Registered in `app.module.ts`
+
+**Block 4: Home Feed Pages (Frontend)**
+- Student feed: Card list with deadline/grade/announcement variants
+- Instructor feed: Grading queue + upcoming deadlines
+- Admin feed: Stat cards (reused existing StatsCard)
+- Parent feed: Placeholder
+- Feed card component with type-based icons, border colours, relative time
+- Skeleton and empty state components
+- `formatRelativeTime()` utility using `Intl.RelativeTimeFormat`
+
+**Block 5: Course Timeline View (Frontend)**
+- Section timeline page at `/courses/[id]/section/[sectionId]`
+- Sticky course header with back nav, code badge, instructor, location
+- Timeline entry cards with assignment/announcement variants
+- Added `section(id)` query to courses resolver (backend)
+- Added "View" button to section list linking to timeline
+- Updated course detail page to pass `courseId` to `SectionList`
+
+**Block 6: Assignment Detail + Submission (Frontend)**
+- Assignment page at `/courses/[id]/section/[sectionId]/assignment/[assignmentId]`
+- Assignment detail card: title, description, type badge, points, due date
+- Submission form: react-hook-form + zod validation, text entry
+- Submission history: Past attempts with scores, feedback, graded status
+- GraphQL queries and mutations for assignments and submissions
+
+### New GraphQL Schema Additions
+
+**Types:** Announcement, FeedItem, InstructorFeedItem, TimelineEntry
+**Enums:** FeedItemType, InstructorFeedItemType, TimelineEntryType, AnnouncementPriority
+**Inputs:** CreateAnnouncementInput
+**Queries:** studentFeed, instructorFeed, sectionTimeline, sectionAnnouncements, section(id)
+**Mutations:** createAnnouncement
+
+### Files Created (~32 new files)
+
+```
+# Backend
+nexused-backend/src/database/entities/announcement.entity.ts
+nexused-backend/src/modules/announcements/announcements.module.ts
+nexused-backend/src/modules/announcements/announcements.service.ts
+nexused-backend/src/modules/announcements/announcements.resolver.ts
+nexused-backend/src/modules/announcements/dto/announcement.types.ts
+nexused-backend/src/modules/feed/feed.module.ts
+nexused-backend/src/modules/feed/feed.service.ts
+nexused-backend/src/modules/feed/feed.resolver.ts
+nexused-backend/src/modules/feed/dto/feed.types.ts
+nexused-backend/src/modules/feed/dto/timeline.types.ts
+
+# Frontend - Navigation & Layout
+nexused-frontend/src/lib/navigation.ts
+nexused-frontend/src/components/layout/mobile-nav.tsx
+nexused-frontend/src/app/(dashboard)/home/page.tsx
+nexused-frontend/src/app/(dashboard)/messages/page.tsx
+nexused-frontend/src/app/(dashboard)/people/page.tsx
+nexused-frontend/src/app/(dashboard)/academics/page.tsx
+
+# Frontend - Feed
+nexused-frontend/src/components/feed/student-home-feed.tsx
+nexused-frontend/src/components/feed/instructor-home-feed.tsx
+nexused-frontend/src/components/feed/admin-home-feed.tsx
+nexused-frontend/src/components/feed/parent-home-feed.tsx
+nexused-frontend/src/components/feed/feed-card.tsx
+nexused-frontend/src/components/feed/feed-card-skeleton.tsx
+nexused-frontend/src/components/feed/empty-feed.tsx
+nexused-frontend/src/lib/utils/relative-time.ts
+nexused-frontend/src/lib/graphql/queries/feed.ts
+
+# Frontend - Timeline
+nexused-frontend/src/components/courses/course-header.tsx
+nexused-frontend/src/components/courses/timeline-entry-card.tsx
+nexused-frontend/src/components/courses/timeline-skeleton.tsx
+nexused-frontend/src/lib/graphql/queries/timeline.ts
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx
+
+# Frontend - Assignment
+nexused-frontend/src/components/assignments/assignment-detail.tsx
+nexused-frontend/src/components/assignments/submission-form.tsx
+nexused-frontend/src/components/assignments/submission-history.tsx
+nexused-frontend/src/lib/graphql/queries/assignments.ts
+nexused-frontend/src/lib/graphql/mutations/assignments.ts
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/assignment/[assignmentId]/page.tsx
+```
+
+### Files Modified (~8 files)
+
+```
+nexused-backend/src/app.module.ts — Added AnnouncementsModule, FeedModule
+nexused-backend/src/database/entities/index.ts — Added Announcement entity
+nexused-backend/src/modules/courses/courses.resolver.ts — Added section(id) query
+nexused-frontend/src/components/layout/sidebar.tsx — Rewrote with centralised nav config
+nexused-frontend/src/app/(dashboard)/layout.tsx — Added MobileNav, bottom padding
+nexused-frontend/src/stores/auth.store.ts — getRoleDashboardPath returns /home
+nexused-frontend/src/components/courses/section-list.tsx — Added View button, courseId prop
+nexused-frontend/src/app/(dashboard)/courses/[id]/page.tsx — Pass courseId to SectionList
+nexused-frontend/src/app/(dashboard)/student/page.tsx — Redirect to /home
+nexused-frontend/src/app/(dashboard)/instructor/page.tsx — Redirect to /home
+nexused-frontend/src/app/(dashboard)/admin/page.tsx — Redirect to /home
+nexused-frontend/src/lib/graphql/queries/courses.ts — Added SECTION_QUERY
+```
+
+### Next Session Priorities
+- Run `npm run typecheck` and `npm run lint` in both projects to verify
+- Start dev servers and test end-to-end
+- Add real data seeding for testing
+- Phase 2: AI chat UI, real-time notifications
+
+---
+
+## Session 4 — Phase 2: Assignment Creation + Roadmap Update
+
+**Started:** 2026-01-30
+**Goal:** Add instructor assignment creation flow, update roadmap
+**Status:** COMPLETE
+
+### Work Done
+1. **CREATE_ASSIGNMENT_MUTATION** — Added to `src/lib/graphql/mutations/assignments.ts`
+2. **CreateAssignmentForm** — `src/components/assignments/create-assignment-form.tsx`
+   - react-hook-form + zod, fields: title, description, type (select), points, due/unlock/lock dates
+   - On success redirects to the new assignment detail page
+   - Refetches section timeline
+3. **Create Assignment page** — `src/app/(dashboard)/courses/[id]/section/[sectionId]/assignment/create/page.tsx`
+4. **Section timeline** — Added role-gated "Create Assignment" button for INSTRUCTOR/ADMIN
+5. **ROADMAP.md** — Checked off all Phase 1 items + 4 Phase 2 items already built
+
+### Files Created (2)
+```
+nexused-frontend/src/components/assignments/create-assignment-form.tsx
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/assignment/create/page.tsx
+```
+
+### Files Modified (3)
+```
+nexused-frontend/src/lib/graphql/mutations/assignments.ts — Added CREATE_ASSIGNMENT_MUTATION
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added Create Assignment button
+ROADMAP.md — Updated checkboxes for Phase 1 + Phase 2
+```
+
+### Next Session Priorities
+- Course roster view (Phase 2)
+- Grades view within course timeline (Phase 2)
+- Gradebook view inside a course (Phase 2)
+
+---
+
+## Session 5 — Phase 2: Course Roster + Inline Grading
+
+**Started:** 2026-01-30
+**Goal:** Add course roster view and instructor grading UI
+**Status:** COMPLETE
+
+### Work Done
+1. **Course Roster (Backend)** — `findEnrollmentsForSection()` in CoursesService, `sectionEnrollments` query in resolver (INSTRUCTOR/ADMIN/TA)
+2. **Course Roster (Frontend)** — `SECTION_ENROLLMENTS_QUERY`, `SectionRoster` component, roster page at `/courses/[id]/section/[sectionId]/roster`
+3. **Roster link** — "Roster" button on section timeline (instructor/admin only)
+4. **Grading mutation** — `GRADE_SUBMISSION_MUTATION` added to frontend
+5. **All submissions query** — `ASSIGNMENT_SUBMISSIONS_QUERY` for instructor view with user relation
+6. **SubmissionGradingList** — `src/components/assignments/submission-grading-list.tsx`
+   - Shows all submissions with student avatar, name, attempt, graded status
+   - Expandable rows with student response preview
+   - Inline grade form per submission (score + feedback)
+   - Independent form state per row — no shared form nonsense
+7. **Assignment page** — Role-based rendering: instructors see grading list, students see submission form + history
+   - `mySubmissions` query skipped for graders (no wasted network call)
+8. **ROADMAP.md** — Checked off course roster view + inline grading
+
+### Files Created (3)
+```
+nexused-frontend/src/components/courses/section-roster.tsx
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/roster/page.tsx
+nexused-frontend/src/components/assignments/submission-grading-list.tsx
+```
+
+### Files Modified (6)
+```
+nexused-backend/src/modules/courses/courses.service.ts — Added findEnrollmentsForSection()
+nexused-backend/src/modules/courses/courses.resolver.ts — Added sectionEnrollments query
+nexused-frontend/src/lib/graphql/queries/courses.ts — Added SECTION_ENROLLMENTS_QUERY
+nexused-frontend/src/lib/graphql/queries/assignments.ts — Added ASSIGNMENT_SUBMISSIONS_QUERY
+nexused-frontend/src/lib/graphql/mutations/assignments.ts — Added GRADE_SUBMISSION_MUTATION
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/assignment/[assignmentId]/page.tsx — Role-based view
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added Roster button
+ROADMAP.md — Checked off roster + inline grading
+```
+
+### Core Academic Loop Now Complete
+```
+Instructor creates assignment → Student submits → Instructor grades → Student sees score
+```
+
+### Next Session Priorities
+- Grades view within course timeline (Phase 2) — DONE (prior session)
+- Overall grades summary page (Phase 2) — DONE (prior session)
+- Gradebook table view inside a course (Phase 2) — DONE (prior session)
+- Grade statistics (Phase 2) — DONE (prior session)
+
+---
+
+## Session 6 — CSV Export + Roadmap Cleanup
+
+**Started:** 2026-02-01
+**Goal:** Add CSV export to gradebook, update roadmap checkboxes
+**Status:** COMPLETE
+
+### Work Done
+1. **CSV Export** — Added "Download CSV" button to gradebook page
+   - `escapeCsvField()` handles commas, quotes, newlines in student names/emails
+   - `downloadGradebookCsv()` builds CSV with headers (student info + assignment columns + totals), triggers browser download
+   - File named `gradebook-{courseCode}.csv`
+   - Client-side only — no backend changes (data already fetched by Apollo)
+2. **ROADMAP.md** — Checked off 6 items that were built in prior sessions but not tracked:
+   - Grades view within course timeline
+   - Overall grades summary
+   - Gradebook as a view inside a course
+   - Grade statistics (mean, median, distribution)
+   - Export grades (CSV)
+
+### Files Modified (3)
+```
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/gradebook/page.tsx — Added CSV export
+ROADMAP.md — Checked off completed Phase 2 items
+.claude/session-log.md — This file
+```
+
+### Remaining Phase 2 Items
+- [x] Course content builder (rich text + file uploads) — Done in Session 8
+- [x] Bulk operations (extend deadline, send announcement to section) — Done in prior sessions
+- [x] Messaging (DMs, threads, unread indicators, contacts) — Done in Session 7
+- [x] Admin panel (user/term/catalog/enrollment management) — Done in prior sessions
+
+---
+
+## Session 7 — Phase 2: Messaging System
+
+**Started:** 2026-02-02
+**Goal:** Implement direct messaging between users within a tenant
+**Status:** COMPLETE — All 5 blocks implemented
+
+### Work Done
+
+**Block 1: Messaging Entities (Backend)**
+- `Conversation` entity — tenant-scoped, nullable title (null = DM, non-null = group chat future)
+- `ConversationParticipant` — per-user read tracking via `lastReadAt`, unique constraint on [conversationId, userId]
+- `DirectMessage` — text content with sender relation
+- Registered all 3 entities in `entities/index.ts`
+
+**Block 2: Messaging Module (Backend)**
+- `MessagingService` with full business logic:
+  - `getContacts()` — enrollment-based contact resolution (students see instructors/classmates, instructors see their students)
+  - `getConversations()` — all conversations with last message + unread count
+  - `getOrCreateConversation()` — find or create 1:1 DM
+  - `getMessages()` — cursor-based pagination for chat scroll
+  - `sendMessage()` / `sendMessageToUser()` — with auto-read for sender
+  - `markAsRead()` — timestamp-based read tracking
+  - `getUnreadCount()` — total unread across all conversations
+  - `verifyParticipant()` — security check on every operation
+- `MessagingResolver` — 4 queries + 3 mutations, all guarded with JwtAuthGuard
+- DTOs: `SendMessageInput`, `SendMessageToConversationInput`, `ConversationWithLatest`, `PaginatedMessagesResponse`, `ContactUser`
+- Registered `MessagingModule` in `app.module.ts`
+
+**Block 3: Frontend GraphQL + Nav Badge**
+- Query definitions: `MY_CONVERSATIONS_QUERY`, `CONVERSATION_MESSAGES_QUERY`, `MY_CONTACTS_QUERY`, `UNREAD_COUNT_QUERY`
+- Mutation definitions: `SEND_MESSAGE_MUTATION`, `SEND_MESSAGE_TO_CONVERSATION_MUTATION`, `MARK_AS_READ_MUTATION`
+- `useUnreadCount` hook — polls every 30s, skipped for admin role
+- Added `badgeKey` to `NavItem` interface in `navigation.ts`
+- Sidebar: red unread count badge on Messages item
+- Mobile nav: positioned badge on icon in bottom bar
+- Added `scroll-area` shadcn component
+
+**Block 4: Messages Page UI (Frontend)**
+- Two-panel layout: conversation list (320px) + message thread (flex-1)
+- Mobile: single panel with list/thread toggle, back button in header
+- URL state: `?conversation=<id>` for deep linking
+- `ConversationList` — search, "New" button, polling (10s), unread badges, relative time
+- `MessageThread` — date separators, own/other message alignment, auto-scroll, "Load older" pagination, auto-mark-as-read, polling (5s)
+- `NewMessageDialog` — searchable contact picker with enrollment-based relationships, inline message compose
+- `EmptyState` — "Select a conversation or start a new one"
+
+**Block 5: Polish + ROADMAP**
+- ROADMAP.md: checked off all 4 messaging items
+- Both projects type-check cleanly (0 new errors)
+
+### Files Created (11)
+```
+# Backend entities
+nexused-backend/src/modules/messaging/entities/conversation.entity.ts
+nexused-backend/src/modules/messaging/entities/conversation-participant.entity.ts
+nexused-backend/src/modules/messaging/entities/direct-message.entity.ts
+
+# Backend module
+nexused-backend/src/modules/messaging/dto/messaging.types.ts
+nexused-backend/src/modules/messaging/messaging.service.ts
+nexused-backend/src/modules/messaging/messaging.resolver.ts
+nexused-backend/src/modules/messaging/messaging.module.ts
+
+# Frontend GraphQL
+nexused-frontend/src/lib/graphql/queries/messaging.ts
+nexused-frontend/src/lib/graphql/mutations/messaging.ts
+
+# Frontend hook
+nexused-frontend/src/hooks/use-unread-count.ts
+
+# Frontend components
+nexused-frontend/src/components/messaging/conversation-list.tsx
+nexused-frontend/src/components/messaging/message-thread.tsx
+nexused-frontend/src/components/messaging/new-message-dialog.tsx
+nexused-frontend/src/components/messaging/empty-state.tsx
+```
+
+### Files Modified (6)
+```
+nexused-backend/src/database/entities/index.ts — Added 3 messaging entities to TypeORM array
+nexused-backend/src/app.module.ts — Added MessagingModule import
+nexused-frontend/src/lib/navigation.ts — Added badgeKey to NavItem, set on Messages items
+nexused-frontend/src/components/layout/sidebar.tsx — Added unread badge rendering
+nexused-frontend/src/components/layout/mobile-nav.tsx — Added unread badge rendering
+nexused-frontend/src/app/(dashboard)/messages/page.tsx — Replaced stub with two-panel messaging UI
+ROADMAP.md — Checked off 4 messaging items
+```
+
+### New GraphQL Schema Additions
+**Types:** Conversation, ConversationParticipant, DirectMessage, ConversationWithLatest, PaginatedMessagesResponse, ContactUser
+**Inputs:** SendMessageInput, SendMessageToConversationInput
+**Queries:** myConversations, conversationMessages, myContacts, unreadMessageCount
+**Mutations:** sendMessage, sendMessageToConversation, markConversationAsRead
+
+---
+
+## Session 8 — Phase 2: Course Content Builder (Final Phase 2 Item)
+
+**Started:** 2026-02-04
+**Goal:** Build the course content builder with rich text editing — the last remaining Phase 2 feature
+**Status:** COMPLETE — Phase 2 is now 100% done
+
+### Work Done
+
+**Backend Changes (4 files)**
+1. **TimelineEntryType** — Added `CONTENT` enum value + `publishedAt` field to `TimelineEntry` type
+2. **FeedModule** — Imported `ContentModule` to make `ContentService` available
+3. **FeedService** — Added content items to `getSectionTimeline()`, accepts `isInstructor` flag to control draft visibility
+4. **FeedResolver** — Passes `isInstructor` based on user roles to timeline query
+
+**Frontend: Rich Text Editor**
+1. Installed Tiptap (`@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-link`, `@tiptap/extension-placeholder`, `@tiptap/pm`)
+2. Installed `@tailwindcss/typography` for prose styling
+3. **RichTextEditor** (`components/courses/rich-text-editor.tsx`) — Full toolbar: bold, italic, strike, code, H1-H3, bullet/ordered lists, blockquote, divider, link, undo/redo
+4. **RichTextViewer** (`components/courses/rich-text-viewer.tsx`) — HTML rendering with Tailwind prose classes
+
+**Frontend: Content CRUD**
+5. **GraphQL queries** (`lib/graphql/queries/content.ts`) — `SECTION_CONTENTS_QUERY`, `CONTENT_QUERY`
+6. **GraphQL mutations** (`lib/graphql/mutations/content.ts`) — `CREATE_CONTENT_MUTATION`, `UPDATE_CONTENT_MUTATION`, `PUBLISH_CONTENT_MUTATION`, `UNPUBLISH_CONTENT_MUTATION`, `DELETE_CONTENT_MUTATION`
+7. **ContentEditorDialog** (`components/courses/content-editor-dialog.tsx`) — Create/edit dialog with Tiptap editor, supports both new and edit modes
+8. **Content detail page** (`courses/[id]/section/[sectionId]/content/[contentId]/page.tsx`) — Full content view with prose rendering, instructor controls (edit, publish/unpublish, delete with confirmation)
+
+**Frontend: Timeline Integration**
+9. **TimelineEntryCard** — Added `content` type support with green border/icon (BookOpen), draft/published badges, links to detail page
+10. **Section timeline page** — Added "Content" create button, passes `publishedAt` to timeline cards
+11. **Timeline query** — Added `publishedAt` field
+
+**Frontend: Styling**
+12. **globals.css** — Added `@tailwindcss/typography` plugin, Tiptap placeholder styles
+
+### Content Workflow
+```
+Instructor creates content (saved as Draft)
+  → Views on timeline with "Draft" badge
+  → Clicks to detail page → Publishes
+  → Students now see it in their timeline
+  → Instructor can unpublish, edit, or delete
+```
+
+### Files Created (6)
+```
+nexused-frontend/src/lib/graphql/queries/content.ts
+nexused-frontend/src/lib/graphql/mutations/content.ts
+nexused-frontend/src/components/courses/rich-text-editor.tsx
+nexused-frontend/src/components/courses/rich-text-viewer.tsx
+nexused-frontend/src/components/courses/content-editor-dialog.tsx
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/content/[contentId]/page.tsx
+```
+
+### Files Modified (8)
+```
+nexused-backend/src/modules/feed/dto/timeline.types.ts — Added CONTENT enum + publishedAt field
+nexused-backend/src/modules/feed/feed.module.ts — Imported ContentModule
+nexused-backend/src/modules/feed/feed.service.ts — Added content to timeline, isInstructor param
+nexused-backend/src/modules/feed/feed.resolver.ts — Pass isInstructor to getSectionTimeline
+nexused-frontend/src/lib/graphql/queries/timeline.ts — Added publishedAt field
+nexused-frontend/src/components/courses/timeline-entry-card.tsx — Added content type support
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added ContentEditorDialog + publishedAt
+nexused-frontend/src/app/globals.css — Typography plugin + Tiptap placeholder styles
+ROADMAP.md — Checked off final Phase 2 items
+```
+
+### Type-check Results
+- **Backend:** 0 new errors (pre-existing auth module type error unchanged)
+- **Frontend:** 0 errors
+
+### Phase 2 Status: COMPLETE
+All Phase 2 items are now checked off:
+- [x] Course content builder (rich text)
+- [x] Assignment creation/submission/grading
+- [x] Course roster
+- [x] Bulk operations (extend deadline, send announcement)
+- [x] Grades view + gradebook + statistics + CSV export
+- [x] Messaging (DMs, threads, unread indicators, contacts)
+- [x] Admin panel (user/term/catalog/enrollment management)
+
+### Next Session Priorities
+- **Phase 3: AI Intelligence Layer** — Feed ranking algorithm, study coach UI, instructor AI tools
+- Consider committing all uncommitted work before starting Phase 3
+
+---
+
+## Session 9 — Comprehensive Code Audit & Documentation Overhaul
+
+**Started:** 2026-02-06
+**Goal:** Three-round code audit, document findings, restructure project trajectory, research LMS landscape
+**Status:** COMPLETE
+
+### What Was Done
+
+**Round 1: Initial Assessment**
+- Comprehensive overview of NexusEd architecture and progress
+- Identified 11 critical issues across codebase
+- Identified 10 "Hidden Gem" differentiators (agentic loop, governance, cost tracking, etc.)
+
+**Round 2: Industry Best Practices**
+- Designed solutions for all 11 issues with industry standards
+- Researched dashboard UX → Decision: toggleable widgets, not drag-and-drop
+- Prioritized roadmap by impact
+
+**Round 3: Deep Infrastructure Audit**
+- Read every entity, service, resolver, guard, config, and CI file on main
+- Found 16 specific code issues:
+  - 4 P0 Security: No tenant scoping on findById, no auth on assignmentSubmissions, JWT in localStorage, zero database indexes
+  - 7 P1 Data: Missing tenantId on 4 entities, global email unique, no transactions, Apollo misconfigured, no error boundaries, `as any` casts
+  - 5 P2 Architecture: No base entities, no tenant interceptor, no DataLoader, vendor lock-in on Claude SDK, unused dependencies
+
+**LMS Landscape Research**
+- Competitor analysis: Canvas (API simplicity), Brightspace (adaptive analytics), Google Classroom (free/simple), Moodle (open source/plugins)
+- Student pain points: Broken notifications, instructor inconsistency, bad mobile UX, accessibility failures
+- Instructor pain: Gradebooks break at scale, repetitive manual labor, shallow analytics, painful migrations
+- Parent pain: FERPA blackout, "is my kid okay?" anxiety, March 2025 DOE guidance shift
+- Agentic AI market: Khanmigo limitations, Chegg collapse (99% stock decline), $199B market by 2034
+
+**Tech Stack Research**
+- NestJS: Keep, swap to Fastify adapter (3x performance)
+- TypeORM: Keep now, plan Drizzle ORM migration for Phase 4+
+- AI: Wrap Anthropic SDK behind provider abstraction, evaluate Vercel AI SDK
+- Monorepo: Add Turborepo + pnpm
+- Testing: Jest + Testcontainers + Playwright
+- Deployment: Railway/Neon/Upstash for early stage
+
+### Critical Finding: Session Log Discrepancy
+Sessions 7 (messaging) and 8 (content builder) are documented as COMPLETE but the code does NOT exist on main. These features need to be built from scratch. The session log specs can be used as design references.
+
+### 10x Differentiators Identified
+1. Production-grade agentic loop (AgentExecutor)
+2. Three-tier AI governance (auto/suggest/blocked)
+3. Per-tenant AI cost tracking
+4. Event-driven proactive AI architecture
+5. Declarative agent definitions
+6. Pedagogically defensible Study Coach
+7. Feed-first architecture
+8. Context snapshot prevents hallucination
+9. Tenant entity has SaaS billing model
+10. Unified timeline
+
+### Files Created
+- `BACKLOG.md` — Prioritized task list (4 P0, 7 P1, 6 P2, 4 P3, 14 features, 10 gems)
+- `STORY.md` — Project narrative with architecture diagram and competitive analysis
+- `TECH_STACK.md` — Technology decisions with rationale, migration paths, and decision records
+
+### Files Modified
+- `ROADMAP.md` — Complete rewrite with audit-informed trajectory (Phases 2.5→5)
+- `CLAUDE.md` — Added 3 sections: Infrastructure Standards, AI Module Architecture, Known Technical Debt
+- `README.md` — Updated tech stack versions, current status, project structure, documentation refs
+- `.claude/session-log.md` — This entry
+
+### Next Session Priorities
+1. Fix P0 security issues (SEC-001 through SEC-004) — See BACKLOG.md
+2. Fix P1 data issues (DATA-001 through DATA-007) — See BACKLOG.md
+3. Begin FEAT-001 (AI Chat UI) — The differentiator must be demo-able

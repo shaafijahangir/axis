@@ -1,165 +1,246 @@
 # NexusEd Development Roadmap
 
 > **Guiding filter:** Does this feature boost growth or eliminate noise? If not, it doesn't belong.
+>
+> **Task reference:** See [BACKLOG.md](./BACKLOG.md) for the detailed, prioritized task list with file references and acceptance criteria.
 
 ---
 
-## What's Done (Phase 0: Foundation)
+## Where We Are
 
-The scaffolding is in place. Both frontend and backend are wired up, authentication works, the database schema covers core entities, and the multi-tenant architecture is solid.
+### What's Built and Working (Merged to Main)
 
-- [x] Next.js 15 + NestJS project scaffolding
+**Phase 0 — Foundation** ✅
+- [x] Next.js 16 + NestJS project scaffolding
 - [x] Authentication system (JWT + bcrypt + Google OAuth)
-- [x] Multi-tenant foundation (schema-per-tenant, PostgreSQL RLS)
-- [x] Core database entities: Tenants, Users, Academic Terms, Courses, Course Sections, Enrollments, Assignments, Submissions
-- [x] GraphQL API with Apollo Server
+- [x] Multi-tenant foundation (Tenant entity with subscription plans, billing status, RLS)
+- [x] Core database entities (9 core + 3 AI = 12 total): Tenants, Users, Academic Terms, Courses, Course Sections, Enrollments, Assignments, Submissions, Announcements, AI Conversations, AI Messages, AI Usage Logs
+- [x] GraphQL API with Apollo Server 5
 - [x] Tenant CRUD operations
 - [x] Login and registration pages
 - [x] Base UI components (shadcn/ui)
 
----
-
-## Phase 1: The Feed and Navigation ✓
-
-**Goal:** Build the skeleton that every future feature plugs into. The home feed, the navigation architecture, and the course timeline view. This phase defines what NexusEd *feels* like.
-
-### Navigation Shell
-- [x] Role-based layout system (student, instructor, admin, parent get different shells)
-- [x] Student nav: Home, Courses, Messages + Profile avatar
-- [x] Instructor nav: Home, Courses, Messages + Profile avatar
-- [x] Admin nav: Home, People, Academics + Settings gear
-- [x] Parent nav: Home, Messages + Profile avatar
-- [x] Mobile-responsive navigation (bottom bar on mobile, sidebar on desktop)
-
-### Home Feed (Student)
-- [x] Feed component architecture
-- [x] Static feed with hardcoded priority items (deadlines, grades, announcements)
-- [x] Feed card types: deadline, grade posted, announcement, course update
-- [x] Empty state and loading states
-- [x] Relative time displays ("due in 4 hours", "graded yesterday")
-
-### Home Feed (Instructor)
-- [x] Submissions-to-grade queue
-- [x] Upcoming deadline reminders for courses you teach
-- [ ] Student flag alerts (placeholder for Phase 3 AI)
-
-### Course Timeline View
-- [x] Unified course view: content + assignments + discussions in one chronological stream
-- [x] Course header with key info (instructor, schedule, progress)
-- [x] Timeline entry types: lesson, assignment, discussion, announcement
+**Phase 1 — Feed & Navigation** ✅
+- [x] Role-based navigation shell (Student, Instructor, Admin, Parent — 3 nav items each)
+- [x] Mobile-responsive layout (bottom bar on mobile, sidebar on desktop)
+- [x] Student home feed with server-side aggregation and urgency ranking
+- [x] Instructor home feed (grading queue, deadline reminders)
+- [x] Admin home feed (stat cards)
+- [x] Unified course timeline (content + assignments + announcements in one stream)
 - [x] Assignment detail view with submission
 
----
-
-## Phase 2: Core Academic Features
-
-**Goal:** The platform works end-to-end for a real course. An instructor can create content and assignments. A student can view, submit, and get graded.
-
-### Course Management (Instructor)
-- [ ] Course content builder (rich text + file uploads)
-- [x] Assignment creation with due dates, rubrics, point values
-- [x] Assignment types: standard, quiz, discussion, project
-- [x] Course roster view
-- [ ] Bulk operations (extend deadline, send announcement to section)
-
-### Student Experience
-- [x] Assignment submission (file upload, text entry)
-- [x] Submission confirmation and status tracking
-- [ ] Grades view within course timeline
-- [ ] Overall grades summary (accessible from profile)
-
-### Gradebook (Instructor)
-- [ ] Gradebook as a view *inside* a course, not a standalone section
+**Phase 2 — Core Academic (Partial)** ⚠️
+- [x] Assignment creation (5 types: standard, quiz, exam, discussion, project)
+- [x] Assignment submission (text entry)
 - [x] Inline grading with rubric support
-- [ ] Grade statistics (mean, median, distribution)
-- [ ] Export grades (CSV)
+- [x] Course roster view
+- [x] Gradebook with statistics (mean, median, distribution)
+- [x] CSV grade export
+- [ ] ~~Messaging system~~ *(Session 7 log claimed complete, but code doesn't exist on main)*
+- [ ] ~~Content builder~~ *(Session 8 log claimed complete, but code doesn't exist on main)*
 
-### Messaging
-- [ ] Direct messaging between users within a tenant
-- [ ] Conversation threads
-- [ ] Unread indicators in nav
-- [ ] Role-appropriate contacts (students see instructors/TAs for their courses)
+**AI Module (Backend Only)** ✅
+- [x] AgentExecutor — Production-grade agentic loop with multi-turn tool use
+- [x] GovernanceService — Three-tier action types (auto/suggest/blocked) with rate limiting
+- [x] UsageTrackingService — Per-tenant AI cost tracking
+- [x] ToolRegistry — 16 tools (course, enrollment, assignment, grading, analytics)
+- [x] AgentRegistry — Study Coach + Feedback Copilot (declarative definitions)
+- [x] AiEventListener — 4 event handler stubs (logging-only, needs FEAT-002 to wire up)
+- [x] ContextService — Snapshot system to prevent hallucination
+- [ ] No frontend UI for AI features
 
-### Admin Panel
-- [ ] User management: create, edit, deactivate, assign roles
-- [ ] Academic term management
-- [ ] Course catalog management
-- [ ] Section creation and instructor assignment
-- [ ] Enrollment management (manual and bulk import)
+### What's NOT Built (Despite Session Log Claims)
+
+The session log documented Sessions 7 (messaging) and 8 (content builder) as COMPLETE, but the code does not exist on the main branch. These need to be built from scratch. The session log specs can be used as design references.
+
+### Infrastructure Audit Findings (Session 9)
+
+A comprehensive code audit found **4 P0 security issues**, **7 P1 data integrity issues**, and **5 P2 architecture improvements** needed. These are fully documented in [BACKLOG.md](./BACKLOG.md).
+
+**The audit also identified 10 "Hidden Gem" differentiators** — architectural decisions already in the codebase that competitors would need months to replicate. These are documented in [STORY.md](./STORY.md) and protected in the backlog.
 
 ---
 
-## Phase 3: AI Intelligence Layer
+## Phase 2.5: Infrastructure Hardening ← NEXT
 
-**Goal:** The platform gets smart. The feed becomes AI-prioritized. Instructors get AI-assisted tooling. Students get a study coach and course planner.
+**Estimated:** 1-2 weeks
+**Why before features:** FERPA compliance, institutional trust, and data integrity. An LMS that leaks student data across tenants or stores tokens insecurely will never be adopted by a university. Fix the foundation before building the floors.
 
-> **Critical:** This phase was originally Phase 3 but the AI prioritization engine should influence the feed from Phase 1 onward, even if it starts simple (rule-based before ML-based).
+### Security (P0 — Backlog SEC-001 through SEC-004)
+- [ ] Tenant scoping on all findById methods
+- [ ] Authorization on assignmentSubmissions query
+- [ ] JWT migration from localStorage to httpOnly cookies
+- [ ] Database indexes on all entities
 
-### Invisible AI (Priority Engine)
-- [ ] Feed ranking algorithm: score items by urgency, relevance, and student behavior
-- [ ] Smart deadline awareness (haven't started + due soon = high priority)
-- [ ] Grade change detection (new grade posted = surface immediately)
-- [ ] Announcement relevance scoring (course-specific > institution-wide)
-- [ ] Gradual migration from rule-based to ML-based ranking
+### Data Integrity (P1 — Backlog DATA-001 through DATA-007)
+- [ ] Add tenantId to Enrollment, Assignment, Submission, Announcement
+- [ ] Per-tenant email unique constraint
+- [ ] TypeORM transactions for multi-step operations
+- [ ] Apollo Client type policies and error link
+- [ ] Frontend error boundaries
+- [ ] Fix `as any` casts in feed.service.ts
 
-### AI Course Planner
+### Architecture Quick Wins (P2 — selected)
+- [ ] BaseEntity + TenantScopedEntity abstract classes (ARCH-001)
+- [ ] Remove unused @tanstack/react-query (ARCH-003)
+- [ ] Turborepo + pnpm monorepo setup (ARCH-006)
+
+### Outcome
+Every query is tenant-scoped, authorized, indexed, and transactional. The frontend gracefully handles errors. The monorepo builds in parallel with caching.
+
+---
+
+## Phase 3: Complete Core Experience
+
+**Estimated:** 3-4 weeks
+**Goal:** The platform works end-to-end for a real course with AI visible to users.
+
+### AI Chat UI (FEAT-001) — The Differentiator
+- [ ] Chat interface with message bubbles and streaming
+- [ ] Tool-use indicators (show when AI is looking up grades, checking enrollments)
+- [ ] Agent selector (Study Coach vs Feedback Copilot)
+- [ ] Conversation history
+- [ ] Integration into course view and standalone page
+
+### Messaging System (FEAT-003)
+- [ ] Conversation, Participant, Message entities
+- [ ] Enrollment-based contact resolution
+- [ ] Cursor-based message pagination
+- [ ] Read tracking with unread badges
+- [ ] Two-panel frontend (list + thread)
+
+### Content Builder (FEAT-004)
+- [ ] Content entity with rich text (Tiptap)
+- [ ] Draft/published workflow
+- [ ] Timeline integration
+- [ ] Instructor CRUD (create, edit, publish, unpublish, delete)
+
+### Real-time (FEAT-005)
+- [ ] Socket.IO gateway for messaging
+- [ ] SSE for AI response streaming
+- [ ] Feed push updates
+
+### Dashboard Widgets (FEAT-006)
+- [ ] Toggleable feed widgets (pin/unpin/collapse)
+- [ ] User preferences persistence
+
+### Test Foundation (TEST-001 through TEST-003)
+- [ ] Jest configuration and mock factories
+- [ ] Unit tests for GovernanceService, FeedService, AssignmentsService
+- [ ] Resolver integration tests for auth and tenant scoping
+
+### Outcome
+Students can chat with the Study Coach, message their instructors, view rich content in the timeline, and customize their feed. Instructors can create content and use Feedback Copilot. Critical paths have test coverage.
+
+---
+
+## Phase 4: AI Intelligence Layer
+
+**Estimated:** 3-4 weeks
+**Goal:** AI becomes proactive, intelligent, and configurable.
+
+### Wire Event Listeners (FEAT-002)
+- [ ] ENROLLMENT_CREATED → Study Coach welcome message
+- [ ] SUBMISSION_CREATED → FeedbackCopilot draft feedback
+- [ ] GRADE_UPDATED → Threshold alerts
+- [ ] ASSIGNMENT_CREATED → Rubric suggestions
+
+### Feed ML Ranking (FEAT-014)
+- [ ] Track user engagement signals (clicks, time-on-item, dismissals)
+- [ ] Replace rule-based ranking with behavior-based model
+- [ ] A/B testing framework
+
+### AI Course Planner (New Agent)
 - [ ] Student degree profile: major, completed courses, credits earned
 - [ ] Prerequisite chain analysis
 - [ ] "What should I take next semester?" recommendations
 - [ ] "How many credits until graduation?" calculator
 - [ ] "What if I change my major?" scenario modeling
-- [ ] Integration with institution's course catalog and scheduling
 
-### AI Study Coach
-- [ ] Socratic tutoring: asks questions instead of giving answers
-- [ ] Scoped to enrolled course content only
-- [ ] Context-aware: knows what the student is currently working on
-- [ ] Rate-limited: 50 interactions/day per student
-- [ ] Escalation: flags when a student seems significantly stuck
+### Instructor AI Tools
+- [ ] Syllabus-to-course-structure generator
+- [ ] Quiz auto-generation from course content
+- [ ] Feedback Copilot UI (review + approve AI-drafted feedback)
+- [ ] At-risk student detection (engagement pattern analysis)
 
-### AI for Instructors
-- [ ] Syllabus-to-course-structure generator (upload PDF, get course skeleton)
-- [ ] Quiz auto-generation from course materials
-- [ ] Feedback copilot: suggested rubric comments based on submission content
-- [ ] At-risk student detection: predictive alerts based on engagement patterns
+### AI Provider Abstraction (ARCH-005)
+- [ ] AiProvider interface
+- [ ] AnthropicProvider implementation
+- [ ] OpenAI fallback provider
 
-### AI Guardrails
-- [ ] Socratic method enforcement (never gives direct homework answers)
-- [ ] PII stripping before external API calls
-- [ ] Scope limitation to enrolled courses
-- [ ] Human review flags for edge-case interactions
-- [ ] Audit logging for all AI interactions
+### AI Governance Console (FEAT-012)
+- [ ] Admin UI for per-tenant AI settings
+- [ ] Tool action type configuration
+- [ ] Rate limit adjustment
+- [ ] Usage and cost dashboards
+- [ ] Audit log viewer
+
+### Outcome
+AI proactively engages with students. Instructors have AI-assisted tools. Administrators control AI behavior at the institutional level. The AI Course Planner — the feature that started this entire project — is live.
 
 ---
 
-## Phase 4: Polish and Scale
+## Phase 5: Production & Market Readiness
 
-**Goal:** Production-ready. Performance, accessibility, integrations, and the features that make institutions want to adopt NexusEd.
+**Estimated:** 4-6 weeks
+**Goal:** Ready for institutional pilots. Performance, accessibility, integrations, and the features that make procurement teams say yes.
 
-### Performance & Quality
-- [ ] Comprehensive test suite (unit, integration, e2e)
-- [ ] Performance optimization (lazy loading, caching, pagination)
-- [ ] Accessibility audit and WCAG 2.1 AA compliance
-- [ ] Error handling and graceful degradation
-- [ ] Offline-capable PWA for mobile
+### Database & Infrastructure
+- [ ] Database migrations — disable synchronize, generate baseline (FEAT-007)
+- [ ] NestJS Fastify adapter swap (3x throughput)
+- [ ] DataLoader for all GraphQL relations (ARCH-004)
+- [ ] Connection pooling
+- [ ] Global tenant interceptor (ARCH-002)
+
+### Compliance & Accessibility
+- [ ] WCAG 2.1 AA audit and fixes (FEAT-010)
+- [ ] FERPA compliance documentation
+- [ ] Accessibility linting in CI (axe-core)
 
 ### Integrations
-- [ ] LTI 1.3 for tool interoperability
+- [ ] LTI 1.3 provider + consumer (FEAT-011)
 - [ ] SAML 2.0 / institutional SSO
 - [ ] Calendar export (iCal)
-- [ ] Payment processing (Stripe) for tenant billing
+- [ ] Stripe billing integration
+
+### Mobile & Performance
+- [ ] PWA setup (FEAT-009)
+- [ ] Lazy loading and code splitting
+- [ ] Image optimization for course content
 
 ### Analytics & Reporting
+- [ ] Admin analytics dashboard (FEAT-008)
 - [ ] Student engagement analytics (for instructors)
-- [ ] Institution-wide reporting (for admins)
-- [ ] Course effectiveness metrics
-- [ ] AI usage and impact dashboards
+- [ ] AI usage and impact metrics
 
-### Parent Experience
-- [ ] Child progress dashboard
-- [ ] Grade notifications
-- [ ] Communication channel with instructors
-- [ ] Attendance visibility
+### Advanced Features
+- [ ] Agent Builder admin UI (FEAT-013)
+- [ ] Parent dashboard (child progress, grade notifications)
+- [ ] Playwright E2E tests for 5 critical flows (TEST-004)
+
+### Outcome
+NexusEd is production-ready, accessible, and integrates with institutional infrastructure. Ready for pilot deployments.
+
+---
+
+## 10x Differentiators
+
+Already built. These create the competitive moat. Competitors would need months to replicate any single one.
+
+| # | Differentiator | Why Competitors Can't Copy |
+|---|---------------|---------------------------|
+| 1 | Production-grade agentic loop | Requires rearchitecting their entire AI layer. Chatbot wrappers can't become agentic loops without a rewrite. |
+| 2 | Three-tier AI governance | Governance must be designed in, not bolted on. Retrofitting auto/suggest/blocked into existing systems breaks their APIs. |
+| 3 | Per-tenant AI cost tracking | Requires tenantId propagation through every AI call. Single-tenant architectures can't add this without restructuring. |
+| 4 | Event-driven proactive AI | Requires an event bus through every module. Adding events to a monolithic LMS means touching every feature. |
+| 5 | Declarative agent definitions | New agent = 30 lines of config. Competitors need engineering sprints to add each new AI feature. |
+| 6 | Pedagogically defensible Study Coach | Socratic enforcement at the architecture level. Other AI tutors just prompt-engineer and hope. |
+| 7 | Feed-first architecture | The entire UX is built around the feed. Competitors have dashboards they'd need to replace, not supplement. |
+| 8 | Context snapshot | Anti-hallucination by design. Other systems query live data, which changes between AI turns. |
+| 9 | SaaS billing in data model | Business model embedded in the tenant entity. Competitors build billing as an afterthought. |
+| 10 | Unified course timeline | Content + assignments + discussions in one stream. Competitors have separate tabs they can't merge without UX redesign. |
+
+> Full narrative: [STORY.md](./STORY.md)
 
 ---
 
@@ -168,7 +249,7 @@ The scaffolding is in place. Both frontend and backend are wired up, authenticat
 These architectural and design decisions are final and should not be revisited:
 
 | Decision | Rationale |
-|---|---|
+|----------|-----------|
 | Feed-first UX | The home feed is the product. Not a dashboard, not a file browser. |
 | 3 nav items per role (max 4 for admin) | If we need more, the information architecture is wrong. |
 | Unified course timeline | Content + assignments + discussions in one stream. No separate tabs. |
@@ -179,24 +260,27 @@ These architectural and design decisions are final and should not be revisited:
 | No standalone notification center | The feed *is* the notification center. Bell icon for quick glance only. |
 | No standalone announcements page | Announcements are feed items and course timeline entries. |
 | No standalone discussions section | Discussions live inside the course timeline. |
+| Dashboard = toggleable widgets | Pin/unpin/collapse. Not drag-and-drop (too complex, low ROI). |
+| httpOnly cookies for JWT | Not localStorage. Security is non-negotiable. |
+| Database indexes on every entity | Performance is not optional. Every entity gets `@Index`. |
+| tenantId on every data entity | Denormalization is correct here. No multi-join tenant scoping. |
+| AI provider abstraction | No direct SDK imports in feature code. Go through the abstraction. |
+| DataLoader for GraphQL relations | N+1 prevention is mandatory, not optional. |
+| Content format = Tiptap | Rich text editor with prose rendering. Decision made. |
 
 ---
 
 ## Open Questions
 
-Things we haven't decided yet and need to resolve:
-
 1. **Should the course view support both timeline and module views?** Timeline is the default, but some instructors may want to organize by topic/module. Do we support both or commit fully to timeline?
 
 2. **How does the parent role link to student accounts?** Invitation system? Verification? What prevents someone from claiming to be a parent?
 
-3. **What's the content format?** Rich text editor? Markdown? Block-based editor (like Notion)? This affects the entire content creation and viewing experience.
+3. **Tenant onboarding flow.** How does an institution get set up? Self-serve? Manual? What's the minimum configuration needed?
 
-4. **Tenant onboarding flow.** How does an institution get set up? Self-serve? Manual? What's the minimum configuration needed?
-
-5. **AI model strategy.** Claude primary, OpenAI fallback — but do we need a local model option for institutions with strict data residency requirements?
+4. **AI model strategy.** Claude primary, abstraction layer in place — but do we need a local model option for institutions with strict data residency requirements?
 
 ---
 
-*Last updated: January 2026*
-*This is a living document. Updated as decisions are made and priorities shift.*
+*Last updated: 2026-02-06 (Session 9 — Code Audit & Documentation Overhaul)*
+*Companion documents: [BACKLOG.md](./BACKLOG.md) | [STORY.md](./STORY.md) | [TECH_STACK.md](./TECH_STACK.md) | [MISSION.md](./MISSION.md)*

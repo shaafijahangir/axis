@@ -1,5 +1,25 @@
 # CLAUDE.md
 
+## Quick Start — "Chef Mode"
+
+When Shaafi says **"chef it up"**, **"start cooking"**, **"build"**, or any variation — this is the protocol:
+
+1. **Read the kitchen** — Scan these files in order:
+   - `.claude/session-log.md` → What was done last, what's the current state
+   - `BACKLOG.md` → The prioritized task list (P0 → P1 → P2 → P3 → Features)
+   - `ROADMAP.md` → The phase structure and what phase we're in
+2. **Pick up the next task** — Find the highest-priority `TODO` item in `BACKLOG.md`. P0 before P1. P1 before P2. Never skip priority levels.
+3. **Announce what you're cooking** — Tell Shaafi in 1-2 sentences what you're about to build and why it's the right next thing.
+4. **Cook** — Implement it fully. Production-quality. No placeholders. No "we'll add this later."
+5. **Update the log** — When done, update `BACKLOG.md` (mark task `DONE`) and `.claude/session-log.md` (add what was built).
+6. **Serve and move on** — Brief summary of what was done, then immediately pick up the next task. Don't wait for permission to continue.
+
+If Shaafi gives a **specific task** (e.g., "build the AI chat UI"), do that instead of the backlog order — but still follow the same read-first, announce, cook, update pattern.
+
+If Shaafi says **"what's next?"** — read the backlog, tell him the top 3 pending tasks with a one-line explanation each, and recommend which to start.
+
+---
+
 ## Your Role
 
 You are a **principal software architect and senior engineer** mentoring a junior developer (Shaafi) on building NexusEd. You do **90% of the implementation work** while teaching along the way.
@@ -58,12 +78,14 @@ Both projects require `npm install` in their respective directories. Run `npm in
 
 ### Backend (NestJS + GraphQL)
 - **API**: GraphQL at `/api/graphql` (Apollo Server) with auto-generated schema at `src/schema.gql`. REST is used only for auth endpoints (`/api/auth/login`, `/api/auth/register`).
-- **Modules**: Feature-based NestJS modules under `src/modules/` — `auth`, `users`, `courses`. The `tenant` module lives at `src/tenant/`.
-- **Database**: PostgreSQL with TypeORM. Entities live in `src/database/entities/`. Schema sync is on (no migration files yet).
+- **Modules**: Feature-based NestJS modules under `src/modules/` — `auth`, `users`, `courses`, `assignments`, `announcements`, `feed`, `ai`. The `tenant` module lives at `src/tenant/`.
+- **Database**: PostgreSQL with TypeORM. Entities live in `src/database/entities/` (9 core entities) and `src/modules/ai/entities/` (3 AI entities). Schema sync is on (no migration files yet).
 - **Auth**: JWT via Passport.js. `JwtAuthGuard` handles both HTTP and GraphQL contexts. `RolesGuard` checks roles from the `@Roles()` decorator. `@CurrentUser()` extracts the authenticated user from either context type.
 - **User Roles**: `STUDENT`, `INSTRUCTOR`, `ADMIN`, `PARENT`, `TA` — stored as a PostgreSQL enum array on the user entity.
 - **Multi-tenancy**: Tenant entity with domain/subdomain. All major entities have a `tenantId` foreign key.
-- **Config**: `src/config/` contains typed config files for app, database, and auth settings loaded from environment variables via `@nestjs/config`.
+- **AI Module**: AgentExecutor (multi-turn agentic loop), GovernanceService (auto/suggest/blocked action types), UsageTrackingService, ContextService, ToolRegistry (16 tools), AgentRegistry (Study Coach + Feedback Copilot), AiEventListener (4 event handlers). See "AI Module Architecture" section below.
+- **Config**: `src/config/` contains typed config files for app, database, auth, and AI settings loaded from environment variables via `@nestjs/config`.
+- **Events**: EventEmitter2 with 10 typed events (`ai-events.ts`) for cross-module communication (enrollment, submission, grading, AI triggers).
 
 ### Frontend (Next.js 16 + App Router)
 - **Route Groups**: `(auth)` for public login/register pages, `(dashboard)` for protected pages. Dashboard routes are role-specific: `/student`, `/instructor`, `/admin`, plus `/courses`.
@@ -126,6 +148,150 @@ Required in `nexused-backend/.env`:
 - **PR review**: Use Claude Code locally with `gh pr diff <number>` for review
 - **CI**: GitHub Actions runs lint, typecheck, test, and build on PRs
 
+---
+
+## Infrastructure Standards
+
+> Codified from the Session 9 code audit. ALL future code must follow these.
+
+### Database Indexes (MANDATORY)
+Every entity must have `@Index` decorators. Minimum indexes per entity:
+- `tenantId` — on every tenant-scoped entity
+- Foreign keys used in WHERE clauses (`userId`, `sectionId`, `assignmentId`)
+- Composite unique constraints where needed (`['email', 'tenantId']`)
+- Timestamp fields used in ordering (`dueAt`, `createdAt`)
+
+```typescript
+// CORRECT
+@Entity('assignments')
+@Index(['tenantId'])
+@Index(['sectionId'])
+@Index(['dueAt'])
+export class Assignment extends TenantScopedEntity { ... }
+
+// WRONG — no indexes
+@Entity('assignments')
+export class Assignment { ... }
+```
+
+### Tenant Scoping (MANDATORY)
+Every `findById`, `findOne`, and `find` query on tenant-scoped data MUST include `tenantId` in the WHERE clause. No exceptions.
+
+```typescript
+// CORRECT
+async findById(id: string, tenantId: string): Promise<Assignment> {
+  return this.repo.findOneOrFail({ where: { id, tenantId } });
+}
+
+// WRONG — cross-tenant data leak
+async findById(id: string): Promise<Assignment> {
+  return this.repo.findOneOrFail({ where: { id } });
+}
+```
+
+### Transactions (MANDATORY)
+Multi-step database operations (2+ writes) MUST use TypeORM `manager.transaction()`. Never leave related writes outside a transaction.
+
+```typescript
+// CORRECT
+async gradeSubmission(graderId: string, input: GradeSubmissionInput) {
+  return this.dataSource.manager.transaction(async (manager) => {
+    const submission = await manager.findOneOrFail(Submission, { where: { id: input.submissionId } });
+    submission.score = input.score;
+    await manager.save(submission);
+    // Additional writes happen atomically
+  });
+}
+```
+
+### Authorization on Queries
+Guards (`@Roles()`) verify the user's role. But they don't verify the user has access to the *specific resource*. Every query that returns tenant-scoped data must also verify resource-level access.
+
+```typescript
+// WRONG — role check only, any instructor sees any assignment's submissions
+@Roles(UserRole.INSTRUCTOR)
+async assignmentSubmissions(@Args('assignmentId') id: string) { ... }
+
+// CORRECT — verify the instructor teaches this section
+@Roles(UserRole.INSTRUCTOR)
+async assignmentSubmissions(@CurrentUser() user: User, @Args('assignmentId') id: string) {
+  const assignment = await this.findById(id, user.tenantId);
+  await this.verifyInstructorAccess(user.id, assignment.sectionId);
+  return this.findSubmissions(id);
+}
+```
+
+### DataLoader Pattern
+All nested GraphQL field resolvers that load related entities must use DataLoader to prevent N+1 queries.
+
+```typescript
+@Injectable({ scope: Scope.REQUEST })
+export class UserLoader {
+  constructor(private usersService: UsersService) {}
+
+  readonly loader = new DataLoader<string, User>(async (ids) => {
+    const users = await this.usersService.findByIds([...ids]);
+    const map = new Map(users.map(u => [u.id, u]));
+    return ids.map(id => map.get(id));
+  });
+}
+```
+
+---
+
+## AI Module Architecture
+
+> Quick reference so Claude doesn't rebuild what exists. Read this before touching anything in `src/modules/ai/`.
+
+### Components
+| Component | File | Purpose |
+|-----------|------|---------|
+| AgentExecutor | `agent-executor.service.ts` | Multi-turn agentic loop: send → tool_use → execute → result → repeat |
+| GovernanceService | `governance.service.ts` | Three-tier permission check (auto/suggest/blocked) + rate limiting + daily token budgets |
+| UsageTrackingService | AI entities | Logs every AI interaction with tenantId, agentType, token counts, estimated USD |
+| ContextService | Context service + JSONB | Snapshots student's academic state at conversation start (anti-hallucination) |
+| ToolRegistry | `tool-registry.ts` | Map-based registry. 16 tools registered on module init. Register/get/execute/toClaudeFormat |
+| AgentRegistry | `ai.module.ts` OnModuleInit | 2 agents defined declaratively: Study Coach (Socratic), Feedback Copilot |
+| AiEventListener | `ai-event.listener.ts` | 4 handler stubs listening to EventEmitter2 events. Currently logging-only (FEAT-002 to wire up). |
+
+### Rules
+- **Never import `@anthropic-ai/sdk` directly** in feature code. Go through `AiService` or the provider abstraction (ARCH-005).
+- **Tool creation pattern**: Factory function that closes over injected NestJS services. Each tool is ~30 lines. See `createCourseTools()` in the ai module.
+- **Agent definitions are TypeScript objects**, not classes. Adding a new agent = 30 lines of config (name, systemPrompt, tools, constraints).
+- **Governance checks happen before every tool execution**. The `GovernanceService.checkToolPermission()` call is mandatory.
+
+### Event Types (from `ai-events.ts`)
+`COURSE_CREATED`, `COURSE_UPDATED`, `SECTION_CREATED`, `ENROLLMENT_CREATED`, `ASSIGNMENT_CREATED`, `SUBMISSION_CREATED`, `SUBMISSION_GRADED`, `GRADE_UPDATED`, `AI_CONVERSATION_STARTED`, `AI_TOOL_INVOKED`
+
+---
+
+## Known Technical Debt
+
+> Tracked in detail in [BACKLOG.md](./BACKLOG.md). This is the summary reference.
+
+| Issue | Backlog ID | Severity |
+|-------|-----------|----------|
+| JWT in localStorage (XSS vulnerable) | SEC-003 | P0 |
+| No database indexes on any entity | SEC-004 | P0 |
+| No tenant scoping on findById methods | SEC-001 | P0 |
+| No auth on assignmentSubmissions query | SEC-002 | P0 |
+| Missing tenantId on 4 entities | DATA-001 | P1 |
+| Email globally unique (should be per-tenant) | DATA-002 | P1 |
+| No transactions on multi-step writes | DATA-003 | P1 |
+| Apollo Client misconfigured (no type policies) | DATA-004 | P1 |
+| `as any` casts in feed.service.ts | DATA-007 | P1 |
+| No base entities (code duplication) | ARCH-001 | P2 |
+| Direct Anthropic SDK imports (vendor lock-in) | ARCH-005 | P2 |
+| @tanstack/react-query installed but unused | ARCH-003 | P2 |
+| Event listener handlers are logging-only stubs | FEAT-002 | Feature |
+| Messaging system not built (session log incorrect) | FEAT-003 | Feature |
+| Content builder not built (session log incorrect) | FEAT-004 | Feature |
+| Only 1 test file exists (scaffold default) | TEST-001 | P3 |
+
+---
+
 ## Session Memory
 
 **IMPORTANT:** Before starting any multi-step implementation, read `.claude/session-log.md` for context on what was last done. After completing each task, update that file with current status. This prevents lost progress on interruptions.
+
+**ALSO:** Read [BACKLOG.md](./BACKLOG.md) for the prioritized task list. Pick the highest-priority `TODO` item and work on it. Update status to `IN_PROGRESS` when starting, `DONE` when finished.
