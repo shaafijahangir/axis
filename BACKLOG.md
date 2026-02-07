@@ -146,10 +146,11 @@
 - **Acceptance:** Expired token → automatic redirect to login page with no user confusion.
 
 ### DATA-006: Add frontend error boundaries
-- **Status:** `TODO`
-- **Files:** Create `error.tsx` in `(dashboard)` and `(auth)` route groups
+- **Status:** `DONE`
+- **Completed:** 2026-02-07
+- **Files:** `(dashboard)/error.tsx`, `(auth)/error.tsx`
 - **Problem:** Unhandled React errors crash the entire app with a white screen. No recovery option.
-- **Fix:** Add Next.js `error.tsx` files in each route group. Display a friendly error message with a "Try again" button.
+- **Fix:** Added Next.js `error.tsx` files in each route group. Display friendly error message with "Try again" button. Shows error details in development mode.
 - **Acceptance:** Any uncaught error in a route group shows a recoverable error page instead of a white screen.
 
 ### DATA-007: Fix `as any` casts in feed.service.ts
