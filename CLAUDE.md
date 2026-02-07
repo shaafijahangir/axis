@@ -169,8 +169,9 @@ Required in `nexused-backend/.env`:
 2. Make commits as you work (multiple commits per branch is fine)
 3. Push branch: `git push -u origin feat/ai-chat-ui`
 4. Create PR: `gh pr create --title "feat: AI Chat UI (FEAT-001)" --body "..."`
-5. Share PR link with Shaafi for review
-6. After approval, merge: `gh pr merge --squash` or let Shaafi merge
+5. **Immediately merge the PR yourself**: `gh pr merge --squash --delete-branch`
+6. Pull main: `git checkout main && git pull origin main`
+7. Continue with the next task (don't leave PRs open and forget about them)
 
 **PR title format:**
 ```
