@@ -1,15 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
-import { Tenant } from './tenant.entity';
+import { TenantScopedEntity } from './base.entity';
 import { CourseSection } from './course-section.entity';
 import { User } from './user.entity';
 
@@ -29,19 +20,7 @@ registerEnumType(AnnouncementPriority, { name: 'AnnouncementPriority' });
 @Index(['tenantId'])
 @Index(['sectionId'])
 @Index(['createdAt'])
-export class Announcement {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field()
-  @Column()
-  tenantId: string;
-
-  @ManyToOne(() => Tenant)
-  @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
-
+export class Announcement extends TenantScopedEntity {
   @Field()
   @Column()
   sectionId: string;
@@ -79,12 +58,4 @@ export class Announcement {
   @Field()
   @Column({ default: false })
   pinned: boolean;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

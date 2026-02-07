@@ -1,15 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
-import { Tenant } from './tenant.entity';
+import { TenantScopedEntity } from './base.entity';
 import { User } from './user.entity';
 import { CourseSection } from './course-section.entity';
 
@@ -40,19 +31,7 @@ registerEnumType(EnrollmentStatus, { name: 'EnrollmentStatus' });
 @Index(['sectionId'])
 @Index(['userId', 'sectionId'], { unique: true })
 @Index(['status'])
-export class Enrollment {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field()
-  @Column()
-  tenantId: string;
-
-  @ManyToOne(() => Tenant)
-  @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
-
+export class Enrollment extends TenantScopedEntity {
   @Field()
   @Column()
   userId: string;
@@ -98,12 +77,4 @@ export class Enrollment {
   @Field({ nullable: true })
   @Column({ type: 'varchar', length: 2, nullable: true })
   finalGrade: string;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
