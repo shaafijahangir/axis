@@ -48,11 +48,13 @@ export class AnnouncementsService {
   }
 
   async create(
+    tenantId: string,
     authorId: string,
     input: CreateAnnouncementInput,
   ): Promise<Announcement> {
     const announcement = this.announcementRepo.create({
       ...input,
+      tenantId,
       authorId,
     });
     return this.announcementRepo.save(announcement);

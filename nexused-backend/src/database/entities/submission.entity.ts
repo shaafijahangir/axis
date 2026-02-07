@@ -9,11 +9,17 @@ import {
   Index,
 } from 'typeorm';
 import { ObjectType, Field, Float, Int } from '@nestjs/graphql';
+import { Tenant } from './tenant.entity';
 import { Assignment } from './assignment.entity';
 import { User } from './user.entity';
 
+/**
+ * DATA-001: Added tenantId for direct tenant filtering without joins.
+ * WHY: Previously required joining assignment → section → course to get tenantId.
+ */
 @ObjectType()
 @Entity('submissions')
+@Index(['tenantId'])
 @Index(['assignmentId'])
 @Index(['userId'])
 @Index(['assignmentId', 'userId'])
@@ -21,6 +27,14 @@ export class Submission {
   @Field()
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Field()
+  @Column()
+  tenantId: string;
+
+  @ManyToOne(() => Tenant)
+  @JoinColumn({ name: 'tenantId' })
+  tenant: Tenant;
 
   @Field()
   @Column()

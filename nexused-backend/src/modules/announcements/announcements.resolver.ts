@@ -28,6 +28,6 @@ export class AnnouncementsResolver {
     @CurrentUser() user: User,
     @Args('input') input: CreateAnnouncementInput,
   ): Promise<Announcement> {
-    return this.announcementsService.create(user.id, input);
+    return this.announcementsService.create(user.tenantId, user.id, input);
   }
 }

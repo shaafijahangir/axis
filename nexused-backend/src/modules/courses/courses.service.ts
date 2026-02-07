@@ -155,27 +155,25 @@ export class CoursesService {
       .getMany();
   }
 
-  async enrollStudent(userId: string, sectionId: string): Promise<Enrollment> {
+  async enrollStudent(
+    tenantId: string,
+    userId: string,
+    sectionId: string,
+  ): Promise<Enrollment> {
     const enrollment = this.enrollmentsRepository.create({
+      tenantId,
       userId,
       sectionId,
       enrolledAt: new Date(),
     });
     const saved = await this.enrollmentsRepository.save(enrollment);
 
-    // Look up section → course to get tenantId for the event
-    const section = await this.sectionsRepository.findOne({
-      where: { id: sectionId },
-      relations: ['course'],
+    this.eventEmitter.emit(NexusEvents.ENROLLMENT_CREATED, {
+      enrollmentId: saved.id,
+      userId,
+      sectionId,
+      tenantId,
     });
-    if (section?.course) {
-      this.eventEmitter.emit(NexusEvents.ENROLLMENT_CREATED, {
-        enrollmentId: saved.id,
-        userId,
-        sectionId,
-        tenantId: section.course.tenantId,
-      });
-    }
 
     return saved;
   }
@@ -341,7 +339,10 @@ export class CoursesService {
     return true;
   }
 
-  async adminEnroll(input: AdminEnrollInput): Promise<Enrollment> {
+  async adminEnroll(
+    tenantId: string,
+    input: AdminEnrollInput,
+  ): Promise<Enrollment> {
     // Check for duplicate enrollment
     const existing = await this.enrollmentsRepository.findOne({
       where: { userId: input.userId, sectionId: input.sectionId },
@@ -351,6 +352,7 @@ export class CoursesService {
     }
 
     const enrollment = this.enrollmentsRepository.create({
+      tenantId,
       userId: input.userId,
       sectionId: input.sectionId,
       role: input.role ?? EnrollmentRole.STUDENT,
@@ -387,7 +389,10 @@ export class CoursesService {
     });
   }
 
-  async bulkEnroll(input: BulkEnrollInput): Promise<Enrollment[]> {
+  async bulkEnroll(
+    tenantId: string,
+    input: BulkEnrollInput,
+  ): Promise<Enrollment[]> {
     // Check for existing enrollments to avoid duplicates
     const existing = await this.enrollmentsRepository.find({
       where: {
@@ -404,6 +409,7 @@ export class CoursesService {
 
     const enrollments = newUserIds.map((userId) =>
       this.enrollmentsRepository.create({
+        tenantId,
         userId,
         sectionId: input.sectionId,
         role: input.role ?? EnrollmentRole.STUDENT,

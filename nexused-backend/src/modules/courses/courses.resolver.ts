@@ -114,6 +114,6 @@ export class CoursesResolver {
     @CurrentUser() user: User,
     @Args('sectionId') sectionId: string,
   ): Promise<Enrollment> {
-    return this.coursesService.enrollStudent(user.id, sectionId);
+    return this.coursesService.enrollStudent(user.tenantId, user.id, sectionId);
   }
 }

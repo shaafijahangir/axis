@@ -64,9 +64,13 @@ export class AssignmentsService {
     return assignment;
   }
 
-  async create(input: CreateAssignmentInput): Promise<Assignment> {
+  async create(
+    tenantId: string,
+    input: CreateAssignmentInput,
+  ): Promise<Assignment> {
     const assignment = this.assignmentRepo.create({
       ...input,
+      tenantId,
       dueAt: input.dueAt ? new Date(input.dueAt) : undefined,
       unlockAt: input.unlockAt ? new Date(input.unlockAt) : undefined,
       lockAt: input.lockAt ? new Date(input.lockAt) : undefined,
@@ -75,16 +79,10 @@ export class AssignmentsService {
     });
     const saved = await this.assignmentRepo.save(assignment);
 
-    // Get tenantId from the section's course
-    const section = await this.sectionRepo.findOne({
-      where: { id: input.sectionId },
-      relations: ['course'],
-    });
-
     this.eventEmitter.emit(NexusEvents.ASSIGNMENT_CREATED, {
       assignmentId: saved.id,
       sectionId: input.sectionId,
-      tenantId: section?.course?.tenantId || '',
+      tenantId,
       title: saved.title,
     });
 
@@ -199,6 +197,7 @@ export class AssignmentsService {
     });
 
     const submission = this.submissionRepo.create({
+      tenantId,
       assignmentId: input.assignmentId,
       userId,
       attempt: existingCount + 1,

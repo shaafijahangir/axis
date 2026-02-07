@@ -59,8 +59,9 @@ export function createEnrollmentTools(
         },
         required: ['userId', 'sectionId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
         const enrollment = await coursesService.enrollStudent(
+          ctx.tenantId,
           input.userId as string,
           input.sectionId as string,
         );

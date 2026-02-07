@@ -86,9 +86,10 @@ export class AdminCoursesResolver {
 
   @Mutation(() => Enrollment)
   async adminEnroll(
+    @CurrentUser() user: User,
     @Args('input') input: AdminEnrollInput,
   ): Promise<Enrollment> {
-    return this.coursesService.adminEnroll(input);
+    return this.coursesService.adminEnroll(user.tenantId, input);
   }
 
   @Mutation(() => Enrollment)
@@ -102,8 +103,9 @@ export class AdminCoursesResolver {
 
   @Mutation(() => [Enrollment])
   async bulkEnroll(
+    @CurrentUser() user: User,
     @Args('input') input: BulkEnrollInput,
   ): Promise<Enrollment[]> {
-    return this.coursesService.bulkEnroll(input);
+    return this.coursesService.bulkEnroll(user.tenantId, input);
   }
 }

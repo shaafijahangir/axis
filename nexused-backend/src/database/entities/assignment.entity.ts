@@ -9,6 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { ObjectType, Field, Float, registerEnumType } from '@nestjs/graphql';
+import { Tenant } from './tenant.entity';
 import { CourseSection } from './course-section.entity';
 
 export enum AssignmentType {
@@ -21,14 +22,27 @@ export enum AssignmentType {
 
 registerEnumType(AssignmentType, { name: 'AssignmentType' });
 
+/**
+ * DATA-001: Added tenantId for direct tenant filtering without joins.
+ * WHY: Previously required joining section → course to get tenantId.
+ */
 @ObjectType()
 @Entity('assignments')
+@Index(['tenantId'])
 @Index(['sectionId'])
 @Index(['dueAt'])
 export class Assignment {
   @Field()
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Field()
+  @Column()
+  tenantId: string;
+
+  @ManyToOne(() => Tenant)
+  @JoinColumn({ name: 'tenantId' })
+  tenant: Tenant;
 
   @Field()
   @Column()

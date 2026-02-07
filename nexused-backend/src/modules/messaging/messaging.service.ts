@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Conversation } from './entities/conversation.entity';
 import { ConversationParticipant } from './entities/conversation-participant.entity';
 import { DirectMessage } from './entities/direct-message.entity';
@@ -36,6 +36,7 @@ export class MessagingService {
     private enrollmentRepo: Repository<Enrollment>,
     @InjectRepository(CourseSection)
     private sectionRepo: Repository<CourseSection>,
+    private dataSource: DataSource,
   ) {}
 
   /**
@@ -201,6 +202,9 @@ export class MessagingService {
 
   /**
    * Find existing 1:1 conversation between two users, or create one.
+   *
+   * DATA-003: Uses transaction to ensure conversation + participants are created atomically.
+   * WHY: If participant creation fails, we'd have an orphaned conversation.
    */
   async getOrCreateConversation(
     userId: string,
@@ -234,23 +238,37 @@ export class MessagingService {
 
     if (existing) return existing;
 
-    // Create new conversation
-    const conversation = this.conversationRepo.create({ tenantId });
-    const saved = await this.conversationRepo.save(conversation);
+    // Create new conversation + participants in a transaction
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Add both participants
-    await this.participantRepo.save([
-      this.participantRepo.create({
-        conversationId: saved.id,
-        userId,
-      }),
-      this.participantRepo.create({
-        conversationId: saved.id,
-        userId: recipientId,
-      }),
-    ]);
+    try {
+      const conversation = queryRunner.manager.create(Conversation, {
+        tenantId,
+      });
+      const saved = await queryRunner.manager.save(conversation);
 
-    return saved;
+      const participants = [
+        queryRunner.manager.create(ConversationParticipant, {
+          conversationId: saved.id,
+          userId,
+        }),
+        queryRunner.manager.create(ConversationParticipant, {
+          conversationId: saved.id,
+          userId: recipientId,
+        }),
+      ];
+      await queryRunner.manager.save(participants);
+
+      await queryRunner.commitTransaction();
+      return saved;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /**
@@ -301,6 +319,9 @@ export class MessagingService {
 
   /**
    * Send a message to an existing conversation.
+   *
+   * DATA-003: Uses transaction to ensure message + updates are atomic.
+   * WHY: Message save, conversation update, and participant update must all succeed or fail together.
    */
   async sendMessage(
     conversationId: string,
@@ -310,29 +331,43 @@ export class MessagingService {
   ): Promise<DirectMessage> {
     await this.verifyParticipant(conversationId, senderId, tenantId);
 
-    const message = this.messageRepo.create({
-      conversationId,
-      senderId,
-      content,
-    });
-    const saved = await this.messageRepo.save(message);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Bump conversation's updatedAt
-    await this.conversationRepo.update(conversationId, {
-      updatedAt: new Date(),
-    });
+    try {
+      const message = queryRunner.manager.create(DirectMessage, {
+        conversationId,
+        senderId,
+        content,
+      });
+      const saved = await queryRunner.manager.save(message);
 
-    // Auto-mark as read for the sender
-    await this.participantRepo.update(
-      { conversationId, userId: senderId },
-      { lastReadAt: new Date() },
-    );
+      // Bump conversation's updatedAt
+      await queryRunner.manager.update(Conversation, conversationId, {
+        updatedAt: new Date(),
+      });
 
-    // Return with sender relation loaded
-    return this.messageRepo.findOne({
-      where: { id: saved.id },
-      relations: ['sender'],
-    }) as Promise<DirectMessage>;
+      // Auto-mark as read for the sender
+      await queryRunner.manager.update(
+        ConversationParticipant,
+        { conversationId, userId: senderId },
+        { lastReadAt: new Date() },
+      );
+
+      await queryRunner.commitTransaction();
+
+      // Return with sender relation loaded (outside transaction - read only)
+      return this.messageRepo.findOne({
+        where: { id: saved.id },
+        relations: ['sender'],
+      }) as Promise<DirectMessage>;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /**

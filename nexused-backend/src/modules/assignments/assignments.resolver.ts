@@ -100,9 +100,10 @@ export class AssignmentsResolver {
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
   async createAssignment(
+    @CurrentUser() user: User,
     @Args('input') input: CreateAssignmentInput,
   ): Promise<Assignment> {
-    return this.assignmentsService.create(input);
+    return this.assignmentsService.create(user.tenantId, input);
   }
 
   @Mutation(() => Assignment)
