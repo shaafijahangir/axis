@@ -294,15 +294,19 @@
 - **Acceptance:** Student can open Study Coach, ask a question about their enrolled course, and get a Socratic response with visible tool usage.
 
 ### FEAT-002: Wire AI event listener to invoke agents
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-09
 - **Priority:** HIGH — Event stubs exist but only log. This is what makes AI proactive.
-- **File:** `ai-event.listener.ts`
-- **Details:** Replace logging stubs with actual agent invocations:
-  - `ENROLLMENT_CREATED` → Study Coach sends welcome message
-  - `SUBMISSION_CREATED` → FeedbackCopilot drafts rubric feedback
-  - `GRADE_UPDATED` → Check if grade drops below threshold, alert student
-  - `ASSIGNMENT_CREATED` → Suggest rubric improvements
-- **Acceptance:** Submitting an assignment triggers FeedbackCopilot to draft feedback. Enrolling triggers a Study Coach welcome. These happen asynchronously via BullMQ.
+- **Files Modified:**
+  - `src/modules/ai/events/ai-event.listener.ts` — Full implementation
+  - `src/modules/ai/ai.module.ts` — Added CourseSection to TypeORM imports
+- **Details:** Replaced logging stubs with actual agent invocations:
+  - `ENROLLMENT_CREATED` → StudyCoach sends personalized welcome message
+  - `SUBMISSION_CREATED` → FeedbackCopilot drafts rubric-aligned feedback for instructor
+  - `GRADE_UPDATED` → Checks if score < 60%, triggers StudyCoach support if below
+  - `ASSIGNMENT_CREATED` → Placeholder for future CourseBuilder agent
+- **Pattern:** Fire-and-forget async handlers — errors are logged but don't block the main action (enrollment/submission/grading succeeds even if AI fails).
+- **Acceptance:** ✓ Submitting an assignment triggers FeedbackCopilot. ✓ Enrolling triggers StudyCoach welcome. ✓ Low grades trigger StudyCoach support. All async.
 
 ### FEAT-003: Build messaging system (from Session 7 spec)
 - **Status:** `DONE`
@@ -397,5 +401,5 @@
 
 ---
 
-*Last updated: 2026-02-09 (Session 13 — TEST-001 and TEST-002 completed, 101 tests passing)*
+*Last updated: 2026-02-09 (Session 13 — TEST-001, TEST-002, FEAT-002 completed, proactive AI wired)*
 *This file is the primary task reference for all development sessions.*

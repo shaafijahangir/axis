@@ -8,9 +8,10 @@ import { AiConversation } from './entities/ai-conversation.entity';
 import { AiMessage } from './entities/ai-message.entity';
 import { AiUsageLog } from './entities/ai-usage-log.entity';
 
-// Domain entities (for tools + context)
+// Domain entities (for tools + context + event listener)
 import { User } from '../../database/entities/user.entity';
 import { Course } from '../../database/entities/course.entity';
+import { CourseSection } from '../../database/entities/course-section.entity';
 import { Enrollment } from '../../database/entities/enrollment.entity';
 import { Assignment } from '../../database/entities/assignment.entity';
 import { Submission } from '../../database/entities/submission.entity';
@@ -69,6 +70,7 @@ import { CoursesService } from '../courses/courses.service';
       AiUsageLog,
       User,
       Course,
+      CourseSection,
       Enrollment,
       Assignment,
       Submission,
