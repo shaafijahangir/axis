@@ -16,6 +16,10 @@ import { Assignment } from '../../database/entities/assignment.entity';
 import { Submission } from '../../database/entities/submission.entity';
 import { Tenant } from '../../database/entities/tenant.entity';
 
+// AI provider abstraction
+import { AI_PROVIDER } from './providers/ai-provider.interface';
+import { AnthropicProvider } from './providers/anthropic.provider';
+
 // AI services
 import { AiService } from './ai.service';
 import { ContextService } from './context.service';
@@ -73,7 +77,14 @@ import { CoursesService } from '../courses/courses.service';
     CoursesModule,
   ],
   providers: [
-    AiService,
+    // AI Provider abstraction — Anthropic is the default implementation
+    AnthropicProvider,
+    {
+      provide: AI_PROVIDER,
+      useExisting: AnthropicProvider,
+    },
+    // Services
+    AiService, // Kept for backward compatibility, delegates to provider
     ContextService,
     GovernanceService,
     UsageTrackingService,
@@ -84,7 +95,9 @@ import { CoursesService } from '../courses/courses.service';
     AiEventListener,
   ],
   exports: [
-    AiService,
+    AI_PROVIDER,
+    AnthropicProvider,
+    AiService, // Deprecated — use AI_PROVIDER injection token instead
     AgentExecutorService,
     ToolRegistry,
     AgentRegistry,
