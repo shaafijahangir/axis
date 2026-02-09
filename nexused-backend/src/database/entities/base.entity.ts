@@ -7,7 +7,6 @@ import {
   Column,
 } from 'typeorm';
 import { Field, ObjectType } from '@nestjs/graphql';
-import { Tenant } from './tenant.entity';
 
 /**
  * ARCH-001: Base entity with common fields.
@@ -46,7 +45,8 @@ export abstract class TenantScopedEntity extends BaseEntity {
   @Column()
   tenantId: string;
 
-  @ManyToOne(() => Tenant)
+  // Use string reference to avoid circular import with Tenant entity
+  @ManyToOne('Tenant')
   @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
+  tenant: any;
 }
