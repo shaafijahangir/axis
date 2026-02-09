@@ -1,9 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import Anthropic from '@anthropic-ai/sdk';
-import { AiService, AiResponse } from './ai.service';
+import type { AiProvider } from './providers/ai-provider.interface';
+import {
+  AI_PROVIDER,
+  AiMessage as ProviderMessage,
+  AiContentBlock,
+  AiToolResultBlock,
+  AiTextBlock,
+  AiToolUseBlock,
+} from './providers/ai-provider.interface';
 import { ContextService } from './context.service';
 import { GovernanceService } from './governance.service';
 import { UsageTrackingService } from './usage-tracking.service';
@@ -70,7 +77,7 @@ export class AgentExecutorService {
   private readonly logger = new Logger(AgentExecutorService.name);
 
   constructor(
-    private aiService: AiService,
+    @Inject(AI_PROVIDER) private aiProvider: AiProvider,
     private contextService: ContextService,
     private governanceService: GovernanceService,
     private usageTracking: UsageTrackingService,
@@ -138,7 +145,7 @@ export class AgentExecutorService {
     const systemPrompt = this.buildSystemPrompt(agent, contextText);
 
     // Run the agent loop
-    const messages: Anthropic.MessageParam[] = [
+    const messages: ProviderMessage[] = [
       { role: 'user', content: params.userMessage },
     ];
 
@@ -196,7 +203,7 @@ export class AgentExecutorService {
       order: { createdAt: 'ASC' },
     });
 
-    const messages: Anthropic.MessageParam[] = [];
+    const messages: ProviderMessage[] = [];
     for (const msg of storedMessages) {
       if (msg.role === MessageRole.USER) {
         messages.push({ role: 'user', content: msg.content });
@@ -232,14 +239,14 @@ export class AgentExecutorService {
   }
 
   /**
-   * The core agent loop. Sends messages to Claude, handles tool calls,
-   * and loops until Claude produces a final response or hits max turns.
+   * The core agent loop. Sends messages to the AI provider, handles tool calls,
+   * and loops until the provider produces a final response or hits max turns.
    */
   private async runAgentLoop(
     conversationId: string,
     agent: AgentDefinition,
     systemPrompt: string,
-    messages: Anthropic.MessageParam[],
+    messages: ProviderMessage[],
     ctx: AgentContext,
   ): Promise<AgentExecutionResult> {
     const toolsUsed: string[] = [];
@@ -248,20 +255,20 @@ export class AgentExecutorService {
     let turns = 0;
     let responseText = '';
 
-    const claudeTools = this.toolRegistry.toClaudeFormat(agent.tools);
+    const tools = this.toolRegistry.toProviderFormat(agent.tools);
 
     while (turns < agent.maxTurns) {
       turns++;
 
-      const response = await this.aiService.sendMessage({
+      const response = await this.aiProvider.sendMessage({
         systemPrompt,
         messages,
-        tools: claudeTools,
+        tools,
         model: agent.model,
       });
 
-      totalInputTokens += response.inputTokens;
-      totalOutputTokens += response.outputTokens;
+      totalInputTokens += response.usage.inputTokens;
+      totalOutputTokens += response.usage.outputTokens;
 
       // Log usage for this turn
       await this.usageTracking.logUsage({
@@ -269,14 +276,14 @@ export class AgentExecutorService {
         userId: ctx.userId,
         agentType: ctx.agentType,
         conversationId,
-        inputTokens: response.inputTokens,
-        outputTokens: response.outputTokens,
+        inputTokens: response.usage.inputTokens,
+        outputTokens: response.usage.outputTokens,
         model: response.model,
       });
 
       // Extract text and tool calls
-      const text = this.aiService.extractText(response.content);
-      const toolCalls = this.aiService.extractToolCalls(response.content);
+      const text = this.extractText(response.content);
+      const toolCalls = this.extractToolCalls(response.content);
 
       // If no tool calls, this is the final response
       if (response.stopReason !== 'tool_use' || toolCalls.length === 0) {
@@ -287,7 +294,7 @@ export class AgentExecutorService {
           conversationId,
           MessageRole.ASSISTANT,
           responseText,
-          response.inputTokens + response.outputTokens,
+          response.usage.inputTokens + response.usage.outputTokens,
         );
         break;
       }
@@ -298,12 +305,12 @@ export class AgentExecutorService {
         conversationId,
         MessageRole.ASSISTANT,
         text || '(tool calls)',
-        response.inputTokens + response.outputTokens,
+        response.usage.inputTokens + response.usage.outputTokens,
         toolCalls,
       );
 
       // Execute each tool call
-      const toolResults: Anthropic.ToolResultBlockParam[] = [];
+      const toolResults: AiToolResultBlock[] = [];
       for (const call of toolCalls) {
         // Check governance
         const decision = await this.governanceService.checkToolPermission(
@@ -339,7 +346,7 @@ export class AgentExecutorService {
 
         toolResults.push({
           type: 'tool_result',
-          tool_use_id: call.id,
+          toolUseId: call.id,
           content: result,
         });
       }
@@ -357,7 +364,14 @@ export class AgentExecutorService {
       // Add the assistant's response (with tool_use blocks) and tool results
       // back to the message array for the next turn
       messages.push({ role: 'assistant', content: response.content });
-      messages.push({ role: 'user', content: toolResults });
+      messages.push({
+        role: 'user',
+        content: toolResults.map((r) => ({
+          type: 'tool_result' as const,
+          toolUseId: r.toolUseId,
+          content: r.content,
+        })),
+      });
     }
 
     // If we hit max turns without a final response
@@ -393,6 +407,33 @@ export class AgentExecutorService {
     contextText: string,
   ): string {
     return `${agent.systemPrompt}\n\n--- CONTEXT ---\n${contextText}`;
+  }
+
+  /**
+   * Extract text content from a response.
+   * Filters out tool_use blocks and joins text blocks.
+   */
+  private extractText(content: AiContentBlock[]): string {
+    return content
+      .filter((block): block is AiTextBlock => block.type === 'text')
+      .map((block) => block.text)
+      .join('\n');
+  }
+
+  /**
+   * Extract tool use requests from a response.
+   * Returns an array of tool calls with their IDs, names, and inputs.
+   */
+  private extractToolCalls(
+    content: AiContentBlock[],
+  ): Array<{ id: string; name: string; input: Record<string, unknown> }> {
+    return content
+      .filter((block): block is AiToolUseBlock => block.type === 'tool_use')
+      .map((block) => ({
+        id: block.id,
+        name: block.name,
+        input: block.input,
+      }));
   }
 
   /** Persist a message to the database. */

@@ -5,6 +5,7 @@ import {
   AgentContext,
   ToolResult,
 } from './tool.interface';
+import { AiToolDefinition } from '../providers/ai-provider.interface';
 
 /**
  * Central registry for all AI-callable tools.
@@ -64,8 +65,24 @@ export class ToolRegistry {
   }
 
   /**
-   * Convert tool definitions to Claude's tool_use API format.
+   * Convert tool definitions to the provider-agnostic format.
    * Only includes tools the agent is allowed to use.
+   */
+  toProviderFormat(toolNames: string[]): AiToolDefinition[] {
+    return this.getToolsForAgent(toolNames).map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      inputSchema: {
+        type: 'object',
+        properties: (tool.inputSchema as any).properties || {},
+        required: (tool.inputSchema as any).required,
+      },
+    }));
+  }
+
+  /**
+   * Convert tool definitions to Claude's tool_use API format.
+   * @deprecated Use toProviderFormat() instead. This method exists for backward compatibility.
    */
   toClaudeFormat(toolNames: string[]): ClaudeToolSchema[] {
     return this.getToolsForAgent(toolNames).map((tool) => ({

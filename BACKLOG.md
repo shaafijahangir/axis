@@ -202,18 +202,25 @@
 - **Acceptance:** Package removed from `package.json` and `node_modules`. No import references exist.
 
 ### ARCH-004: DataLoader for GraphQL N+1 prevention
-- **Status:** `TODO`
-- **Files:** Create loaders in each module (e.g., `users.loader.ts`, `courses.loader.ts`)
-- **Problem:** Nested GraphQL queries generate N+1 database calls. Querying 20 assignments with their sections = 21 queries instead of 2.
-- **Fix:** Create DataLoader instances as `@Injectable({ scope: Scope.REQUEST })` providers. Use in `@ResolveField()` methods.
-- **Acceptance:** GraphQL queries with nested relations batch database calls. A query for 20 assignments with sections makes 2 database calls, not 21.
+- **Status:** `DONE`
+- **Completed:** 2026-02-09
+- **Finding:** N+1 prevention is already implemented at the service layer via eager loading (`leftJoinAndSelect`, `relations: []`). No @ResolveField() methods exist — all resolvers are query/mutation only. The architecture follows the batch-load pattern throughout.
+- **Verification:** Grep for `@ResolveField` returns 0 matches. All services use joins or relations arrays for nested data.
+- **Acceptance:** Already met — the codebase was designed correctly from the start.
 
 ### ARCH-005: AI provider abstraction layer
-- **Status:** `TODO`
-- **Files:** Create `src/modules/ai/providers/ai-provider.interface.ts`, `anthropic.provider.ts`
-- **Problem:** Direct `@anthropic-ai/sdk` imports create vendor lock-in. Can't swap providers or add fallbacks without modifying the agentic loop.
-- **Fix:** Define `AiProvider` interface with `chat()` and `stream()` methods. Wrap current Anthropic SDK in `AnthropicProvider` class. AgentExecutor depends on interface, not concrete SDK.
-- **Acceptance:** No file outside `providers/` imports `@anthropic-ai/sdk`. AgentExecutor works with any `AiProvider` implementation.
+- **Status:** `DONE`
+- **Completed:** 2026-02-09
+- **Files Created:**
+  - `src/modules/ai/providers/ai-provider.interface.ts` — Vendor-agnostic types (AiMessage, AiContentBlock, AiToolDefinition, AiProvider interface, AI_PROVIDER injection token)
+  - `src/modules/ai/providers/anthropic.provider.ts` — Anthropic SDK wrapper implementing AiProvider
+  - `src/modules/ai/providers/index.ts` — Barrel export
+- **Files Modified:**
+  - `agent-executor.service.ts` — Now injects AI_PROVIDER and uses vendor-agnostic types
+  - `ai.service.ts` — Deprecated, delegates to provider (kept for backward compatibility)
+  - `ai.module.ts` — Registers AnthropicProvider with AI_PROVIDER token
+  - `tools/tool-registry.ts` — Added `toProviderFormat()` method (deprecated `toClaudeFormat`)
+- **Acceptance:** `@anthropic-ai/sdk` is only imported in `providers/anthropic.provider.ts`. AgentExecutor uses the AiProvider interface. New providers can be added without touching the agentic loop.
 
 ### ARCH-006: Switch monorepo to Turborepo + pnpm
 - **Status:** `TODO`
@@ -379,5 +386,5 @@
 
 ---
 
-*Last updated: 2026-02-07 (Session 11 — FEAT-001 AI Chat UI)*
+*Last updated: 2026-02-09 (Session 13 — ARCH-004 verified, ARCH-005 completed)*
 *This file is the primary task reference for all development sessions.*
