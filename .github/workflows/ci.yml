@@ -1,14 +1,14 @@
-name: Backend CI
+name: CI
 
 on:
   push:
     branches: [main]
-    paths:
-      - 'nexused-backend/**'
   pull_request:
     branches: [main]
-    paths:
-      - 'nexused-backend/**'
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 jobs:
   ci:
@@ -32,27 +32,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
-          cache-dependency-path: nexused-backend/package-lock.json
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
-        working-directory: nexused-backend
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
-        working-directory: nexused-backend
+        run: pnpm lint
 
       - name: Type check
-        run: npx tsc --noEmit
-        working-directory: nexused-backend
+        run: pnpm typecheck
 
       - name: Test
-        run: npm test
-        working-directory: nexused-backend
+        run: pnpm test
         env:
           DATABASE_HOST: localhost
           DATABASE_PORT: 5432
@@ -62,5 +61,4 @@ jobs:
           JWT_SECRET: test-secret
 
       - name: Build
-        run: npm run build
-        working-directory: nexused-backend
+        run: pnpm build

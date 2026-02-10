@@ -223,11 +223,21 @@
 - **Acceptance:** `@anthropic-ai/sdk` is only imported in `providers/anthropic.provider.ts`. AgentExecutor uses the AiProvider interface. New providers can be added without touching the agentic loop.
 
 ### ARCH-006: Switch monorepo to Turborepo + pnpm
-- **Status:** `TODO`
-- **Files:** Root `package.json`, create `turbo.json`, create `pnpm-workspace.yaml`, update CI workflows
-- **Problem:** Sequential builds, no caching, slow CI. `npm run build` rebuilds everything even when nothing changed.
-- **Fix:** Install pnpm, configure Turborepo with task pipeline, update GitHub Actions to use pnpm + turbo.
-- **Acceptance:** `turbo build` runs backend and frontend in parallel. Cached builds complete in <5 seconds. CI is 50%+ faster.
+- **Status:** `DONE`
+- **Completed:** 2026-02-09
+- **Files Created:**
+  - `turbo.json` — Task pipeline (build, lint, test, typecheck, dev)
+  - `pnpm-workspace.yaml` — Workspace configuration
+  - `.github/workflows/ci.yml` — Unified CI with pnpm + turbo
+- **Files Modified:**
+  - Root `package.json` — Added turbo scripts, packageManager field
+  - `nexused-backend/package.json` — Added `dev`, `typecheck` scripts
+  - `nexused-frontend/package.json` — Added `typecheck` script
+  - `.gitignore` — Added package-lock.json exclusion
+- **Files Removed:**
+  - `.github/workflows/backend-ci.yml`, `.github/workflows/frontend-ci.yml` (replaced by unified ci.yml)
+  - `package-lock.json` files (replaced by pnpm-lock.yaml)
+- **Acceptance:** ✓ `pnpm build` runs both projects in parallel. ✓ Cached builds are instant. ✓ 101 tests pass.
 
 ---
 
@@ -401,5 +411,5 @@
 
 ---
 
-*Last updated: 2026-02-09 (Session 13 — TEST-001, TEST-002, FEAT-002 completed, proactive AI wired)*
+*Last updated: 2026-02-09 (Session 13 — TEST-001/002, FEAT-002, ARCH-006 completed, all P0-P2 done)*
 *This file is the primary task reference for all development sessions.*
