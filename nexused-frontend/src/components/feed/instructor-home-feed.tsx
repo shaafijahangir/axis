@@ -1,7 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
-import Link from 'next/link';
 import { Clock, ClipboardList, Megaphone } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { INSTRUCTOR_FEED_QUERY } from '@/lib/graphql/queries/feed';
@@ -9,7 +9,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyFeed } from './empty-feed';
+import { WidgetSettings } from './widget-settings';
 import { formatRelativeTime } from '@/lib/utils/relative-time';
+import {
+  useWidgetPreferences,
+  feedTypeToInstructorWidget,
+} from '@/hooks/use-widget-preferences';
 
 interface InstructorFeedItemData {
   type: string;
@@ -48,15 +53,33 @@ const typeConfig: Record<
 
 export function InstructorHomeFeed() {
   const { user } = useAuthStore();
+  const { isWidgetEnabled } = useWidgetPreferences();
   const { data, loading } = useQuery<{
     instructorFeed: InstructorFeedItemData[];
   }>(INSTRUCTOR_FEED_QUERY);
 
+  // Filter feed items based on widget preferences
+  const filteredFeed = useMemo(() => {
+    if (!data?.instructorFeed) return [];
+    return data.instructorFeed.filter((item) => {
+      const widgetType = feedTypeToInstructorWidget(item.type.toUpperCase());
+      if (!widgetType) return true; // Show unknown types by default
+      return isWidgetEnabled(widgetType);
+    });
+  }, [data?.instructorFeed, isWidgetEnabled]);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Welcome back, {user?.firstName}</h1>
-        <p className="text-muted-foreground">Here's your teaching overview.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">
+            Welcome back, {user?.firstName}
+          </h1>
+          <p className="text-muted-foreground">
+            Here's your teaching overview.
+          </p>
+        </div>
+        <WidgetSettings role="instructor" />
       </div>
 
       {loading ? (
@@ -65,9 +88,9 @@ export function InstructorHomeFeed() {
             <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
         </div>
-      ) : data?.instructorFeed && data.instructorFeed.length > 0 ? (
+      ) : filteredFeed.length > 0 ? (
         <div className="space-y-3">
-          {data.instructorFeed.map((item) => {
+          {filteredFeed.map((item) => {
             const config =
               typeConfig[item.type] ?? typeConfig.upcoming_deadline;
             const Icon = config.icon;

@@ -8,6 +8,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isHydrated: boolean;
   setAuth: (user: User) => void;
+  setUser: (user: User) => void;
   logout: () => Promise<void>;
   hydrate: () => void;
 }
@@ -26,6 +27,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: (user: User) => {
     localStorage.setItem('user', JSON.stringify(user));
     set({ user, isAuthenticated: true });
+  },
+
+  /**
+   * Update user object (e.g., after preferences change) without re-authenticating.
+   */
+  setUser: (user: User) => {
+    localStorage.setItem('user', JSON.stringify(user));
+    set({ user });
   },
 
   logout: async () => {

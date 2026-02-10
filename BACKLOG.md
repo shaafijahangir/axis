@@ -389,10 +389,25 @@
 - **Acceptance:** ✓ New messages appear instantly without polling. ✓ Typing indicators show when other user types. ✓ Connection reconnects automatically on disconnect.
 
 ### FEAT-006: Dashboard as toggleable widgets
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-10
 - **Priority:** MEDIUM
-- **Details:** Feed items as pin/unpin/collapse widgets. Students can customize what appears on their home feed. NOT drag-and-drop (too complex, low ROI). Simple toggle list in settings.
-- **Acceptance:** Student can hide announcement widgets, pin deadline widgets. Preferences persist across sessions (stored in user preferences JSONB).
+- **Files Created:**
+  - `nexused-frontend/src/hooks/use-widget-preferences.ts` — Hook for widget visibility, collapse state, type mappings
+  - `nexused-frontend/src/components/feed/widget-settings.tsx` — Settings dialog with Switch toggles per widget type
+  - `nexused-frontend/src/lib/graphql/mutations/user.ts` — UPDATE_PREFERENCES_MUTATION
+- **Files Modified:**
+  - `nexused-frontend/src/types/auth.ts` — Added preferences field to User type
+  - `nexused-frontend/src/stores/auth.store.ts` — Added setUser method for preferences updates
+  - `nexused-frontend/src/lib/graphql/queries/user.ts` — Added preferences to ME_QUERY
+  - `nexused-frontend/src/components/feed/student-home-feed.tsx` — Widget filtering + settings button
+  - `nexused-frontend/src/components/feed/instructor-home-feed.tsx` — Widget filtering + settings button
+- **Features:**
+  - Students can toggle deadlines, grades, announcements, courseUpdates widgets
+  - Instructors can toggle ungraded, upcomingDeadlines, announcements widgets
+  - Preferences persisted in user.preferences JSONB via GraphQL mutation
+  - Settings accessible via "Customize" button on feed header
+- **Acceptance:** ✓ Student can hide announcement widgets. ✓ Preferences persist across sessions. ✓ Instructor has separate widget types.
 
 ### FEAT-007: Database migrations
 - **Status:** `DONE`
@@ -477,5 +492,5 @@
 
 ---
 
-*Last updated: 2026-02-10 (Session 14 — TEST-004 + FEAT-005 completed)*
+*Last updated: 2026-02-10 (Session 15 — FEAT-006 completed)*
 *This file is the primary task reference for all development sessions.*

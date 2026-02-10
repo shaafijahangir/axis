@@ -845,3 +845,306 @@ BACKLOG.md — Updated FEAT-001 to DONE
 ### Next Session Priorities
 - Test the AI Chat UI end-to-end with real AI backend
 - Consider FEAT-002: Wire AI event listener to invoke agents
+
+---
+
+## Session 12 — P2 Architecture Cleanup
+
+**Started:** 2026-02-07
+**Goal:** Work through P2 architecture items from backlog
+**Status:** PARTIAL — 3 items done, paused mid-P2
+
+### Work Done
+
+**ARCH-003: Remove unused @tanstack/react-query (DONE)**
+- Verified no imports of react-query existed in codebase
+- `npm uninstall @tanstack/react-query` from frontend
+- Pushed directly to main (trivial change)
+
+**ARCH-001: Base entities (DONE — prior session, merged PR #10)**
+- Created `BaseEntity` (id, createdAt, updatedAt) and `TenantScopedEntity extends BaseEntity`
+- Updated 11 entities to use base classes
+
+**ARCH-002: Global tenant interceptor (DONE — PR #11 merged)**
+- Created `TenantContext` service using AsyncLocalStorage
+- Created `TenantInterceptor` that extracts tenantId from authenticated user
+- Registered interceptor globally in AppModule
+- Updated `AnnouncementsService` as proof of concept (uses `getTenantId()` from context)
+- Services can now gradually migrate to use TenantContext
+
+**Workflow update:**
+- Updated CLAUDE.md to auto-merge PRs immediately (don't leave open)
+
+### Files Created (2)
+```
+nexused-backend/src/tenant/tenant-context.ts
+nexused-backend/src/tenant/tenant.interceptor.ts
+```
+
+### Files Modified (5)
+```
+nexused-backend/src/app.module.ts — Added APP_INTERCEPTOR with TenantInterceptor
+nexused-backend/src/tenant/tenant.module.ts — Made @Global, exports TenantContext
+nexused-backend/src/modules/announcements/announcements.service.ts — Uses TenantContext
+nexused-backend/src/modules/announcements/announcements.resolver.ts — No longer passes tenantId
+CLAUDE.md — Auto-merge workflow update
+```
+
+### Remaining P2 Items
+- ARCH-004: DataLoader for GraphQL N+1 prevention
+- ARCH-005: AI provider abstraction layer
+- ARCH-006: Switch to Turborepo + pnpm
+
+### Next Session Priorities
+1. **ARCH-004: DataLoader** — Create request-scoped loaders for N+1 prevention
+2. Continue through P2 items
+3. Then P3 (testing infrastructure)
+
+---
+
+## Session 13 — P2 Architecture: ARCH-004 + ARCH-005
+
+**Started:** 2026-02-09
+**Goal:** Complete remaining P2 architecture items
+**Status:** IN PROGRESS — 2 items done, 1 remaining
+
+### Work Done
+
+**ARCH-004: DataLoader for N+1 Prevention (VERIFIED — ALREADY SOLVED)**
+- Explored all 12 resolvers in the codebase
+- Found **zero @ResolveField() decorators** — all resolvers are query/mutation only
+- All services already use eager loading via `leftJoinAndSelect()` and `relations: []`
+- The architecture follows the batch-load pattern at the service layer
+- **Conclusion:** N+1 prevention was already implemented correctly from day one. No DataLoaders needed.
+
+**ARCH-005: AI Provider Abstraction Layer (DONE)**
+- Created vendor-agnostic AI provider interface:
+  - `AiProvider` interface with `sendMessage()`, `isConfigured()`, `getDefaultModel()`, `estimateCost()`
+  - `AiMessage`, `AiContentBlock`, `AiToolUseBlock`, `AiTextBlock`, `AiToolResultBlock` types
+  - `AiToolDefinition` for tool definitions
+  - `AI_PROVIDER` injection token
+- Implemented `AnthropicProvider` that wraps `@anthropic-ai/sdk`
+- Updated `AgentExecutorService` to:
+  - Inject `AI_PROVIDER` instead of `AiService`
+  - Use vendor-agnostic types throughout the agentic loop
+  - Move `extractText()` and `extractToolCalls()` helpers inline
+- Updated `ToolRegistry`:
+  - Added `toProviderFormat()` method returning `AiToolDefinition[]`
+  - Deprecated `toClaudeFormat()` for backward compatibility
+- Updated `AiService`:
+  - Now delegates to the injected provider
+  - Marked as deprecated (new code should inject AI_PROVIDER directly)
+- Updated `AiModule`:
+  - Registers `AnthropicProvider`
+  - Provides `AI_PROVIDER` token using `useExisting`
+
+### Files Created (3)
+```
+nexused-backend/src/modules/ai/providers/ai-provider.interface.ts
+nexused-backend/src/modules/ai/providers/anthropic.provider.ts
+nexused-backend/src/modules/ai/providers/index.ts
+```
+
+### Files Modified (5)
+```
+nexused-backend/src/modules/ai/agent-executor.service.ts — Uses provider abstraction
+nexused-backend/src/modules/ai/ai.service.ts — Delegates to provider (deprecated)
+nexused-backend/src/modules/ai/ai.module.ts — Registers provider
+nexused-backend/src/modules/ai/tools/tool-registry.ts — Added toProviderFormat()
+BACKLOG.md — Updated ARCH-004 and ARCH-005 to DONE
+```
+
+### Build Status
+- Backend: ✓ Builds successfully
+- Frontend: ✓ Builds successfully
+
+### Remaining P2 Items
+- ARCH-006: Switch to Turborepo + pnpm (deferred — testing has higher priority)
+
+---
+
+**TEST-001: Testing Infrastructure (DONE)**
+
+Moved to P3 testing infrastructure after completing P2 architecture items.
+
+**Created:**
+1. Test factory system (`src/test/factories/index.ts`)
+   - Entity factories: createUser, createCourse, createAssignment, createSubmission, etc.
+   - Local enum definitions to avoid circular dependency issues
+   - Plain object factories (TypeORM-compatible)
+
+2. Mock utilities (`src/test/mocks/repository.mock.ts`)
+   - `createMockRepository<T>()` — mocks common TypeORM methods
+   - `createMockQueryBuilder<T>()` — mocks chained query builder calls
+
+3. GovernanceService tests (`src/modules/ai/governance.service.spec.ts`)
+   - 18 tests covering permission checks, rate limiting, token budgets
+
+4. FeedService tests (`src/modules/feed/feed.service.spec.ts`)
+   - 14 tests covering student feed, instructor feed, timeline, grades
+
+**Fixed:**
+- Circular dependency in `base.entity.ts` — changed `@ManyToOne(() => Tenant)` to `@ManyToOne('Tenant')`
+
+**Test Results:**
+```
+Test Suites: 3 passed, 3 total
+Tests:       33 passed, 33 total
+```
+
+### Files Created (4)
+```
+nexused-backend/src/test/factories/index.ts
+nexused-backend/src/test/mocks/repository.mock.ts
+nexused-backend/src/modules/ai/governance.service.spec.ts
+nexused-backend/src/modules/feed/feed.service.spec.ts
+```
+
+### Files Modified (2)
+```
+nexused-backend/src/database/entities/base.entity.ts — Fixed circular dependency
+BACKLOG.md — Updated TEST-001 to DONE
+```
+
+### Session 13 Status
+**COMPLETE** — 4 items done:
+- ARCH-004: Verified (already solved by design)
+- ARCH-005: AI provider abstraction layer
+- TEST-001: Testing infrastructure + 32 new tests
+
+### Next Steps
+- TEST-002: Add tests for AssignmentsService and CoursesService
+- TEST-003: Resolver integration tests
+- FEAT-002: Wire AI event listener to invoke agents
+
+---
+
+## Session 14 — TEST-004: Playwright E2E Tests
+
+**Started:** 2026-02-10
+**Goal:** Add Playwright E2E tests for 5 critical user flows
+**Status:** COMPLETE
+
+### Work Done
+
+**TEST-004: Playwright E2E for Critical User Flows (DONE)**
+- Installed `@playwright/test` in frontend project
+- Created Playwright configuration with Chromium (dev) + Firefox/WebKit (CI)
+- Created test fixtures for authentication (loginAs, loginAsStudent, loginAsInstructor, loginAsAdmin, logout)
+- Created test fixtures for test data seeding and GraphQL helpers
+- Created 5 E2E test files covering critical user journeys:
+  1. **Login Flow** (7 tests): Login page display, invalid credentials, successful login, session persistence, logout
+  2. **Feed Flow** (8 tests): Student feed, instructor feed, navigation items, role-appropriate content
+  3. **Course Navigation** (9 tests): Course list, course detail, section timeline, gradebook, roster
+  4. **Submit Assignment** (7 tests): Navigate to assignment, view details, submit work, view history
+  5. **Grade Submission** (9 tests): View submissions, enter grade/feedback, save, visibility
+- Added health endpoint to backend (`/api/health`) for CI server readiness checks
+- Updated CI workflow with E2E job (runs on main branch only, after unit tests pass)
+- Added `wait-on` dependency for server startup coordination
+- Added Playwright scripts to package.json
+
+### Files Created (11)
+```
+nexused-frontend/playwright.config.ts
+nexused-frontend/e2e/fixtures/auth.fixture.ts
+nexused-frontend/e2e/fixtures/seed.fixture.ts
+nexused-frontend/e2e/fixtures/index.ts
+nexused-frontend/e2e/01-login.spec.ts
+nexused-frontend/e2e/02-feed.spec.ts
+nexused-frontend/e2e/03-course-navigation.spec.ts
+nexused-frontend/e2e/04-submit-assignment.spec.ts
+nexused-frontend/e2e/05-grade-submission.spec.ts
+nexused-backend/src/health/health.controller.ts
+```
+
+### Files Modified (7)
+```
+nexused-frontend/package.json — Added Playwright scripts (test:e2e, test:e2e:ui, etc.)
+package.json — Added test:e2e script, wait-on dependency
+turbo.json — Added test:e2e task
+.github/workflows/ci.yml — Added E2E test job with server startup
+.gitignore — Added Playwright output directories
+nexused-backend/src/app.module.ts — Added HealthController
+BACKLOG.md — Updated TEST-004 to DONE
+```
+
+### Test Coverage Summary
+| Flow | Tests | Key Scenarios |
+|------|-------|---------------|
+| Login | 7 | Valid/invalid login, session persistence, logout |
+| Feed | 8 | Student/instructor feeds, navigation items |
+| Course Navigation | 9 | List, detail, section, gradebook, roster |
+| Submit Assignment | 7 | Navigate, view, submit, history |
+| Grade Submission | 9 | View submissions, grade, feedback, visibility |
+
+### CI Configuration
+- E2E tests run only on `main` branch (PRs run unit tests only)
+- Requires PostgreSQL service container
+- Starts backend in production mode, frontend via `next start`
+- Uses `wait-on` to verify servers are ready before running tests
+- Uploads Playwright report as artifact (30-day retention)
+
+### Session 14 Status
+**COMPLETE** — All P3 items now done. Test foundation complete.
+
+---
+
+## Session 15 — FEAT-005 + FEAT-006: Socket.IO + Dashboard Widgets
+
+**Started:** 2026-02-10
+**Goal:** Add real-time messaging via Socket.IO and toggleable dashboard widgets
+**Status:** COMPLETE
+
+### Work Done
+
+**FEAT-005: Socket.IO Real-time Messaging (DONE)**
+- Created `MessagingGateway` with JWT auth from httpOnly cookies
+- WebSocket gateway at `/messaging` namespace
+- Room-based subscriptions (join-conversation, leave-conversation)
+- Events: `message:new`, `conversation:created`, `user:typing`
+- Added EventEmitter2 integration to MessagingService
+- Created frontend socket client (`lib/socket.ts`) with auto-reconnect
+- Created React hooks: `useSocketConnection`, `useConversationSocket`, `useTypingIndicator`, `useConversationUpdates`
+- Updated ConversationList and MessageThread for real-time updates
+
+**FEAT-006: Dashboard as Toggleable Widgets (DONE)**
+- Updated User type to include `preferences` field
+- Created `UPDATE_PREFERENCES_MUTATION` for persisting widget preferences
+- Created `use-widget-preferences.ts` hook with:
+  - `isWidgetEnabled()` — check if widget is visible
+  - `toggleWidget()` — enable/disable widget
+  - `isWidgetCollapsed()` / `toggleCollapse()` — collapse state
+  - Type mappings between frontend widgets and backend feed types
+- Created `WidgetSettings` component with Switch toggles per widget type
+- Updated `StudentHomeFeed` to filter by widget preferences
+- Updated `InstructorHomeFeed` to filter by widget preferences
+- Added `setUser` method to auth store for preferences updates
+
+### Files Created (4)
+```
+nexused-backend/src/modules/messaging/messaging.gateway.ts
+nexused-frontend/src/lib/socket.ts
+nexused-frontend/src/hooks/use-socket.ts
+nexused-frontend/src/lib/graphql/mutations/user.ts
+nexused-frontend/src/hooks/use-widget-preferences.ts
+nexused-frontend/src/components/feed/widget-settings.tsx
+nexused-frontend/src/components/ui/switch.tsx (shadcn)
+```
+
+### Files Modified (7)
+```
+nexused-backend/src/modules/messaging/messaging.service.ts — Added EventEmitter2 events
+nexused-backend/src/modules/messaging/messaging.module.ts — Added gateway
+nexused-frontend/src/lib/graphql/queries/user.ts — Added preferences to ME_QUERY
+nexused-frontend/src/types/auth.ts — Added preferences field to User type
+nexused-frontend/src/stores/auth.store.ts — Added setUser method
+nexused-frontend/src/components/feed/student-home-feed.tsx — Widget filtering + settings button
+nexused-frontend/src/components/feed/instructor-home-feed.tsx — Widget filtering + settings button
+```
+
+### Session 15 Status
+**COMPLETE** — FEAT-005 and FEAT-006 done.
+
+### Next Session Priorities
+- FEAT-008: Admin analytics dashboard (LOW priority)
+- FEAT-002: Wire AI event listener to invoke agents (MEDIUM priority)

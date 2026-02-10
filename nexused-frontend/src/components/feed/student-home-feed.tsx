@@ -1,11 +1,17 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useAuthStore } from '@/stores/auth.store';
 import { STUDENT_FEED_QUERY } from '@/lib/graphql/queries/feed';
 import { FeedCard } from './feed-card';
 import { FeedCardSkeleton } from './feed-card-skeleton';
 import { EmptyFeed } from './empty-feed';
+import { WidgetSettings } from './widget-settings';
+import {
+  useWidgetPreferences,
+  feedTypeToStudentWidget,
+} from '@/hooks/use-widget-preferences';
 
 interface FeedItemData {
   type: string;
@@ -25,17 +31,33 @@ interface FeedItemData {
 
 export function StudentHomeFeed() {
   const { user } = useAuthStore();
+  const { isWidgetEnabled } = useWidgetPreferences();
   const { data, loading } = useQuery<{ studentFeed: FeedItemData[] }>(
     STUDENT_FEED_QUERY,
   );
 
+  // Filter feed items based on widget preferences
+  const filteredFeed = useMemo(() => {
+    if (!data?.studentFeed) return [];
+    return data.studentFeed.filter((item) => {
+      const widgetType = feedTypeToStudentWidget(item.type);
+      if (!widgetType) return true; // Show unknown types by default
+      return isWidgetEnabled(widgetType);
+    });
+  }, [data?.studentFeed, isWidgetEnabled]);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Welcome back, {user?.firstName}</h1>
-        <p className="text-muted-foreground">
-          Here's what needs your attention.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">
+            Welcome back, {user?.firstName}
+          </h1>
+          <p className="text-muted-foreground">
+            Here's what needs your attention.
+          </p>
+        </div>
+        <WidgetSettings role="student" />
       </div>
 
       {loading ? (
@@ -44,9 +66,9 @@ export function StudentHomeFeed() {
             <FeedCardSkeleton key={i} />
           ))}
         </div>
-      ) : data?.studentFeed && data.studentFeed.length > 0 ? (
+      ) : filteredFeed.length > 0 ? (
         <div className="space-y-3">
-          {data.studentFeed.map((item) => (
+          {filteredFeed.map((item) => (
             <FeedCard
               key={item.id}
               type={item.type as any}

@@ -12,6 +12,10 @@ export interface User {
   firstName: string;
   lastName: string;
   roles: UserRole[];
+  status?: string;
+  tenantId?: string;
+  preferences?: string | Record<string, unknown> | null;
+  createdAt?: string;
 }
 
 export interface AuthResponse {
