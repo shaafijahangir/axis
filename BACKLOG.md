@@ -274,10 +274,22 @@
 - **Acceptance:** ✓ All critical services have comprehensive unit tests covering tenant scoping, authorization, edge cases.
 
 ### TEST-003: Resolver integration tests
-- **Status:** `TODO`
-- **Targets:** Guards, roles, tenant scoping at the resolver level
-- **Problem:** Unit tests mock the database. Integration tests verify that guards actually block unauthorized access and tenant scoping actually filters data.
-- **Acceptance:** Integration tests prove: (1) unauthenticated requests are rejected, (2) wrong-role requests are rejected, (3) cross-tenant data is never returned.
+- **Status:** `DONE`
+- **Completed:** 2026-02-09
+- **Files Created:**
+  - `test/helpers/test-app.ts` — Integration test application helper with database utilities
+  - `test/courses.e2e-spec.ts` — 22 integration tests for CoursesResolver
+- **Files Modified:**
+  - `test/jest-e2e.json` — Added moduleNameMapper and testTimeout
+  - `.env.test` — Test database configuration
+  - `src/modules/content/course-content.entity.ts` — Fixed publishedAt GraphQL type
+- **Test categories:**
+  - Authentication (5 tests): Unauthenticated requests are rejected
+  - Authorization (7 tests): Wrong-role requests are rejected, correct roles allowed
+  - Tenant Scoping (5 tests): Cross-tenant data is never returned
+  - Happy Path (4 tests): Normal operations work correctly
+- **CI Note:** Tests require PostgreSQL, which is provided by GitHub Actions service container. Tests skip gracefully when no database is available locally.
+- **Acceptance:** ✓ Integration tests prove all three security properties.
 
 ### TEST-004: Playwright E2E for critical user flows
 - **Status:** `TODO`
@@ -411,5 +423,5 @@
 
 ---
 
-*Last updated: 2026-02-09 (Session 13 — TEST-001/002, FEAT-002, ARCH-006 completed, all P0-P2 done)*
+*Last updated: 2026-02-09 (Session 13 — TEST-001/002/003, FEAT-002, ARCH-006 completed, all P0-P2 done)*
 *This file is the primary task reference for all development sessions.*
