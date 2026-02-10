@@ -70,6 +70,9 @@ logs/
 .parcel-cache/
 .turbo/
 
+# npm (we use pnpm)
+package-lock.json
+
 # Vercel
 .vercel
 
