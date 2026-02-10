@@ -65,7 +65,7 @@ export class CourseContent {
   @Column({ type: 'text' })
   body: string;
 
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   @Column({ type: 'timestamp', nullable: true })
   publishedAt: Date | null;
 
