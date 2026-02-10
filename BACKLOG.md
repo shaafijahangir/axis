@@ -367,10 +367,26 @@
 - **Details:** Content entity with rich text (Tiptap editor), draft/published workflow, integration into course timeline. Instructor creates content → appears as timeline entry.
 
 ### FEAT-005: Activate Socket.IO for real-time
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-10
 - **Priority:** MEDIUM
-- **Details:** Socket.IO gateway for messaging (real-time message delivery), feed updates (new items push to client), AI response streaming indicators. Replace polling in conversation list and message thread.
-- **Acceptance:** New messages appear instantly without polling. Feed updates push to the client. Connection handles reconnection gracefully.
+- **Files Created:**
+  - `nexused-backend/src/modules/messaging/messaging.gateway.ts` — WebSocket gateway with JWT auth from cookies, room-based subscriptions
+  - `nexused-frontend/src/lib/socket.ts` — Socket.IO client initialization with auth
+  - `nexused-frontend/src/hooks/use-socket.ts` — React hooks for socket lifecycle, conversation events, typing indicators
+- **Files Modified:**
+  - `nexused-backend/src/modules/messaging/messaging.service.ts` — Added EventEmitter2 events for MESSAGE_SENT, CONVERSATION_CREATED
+  - `nexused-backend/src/modules/messaging/messaging.module.ts` — Added MessagingGateway, JwtModule
+  - `nexused-frontend/src/components/messaging/conversation-list.tsx` — Real-time updates instead of 10s polling
+  - `nexused-frontend/src/components/messaging/message-thread.tsx` — Real-time messages, typing indicators
+- **Features:**
+  - JWT authentication from httpOnly cookies in WebSocket handshake
+  - Room-based subscriptions per conversation
+  - Real-time message delivery via `message:new` event
+  - Typing indicators with debouncing (2s timeout)
+  - Connection status indicator (Wifi icon)
+  - Graceful fallback to polling when socket disconnected
+- **Acceptance:** ✓ New messages appear instantly without polling. ✓ Typing indicators show when other user types. ✓ Connection reconnects automatically on disconnect.
 
 ### FEAT-006: Dashboard as toggleable widgets
 - **Status:** `TODO`
@@ -461,5 +477,5 @@
 
 ---
 
-*Last updated: 2026-02-10 (Session 14 — TEST-004 completed, all P0-P3 done)*
+*Last updated: 2026-02-10 (Session 14 — TEST-004 + FEAT-005 completed)*
 *This file is the primary task reference for all development sessions.*

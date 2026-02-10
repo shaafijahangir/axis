@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Wifi, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,6 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MY_CONVERSATIONS_QUERY } from '@/lib/graphql/queries/messaging';
 import { NewMessageDialog } from './new-message-dialog';
+import {
+  useSocketConnection,
+  useConversationUpdates,
+} from '@/hooks/use-socket';
 
 interface Participant {
   id: string;
@@ -77,14 +81,30 @@ export function ConversationList({
   const [search, setSearch] = useState('');
   const [newMessageOpen, setNewMessageOpen] = useState(false);
 
+  // Socket connection status
+  const { isConnected } = useSocketConnection();
+
+  // Fetch conversations - use polling only when socket is disconnected
   const { data, loading, refetch } = useQuery<{
     myConversations: ConversationItem[];
   }>(MY_CONVERSATIONS_QUERY, {
-    pollInterval: 10_000,
+    // Only poll if socket is not connected (fallback)
+    pollInterval: isConnected ? 0 : 10_000,
     fetchPolicy: 'network-only',
   });
 
   const conversations = data?.myConversations ?? [];
+
+  // Refetch callback for socket events
+  const handleRefetch = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  // Subscribe to real-time conversation updates
+  useConversationUpdates({
+    onConversationCreated: handleRefetch,
+    onConversationUpdated: handleRefetch,
+  });
 
   const filtered = useMemo(() => {
     if (!search.trim()) return conversations;
@@ -104,7 +124,21 @@ export function ConversationList({
     <div className="flex h-full flex-col border-r">
       {/* Header */}
       <div className="flex items-center justify-between border-b p-4">
-        <h2 className="text-lg font-semibold">Messages</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">Messages</h2>
+          {/* Real-time connection indicator */}
+          {isConnected ? (
+            <Wifi
+              className="h-3.5 w-3.5 text-green-500"
+              aria-label="Real-time connected"
+            />
+          ) : (
+            <WifiOff
+              className="h-3.5 w-3.5 text-muted-foreground"
+              aria-label="Polling mode"
+            />
+          )}
+        </div>
         <Button
           size="sm"
           variant="outline"
