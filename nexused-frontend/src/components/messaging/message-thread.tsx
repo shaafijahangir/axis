@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,13 @@ import {
   SEND_MESSAGE_TO_CONVERSATION_MUTATION,
   MARK_AS_READ_MUTATION,
 } from '@/lib/graphql/mutations/messaging';
+import {
+  useSocketConnection,
+  useConversationSocket,
+  useTypingIndicator,
+  useMarkAsRead,
+} from '@/hooks/use-socket';
+import { NewMessageEvent, UserTypingEvent } from '@/lib/socket';
 
 interface MessageSender {
   id: string;
@@ -95,15 +102,57 @@ export function MessageThread({
   const [messageText, setMessageText] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
 
-  const { data, loading, fetchMore } = useQuery<MessagesData>(
+  // Socket connection
+  const { isConnected } = useSocketConnection();
+  const { setTyping } = useTypingIndicator(conversationId);
+  const { markAsRead: markAsReadSocket } = useMarkAsRead();
+
+  const { data, loading, fetchMore, refetch } = useQuery<MessagesData>(
     CONVERSATION_MESSAGES_QUERY,
     {
       variables: { conversationId, limit: 50 },
-      pollInterval: 5_000,
+      // Only poll if socket is not connected (fallback)
+      pollInterval: isConnected ? 0 : 5_000,
       fetchPolicy: 'network-only',
     },
   );
+
+  // Handle real-time new messages
+  const handleNewMessage = useCallback(
+    (event: NewMessageEvent) => {
+      // Refetch messages when new one arrives
+      refetch();
+      // Auto-scroll to bottom
+      setShouldAutoScroll(true);
+      // Mark as read (via socket for speed)
+      if (isConnected) {
+        markAsReadSocket(conversationId);
+      }
+    },
+    [refetch, isConnected, markAsReadSocket, conversationId],
+  );
+
+  // Handle typing indicators
+  const handleTyping = useCallback((event: UserTypingEvent) => {
+    setTypingUsers((prev) => {
+      const next = new Set(prev);
+      if (event.isTyping) {
+        next.add(event.userId);
+      } else {
+        next.delete(event.userId);
+      }
+      return next;
+    });
+  }, []);
+
+  // Subscribe to conversation socket events
+  useConversationSocket({
+    conversationId,
+    onNewMessage: handleNewMessage,
+    onTyping: handleTyping,
+  });
 
   const [sendMessage, { loading: sending }] = useMutation(
     SEND_MESSAGE_TO_CONVERSATION_MUTATION,
@@ -118,12 +167,16 @@ export function MessageThread({
     },
   );
 
-  const [markAsRead] = useMutation(MARK_AS_READ_MUTATION);
+  const [markAsReadMutation] = useMutation(MARK_AS_READ_MUTATION);
 
-  // Mark conversation as read when opened
+  // Mark conversation as read when opened (GraphQL fallback)
   useEffect(() => {
-    markAsRead({ variables: { conversationId } });
-  }, [conversationId, markAsRead]);
+    if (isConnected) {
+      markAsReadSocket(conversationId);
+    } else {
+      markAsReadMutation({ variables: { conversationId } });
+    }
+  }, [conversationId, markAsReadMutation, isConnected, markAsReadSocket]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -289,10 +342,20 @@ export function MessageThread({
 
       {/* Input area */}
       <div className="border-t p-4">
+        {/* Typing indicator */}
+        {typingUsers.size > 0 && (
+          <div className="mb-2 text-xs text-muted-foreground">
+            {getTypingText(typingUsers, participants)}
+          </div>
+        )}
         <div className="flex items-end gap-2">
           <textarea
             value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
+            onChange={(e) => {
+              setMessageText(e.target.value);
+              // Send typing indicator via socket
+              setTyping();
+            }}
             placeholder="Type a message..."
             rows={1}
             className="max-h-32 min-h-[40px] flex-1 resize-none rounded-md border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -319,4 +382,25 @@ export function MessageThread({
       </div>
     </div>
   );
+}
+
+/**
+ * Generate typing indicator text from typing user IDs.
+ */
+function getTypingText(
+  typingUserIds: Set<string>,
+  participants: Participant[],
+): string {
+  const typingParticipants = participants.filter((p) =>
+    typingUserIds.has(p.id),
+  );
+
+  if (typingParticipants.length === 0) return '';
+  if (typingParticipants.length === 1) {
+    return `${typingParticipants[0].firstName} is typing...`;
+  }
+  if (typingParticipants.length === 2) {
+    return `${typingParticipants[0].firstName} and ${typingParticipants[1].firstName} are typing...`;
+  }
+  return 'Several people are typing...';
 }

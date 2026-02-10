@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Conversation } from './entities/conversation.entity';
 import { ConversationParticipant } from './entities/conversation-participant.entity';
 import { DirectMessage } from './entities/direct-message.entity';
@@ -20,6 +21,23 @@ import {
   PaginatedMessagesResponse,
   ContactUser,
 } from './dto/messaging.types';
+
+// Messaging event types for real-time updates
+export const MESSAGING_EVENTS = {
+  MESSAGE_SENT: 'messaging.message-sent',
+  CONVERSATION_CREATED: 'messaging.conversation-created',
+} as const;
+
+export interface MessageSentEvent {
+  conversationId: string;
+  message: DirectMessage;
+  participantIds: string[];
+}
+
+export interface ConversationCreatedEvent {
+  conversation: Conversation;
+  participantIds: string[];
+}
 
 @Injectable()
 export class MessagingService {
@@ -37,6 +55,7 @@ export class MessagingService {
     @InjectRepository(CourseSection)
     private sectionRepo: Repository<CourseSection>,
     private dataSource: DataSource,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -262,6 +281,13 @@ export class MessagingService {
       await queryRunner.manager.save(participants);
 
       await queryRunner.commitTransaction();
+
+      // Emit event for real-time updates
+      this.eventEmitter.emit(MESSAGING_EVENTS.CONVERSATION_CREATED, {
+        conversation: saved,
+        participantIds: [userId, recipientId],
+      } as ConversationCreatedEvent);
+
       return saved;
     } catch (err) {
       await queryRunner.rollbackTransaction();
@@ -358,10 +384,22 @@ export class MessagingService {
       await queryRunner.commitTransaction();
 
       // Return with sender relation loaded (outside transaction - read only)
-      return this.messageRepo.findOne({
+      const savedMessage = await this.messageRepo.findOne({
         where: { id: saved.id },
         relations: ['sender'],
-      }) as Promise<DirectMessage>;
+      });
+
+      // Emit event for real-time updates
+      if (savedMessage) {
+        const participantIds = await this.getParticipantIds(conversationId);
+        this.eventEmitter.emit(MESSAGING_EVENTS.MESSAGE_SENT, {
+          conversationId,
+          message: savedMessage,
+          participantIds,
+        } as MessageSentEvent);
+      }
+
+      return savedMessage as DirectMessage;
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
@@ -437,7 +475,7 @@ export class MessagingService {
    * Security check: verify the user is a participant of the conversation
    * and the conversation belongs to the correct tenant.
    */
-  private async verifyParticipant(
+  async verifyParticipant(
     conversationId: string,
     userId: string,
     tenantId: string,
@@ -459,5 +497,17 @@ export class MessagingService {
         'You are not a participant in this conversation',
       );
     }
+  }
+
+  /**
+   * Get all participant user IDs for a conversation.
+   * Used by WebSocket gateway to broadcast messages.
+   */
+  async getParticipantIds(conversationId: string): Promise<string[]> {
+    const participants = await this.participantRepo.find({
+      where: { conversationId },
+      select: ['userId'],
+    });
+    return participants.map((p) => p.userId);
   }
 }
