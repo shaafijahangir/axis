@@ -45,7 +45,10 @@ import { MessagingModule } from './modules/messaging/messaging.module';
         database: configService.get('database.database'),
         schema: configService.get('database.schema'),
         entities: entities,
-        synchronize: configService.get('database.synchronize'),
+        // Migrations configuration - NEVER use synchronize: true
+        synchronize: false,
+        migrationsRun: configService.get('database.migrationsRun'),
+        migrations: ['dist/database/migrations/*.js'],
         logging: configService.get('database.logging'),
       }),
     }),
