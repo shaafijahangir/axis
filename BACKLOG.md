@@ -355,10 +355,24 @@
 - **Acceptance:** Student can hide announcement widgets, pin deadline widgets. Preferences persist across sessions (stored in user preferences JSONB).
 
 ### FEAT-007: Database migrations
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-09
 - **Priority:** MEDIUM
-- **Details:** Disable `synchronize: true`. Generate initial migration from current schema as baseline. All future schema changes via migration files. Add migration commands to package.json.
-- **Acceptance:** `npm run migration:generate` creates a migration. `npm run migration:run` applies it. `synchronize: false` in all environments.
+- **Files Created:**
+  - `src/database/typeorm.config.ts` — TypeORM CLI data source for migration commands
+  - `src/database/migrations/` — Directory for migration files
+- **Files Modified:**
+  - `package.json` — Added 4 migration scripts (generate, run, revert, show)
+  - `database.config.ts` — `synchronize: false`, `migrationsRun: true`
+  - `app.module.ts` — Load migrations from `dist/database/migrations/*.js`
+- **Usage:**
+  ```bash
+  pnpm --filter nexused-backend migration:generate -- src/database/migrations/AddNewFeature
+  pnpm --filter nexused-backend migration:run
+  pnpm --filter nexused-backend migration:revert
+  pnpm --filter nexused-backend migration:show
+  ```
+- **Acceptance:** ✓ `synchronize: false` in all environments. ✓ Migrations run on startup. ✓ CLI commands generate/run/revert migrations.
 
 ### FEAT-008: Admin analytics dashboard
 - **Status:** `TODO`
@@ -423,5 +437,5 @@
 
 ---
 
-*Last updated: 2026-02-09 (Session 13 — TEST-001/002/003, FEAT-002, ARCH-006 completed, all P0-P2 done)*
+*Last updated: 2026-02-09 (Session 13 — TEST-001/002/003, FEAT-002, ARCH-006, FEAT-007 completed, all P0-P2 done)*
 *This file is the primary task reference for all development sessions.*
