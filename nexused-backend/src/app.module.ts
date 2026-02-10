@@ -10,6 +10,7 @@ import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AppResolver } from './app.resolver';
+import { HealthController } from './health/health.controller';
 import { TenantModule } from './tenant/tenant.module';
 import { TenantInterceptor } from './tenant/tenant.interceptor';
 import appConfig from './config/app.config';
@@ -85,7 +86,7 @@ import { MessagingModule } from './modules/messaging/messaging.module';
     AiModule,
     MessagingModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [
     AppService,
     AppResolver,

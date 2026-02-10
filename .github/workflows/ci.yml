@@ -62,3 +62,86 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: ci
+    # Only run E2E tests on main branch (PRs run unit tests only)
+    if: github.ref == 'refs/heads/main'
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: nexused_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter nexused-frontend playwright:install
+        working-directory: .
+
+      - name: Build projects
+        run: pnpm build
+
+      - name: Start backend server
+        run: pnpm --filter nexused-backend start:prod &
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_USERNAME: test
+          DATABASE_PASSWORD: test
+          DATABASE_NAME: nexused_test
+          JWT_SECRET: test-secret
+          FRONTEND_URL: http://localhost:3000
+
+      - name: Start frontend server
+        run: pnpm --filter nexused-frontend start &
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api
+
+      - name: Wait for servers
+        run: |
+          npx wait-on http://localhost:3001/api/health http://localhost:3000 --timeout 60000
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        env:
+          CI: true
+          E2E_BASE_URL: http://localhost:3000
+          E2E_API_URL: http://localhost:3001/api
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_USERNAME: test
+          DATABASE_PASSWORD: test
+          DATABASE_NAME: nexused_test
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: nexused-frontend/playwright-report/
+          retention-days: 30
