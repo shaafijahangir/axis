@@ -430,10 +430,26 @@
 - **Acceptance:** ✓ `synchronize: false` in all environments. ✓ Migrations run on startup. ✓ CLI commands generate/run/revert migrations.
 
 ### FEAT-008: Admin analytics dashboard
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-11
 - **Priority:** LOW
-- **Details:** Enrollment statistics, grade distributions, AI usage metrics, active users per course. Admin-only view using existing data.
-- **Acceptance:** Admin can view institution-wide metrics. Data is accurate and updates in real-time (or near-real-time).
+- **Files Created:**
+  - `nexused-backend/src/modules/analytics/analytics.module.ts`
+  - `nexused-backend/src/modules/analytics/analytics.service.ts`
+  - `nexused-backend/src/modules/analytics/analytics.resolver.ts`
+  - `nexused-backend/src/modules/analytics/dto/analytics.types.ts`
+  - `nexused-frontend/src/lib/graphql/queries/analytics.ts`
+  - `nexused-frontend/src/app/(dashboard)/admin/analytics/page.tsx`
+- **Files Modified:**
+  - `nexused-backend/src/app.module.ts` — Added AnalyticsModule
+  - `nexused-frontend/src/lib/navigation.ts` — Added Analytics nav item for admins
+  - `nexused-frontend/src/app/(dashboard)/admin/page.tsx` — Redirects to /admin/analytics
+- **Details:**
+  - Backend AnalyticsModule with tenant-scoped aggregation queries
+  - GraphQL queries: adminDashboard, tenantStats, userStats, gradeStats, submissionMetrics, atRiskStudents, aiUsageSummary, aiAgentUsage, topCourses
+  - Frontend dashboard with stat cards, grade distribution chart, role distribution chart, AI usage table, top courses list, at-risk students list
+  - All queries admin-only via @Roles(UserRole.ADMIN)
+- **Acceptance:** ✓ Admin can view institution-wide metrics. ✓ Data includes users, courses, grades, submissions, AI usage. ✓ At-risk students identified by average score < 60%.
 
 ### FEAT-009: PWA setup
 - **Status:** `TODO`
@@ -492,5 +508,5 @@
 
 ---
 
-*Last updated: 2026-02-10 (Session 15 — FEAT-006 completed)*
+*Last updated: 2026-02-11 (Session 16 — FEAT-008 completed)*
 *This file is the primary task reference for all development sessions.*
