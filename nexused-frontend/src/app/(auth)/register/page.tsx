@@ -35,8 +35,12 @@ export default function RegisterPage() {
       });
       setAuth(response.user);
       router.push(getRoleDashboardPath(response.user.roles));
-    } catch (err: any) {
-      setError(err.message || 'Registration failed. Please try again.');
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Registration failed. Please try again.';
+      setError(message);
     } finally {
       setIsLoading(false);
     }

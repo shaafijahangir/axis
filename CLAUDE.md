@@ -111,6 +111,13 @@ Both projects require `npm install` in their respective directories. Run `npm in
 - **Forms**: Use `react-hook-form` + `zod` for validation. Define schemas alongside the form component or in a shared schemas file.
 - **UI components**: Use shadcn/ui (`src/components/ui/`). Add new shadcn components via `npx shadcn@latest add <component>`.
 - **Error handling**: Display user-facing errors via toast or inline messages. Log technical errors to console in development.
+- **Type-safe catch blocks**: Never use `catch (err: any)`. Use type narrowing instead:
+  ```typescript
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Operation failed';
+    setError(message);
+  }
+  ```
 
 ### Naming Conventions
 - **Backend files**: `kebab-case` — `course-section.entity.ts`, `create-course.dto.ts`, `courses.resolver.ts`
