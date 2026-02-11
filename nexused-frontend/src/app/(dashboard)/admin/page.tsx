@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function AdminDashboardRedirect() {
   const router = useRouter();
   useEffect(() => {
-    router.replace('/home');
+    router.replace('/admin/analytics');
   }, [router]);
   return null;
 }

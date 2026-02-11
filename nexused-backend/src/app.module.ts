@@ -28,6 +28,7 @@ import { FeedModule } from './modules/feed/feed.module';
 import { AcademicTermsModule } from './modules/academic-terms/academic-terms.module';
 import { ContentModule } from './modules/content/content.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { MessagingModule } from './modules/messaging/messaging.module';
     ContentModule,
     AiModule,
     MessagingModule,
+    AnalyticsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [
