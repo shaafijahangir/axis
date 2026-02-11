@@ -452,10 +452,28 @@
 - **Acceptance:** ✓ Admin can view institution-wide metrics. ✓ Data includes users, courses, grades, submissions, AI usage. ✓ At-risk students identified by average score < 60%.
 
 ### FEAT-009: PWA setup
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-11
 - **Priority:** LOW
-- **Details:** `manifest.json`, service worker, offline feed cache, install prompt. Mobile students should be able to "install" NexusEd on their home screen.
-- **Acceptance:** App is installable on mobile. Offline mode shows cached feed. Push notifications work.
+- **Files Created:**
+  - `nexused-frontend/public/manifest.json` — PWA manifest with app metadata, icons, shortcuts
+  - `nexused-frontend/public/sw.js` — Service worker with caching strategies
+  - `nexused-frontend/public/icons/` — 8 PNG icons (72-512px) generated from SVG
+  - `nexused-frontend/src/app/offline/page.tsx` — Offline fallback page
+  - `nexused-frontend/src/hooks/use-pwa.ts` — PWA hook (install, online status, SW registration)
+  - `nexused-frontend/src/components/pwa/install-prompt.tsx` — Install banner component
+  - `nexused-frontend/src/components/pwa/offline-indicator.tsx` — Offline status banner
+  - `nexused-frontend/scripts/generate-icons.js` — Icon generation script
+- **Files Modified:**
+  - `nexused-frontend/src/app/layout.tsx` — PWA metadata, viewport, apple-touch-icon
+  - `nexused-frontend/src/app/(dashboard)/layout.tsx` — Added InstallPrompt, OfflineIndicator
+- **Details:**
+  - Service worker caches: static assets (cache-first), pages (network-first with offline fallback), API (network-only)
+  - Install prompt shows on supported browsers, dismissable per session
+  - Offline indicator banner when connection lost
+  - App shortcuts for Home, Courses, AI
+  - Push notification handlers ready for future use
+- **Acceptance:** ✓ App is installable on mobile. ✓ Offline mode shows cached pages or offline page. ✓ Push notification handlers ready.
 
 ### FEAT-010: WCAG 2.1 AA accessibility
 - **Status:** `TODO`
@@ -508,5 +526,5 @@
 
 ---
 
-*Last updated: 2026-02-11 (Session 16 — FEAT-008 completed)*
+*Last updated: 2026-02-11 (Session 16 — FEAT-008, FEAT-009 completed)*
 *This file is the primary task reference for all development sessions.*

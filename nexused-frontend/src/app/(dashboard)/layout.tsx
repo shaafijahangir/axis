@@ -6,6 +6,8 @@ import { GraphQLProvider } from '@/lib/graphql/provider';
 import { Sidebar } from '@/components/layout/sidebar';
 import { TopNav } from '@/components/layout/top-nav';
 import { MobileNav } from '@/components/layout/mobile-nav';
+import { InstallPrompt } from '@/components/pwa/install-prompt';
+import { OfflineIndicator } from '@/components/pwa/offline-indicator';
 
 export default function DashboardLayout({
   children,
@@ -26,6 +28,8 @@ export default function DashboardLayout({
           <MobileNav />
         </div>
         <Toaster position="bottom-right" richColors />
+        <InstallPrompt />
+        <OfflineIndicator />
       </AuthGuard>
     </GraphQLProvider>
   );
