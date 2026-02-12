@@ -516,10 +516,28 @@
 - **Acceptance:** ✓ Zero axe-core violations at critical/serious level. ✓ Keyboard-only navigation works. ✓ Screen reader announces route changes and feed updates. ✓ Skip link focuses main content. ✓ All interactive elements have accessible names. ✓ Reduced motion disables animations. ✓ High contrast mode enhances borders/text. ✓ Forms have autocomplete attributes. ✓ Focus moves to main content on navigation.
 
 ### FEAT-011: LTI 1.3 integration
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-11
 - **Priority:** LOW (but required for institutional adoption)
-- **Details:** LTI 1.3 provider using `ltijs` library. Allows NexusEd courses to embed external tools (Turnitin, Kaltura, etc.) and external LMS to embed NexusEd content.
-- **Acceptance:** External LTI tool can be launched from within NexusEd. NexusEd can be launched as an LTI tool from Canvas/Brightspace.
+- **Details:** Full LTI 1.3 integration allowing external LMS platforms (Canvas, Brightspace, Moodle, etc.) to launch NexusEd as a tool.
+- **Backend Implementation:**
+  - 5 new entities: `LtiPlatform`, `LtiDeployment`, `LtiContext`, `LtiUser`, `LtiState`
+  - `LtiService`: Platform management, OIDC login flow, JWT verification, user provisioning, role mapping, context linking
+  - `LtiController`: REST endpoints for `/api/lti/login`, `/api/lti/launch`, `/api/lti/.well-known/jwks.json`, `/api/lti/config`
+  - `LtiResolver`: GraphQL admin interface for platform registration
+  - `LtiCleanupService`: Periodic cleanup of expired OIDC states
+  - Automatic user creation with LTI role to NexusEd role mapping
+  - Course context detection and linking to NexusEd sections
+- **Frontend Implementation:**
+  - Admin integrations page at `/admin/integrations`
+  - Tool configuration display for LMS registration
+  - Platform registration form with OIDC endpoints
+  - Platform list with status, deployment count, user count
+  - Integrations nav item added to admin navigation
+- **Files Created:**
+  - Backend: `lti.config.ts`, `lti-platform.entity.ts`, `lti-deployment.entity.ts`, `lti-context.entity.ts`, `lti-user.entity.ts`, `lti-state.entity.ts`, `lti.types.ts`, `lti.service.ts`, `lti.controller.ts`, `lti.resolver.ts`, `lti-cleanup.service.ts`, `lti.module.ts`
+  - Frontend: `queries/lti.ts`, `mutations/lti.ts`, `admin/integrations/page.tsx`
+- **Acceptance:** ✓ NexusEd can be registered as an LTI 1.3 tool in external LMS. ✓ OIDC login flow implemented. ✓ Users auto-provisioned on first launch. ✓ Admin UI for managing platform registrations. ✓ Context linking for course mapping.
 
 ### FEAT-012: Per-tenant AI governance console
 - **Status:** `TODO`
@@ -560,5 +578,5 @@
 
 ---
 
-*Last updated: 2026-02-11 (Session 17 — FEAT-010 completed)*
+*Last updated: 2026-02-11 (Session 19 — FEAT-011 LTI 1.3 integration completed)*
 *This file is the primary task reference for all development sessions.*

@@ -7,6 +7,7 @@ import {
   Settings,
   Sparkles,
   BarChart3,
+  Link,
   type LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
@@ -55,7 +56,7 @@ const adminNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { label: 'People', href: '/people', icon: Users },
-  { label: 'Academics', href: '/academics', icon: GraduationCap },
+  { label: 'Integrations', href: '/admin/integrations', icon: Link },
 ];
 
 const parentNav: NavItem[] = [

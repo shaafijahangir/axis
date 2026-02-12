@@ -37,6 +37,13 @@ import { Conversation } from '../../modules/messaging/entities/conversation.enti
 import { ConversationParticipant } from '../../modules/messaging/entities/conversation-participant.entity';
 import { DirectMessage } from '../../modules/messaging/entities/direct-message.entity';
 
+// LTI entities
+import { LtiPlatform } from '../../modules/lti/entities/lti-platform.entity';
+import { LtiDeployment } from '../../modules/lti/entities/lti-deployment.entity';
+import { LtiContext } from '../../modules/lti/entities/lti-context.entity';
+import { LtiUser } from '../../modules/lti/entities/lti-user.entity';
+import { LtiState } from '../../modules/lti/entities/lti-state.entity';
+
 // Array of entity classes for TypeORM
 export const entities = [
   Tenant,
@@ -55,4 +62,9 @@ export const entities = [
   Conversation,
   ConversationParticipant,
   DirectMessage,
+  LtiPlatform,
+  LtiDeployment,
+  LtiContext,
+  LtiUser,
+  LtiState,
 ];
