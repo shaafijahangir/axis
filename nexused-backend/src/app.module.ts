@@ -17,6 +17,7 @@ import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import authConfig from './config/auth.config';
 import aiConfig from './config/ai.config';
+import ltiConfig from './config/lti.config';
 import { entities } from './database/entities';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -29,12 +30,13 @@ import { AcademicTermsModule } from './modules/academic-terms/academic-terms.mod
 import { ContentModule } from './modules/content/content.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { LtiModule } from './modules/lti/lti.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, authConfig, aiConfig],
+      load: [appConfig, databaseConfig, authConfig, aiConfig, ltiConfig],
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -87,6 +89,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     AiModule,
     MessagingModule,
     AnalyticsModule,
+    LtiModule,
   ],
   controllers: [AppController, HealthController],
   providers: [
