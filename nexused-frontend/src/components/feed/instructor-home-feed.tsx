@@ -79,17 +79,22 @@ export function InstructorHomeFeed() {
             Here's your teaching overview.
           </p>
         </div>
-        <WidgetSettings role="instructor" />
+        <WidgetSettings userRole="instructor" />
       </div>
 
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-3" role="status" aria-label="Loading feed">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
+          <span className="sr-only">Loading your feed items...</span>
         </div>
       ) : filteredFeed.length > 0 ? (
-        <div className="space-y-3">
+        <section
+          className="space-y-3"
+          aria-label="Teaching activity feed"
+          aria-busy={loading}
+        >
           {filteredFeed.map((item) => {
             const config =
               typeConfig[item.type] ?? typeConfig.upcoming_deadline;
@@ -98,9 +103,14 @@ export function InstructorHomeFeed() {
               <Card
                 key={item.id}
                 className={`border-l-4 ${config.borderColor}`}
+                role="article"
+                aria-label={`${item.type === 'ungraded' ? 'Needs grading' : item.type === 'upcoming_deadline' ? 'Upcoming deadline' : 'Announcement'}: ${item.title}`}
               >
                 <CardContent className="flex items-start gap-4 p-4">
-                  <div className={`mt-0.5 shrink-0 ${config.iconColor}`}>
+                  <div
+                    className={`mt-0.5 shrink-0 ${config.iconColor}`}
+                    aria-hidden="true"
+                  >
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -130,7 +140,7 @@ export function InstructorHomeFeed() {
               </Card>
             );
           })}
-        </div>
+        </section>
       ) : (
         <EmptyFeed />
       )}

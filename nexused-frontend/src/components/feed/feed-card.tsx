@@ -75,12 +75,26 @@ export function FeedCard({
       ? `/courses/${sectionId}/section/${sectionId}/assignment/${assignmentId}`
       : undefined;
 
+  const typeLabel =
+    type === 'deadline'
+      ? 'Upcoming deadline'
+      : type === 'grade_posted'
+        ? 'Grade posted'
+        : type === 'announcement'
+          ? 'Announcement'
+          : 'Course update';
+
   const content = (
     <Card
       className={`border-l-4 ${config.borderColor} transition-shadow hover:shadow-md`}
+      role="article"
+      aria-label={`${typeLabel}: ${title} — ${courseCode}`}
     >
       <CardContent className="flex items-start gap-4 p-4">
-        <div className={`mt-0.5 shrink-0 ${config.iconColor}`}>
+        <div
+          className={`mt-0.5 shrink-0 ${config.iconColor}`}
+          aria-hidden="true"
+        >
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">

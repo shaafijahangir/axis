@@ -65,17 +65,17 @@ const INSTRUCTOR_WIDGET_LABELS: Record<
 };
 
 interface WidgetSettingsProps {
-  role: 'student' | 'instructor';
+  userRole: 'student' | 'instructor';
 }
 
 /**
  * Widget settings dialog for customizing dashboard feed.
  */
-export function WidgetSettings({ role }: WidgetSettingsProps) {
+export function WidgetSettings({ userRole }: WidgetSettingsProps) {
   const { isWidgetEnabled, toggleWidget, loading } = useWidgetPreferences();
 
   const widgets =
-    role === 'student' ? STUDENT_WIDGET_LABELS : INSTRUCTOR_WIDGET_LABELS;
+    userRole === 'student' ? STUDENT_WIDGET_LABELS : INSTRUCTOR_WIDGET_LABELS;
 
   return (
     <Dialog>

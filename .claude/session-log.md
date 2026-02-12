@@ -1145,6 +1145,200 @@ nexused-frontend/src/components/feed/instructor-home-feed.tsx — Widget filteri
 ### Session 15 Status
 **COMPLETE** — FEAT-005 and FEAT-006 done.
 
+---
+
+## Session 16 — FEAT-008: Admin Analytics Dashboard
+
+**Started:** 2026-02-11
+**Goal:** Build the admin analytics dashboard for institution-wide metrics
+**Status:** COMPLETE
+
+### Work Done
+
+**FEAT-008: Admin Analytics Dashboard (DONE)**
+- Created `AnalyticsModule` with comprehensive aggregation queries
+- Backend service methods:
+  - `getTenantStats()` — users, courses, sections, enrollments
+  - `getUserStats()` — role distribution, new users this month
+  - `getGradeStats()` — average, median, distribution (A/B/C/D/F)
+  - `getSubmissionMetrics()` — assignments, submissions, grading backlog
+  - `getAtRiskStudents()` — students with average < 60%
+  - `getAiUsageSummary()` — conversations, messages, tokens, cost
+  - `getAiAgentUsage()` — breakdown by agent type
+  - `getTopCourses()` — courses ranked by enrollment
+  - `getAdminDashboard()` — all metrics in one query
+- GraphQL resolver with 9 admin-only queries
+- Frontend dashboard page with:
+  - Overview stat cards (users, sections, enrollments, pending grading)
+  - User role distribution bar chart
+  - Grade distribution visualization (color-coded A-F)
+  - AI usage stat cards (conversations, messages, tokens, cost)
+  - AI agent breakdown table
+  - Top courses list by enrollment
+  - At-risk students list with scores
+  - Submission metrics section
+- Added Analytics nav item with BarChart3 icon for admin role
+- Updated /admin to redirect to /admin/analytics
+
+### Files Created (6)
+```
+nexused-backend/src/modules/analytics/analytics.module.ts
+nexused-backend/src/modules/analytics/analytics.service.ts
+nexused-backend/src/modules/analytics/analytics.resolver.ts
+nexused-backend/src/modules/analytics/dto/analytics.types.ts
+nexused-frontend/src/lib/graphql/queries/analytics.ts
+nexused-frontend/src/app/(dashboard)/admin/analytics/page.tsx
+```
+
+### Files Modified (4)
+```
+nexused-backend/src/app.module.ts — Added AnalyticsModule
+nexused-frontend/src/lib/navigation.ts — Added BarChart3 icon, Analytics nav item for admins
+nexused-frontend/src/app/(dashboard)/admin/page.tsx — Redirect to /admin/analytics
+BACKLOG.md — Updated FEAT-008 to DONE
+```
+
+### Build Status
+- Backend: ✓ Builds successfully
+- Frontend: ✓ Builds successfully
+
+### Dashboard Features
+- All queries are tenant-scoped (admin sees only their institution's data)
+- At-risk detection uses configurable threshold (default 60%)
+- AI usage shows last 30 days
+- Grade distribution calculated from actual submission scores and assignment points
+- Median score calculated from all graded submissions
+
+### Session 16 Status
+**COMPLETE** — FEAT-008 done.
+
 ### Next Session Priorities
-- FEAT-008: Admin analytics dashboard (LOW priority)
-- FEAT-002: Wire AI event listener to invoke agents (MEDIUM priority)
+- FEAT-009: PWA setup (LOW priority)
+- FEAT-010: WCAG 2.1 AA accessibility (LOW but required for institutional sales)
+- FEAT-011: LTI 1.3 integration (LOW but required for institutional adoption)
+
+---
+
+## Session 17 — FEAT-010: WCAG 2.1 AA Accessibility
+
+**Started:** 2026-02-11
+**Goal:** Comprehensive WCAG 2.1 AA accessibility compliance across the frontend
+**Status:** COMPLETE
+
+### Work Done
+
+**ESLint Accessibility Rules**
+- Added 20+ strict jsx-a11y rules to `eslint.config.mjs` (error level)
+- Configured label-has-associated-control with custom component support
+- Added shadcn/ui component override (generic wrappers pass a11y props via spread)
+
+**Root Layout Fixes**
+- Removed `userScalable: false` and `maximumScale: 1` (WCAG 1.4.4 — users must be able to zoom to 200%)
+- Added global `:focus-visible` outline styles and `.sr-only` utility class
+
+**Skip Navigation**
+- Added skip-to-content link (`<a href="#main-content" class="skip-nav">`) visible only on keyboard focus
+- Added `id="main-content"` and `tabIndex={-1}` to `<main>` element
+
+**Landmark Regions**
+- Added `aria-label` to all navigation landmarks: sidebar ("Main navigation"), mobile nav ("Mobile navigation"), top nav ("Top navigation bar")
+- Added `aria-label="Main sidebar"` to `<aside>` element
+- Added `aria-label="Page content"` to `<main>` element
+- Added `aria-label="Authentication"` to auth layout `<main>`
+
+**Active Navigation State**
+- Added `aria-current="page"` to active sidebar links
+- Added `aria-current="page"` to active mobile nav links
+- Added `aria-current="true"` to active conversation list items (messaging + AI)
+
+**Screen-Reader Announcements**
+- Created `RouteAnnouncer` component with `aria-live="assertive"` for SPA route changes
+- Added `aria-live="polite"` region for new chat messages (messaging)
+- Added `aria-live="polite"` region for AI response announcements
+- Added `role="status"` with `aria-live="polite"` for typing indicators
+- Added `role="status"` for empty feed and loading states
+
+**Form Labels**
+- Added `<label>` with `htmlFor` for messaging textarea (`message-input`)
+- Added `<label>` with `htmlFor` for AI chat textarea (`ai-message-input`)
+- Added `<label>` with `htmlFor` for conversation search input
+- Added `aria-invalid` and `aria-describedby` for form error states
+
+**Icon-Only Button Labels**
+- Added `aria-label="Back to conversation list"` to back buttons (messaging + AI)
+- Added `aria-label="Send message"` to send buttons (messaging + AI)
+- Added `aria-label="Start new AI conversation"` to new conversation button
+- Added `aria-label` to user menu trigger with user's name
+- Added `aria-hidden="true"` to all decorative icons (sidebar, mobile nav, top nav, feed cards, timeline cards)
+
+**Badge Accessibility**
+- Unread message badges use `aria-hidden="true"` (count conveyed via `aria-label` on parent link)
+- Sidebar: `aria-label="Messages, 5 unread messages"` on link
+- Mobile nav: same pattern with `aria-label`
+
+**Error Announcements**
+- Added `role="alert"` to login page error messages
+- Added `role="alert"` to register page error messages
+- Added `role="alert"` for AI chat form errors
+
+**Feed Semantic Structure**
+- Changed feed containers from `<div>` to `<section>` with descriptive `aria-label`
+- Added `role="article"` and `aria-label` to feed cards and timeline cards
+- Added `aria-busy` to feed sections during loading
+- Renamed `WidgetSettings` `role` prop to `userRole` (avoid conflict with HTML role attribute)
+
+**axe-core E2E Tests**
+- Installed `@axe-core/playwright`
+- Created 12 accessibility tests in `e2e/06-accessibility.spec.ts`:
+  - Login page: zero critical violations, proper form labels, lang attribute
+  - Register page: zero critical violations
+  - Dashboard: skip link, landmark regions, active nav state, zero critical violations
+  - Courses page: zero critical violations
+  - Messages page: zero critical violations
+  - AI Chat page: zero critical violations
+  - Keyboard navigation: tab through login form, skip link activation
+
+### Files Created (2)
+```
+nexused-frontend/src/components/a11y/route-announcer.tsx
+nexused-frontend/e2e/06-accessibility.spec.ts
+```
+
+### Files Modified (18)
+```
+nexused-frontend/eslint.config.mjs — Added strict jsx-a11y rules, shadcn override
+nexused-frontend/src/app/layout.tsx — Removed userScalable: false, maximumScale: 1
+nexused-frontend/src/app/globals.css — Added .sr-only, .skip-nav, :focus-visible styles
+nexused-frontend/src/app/(dashboard)/layout.tsx — Added skip link, RouteAnnouncer, main id/aria-label
+nexused-frontend/src/app/(auth)/layout.tsx — Added main landmark with aria-label
+nexused-frontend/src/app/(auth)/login/page.tsx — Added role="alert" to error div
+nexused-frontend/src/app/(auth)/register/page.tsx — Added role="alert" to error div
+nexused-frontend/src/components/layout/sidebar.tsx — aria-label, aria-current, aria-hidden on icons
+nexused-frontend/src/components/layout/mobile-nav.tsx — aria-label, aria-current, aria-hidden
+nexused-frontend/src/components/layout/top-nav.tsx — aria-label on header, aria-hidden on icon
+nexused-frontend/src/components/layout/user-menu.tsx — aria-label on dropdown trigger
+nexused-frontend/src/components/messaging/message-thread.tsx — aria-live, labels, button labels
+nexused-frontend/src/components/messaging/conversation-list.tsx — search label, button labels
+nexused-frontend/src/components/ai/ai-chat-thread.tsx — aria-live, form labels, button labels
+nexused-frontend/src/components/ai/ai-conversation-list.tsx — button labels, aria-hidden
+nexused-frontend/src/components/feed/feed-card.tsx — role="article", aria-label, aria-hidden
+nexused-frontend/src/components/feed/student-home-feed.tsx — section element, loading states
+nexused-frontend/src/components/feed/instructor-home-feed.tsx — section element, loading states
+nexused-frontend/src/components/feed/empty-feed.tsx — role="status", aria-hidden
+nexused-frontend/src/components/feed/widget-settings.tsx — Renamed role prop to userRole
+nexused-frontend/src/components/courses/timeline-entry-card.tsx — role="article", aria-label
+nexused-frontend/package.json — Added eslint-plugin-jsx-a11y, @axe-core/playwright
+BACKLOG.md — Updated FEAT-010 to DONE
+```
+
+### Build Status
+- Backend: ✓ Builds successfully (0 errors)
+- Frontend: ✓ Builds successfully (0 type errors, 0 a11y lint errors, 1 autoFocus warning)
+
+### Session 17 Status
+**COMPLETE** — FEAT-010 done.
+
+### Next Session Priorities
+- FEAT-011: LTI 1.3 integration (LOW but required for institutional adoption)
+- FEAT-012: Per-tenant AI governance console (LOW - enterprise tier)
+- FEAT-013: Agent Builder admin UI (LOW - marketplace potential)
