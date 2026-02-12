@@ -171,7 +171,11 @@ export function AiChatThread({
         : 'AI Assistant';
 
   return (
-    <div className="flex h-full flex-col border-l">
+    <div
+      className="flex h-full flex-col border-l"
+      role="region"
+      aria-label={`${agentLabel} conversation`}
+    >
       {/* Header */}
       <div className="flex h-14 items-center gap-3 border-b px-4">
         {onBack && (
@@ -180,8 +184,9 @@ export function AiChatThread({
             size="icon"
             onClick={onBack}
             className="md:hidden"
+            aria-label="Back to conversation list"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
         )}
         <div>
@@ -194,6 +199,7 @@ export function AiChatThread({
         className="flex-1 p-4"
         ref={scrollRef}
         onScroll={handleScroll}
+        aria-label="Chat messages"
       >
         {loading ? (
           <div className="space-y-4">
@@ -245,17 +251,41 @@ export function AiChatThread({
             ))}
 
             {/* Thinking indicator */}
-            {sending && <AiThinkingIndicator />}
+            {sending && (
+              <div role="status" aria-live="polite">
+                <AiThinkingIndicator />
+                <span className="sr-only">{agentLabel} is thinking...</span>
+              </div>
+            )}
           </div>
         )}
       </ScrollArea>
 
+      {/* Screen-reader announcement for new AI responses */}
+      <div aria-live="polite" aria-atomic="false" className="sr-only">
+        {messages.length > 0 &&
+          messages[messages.length - 1].role === 'assistant' && (
+            <span>
+              {agentLabel} responded:{' '}
+              {messages[messages.length - 1].content.slice(0, 200)}
+            </span>
+          )}
+      </div>
+
       {/* Input area */}
-      <form onSubmit={handleSubmit(onSubmit)} className="border-t p-4">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="border-t p-4"
+        aria-label={`Send message to ${agentLabel}`}
+      >
         <div className="flex gap-2">
           <div className="flex-1">
+            <label htmlFor="ai-message-input" className="sr-only">
+              Message to {agentLabel}
+            </label>
             <Textarea
               {...register('message')}
+              id="ai-message-input"
               placeholder="Type your message..."
               className={cn(
                 'min-h-[44px] max-h-32 resize-none',
@@ -264,18 +294,26 @@ export function AiChatThread({
               disabled={sending}
               onKeyDown={handleKeyDown}
               rows={1}
+              aria-invalid={errors.message ? 'true' : undefined}
+              aria-describedby={errors.message ? 'ai-message-error' : undefined}
             />
+            {errors.message && (
+              <p id="ai-message-error" className="sr-only" role="alert">
+                {errors.message.message}
+              </p>
+            )}
           </div>
           <Button
             type="submit"
             size="icon"
             disabled={sending}
             className="h-[44px] w-[44px]"
+            aria-label={sending ? 'Sending message...' : 'Send message'}
           >
             {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-4 w-4" aria-hidden="true" />
             )}
           </Button>
         </div>

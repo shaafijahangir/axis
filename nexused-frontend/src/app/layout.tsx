@@ -44,8 +44,8 @@ export const viewport: Viewport = {
   ],
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // WHY: WCAG 1.4.4 requires users to be able to zoom up to 200%.
+  // maximumScale and userScalable: false are accessibility violations.
 };
 
 export default function RootLayout({

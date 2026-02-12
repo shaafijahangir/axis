@@ -24,8 +24,16 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!isHydrated || !isAuthenticated) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div
+        className="flex h-screen items-center justify-center"
+        role="status"
+        aria-label="Loading application"
+      >
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
+          aria-hidden="true"
+        />
+        <span className="sr-only">Loading NexusEd, please wait...</span>
       </div>
     );
   }

@@ -152,8 +152,15 @@ export function ConversationList({
       {/* Search */}
       <div className="border-b p-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <label htmlFor="conversation-search" className="sr-only">
+            Search conversations
+          </label>
           <Input
+            id="conversation-search"
             placeholder="Search conversations..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -193,6 +200,8 @@ export function ConversationList({
                 <button
                   key={conv.id}
                   onClick={() => onSelectConversation(conv.id)}
+                  aria-current={isActive ? 'true' : undefined}
+                  aria-label={`${displayName}${conv.unreadCount > 0 ? `, ${conv.unreadCount} unread` : ''}`}
                   className={cn(
                     'flex items-center gap-3 rounded-md p-3 text-left transition-colors',
                     isActive ? 'bg-primary/10' : 'hover:bg-accent',
@@ -224,7 +233,10 @@ export function ConversationList({
                         {preview}
                       </p>
                       {conv.unreadCount > 0 && (
-                        <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                        <span
+                          aria-hidden="true"
+                          className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground"
+                        >
                           {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
                         </span>
                       )}

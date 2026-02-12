@@ -22,16 +22,27 @@ export function MobileNav() {
   const items = getNavForRole(user.roles);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t bg-background md:hidden">
-      <div className="flex items-center justify-around">
+    <nav
+      aria-label="Mobile navigation"
+      className="fixed inset-x-0 bottom-0 z-50 border-t bg-background md:hidden"
+    >
+      <div className="flex items-center justify-around" role="list">
         {items.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== '/home' && pathname.startsWith(item.href));
+          const hasUnread = item.badgeKey === 'messages' && unreadCount > 0;
           return (
             <Link
               key={item.href}
               href={item.href}
+              role="listitem"
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={
+                hasUnread
+                  ? `${item.label}, ${unreadCount} unread message${unreadCount === 1 ? '' : 's'}`
+                  : item.label
+              }
               className={cn(
                 'relative flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors',
                 isActive
@@ -40,14 +51,17 @@ export function MobileNav() {
               )}
             >
               <div className="relative">
-                <item.icon className="h-5 w-5" />
-                {item.badgeKey === 'messages' && unreadCount > 0 && (
-                  <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+                <item.icon className="h-5 w-5" aria-hidden="true" />
+                {hasUnread && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground"
+                  >
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
               </div>
-              {item.label}
+              <span aria-hidden="true">{item.label}</span>
             </Link>
           );
         })}

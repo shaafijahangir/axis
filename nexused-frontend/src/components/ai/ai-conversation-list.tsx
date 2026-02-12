@@ -94,9 +94,9 @@ export function AiConversationList({
           variant="ghost"
           size="icon"
           onClick={onNewConversation}
-          title="New conversation"
+          aria-label="Start new AI conversation"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
 
@@ -116,7 +116,10 @@ export function AiConversationList({
           </div>
         ) : conversations.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground">
-            <Sparkles className="mx-auto h-8 w-8 opacity-50" />
+            <Sparkles
+              className="mx-auto h-8 w-8 opacity-50"
+              aria-hidden="true"
+            />
             <p className="mt-2 text-sm">No conversations yet</p>
             <Button
               variant="outline"
@@ -137,6 +140,8 @@ export function AiConversationList({
                 <button
                   key={conv.id}
                   onClick={() => onSelectConversation(conv.id, conv.agentType)}
+                  aria-current={isActive ? 'true' : undefined}
+                  aria-label={`${getAgentLabel(conv.agentType)} conversation from ${formatRelativeTime(new Date(conv.updatedAt))}`}
                   className={cn(
                     'flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors',
                     isActive
@@ -151,6 +156,7 @@ export function AiConversationList({
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted',
                     )}
+                    aria-hidden="true"
                   >
                     <Icon className="h-4 w-4" />
                   </div>

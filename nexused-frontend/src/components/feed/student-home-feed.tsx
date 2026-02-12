@@ -57,17 +57,22 @@ export function StudentHomeFeed() {
             Here's what needs your attention.
           </p>
         </div>
-        <WidgetSettings role="student" />
+        <WidgetSettings userRole="student" />
       </div>
 
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-3" role="status" aria-label="Loading feed">
           {[1, 2, 3, 4].map((i) => (
             <FeedCardSkeleton key={i} />
           ))}
+          <span className="sr-only">Loading your feed items...</span>
         </div>
       ) : filteredFeed.length > 0 ? (
-        <div className="space-y-3">
+        <section
+          className="space-y-3"
+          aria-label="Your activity feed"
+          aria-busy={loading}
+        >
           {filteredFeed.map((item) => (
             <FeedCard
               key={item.id}
@@ -85,7 +90,7 @@ export function StudentHomeFeed() {
               timestamp={item.timestamp}
             />
           ))}
-        </div>
+        </section>
       ) : (
         <EmptyFeed />
       )}

@@ -73,12 +73,19 @@ export function TimelineEntryCard({
   const isPastDueUngraded =
     isAssignment && !isGraded && dueAt && new Date(dueAt) < new Date();
 
+  const typeLabel = isContent
+    ? 'Content'
+    : isAssignment
+      ? 'Assignment'
+      : 'Announcement';
   const content = (
     <Card
       className={`border-l-4 ${borderColor} transition-shadow hover:shadow-md`}
+      role="article"
+      aria-label={`${typeLabel}: ${title}${isGraded ? `, graded ${score}/${pointsPossible}` : ''}${isDraft ? ' (draft)' : ''}`}
     >
       <CardContent className="flex items-start gap-4 p-4">
-        <div className={`mt-0.5 shrink-0 ${iconColor}`}>
+        <div className={`mt-0.5 shrink-0 ${iconColor}`} aria-hidden="true">
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">

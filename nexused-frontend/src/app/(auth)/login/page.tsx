@@ -45,7 +45,11 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           {error && (
-            <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
+            <div
+              id="login-error"
+              role="alert"
+              className="rounded-md bg-destructive/10 border border-destructive/20 p-3"
+            >
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
@@ -57,10 +61,12 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="student@example.com"
                 disabled={isLoading}
+                aria-describedby={error ? 'login-error' : undefined}
               />
             </div>
 
@@ -70,10 +76,12 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 disabled={isLoading}
+                aria-describedby={error ? 'login-error' : undefined}
               />
             </div>
           </div>

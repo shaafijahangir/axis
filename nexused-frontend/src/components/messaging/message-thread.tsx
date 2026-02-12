@@ -235,14 +235,19 @@ export function MessageThread({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div
+      className="flex h-full flex-col"
+      role="region"
+      aria-label={`Conversation with ${displayName}`}
+    >
       {/* Header */}
       <div className="flex items-center gap-3 border-b p-4">
         <button
           onClick={onBack}
+          aria-label="Back to conversation list"
           className="rounded-md p-1 transition-colors hover:bg-accent md:hidden"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </button>
         <Avatar className="h-9 w-9">
           <AvatarFallback className="text-xs">{initials}</AvatarFallback>
@@ -252,8 +257,8 @@ export function MessageThread({
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
+      {/* Messages — aria-live for new message announcements */}
+      <ScrollArea className="flex-1 p-4" aria-label="Message history">
         {loading && messages.length === 0 ? (
           <div className="flex flex-col gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -340,16 +345,34 @@ export function MessageThread({
         )}
       </ScrollArea>
 
+      {/* New message announcements for screen readers */}
+      <div aria-live="polite" aria-atomic="false" className="sr-only">
+        {messages.length > 0 && (
+          <span>
+            {messages[messages.length - 1].sender.firstName} said:{' '}
+            {messages[messages.length - 1].content}
+          </span>
+        )}
+      </div>
+
       {/* Input area */}
       <div className="border-t p-4">
         {/* Typing indicator */}
         {typingUsers.size > 0 && (
-          <div className="mb-2 text-xs text-muted-foreground">
+          <div
+            className="mb-2 text-xs text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
             {getTypingText(typingUsers, participants)}
           </div>
         )}
         <div className="flex items-end gap-2">
+          <label htmlFor="message-input" className="sr-only">
+            Message to {displayName}
+          </label>
           <textarea
+            id="message-input"
             value={messageText}
             onChange={(e) => {
               setMessageText(e.target.value);
@@ -375,8 +398,9 @@ export function MessageThread({
             size="icon"
             onClick={handleSend}
             disabled={!messageText.trim() || sending}
+            aria-label="Send message"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </div>

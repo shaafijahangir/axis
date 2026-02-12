@@ -63,7 +63,11 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           {error && (
-            <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
+            <div
+              id="register-error"
+              role="alert"
+              className="rounded-md bg-destructive/10 border border-destructive/20 p-3"
+            >
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
@@ -77,10 +81,12 @@ export default function RegisterPage() {
                   name="firstName"
                   type="text"
                   required
+                  autoComplete="given-name"
                   value={formData.firstName}
                   onChange={handleChange}
                   placeholder="John"
                   disabled={isLoading}
+                  aria-describedby={error ? 'register-error' : undefined}
                 />
               </div>
 
@@ -91,10 +97,12 @@ export default function RegisterPage() {
                   name="lastName"
                   type="text"
                   required
+                  autoComplete="family-name"
                   value={formData.lastName}
                   onChange={handleChange}
                   placeholder="Doe"
                   disabled={isLoading}
+                  aria-describedby={error ? 'register-error' : undefined}
                 />
               </div>
             </div>
@@ -106,10 +114,12 @@ export default function RegisterPage() {
                 name="email"
                 type="email"
                 required
+                autoComplete="email"
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="student@example.com"
                 disabled={isLoading}
+                aria-describedby={error ? 'register-error' : undefined}
               />
             </div>
 
@@ -120,13 +130,15 @@ export default function RegisterPage() {
                 name="password"
                 type="password"
                 required
+                autoComplete="new-password"
                 minLength={8}
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
                 disabled={isLoading}
+                aria-describedby="password-hint"
               />
-              <p className="text-xs text-muted-foreground">
+              <p id="password-hint" className="text-xs text-muted-foreground">
                 Must be at least 8 characters
               </p>
             </div>
