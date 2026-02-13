@@ -1630,3 +1630,68 @@ BACKLOG.md — Updated FEAT-012 to DONE
 ### Next Session Priorities
 - FEAT-013: Agent Builder admin UI (marketplace potential)
 - FEAT-014: ML-based feed personalization (requires data)
+
+---
+
+## Session 21 — FEAT-013: Agent Builder Admin UI
+
+**Date:** 2026-02-12
+**Goal:** Let instructors create custom AI agents for their courses via UI
+
+### What Was Built
+
+**Backend — Custom Agent System:**
+- `CustomAgent` entity (`custom_agents` table) — stores agent definitions in DB with slug, displayName, description, systemPrompt, tools (JSONB), allowedRoles (JSONB), maxTurns, model, isActive, optional courseId scope
+- `CustomAgentService` — full CRUD with tool validation (checks ToolRegistry), slug generation from displayName, `resolveAgent()` method that transparently checks built-in AgentRegistry then falls back to DB custom agents
+- `CustomAgentResolver` — instructor/admin GraphQL API: queries (customAgents, customAgent, availableTools) and mutations (createCustomAgent, updateCustomAgent, deleteCustomAgent)
+- Updated `AgentExecutorService` to use `CustomAgentService.resolveAgent()` for both startConversation and continueConversation — custom agents run through the exact same agentic loop as built-in agents
+- Updated `AiResolver.availableAgents` to merge built-in agents with custom agents filtered by user role and course enrollment
+
+**Frontend — Agent Builder Page:**
+- Agent Builder page at `/ai/agents` with card grid layout
+- Create/Edit dialog with: agent name, description, system prompt editor (with character count), tool picker (checkbox grid showing tool name, action type badge, and description), role selector (checkboxes), max turns input
+- Agent cards show: name, description, tool count, allowed roles, max turns, active/inactive toggle, course-scoped badge, edit/delete buttons
+- Empty state with call-to-action for first agent creation
+- Delete confirmation dialog with warning about existing conversations
+- Added "Agent Builder" nav item with Bot icon to instructor sidebar
+- Updated conversation list to display custom agent names from slug format
+
+### Files Created (7)
+```
+nexused-backend/src/modules/ai/entities/custom-agent.entity.ts
+nexused-backend/src/modules/ai/dto/custom-agent.types.ts
+nexused-backend/src/modules/ai/custom-agent.service.ts
+nexused-backend/src/modules/ai/custom-agent.resolver.ts
+nexused-frontend/src/lib/graphql/queries/custom-agents.ts
+nexused-frontend/src/lib/graphql/mutations/custom-agents.ts
+nexused-frontend/src/app/(dashboard)/ai/agents/page.tsx
+```
+
+### Files Modified (6)
+```
+nexused-backend/src/modules/ai/agent-executor.service.ts — Uses CustomAgentService.resolveAgent()
+nexused-backend/src/modules/ai/ai.resolver.ts — Merges custom agents into availableAgents query
+nexused-backend/src/modules/ai/ai.module.ts — Registered CustomAgent, CustomAgentService, CustomAgentResolver
+nexused-backend/src/database/entities/index.ts — Added CustomAgent to entities array
+nexused-frontend/src/lib/navigation.ts — Added Bot icon, Agent Builder nav for instructors
+nexused-frontend/src/components/ai/ai-conversation-list.tsx — Custom agent label from slug
+```
+
+### New GraphQL Schema Additions
+**Types:** CustomAgent, AvailableTool
+**Inputs:** CreateCustomAgentInput, UpdateCustomAgentInput
+**Queries:** customAgents, customAgent, availableTools
+**Mutations:** createCustomAgent, updateCustomAgent, deleteCustomAgent
+
+### Build & Test Status
+- Backend: ✓ Type-checks clean
+- Frontend: ✓ Type-checks clean
+- Tests: ✓ 104 tests pass
+- Lint: ✓ No errors
+
+### Session 21 Status
+**COMPLETE** — FEAT-013 done.
+
+### Next Session Priorities
+- FEAT-014: ML-based feed personalization (requires data)
+- TEST-001: Add unit and integration tests

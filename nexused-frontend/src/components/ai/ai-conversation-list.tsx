@@ -49,6 +49,14 @@ function getAgentLabel(type: string): string {
     case 'feedback-copilot':
       return 'Feedback Copilot';
     default:
+      // Custom agents have type 'custom-<slug>'
+      if (type.startsWith('custom-')) {
+        return type
+          .slice(7)
+          .split('-')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ');
+      }
       return 'AI Chat';
   }
 }

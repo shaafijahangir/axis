@@ -9,6 +9,7 @@ import {
   BarChart3,
   Link,
   Shield,
+  Bot,
   type LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
@@ -45,6 +46,7 @@ const instructorNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Courses', href: '/courses', icon: BookOpen },
   { label: 'AI', href: '/ai', icon: Sparkles },
+  { label: 'Agent Builder', href: '/ai/agents', icon: Bot },
   {
     label: 'Messages',
     href: '/messages',
