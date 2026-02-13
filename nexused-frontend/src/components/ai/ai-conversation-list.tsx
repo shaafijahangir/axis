@@ -1,7 +1,13 @@
 'use client';
 
 import { useQuery } from '@apollo/client/react';
-import { GraduationCap, MessageSquareText, Sparkles, Plus } from 'lucide-react';
+import {
+  GraduationCap,
+  MessageSquareText,
+  Sparkles,
+  Plus,
+  Map,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,6 +40,8 @@ function getAgentIcon(type: string) {
       return GraduationCap;
     case 'feedback-copilot':
       return MessageSquareText;
+    case 'course-planner':
+      return Map;
     default:
       return Sparkles;
   }
@@ -48,6 +56,8 @@ function getAgentLabel(type: string): string {
       return 'Study Coach';
     case 'feedback-copilot':
       return 'Feedback Copilot';
+    case 'course-planner':
+      return 'Course Planner';
     default:
       // Custom agents have type 'custom-<slug>'
       if (type.startsWith('custom-')) {
