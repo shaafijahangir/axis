@@ -1,10 +1,12 @@
 'use client';
 
+import { useCallback } from 'react';
 import Link from 'next/link';
 import { Clock, CheckCircle, Megaphone, Info } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime } from '@/lib/utils/relative-time';
+import { useFeedCardVisibility } from '@/hooks/use-feed-engagement';
 
 type FeedItemType =
   | 'deadline'
@@ -25,6 +27,19 @@ interface FeedCardProps {
   score?: number;
   pointsPossible?: number;
   timestamp: string;
+  id: string;
+  onImpression?: (
+    feedItemType: string,
+    feedItemId: string,
+    courseCode: string,
+    sectionId: string,
+  ) => void;
+  onClick?: (
+    feedItemType: string,
+    feedItemId: string,
+    courseCode: string,
+    sectionId: string,
+  ) => void;
 }
 
 const typeConfig: Record<
@@ -66,6 +81,9 @@ export function FeedCard({
   score,
   pointsPossible,
   timestamp,
+  id,
+  onImpression,
+  onClick,
 }: FeedCardProps) {
   const config = typeConfig[type];
   const Icon = config.icon;
@@ -83,6 +101,18 @@ export function FeedCard({
         : type === 'announcement'
           ? 'Announcement'
           : 'Course update';
+
+  // FEAT-014: Track impression when card becomes visible
+  const handleVisible = useCallback(() => {
+    onImpression?.(type, id, courseCode, sectionId);
+  }, [type, id, courseCode, sectionId, onImpression]);
+
+  const visibilityRef = useFeedCardVisibility(handleVisible);
+
+  // FEAT-014: Track click when card is clicked
+  const handleClick = useCallback(() => {
+    onClick?.(type, id, courseCode, sectionId);
+  }, [type, id, courseCode, sectionId, onClick]);
 
   const content = (
     <Card
@@ -133,7 +163,15 @@ export function FeedCard({
   );
 
   if (href) {
-    return <Link href={href}>{content}</Link>;
+    return (
+      <div ref={visibilityRef} onClick={handleClick}>
+        <Link href={href}>{content}</Link>
+      </div>
+    );
   }
-  return content;
+  return (
+    <div ref={visibilityRef} onClick={handleClick}>
+      {content}
+    </div>
+  );
 }

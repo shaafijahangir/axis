@@ -12,6 +12,7 @@ import {
   useWidgetPreferences,
   feedTypeToStudentWidget,
 } from '@/hooks/use-widget-preferences';
+import { useFeedEngagement } from '@/hooks/use-feed-engagement';
 
 interface FeedItemData {
   type: string;
@@ -32,6 +33,7 @@ interface FeedItemData {
 export function StudentHomeFeed() {
   const { user } = useAuthStore();
   const { isWidgetEnabled } = useWidgetPreferences();
+  const { trackClick, trackImpression } = useFeedEngagement();
   const { data, loading } = useQuery<{ studentFeed: FeedItemData[] }>(
     STUDENT_FEED_QUERY,
   );
@@ -76,6 +78,7 @@ export function StudentHomeFeed() {
           {filteredFeed.map((item) => (
             <FeedCard
               key={item.id}
+              id={item.id}
               type={item.type as any}
               title={item.title}
               subtitle={item.subtitle}
@@ -88,6 +91,8 @@ export function StudentHomeFeed() {
               score={item.score}
               pointsPossible={item.pointsPossible}
               timestamp={item.timestamp}
+              onImpression={trackImpression}
+              onClick={trackClick}
             />
           ))}
         </section>

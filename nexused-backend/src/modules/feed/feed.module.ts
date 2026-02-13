@@ -6,7 +6,9 @@ import { Submission } from '../../database/entities/submission.entity';
 import { CourseSection } from '../../database/entities/course-section.entity';
 import { AnnouncementsModule } from '../announcements/announcements.module';
 import { ContentModule } from '../content/content.module';
+import { FeedEngagement } from './entities/feed-engagement.entity';
 import { FeedService } from './feed.service';
+import { FeedPersonalizationService } from './feed-personalization.service';
 import { FeedResolver } from './feed.resolver';
 
 @Module({
@@ -16,10 +18,12 @@ import { FeedResolver } from './feed.resolver';
       Assignment,
       Submission,
       CourseSection,
+      FeedEngagement,
     ]),
     AnnouncementsModule,
     ContentModule,
   ],
-  providers: [FeedService, FeedResolver],
+  providers: [FeedService, FeedPersonalizationService, FeedResolver],
+  exports: [FeedPersonalizationService],
 })
 export class FeedModule {}
