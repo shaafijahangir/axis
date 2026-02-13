@@ -575,10 +575,39 @@
 - **Acceptance:** ✓ Admin can change a tool from "auto" to "suggest" and it takes effect immediately. ✓ Usage logs are visible with timestamps and costs. ✓ Rate limits and budgets are configurable per tenant. ✓ AI can be disabled entirely per tenant. ✓ 104 tests pass.
 
 ### FEAT-013: Agent Builder admin UI
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-12
 - **Priority:** LOW (marketplace potential)
 - **Details:** UI for creating custom agents per course. Instructors define system prompts, select tools, set constraints. Agents appear in the student's agent selector.
-- **Acceptance:** Instructor can create a custom agent for their course. Student can interact with it. Agent respects governance rules.
+- **Backend Implementation:**
+  - `CustomAgent` entity — DB-stored agent definitions with slug, displayName, description, systemPrompt, tools (JSONB), allowedRoles, maxTurns, isActive, optional courseId scope
+  - `CustomAgentService` — CRUD operations, tool validation against ToolRegistry, slug generation, `resolveAgent()` method that checks built-in registry then falls back to DB
+  - `CustomAgentResolver` — instructor/admin GraphQL resolver with customAgents, customAgent, availableTools queries and createCustomAgent, updateCustomAgent, deleteCustomAgent mutations
+  - Updated `AgentExecutorService` — uses `CustomAgentService.resolveAgent()` instead of direct AgentRegistry.get() for both start and continue flows
+  - Updated `AiResolver.availableAgents` — merges built-in agents with custom agents filtered by role and course enrollment
+- **Frontend Implementation:**
+  - Agent Builder page at `/ai/agents` with card grid showing all custom agents
+  - Create/Edit dialog with agent name, description, system prompt editor (with char count), tool picker (checkbox grid with action type badges), role selector, max turns config
+  - Active/inactive toggle, delete confirmation dialog
+  - Empty state with call-to-action for first agent creation
+  - Added "Agent Builder" nav item with Bot icon to instructor navigation
+  - Updated conversation list to display custom agent names from slug
+- **Files Created:**
+  - `nexused-backend/src/modules/ai/entities/custom-agent.entity.ts`
+  - `nexused-backend/src/modules/ai/dto/custom-agent.types.ts`
+  - `nexused-backend/src/modules/ai/custom-agent.service.ts`
+  - `nexused-backend/src/modules/ai/custom-agent.resolver.ts`
+  - `nexused-frontend/src/lib/graphql/queries/custom-agents.ts`
+  - `nexused-frontend/src/lib/graphql/mutations/custom-agents.ts`
+  - `nexused-frontend/src/app/(dashboard)/ai/agents/page.tsx`
+- **Files Modified:**
+  - `nexused-backend/src/modules/ai/agent-executor.service.ts` — Uses CustomAgentService.resolveAgent()
+  - `nexused-backend/src/modules/ai/ai.resolver.ts` — Merges custom agents into availableAgents query
+  - `nexused-backend/src/modules/ai/ai.module.ts` — Registered CustomAgent entity, CustomAgentService, CustomAgentResolver
+  - `nexused-backend/src/database/entities/index.ts` — Added CustomAgent to entities array
+  - `nexused-frontend/src/lib/navigation.ts` — Added Agent Builder nav for instructors
+  - `nexused-frontend/src/components/ai/ai-conversation-list.tsx` — Custom agent label from slug
+- **Acceptance:** ✓ Instructor can create a custom agent for their course. ✓ Custom agents appear in student's agent selector (role + course filtered). ✓ Agent respects governance rules (same AgentExecutor loop). ✓ 104 tests pass.
 
 ### FEAT-014: ML-based feed personalization
 - **Status:** `TODO`
