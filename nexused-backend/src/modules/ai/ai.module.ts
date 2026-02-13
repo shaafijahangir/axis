@@ -40,10 +40,12 @@ import { createEnrollmentTools } from './tools/enrollment.tools';
 import { createAssignmentTools } from './tools/assignment.tools';
 import { createGradingTools } from './tools/grading.tools';
 import { createAnalyticsTools } from './tools/analytics.tools';
+import { createPlannerTools } from './tools/planner.tools';
 
 // Agent definitions
 import { studyCoachAgent } from './agents/study-coach.agent';
 import { feedbackCopilotAgent } from './agents/feedback-copilot.agent';
+import { coursePlannerAgent } from './agents/course-planner.agent';
 
 // Resolvers
 import { AiResolver } from './ai.resolver';
@@ -59,6 +61,8 @@ import { AiEventListener } from './events/ai-event.listener';
 // External module imports
 import { CoursesModule } from '../courses/courses.module';
 import { CoursesService } from '../courses/courses.service';
+import { PlannerModule } from '../planner/planner.module';
+import { PlannerService } from '../planner/planner.service';
 
 /**
  * The AI module — core of the AI-native architecture.
@@ -86,6 +90,7 @@ import { CoursesService } from '../courses/courses.service';
       Tenant,
     ]),
     CoursesModule,
+    PlannerModule,
   ],
   providers: [
     // AI Provider abstraction — Anthropic is the default implementation
@@ -127,6 +132,7 @@ export class AiModule implements OnModuleInit {
     private toolRegistry: ToolRegistry,
     private agentRegistry: AgentRegistry,
     private coursesService: CoursesService,
+    private plannerService: PlannerService,
     @InjectRepository(Assignment)
     private assignmentRepo: Repository<Assignment>,
     @InjectRepository(Submission)
@@ -166,10 +172,14 @@ export class AiModule implements OnModuleInit {
         this.assignmentRepo,
       ),
     );
+
+    // Planner tools (degree progress, eligibility, major simulation)
+    this.toolRegistry.registerAll(createPlannerTools(this.plannerService));
   }
 
   private registerAgents(): void {
     this.agentRegistry.register(studyCoachAgent);
     this.agentRegistry.register(feedbackCopilotAgent);
+    this.agentRegistry.register(coursePlannerAgent);
   }
 }

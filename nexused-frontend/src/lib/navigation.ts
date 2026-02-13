@@ -10,6 +10,7 @@ import {
   Link,
   Shield,
   Bot,
+  Map,
   type LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
@@ -33,6 +34,7 @@ const studentNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Courses', href: '/courses', icon: BookOpen },
   { label: 'Grades', href: '/grades', icon: GraduationCap },
+  { label: 'Planner', href: '/planner', icon: Map },
   { label: 'AI', href: '/ai', icon: Sparkles },
   {
     label: 'Messages',
