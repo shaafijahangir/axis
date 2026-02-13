@@ -540,10 +540,39 @@
 - **Acceptance:** ✓ NexusEd can be registered as an LTI 1.3 tool in external LMS. ✓ OIDC login flow implemented. ✓ Users auto-provisioned on first launch. ✓ Admin UI for managing platform registrations. ✓ Context linking for course mapping.
 
 ### FEAT-012: Per-tenant AI governance console
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-12
 - **Priority:** LOW (enterprise tier feature)
 - **Details:** Admin UI for configuring AI governance per tenant. Set action types per tool, adjust rate limits, set token budgets, view AI audit logs.
-- **Acceptance:** Admin can change a tool from "auto" to "suggest" and it takes effect immediately. Usage logs are visible with timestamps and costs.
+- **Backend Implementation:**
+  - `TenantAiConfig` entity — per-tenant governance settings (enabled flag, JSONB tool overrides, rate limits, budgets)
+  - Updated `GovernanceService` — loads tenant-specific config from DB, falls back to global defaults. Added monthly budget check.
+  - `GovernanceResolver` — admin-only GraphQL resolver with queries (aiGovernanceConfig, aiAuditLogs, aiUsageTrend) and mutations (updateAiGovernanceConfig, updateToolPermission, resetToolPermission)
+  - GraphQL DTOs: GovernanceConfig, ToolPermission, AuditLogEntry, AuditLogPage, UsageTrend, DailyUsagePoint
+  - 3 new unit tests for tenant-specific governance (disabled AI, tool override, blocked override)
+- **Frontend Implementation:**
+  - Admin page at `/admin/ai-governance` with 4 tabbed sections:
+    1. Tool Permissions — table of all 16 tools with dropdown to change action type (auto/suggest/blocked), reset-to-default button
+    2. Rate Limits & Budget — configurable requests/min, daily token budget, monthly USD budget with progress bar
+    3. Usage Trend — 30-day bar chart of daily token usage with summary stats
+    4. Audit Log — paginated table of AI interactions with user info, agent type, tokens, cost, filterable by agent
+  - Overview stat cards: tool overrides count, rate limit, today's tokens, month's cost
+  - AI enabled/disabled toggle with warning banner
+  - Added "AI Governance" nav item with Shield icon to admin navigation
+- **Files Created:**
+  - `nexused-backend/src/modules/ai/entities/tenant-ai-config.entity.ts`
+  - `nexused-backend/src/modules/ai/dto/governance.types.ts`
+  - `nexused-backend/src/modules/ai/governance.resolver.ts`
+  - `nexused-frontend/src/lib/graphql/queries/governance.ts`
+  - `nexused-frontend/src/lib/graphql/mutations/governance.ts`
+  - `nexused-frontend/src/app/(dashboard)/admin/ai-governance/page.tsx`
+- **Files Modified:**
+  - `nexused-backend/src/modules/ai/governance.service.ts` — DB-backed config, monthly budget checks
+  - `nexused-backend/src/modules/ai/ai.module.ts` — Added TenantAiConfig entity, GovernanceResolver
+  - `nexused-backend/src/database/entities/index.ts` — Added TenantAiConfig
+  - `nexused-backend/src/modules/ai/governance.service.spec.ts` — Updated with TenantAiConfig mock, 3 new tests
+  - `nexused-frontend/src/lib/navigation.ts` — Added Shield icon, AI Governance nav for admin
+- **Acceptance:** ✓ Admin can change a tool from "auto" to "suggest" and it takes effect immediately. ✓ Usage logs are visible with timestamps and costs. ✓ Rate limits and budgets are configurable per tenant. ✓ AI can be disabled entirely per tenant. ✓ 104 tests pass.
 
 ### FEAT-013: Agent Builder admin UI
 - **Status:** `TODO`
@@ -578,5 +607,5 @@
 
 ---
 
-*Last updated: 2026-02-11 (Session 19 — FEAT-011 LTI 1.3 integration completed)*
+*Last updated: 2026-02-12 (Session 20 — FEAT-012 AI Governance Console completed)*
 *This file is the primary task reference for all development sessions.*

@@ -28,6 +28,7 @@ import { Announcement } from './announcement.entity';
 import { AiConversation } from '../../modules/ai/entities/ai-conversation.entity';
 import { AiMessage } from '../../modules/ai/entities/ai-message.entity';
 import { AiUsageLog } from '../../modules/ai/entities/ai-usage-log.entity';
+import { TenantAiConfig } from '../../modules/ai/entities/tenant-ai-config.entity';
 
 // Content entities
 import { CourseContent } from '../../modules/content/course-content.entity';
@@ -58,6 +59,7 @@ export const entities = [
   AiConversation,
   AiMessage,
   AiUsageLog,
+  TenantAiConfig,
   CourseContent,
   Conversation,
   ConversationParticipant,

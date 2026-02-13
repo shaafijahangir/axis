@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { AiConversation } from './entities/ai-conversation.entity';
 import { AiMessage } from './entities/ai-message.entity';
 import { AiUsageLog } from './entities/ai-usage-log.entity';
+import { TenantAiConfig } from './entities/tenant-ai-config.entity';
 
 // Domain entities (for tools + context + event listener)
 import { User } from '../../database/entities/user.entity';
@@ -43,8 +44,9 @@ import { createAnalyticsTools } from './tools/analytics.tools';
 import { studyCoachAgent } from './agents/study-coach.agent';
 import { feedbackCopilotAgent } from './agents/feedback-copilot.agent';
 
-// Resolver
+// Resolvers
 import { AiResolver } from './ai.resolver';
+import { GovernanceResolver } from './governance.resolver';
 
 // Event listener
 import { AiEventListener } from './events/ai-event.listener';
@@ -68,6 +70,7 @@ import { CoursesService } from '../courses/courses.service';
       AiConversation,
       AiMessage,
       AiUsageLog,
+      TenantAiConfig,
       User,
       Course,
       CourseSection,
@@ -94,6 +97,7 @@ import { CoursesService } from '../courses/courses.service';
     ToolRegistry,
     AgentRegistry,
     AiResolver,
+    GovernanceResolver,
     AiEventListener,
   ],
   exports: [
@@ -104,6 +108,7 @@ import { CoursesService } from '../courses/courses.service';
     ToolRegistry,
     AgentRegistry,
     UsageTrackingService,
+    GovernanceService,
   ],
 })
 export class AiModule implements OnModuleInit {

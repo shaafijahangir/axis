@@ -1292,10 +1292,134 @@ BACKLOG.md — Updated FEAT-010 with Phase 2 details
 ### Session 18 Status
 **COMPLETE** — FEAT-010 Phase 2 done. Full WCAG 2.1 AA compliance.
 
+---
+
+## Session 19 — FEAT-011: LTI 1.3 Integration
+
+**Started:** 2026-02-11
+**Goal:** Implement LTI 1.3 integration for institutional adoption — allow external LMS platforms to launch NexusEd
+**Status:** COMPLETE
+
+### Work Done
+
+**Backend: LTI Module**
+- Created `lti.config.ts` with tool configuration and RSA keypair settings
+- Created 5 LTI entities with proper indexes:
+  - `LtiPlatform` — stores external LMS configuration (issuer, client_id, OIDC endpoints)
+  - `LtiDeployment` — specific deployment of NexusEd on a platform
+  - `LtiContext` — course context from launches, linkable to NexusEd sections
+  - `LtiUser` — maps external LTI user IDs to internal User entities
+  - `LtiState` — temporary state for OIDC flow (nonce validation)
+- Created `LtiService` with:
+  - Platform CRUD operations
+  - OIDC login initiation (`initiateLogin`)
+  - JWT validation and launch processing (`processLaunch`)
+  - User provisioning with role mapping (LTI role URIs → UserRole enum)
+  - Context creation and linking
+  - Platform JWKS fetching for JWT verification
+  - Cleanup of expired states
+- Created `LtiController` with REST endpoints:
+  - `GET/POST /api/lti/login` — OIDC login initiation
+  - `POST /api/lti/launch` — OIDC callback with id_token
+  - `GET /api/lti/.well-known/jwks.json` — public key for platforms
+  - `GET /api/lti/config` — tool configuration for LMS admins
+- Created `LtiResolver` with GraphQL admin interface:
+  - `ltiToolConfiguration` — get tool config for registration
+  - `ltiPlatforms` — list registered platforms
+  - `ltiPlatform(id)` — get platform details
+  - `ltiDeployments(platformId)` — list deployments
+  - `ltiUnlinkedContexts` — contexts not yet linked to sections
+  - `createLtiPlatform` / `updateLtiPlatform` / `deleteLtiPlatform` — platform CRUD
+  - `createLtiDeployment` — add deployment
+  - `linkLtiContext` / `unlinkLtiContext` — course linking
+- Created `LtiCleanupService` with scheduled cleanup of expired states
+
+**Frontend: Admin Integrations Page**
+- Created `/admin/integrations` page with:
+  - Tool configuration display (OIDC Login URL, Launch URL, JWKS URL, Deep Linking URL)
+  - Copy-to-clipboard buttons for easy LMS registration
+  - Platform registration form with all required OIDC endpoints
+  - Platforms table with status badges, deployment count, user count
+  - Delete confirmation dialog
+  - Setup guide with step-by-step instructions
+- Added GraphQL queries: `LTI_PLATFORMS_QUERY`, `LTI_TOOL_CONFIGURATION_QUERY`, `LTI_PLATFORM_QUERY`, `LTI_DEPLOYMENTS_QUERY`, `LTI_UNLINKED_CONTEXTS_QUERY`
+- Added GraphQL mutations: `CREATE_LTI_PLATFORM_MUTATION`, `UPDATE_LTI_PLATFORM_MUTATION`, `DELETE_LTI_PLATFORM_MUTATION`, `CREATE_LTI_DEPLOYMENT_MUTATION`, `LINK_LTI_CONTEXT_MUTATION`, `UNLINK_LTI_CONTEXT_MUTATION`
+- Added Integrations nav item with Link icon to admin navigation
+
+**LTI 1.3 Flow Implemented**
+```
+1. Platform calls /api/lti/login with issuer, client_id, login_hint
+2. NexusEd generates state/nonce, stores in lti_states table
+3. NexusEd redirects to platform's authorization endpoint
+4. User authenticates on platform
+5. Platform redirects to /api/lti/launch with id_token (JWT)
+6. NexusEd validates JWT signature using platform's JWKS
+7. NexusEd verifies nonce, extracts claims (user, roles, context)
+8. NexusEd provisions user (creates or updates) with mapped roles
+9. NexusEd creates/updates context if present
+10. NexusEd sets auth cookie and redirects to appropriate page
+```
+
+**Role Mapping**
+| LTI Role URI | NexusEd Role |
+|-------------|--------------|
+| .../membership#Instructor | INSTRUCTOR |
+| .../membership#ContentDeveloper | INSTRUCTOR |
+| .../membership#Learner | STUDENT |
+| .../membership#Mentor | TA |
+| .../institution/person#Administrator | ADMIN |
+| .../system/person#Administrator | ADMIN |
+
+### Files Created (15)
+```
+# Backend
+nexused-backend/src/config/lti.config.ts
+nexused-backend/src/modules/lti/entities/lti-platform.entity.ts
+nexused-backend/src/modules/lti/entities/lti-deployment.entity.ts
+nexused-backend/src/modules/lti/entities/lti-context.entity.ts
+nexused-backend/src/modules/lti/entities/lti-user.entity.ts
+nexused-backend/src/modules/lti/entities/lti-state.entity.ts
+nexused-backend/src/modules/lti/entities/index.ts
+nexused-backend/src/modules/lti/dto/lti.types.ts
+nexused-backend/src/modules/lti/lti.service.ts
+nexused-backend/src/modules/lti/lti.controller.ts
+nexused-backend/src/modules/lti/lti.resolver.ts
+nexused-backend/src/modules/lti/lti-cleanup.service.ts
+nexused-backend/src/modules/lti/lti.module.ts
+
+# Frontend
+nexused-frontend/src/lib/graphql/queries/lti.ts
+nexused-frontend/src/lib/graphql/mutations/lti.ts
+nexused-frontend/src/app/(dashboard)/admin/integrations/page.tsx
+```
+
+### Files Modified (4)
+```
+nexused-backend/src/database/entities/index.ts — Added LTI entities to TypeORM
+nexused-backend/src/app.module.ts — Added ltiConfig and LtiModule
+nexused-frontend/src/lib/navigation.ts — Added Integrations nav item for admin
+BACKLOG.md — Updated FEAT-011 to DONE
+```
+
+### Dependencies Added
+```
+jose — JWT signing and verification
+@nestjs/schedule — Scheduled cleanup of expired states
+ltijs — Installed but not directly used (built custom implementation)
+mongoose — ltijs dependency (not directly used)
+```
+
+### Build Status
+- Backend: ✓ Builds successfully
+- Frontend: ✓ Builds successfully
+
+### Session 19 Status
+**COMPLETE** — FEAT-011 done. Full LTI 1.3 integration for institutional adoption.
+
 ### Next Session Priorities
-- FEAT-011: LTI 1.3 integration (required for institutional adoption)
 - FEAT-012: Per-tenant AI governance console (enterprise tier)
 - FEAT-013: Agent Builder admin UI (marketplace potential)
+- FEAT-014: ML-based feed personalization (requires data)
 
 ---
 
@@ -1419,6 +1543,90 @@ BACKLOG.md — Updated FEAT-010 to DONE
 **COMPLETE** — FEAT-010 done.
 
 ### Next Session Priorities
-- FEAT-011: LTI 1.3 integration (LOW but required for institutional adoption)
-- FEAT-012: Per-tenant AI governance console (LOW - enterprise tier)
 - FEAT-013: Agent Builder admin UI (LOW - marketplace potential)
+- FEAT-014: ML-based feed personalization (LOW - requires data)
+
+---
+
+## Session 20 — FEAT-012: Per-tenant AI Governance Console
+
+**Started:** 2026-02-12
+**Goal:** Build admin UI for configuring AI governance per tenant — tool permissions, rate limits, budgets, audit logs
+**Status:** COMPLETE
+
+### Work Done
+
+**Backend: TenantAiConfig Entity**
+- Created `TenantAiConfig` entity in `entities/tenant-ai-config.entity.ts`
+- Fields: tenantId (unique), enabled (kill switch), toolOverrides (JSONB), maxRequestsPerMinute, maxTokensPerDay, monthlyBudgetUsd
+- Registered in TypeORM entity index
+
+**Backend: GovernanceService Updates**
+- Rewrote `GovernanceService` to load per-tenant config from DB
+- `checkToolPermission()` now: checks AI enabled → resolves effective action type (tenant override → default) → rate limit → daily token budget → monthly cost budget
+- New methods: `getOrCreateConfig()`, `updateConfig()`, `setToolOverride()`, `resetToolOverride()`, `getToolPermissions()`, `getGovernanceConfig()`, `getAuditLogs()`, `getUsageTrend()`
+- Config falls back to env var defaults when tenant hasn't customized
+
+**Backend: GovernanceResolver**
+- Admin-only GraphQL resolver with:
+  - `query aiGovernanceConfig` → full config with tool permissions and current usage stats
+  - `query aiAuditLogs(filters)` → paginated usage logs with user info, filterable by agent/user/date
+  - `query aiUsageTrend(days)` → daily usage trend with request/token/cost breakdown
+  - `mutation updateAiGovernanceConfig(input)` → update rate limits, budget, enabled
+  - `mutation updateToolPermission(input)` → override tool action type for tenant
+  - `mutation resetToolPermission(input)` → remove tenant override (revert to default)
+
+**Backend: Tests**
+- Updated governance.service.spec.ts with TenantAiConfig mock
+- Added 3 new tests: disabled AI blocks all tools, tenant override changes action type, tenant override to blocked works
+- All 104 tests pass
+
+**Frontend: Admin AI Governance Page**
+- New page at `/admin/ai-governance` with 4 tabbed sections:
+  1. **Tool Permissions** — Table of all 16 tools with Select dropdown to change action type (auto/suggest/blocked), reset-to-default button per overridden tool
+  2. **Rate Limits & Budget** — Configurable requests/min, daily token budget with current usage, monthly USD budget with progress bar
+  3. **Usage Trend** — 30-day bar chart of daily token usage with hover tooltips, summary stats
+  4. **Audit Log** — Paginated table with user info, agent type, tokens, cost, relative time, filterable by agent type
+- Overview stat cards: tool overrides count, rate limit, today's tokens, month's cost
+- AI enabled/disabled toggle with orange warning banner
+- Added "AI Governance" nav item with Shield icon to admin navigation
+
+### Files Created (6)
+```
+nexused-backend/src/modules/ai/entities/tenant-ai-config.entity.ts
+nexused-backend/src/modules/ai/dto/governance.types.ts
+nexused-backend/src/modules/ai/governance.resolver.ts
+nexused-frontend/src/lib/graphql/queries/governance.ts
+nexused-frontend/src/lib/graphql/mutations/governance.ts
+nexused-frontend/src/app/(dashboard)/admin/ai-governance/page.tsx
+```
+
+### Files Modified (6)
+```
+nexused-backend/src/modules/ai/governance.service.ts — DB-backed config, monthly budget, audit logs, usage trend
+nexused-backend/src/modules/ai/ai.module.ts — Added TenantAiConfig, GovernanceResolver, exported GovernanceService
+nexused-backend/src/database/entities/index.ts — Added TenantAiConfig to entity array
+nexused-backend/src/modules/ai/governance.service.spec.ts — Updated for TenantAiConfig, 3 new tests
+nexused-frontend/src/lib/navigation.ts — Added Shield icon, AI Governance nav item for admin
+BACKLOG.md — Updated FEAT-012 to DONE
+```
+
+### New GraphQL Schema Additions
+**Types:** TenantAiConfig, GovernanceConfig, ToolPermission, AuditLogEntry, AuditLogPage, DailyUsagePoint, UsageTrend
+**Enums:** GovernanceActionType
+**Inputs:** UpdateGovernanceConfigInput, UpdateToolPermissionInput, ResetToolPermissionInput, AuditLogFilterInput
+**Queries:** aiGovernanceConfig, aiAuditLogs, aiUsageTrend
+**Mutations:** updateAiGovernanceConfig, updateToolPermission, resetToolPermission
+
+### Build & Test Status
+- Backend: ✓ Type-checks clean
+- Frontend: ✓ Type-checks clean
+- Tests: ✓ 104 tests pass (21 governance + 83 others)
+- Lint: ✓ No errors
+
+### Session 20 Status
+**COMPLETE** — FEAT-012 done.
+
+### Next Session Priorities
+- FEAT-013: Agent Builder admin UI (marketplace potential)
+- FEAT-014: ML-based feed personalization (requires data)
