@@ -12,6 +12,11 @@ export {
 export { Assignment, AssignmentType } from './assignment.entity';
 export { Submission } from './submission.entity';
 export { Announcement, AnnouncementPriority } from './announcement.entity';
+export { DegreeProgram, DegreeProgramStatus } from './degree-program.entity';
+export {
+  StudentDegreeProfile,
+  DegreeProfileStatus,
+} from './student-degree-profile.entity';
 
 // Import entities for TypeORM
 import { Tenant } from './tenant.entity';
@@ -38,6 +43,10 @@ import { CourseContent } from '../../modules/content/course-content.entity';
 import { Conversation } from '../../modules/messaging/entities/conversation.entity';
 import { ConversationParticipant } from '../../modules/messaging/entities/conversation-participant.entity';
 import { DirectMessage } from '../../modules/messaging/entities/direct-message.entity';
+
+// Degree/planner entities
+import { DegreeProgram } from './degree-program.entity';
+import { StudentDegreeProfile } from './student-degree-profile.entity';
 
 // LTI entities
 import { LtiPlatform } from '../../modules/lti/entities/lti-platform.entity';
@@ -71,4 +80,6 @@ export const entities = [
   LtiContext,
   LtiUser,
   LtiState,
+  DegreeProgram,
+  StudentDegreeProfile,
 ];

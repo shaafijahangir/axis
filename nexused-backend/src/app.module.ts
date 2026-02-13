@@ -31,6 +31,7 @@ import { ContentModule } from './modules/content/content.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { LtiModule } from './modules/lti/lti.module';
+import { PlannerModule } from './modules/planner/planner.module';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import { LtiModule } from './modules/lti/lti.module';
     MessagingModule,
     AnalyticsModule,
     LtiModule,
+    PlannerModule,
   ],
   controllers: [AppController, HealthController],
   providers: [
