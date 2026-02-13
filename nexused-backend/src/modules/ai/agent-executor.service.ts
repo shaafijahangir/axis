@@ -16,6 +16,7 @@ import { GovernanceService } from './governance.service';
 import { UsageTrackingService } from './usage-tracking.service';
 import { ToolRegistry } from './tools/tool-registry';
 import { AgentRegistry } from './agents/agent-registry.service';
+import { CustomAgentService } from './custom-agent.service';
 import { AgentContext } from './tools/tool.interface';
 import {
   ContextBuilderParams,
@@ -83,6 +84,7 @@ export class AgentExecutorService {
     private usageTracking: UsageTrackingService,
     private toolRegistry: ToolRegistry,
     private agentRegistry: AgentRegistry,
+    private customAgentService: CustomAgentService,
     private eventEmitter: EventEmitter2,
     @InjectRepository(AiConversation)
     private conversationRepository: Repository<AiConversation>,
@@ -97,7 +99,11 @@ export class AgentExecutorService {
   async startConversation(
     params: StartConversationParams,
   ): Promise<AgentExecutionResult> {
-    const agent = this.agentRegistry.get(params.agentType);
+    // Resolve agent from built-in registry or custom agents DB
+    const agent = await this.customAgentService.resolveAgent(
+      params.agentType,
+      params.tenantId,
+    );
     if (!agent) {
       throw new Error(`Unknown agent type: "${params.agentType}"`);
     }
@@ -184,7 +190,10 @@ export class AgentExecutorService {
       );
     }
 
-    const agent = this.agentRegistry.get(conversation.agentType);
+    const agent = await this.customAgentService.resolveAgent(
+      conversation.agentType,
+      params.tenantId,
+    );
     if (!agent) {
       throw new Error(`Unknown agent type: "${conversation.agentType}"`);
     }

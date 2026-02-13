@@ -3,8 +3,10 @@ import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { User } from '../../database/entities/user.entity';
+import { Enrollment } from '../../database/entities/enrollment.entity';
 import { AgentExecutorService } from './agent-executor.service';
 import { AgentRegistry } from './agents/agent-registry.service';
+import { CustomAgentService } from './custom-agent.service';
 import { AiConversation } from './entities/ai-conversation.entity';
 import { AiMessage } from './entities/ai-message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -28,10 +30,13 @@ export class AiResolver {
   constructor(
     private agentExecutor: AgentExecutorService,
     private agentRegistry: AgentRegistry,
+    private customAgentService: CustomAgentService,
     @InjectRepository(AiConversation)
     private conversationRepo: Repository<AiConversation>,
     @InjectRepository(AiMessage)
     private messageRepo: Repository<AiMessage>,
+    @InjectRepository(Enrollment)
+    private enrollmentRepo: Repository<Enrollment>,
   ) {}
 
   // ─── Mutations ──────────────────────────────────────────────────────
@@ -72,9 +77,9 @@ export class AiResolver {
 
   @Query(() => [AgentInfoDto])
   async availableAgents(@CurrentUser() user: User): Promise<AgentInfoDto[]> {
-    // Return agents filtered by the user's roles
-    const allAgents = this.agentRegistry.getAll();
-    return allAgents
+    // Built-in agents filtered by role
+    const builtInAgents = this.agentRegistry
+      .getAll()
       .filter((agent) =>
         agent.allowedRoles.some((role) => user.roles.includes(role as any)),
       )
@@ -84,6 +89,34 @@ export class AiResolver {
         description: agent.description,
         allowedRoles: agent.allowedRoles,
       }));
+
+    // Custom agents: get user's enrolled course IDs for scope filtering
+    const enrollments = await this.enrollmentRepo.find({
+      where: { userId: user.id, tenantId: user.tenantId },
+      relations: ['section'],
+    });
+    const enrolledCourseIds = [
+      ...new Set(
+        enrollments
+          .map((e) => e.section?.courseId)
+          .filter((id): id is string => !!id),
+      ),
+    ];
+
+    const customAgents = await this.customAgentService.findAvailableForUser(
+      user.tenantId,
+      user.roles as string[],
+      enrolledCourseIds,
+    );
+
+    const customAgentInfos = customAgents.map((agent) => ({
+      type: `custom-${agent.slug}`,
+      displayName: agent.displayName,
+      description: agent.description,
+      allowedRoles: agent.allowedRoles,
+    }));
+
+    return [...builtInAgents, ...customAgentInfos];
   }
 
   @Query(() => [AiConversation])

@@ -8,6 +8,7 @@ import { AiConversation } from './entities/ai-conversation.entity';
 import { AiMessage } from './entities/ai-message.entity';
 import { AiUsageLog } from './entities/ai-usage-log.entity';
 import { TenantAiConfig } from './entities/tenant-ai-config.entity';
+import { CustomAgent } from './entities/custom-agent.entity';
 
 // Domain entities (for tools + context + event listener)
 import { User } from '../../database/entities/user.entity';
@@ -47,6 +48,10 @@ import { feedbackCopilotAgent } from './agents/feedback-copilot.agent';
 // Resolvers
 import { AiResolver } from './ai.resolver';
 import { GovernanceResolver } from './governance.resolver';
+import { CustomAgentResolver } from './custom-agent.resolver';
+
+// Custom agent service
+import { CustomAgentService } from './custom-agent.service';
 
 // Event listener
 import { AiEventListener } from './events/ai-event.listener';
@@ -71,6 +76,7 @@ import { CoursesService } from '../courses/courses.service';
       AiMessage,
       AiUsageLog,
       TenantAiConfig,
+      CustomAgent,
       User,
       Course,
       CourseSection,
@@ -98,6 +104,8 @@ import { CoursesService } from '../courses/courses.service';
     AgentRegistry,
     AiResolver,
     GovernanceResolver,
+    CustomAgentResolver,
+    CustomAgentService,
     AiEventListener,
   ],
   exports: [
@@ -109,6 +117,7 @@ import { CoursesService } from '../courses/courses.service';
     AgentRegistry,
     UsageTrackingService,
     GovernanceService,
+    CustomAgentService,
   ],
 })
 export class AiModule implements OnModuleInit {
