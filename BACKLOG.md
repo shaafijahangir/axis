@@ -609,6 +609,45 @@
   - `nexused-frontend/src/components/ai/ai-conversation-list.tsx` — Custom agent label from slug
 - **Acceptance:** ✓ Instructor can create a custom agent for their course. ✓ Custom agents appear in student's agent selector (role + course filtered). ✓ Agent respects governance rules (same AgentExecutor loop). ✓ 104 tests pass.
 
+### FEAT-015: AI Course Planner
+- **Status:** `DONE`
+- **Completed:** 2026-02-12
+- **Priority:** HIGH — "The feature that started the entire project" (ROADMAP.md)
+- **Details:** AI-powered academic advisor that helps students plan courses, track graduation progress, explore what-if scenarios for changing majors, and find eligible courses.
+- **Backend Implementation:**
+  - `DegreeProgram` entity — tenant-scoped degree definitions with name, code, department, totalCreditsRequired, and JSONB requirements (groups of core/elective/gen-ed/concentration with course refs and credit/course thresholds)
+  - `StudentDegreeProfile` entity — links student to a degree program, tracks completedCourseIds and currentCourseIds (JSONB), enrollment year, expected graduation
+  - `PlannerService` — CRUD for programs and profiles, progress calculation (per-requirement-group credit/course tracking), course eligibility (prerequisite checking + unfulfilled requirement matching), major change simulation
+  - `PlannerResolver` — GraphQL queries (degreePrograms, myDegreeProfiles, degreeProgress, eligibleCourses, simulateMajorChange) and mutations (createDegreeProgram, updateDegreeProgram, createStudentDegreeProfile, updateStudentDegreeProfile)
+  - `PlannerModule` — standalone module, exports PlannerService for AI module consumption
+  - 6 new AI tools: get_degree_progress, get_student_degree_profiles, get_eligible_courses, get_degree_requirements, list_degree_programs, simulate_major_change
+  - Course Planner agent definition — maxTurns: 20, tools: 6 planner + 3 course tools, Socratic-directive hybrid prompt
+- **Frontend Implementation:**
+  - Degree Planner page at `/planner` with SVG progress ring, stat cards (credits completed, remaining, estimated semesters), requirements breakdown grid with progress bars, eligible courses list with prerequisite badges, what-if major change simulator
+  - Setup dialog for selecting degree program and enrollment year
+  - CTA linking to AI Course Planner conversation
+  - Added "Planner" nav item with Map icon to student navigation
+  - Updated AI conversation list with Course Planner icon and label
+- **Files Created:**
+  - `nexused-backend/src/database/entities/degree-program.entity.ts`
+  - `nexused-backend/src/database/entities/student-degree-profile.entity.ts`
+  - `nexused-backend/src/modules/planner/planner.service.ts`
+  - `nexused-backend/src/modules/planner/planner.resolver.ts`
+  - `nexused-backend/src/modules/planner/planner.module.ts`
+  - `nexused-backend/src/modules/planner/dto/planner.types.ts`
+  - `nexused-backend/src/modules/ai/tools/planner.tools.ts`
+  - `nexused-backend/src/modules/ai/agents/course-planner.agent.ts`
+  - `nexused-frontend/src/lib/graphql/queries/planner.ts`
+  - `nexused-frontend/src/lib/graphql/mutations/planner.ts`
+  - `nexused-frontend/src/app/(dashboard)/planner/page.tsx`
+- **Files Modified:**
+  - `nexused-backend/src/database/entities/index.ts` — Added DegreeProgram, StudentDegreeProfile
+  - `nexused-backend/src/modules/ai/ai.module.ts` — Registered planner tools and Course Planner agent
+  - `nexused-backend/src/app.module.ts` — Added PlannerModule
+  - `nexused-frontend/src/lib/navigation.ts` — Added Planner nav for students
+  - `nexused-frontend/src/components/ai/ai-conversation-list.tsx` — Course Planner icon and label
+- **Acceptance:** ✓ Student can set up degree profile. ✓ Progress tracked with per-requirement breakdown. ✓ Eligible courses filtered by prerequisites and requirements. ✓ What-if simulator shows credit transfer. ✓ AI Course Planner agent available in chat. ✓ 104 tests pass.
+
 ### FEAT-014: ML-based feed personalization
 - **Status:** `TODO`
 - **Priority:** LOW (requires data to train)
