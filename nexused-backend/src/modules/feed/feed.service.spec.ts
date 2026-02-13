@@ -168,7 +168,7 @@ describe('FeedService', () => {
       expect(gradeItem?.pointsPossible).toBe(50);
     });
 
-    it('should prioritize urgent deadlines (within 48 hours)', async () => {
+    it('should return all deadline items without sorting (sorting moved to personalization)', async () => {
       const course = createCourse({ code: 'CS101' });
       const section = createCourseSection({ course });
       const enrollment = createEnrollment({
@@ -180,7 +180,6 @@ describe('FeedService', () => {
       enrollment.section = section;
       enrollment.section.course = course;
 
-      // One assignment due in 24 hours (urgent)
       const urgentDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const urgentAssignment = createAssignment({
         sectionId: section.id,
@@ -188,7 +187,6 @@ describe('FeedService', () => {
         dueAt: urgentDate,
       });
 
-      // One assignment due in 7 days (not urgent)
       const laterDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       const laterAssignment = createAssignment({
         sectionId: section.id,
@@ -208,9 +206,11 @@ describe('FeedService', () => {
 
       const result = await service.getStudentFeed(userId, tenantId);
 
-      // Urgent deadline should come first
+      // Both deadlines should be present (sorting is now in FeedPersonalizationService)
       const deadlines = result.filter((i) => i.type === FeedItemType.DEADLINE);
-      expect(deadlines[0].title).toBe('Urgent Assignment');
+      expect(deadlines).toHaveLength(2);
+      expect(deadlines.map((d) => d.title)).toContain('Urgent Assignment');
+      expect(deadlines.map((d) => d.title)).toContain('Later Assignment');
     });
   });
 

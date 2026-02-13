@@ -55,6 +55,9 @@ import { LtiContext } from '../../modules/lti/entities/lti-context.entity';
 import { LtiUser } from '../../modules/lti/entities/lti-user.entity';
 import { LtiState } from '../../modules/lti/entities/lti-state.entity';
 
+// Feed engagement entity
+import { FeedEngagement } from '../../modules/feed/entities/feed-engagement.entity';
+
 // Array of entity classes for TypeORM
 export const entities = [
   Tenant,
@@ -82,4 +85,5 @@ export const entities = [
   LtiState,
   DegreeProgram,
   StudentDegreeProfile,
+  FeedEngagement,
 ];

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, In, IsNull, Repository } from 'typeorm';
+import { MoreThan, In, Repository } from 'typeorm';
 import {
   Enrollment,
   EnrollmentStatus,
@@ -148,31 +148,9 @@ export class FeedService {
       });
     }
 
-    // 5. Sort by urgency: deadlines first (nearest due date), then by recency
-    items.sort((a, b) => {
-      // Deadlines within 48 hours get priority
-      const aUrgent =
-        a.type === FeedItemType.DEADLINE &&
-        a.dueAt &&
-        a.dueAt.getTime() - now.getTime() < 48 * 60 * 60 * 1000;
-      const bUrgent =
-        b.type === FeedItemType.DEADLINE &&
-        b.dueAt &&
-        b.dueAt.getTime() - now.getTime() < 48 * 60 * 60 * 1000;
-
-      if (aUrgent && !bUrgent) return -1;
-      if (!aUrgent && bUrgent) return 1;
-
-      // Then sort by timestamp (most recent first for non-deadlines, earliest first for deadlines)
-      if (
-        a.type === FeedItemType.DEADLINE &&
-        b.type === FeedItemType.DEADLINE
-      ) {
-        return a.timestamp.getTime() - b.timestamp.getTime();
-      }
-      return b.timestamp.getTime() - a.timestamp.getTime();
-    });
-
+    // FEAT-014: Sorting moved to FeedPersonalizationService.rankFeedItems()
+    // which applies ML-based scoring when engagement data exists,
+    // or falls back to rule-based urgency ranking for new users.
     return items;
   }
 

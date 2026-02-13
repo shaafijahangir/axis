@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { Clock, ClipboardList, Megaphone } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
@@ -15,6 +15,10 @@ import {
   useWidgetPreferences,
   feedTypeToInstructorWidget,
 } from '@/hooks/use-widget-preferences';
+import {
+  useFeedEngagement,
+  useFeedCardVisibility,
+} from '@/hooks/use-feed-engagement';
 
 interface InstructorFeedItemData {
   type: string;
@@ -51,9 +55,85 @@ const typeConfig: Record<
   },
 };
 
+function InstructorFeedCard({
+  item,
+  onImpression,
+  onClick,
+}: {
+  item: InstructorFeedItemData;
+  onImpression: (
+    type: string,
+    id: string,
+    courseCode: string,
+    sectionId: string,
+  ) => void;
+  onClick: (
+    type: string,
+    id: string,
+    courseCode: string,
+    sectionId: string,
+  ) => void;
+}) {
+  const config = typeConfig[item.type] ?? typeConfig.upcoming_deadline;
+  const Icon = config.icon;
+
+  const handleVisible = useCallback(() => {
+    onImpression(item.type, item.id, item.courseCode, item.sectionId);
+  }, [item.type, item.id, item.courseCode, item.sectionId, onImpression]);
+
+  const handleClick = useCallback(() => {
+    onClick(item.type, item.id, item.courseCode, item.sectionId);
+  }, [item.type, item.id, item.courseCode, item.sectionId, onClick]);
+
+  const visibilityRef = useFeedCardVisibility(handleVisible);
+
+  return (
+    <div ref={visibilityRef} onClick={handleClick}>
+      <Card
+        className={`border-l-4 ${config.borderColor}`}
+        role="article"
+        aria-label={`${item.type === 'ungraded' ? 'Needs grading' : item.type === 'upcoming_deadline' ? 'Upcoming deadline' : 'Announcement'}: ${item.title}`}
+      >
+        <CardContent className="flex items-start gap-4 p-4">
+          <div
+            className={`mt-0.5 shrink-0 ${config.iconColor}`}
+            aria-hidden="true"
+          >
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {item.courseCode}
+              </Badge>
+              {item.ungradedCount != null && (
+                <Badge variant="destructive" className="text-xs">
+                  {item.ungradedCount} to grade
+                </Badge>
+              )}
+            </div>
+            <p className="mt-1 font-medium">{item.title}</p>
+            {item.subtitle && (
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {item.subtitle}
+              </p>
+            )}
+            {item.dueAt && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Due {formatRelativeTime(item.dueAt)}
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export function InstructorHomeFeed() {
   const { user } = useAuthStore();
   const { isWidgetEnabled } = useWidgetPreferences();
+  const { trackClick, trackImpression } = useFeedEngagement();
   const { data, loading } = useQuery<{
     instructorFeed: InstructorFeedItemData[];
   }>(INSTRUCTOR_FEED_QUERY);
@@ -95,51 +175,14 @@ export function InstructorHomeFeed() {
           aria-label="Teaching activity feed"
           aria-busy={loading}
         >
-          {filteredFeed.map((item) => {
-            const config =
-              typeConfig[item.type] ?? typeConfig.upcoming_deadline;
-            const Icon = config.icon;
-            return (
-              <Card
-                key={item.id}
-                className={`border-l-4 ${config.borderColor}`}
-                role="article"
-                aria-label={`${item.type === 'ungraded' ? 'Needs grading' : item.type === 'upcoming_deadline' ? 'Upcoming deadline' : 'Announcement'}: ${item.title}`}
-              >
-                <CardContent className="flex items-start gap-4 p-4">
-                  <div
-                    className={`mt-0.5 shrink-0 ${config.iconColor}`}
-                    aria-hidden="true"
-                  >
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {item.courseCode}
-                      </Badge>
-                      {item.ungradedCount != null && (
-                        <Badge variant="destructive" className="text-xs">
-                          {item.ungradedCount} to grade
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="mt-1 font-medium">{item.title}</p>
-                    {item.subtitle && (
-                      <p className="mt-0.5 text-sm text-muted-foreground">
-                        {item.subtitle}
-                      </p>
-                    )}
-                    {item.dueAt && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Due {formatRelativeTime(item.dueAt)}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {filteredFeed.map((item) => (
+            <InstructorFeedCard
+              key={item.id}
+              item={item}
+              onImpression={trackImpression}
+              onClick={trackClick}
+            />
+          ))}
         </section>
       ) : (
         <EmptyFeed />

@@ -649,10 +649,40 @@
 - **Acceptance:** ✓ Student can set up degree profile. ✓ Progress tracked with per-requirement breakdown. ✓ Eligible courses filtered by prerequisites and requirements. ✓ What-if simulator shows credit transfer. ✓ AI Course Planner agent available in chat. ✓ 104 tests pass.
 
 ### FEAT-014: ML-based feed personalization
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-12
 - **Priority:** LOW (requires data to train)
-- **Details:** Replace rule-based feed ranking with a model trained on user behavior. Track which feed items are clicked, how long users spend, what gets ignored. Use engagement signals to personalize ranking.
-- **Acceptance:** Feed order reflects individual user behavior patterns. A/B test shows higher engagement than rule-based ranking.
+- **Details:** Replace rule-based feed ranking with a weighted scoring model trained on user behavior. Track clicks, impressions, and dismissals per feed item per user. Use engagement signals to personalize ranking.
+- **Backend Implementation:**
+  - `FeedEngagement` entity — append-only event log tracking clicks, impressions, dismissals with tenantId, userId, feedItemType, courseCode, dwellTimeMs
+  - `FeedPersonalizationService` — builds per-user engagement profile (type CTR, course CTR, seen items), scores feed items using 5-feature weighted model (urgency 0.35, typeAffinity 0.20, courseAffinity 0.15, recency 0.20, novelty 0.10), falls back to rule-based ranking for new users
+  - GraphQL mutations: `recordFeedEngagement` (single), `recordFeedEngagementBatch` (batched impressions)
+  - GraphQL query: `feedEngagementStats` (admin-only tenant analytics)
+  - Updated `FeedResolver.studentFeed` to apply personalized ranking after data fetch
+  - 13 new unit tests for personalization service (scoring model, profiles, stats)
+- **Frontend Implementation:**
+  - `useFeedEngagement` hook — tracks clicks (immediate), impressions (batched every 5s via IntersectionObserver), dismissals (immediate). Deduplicates impressions, fire-and-forget mutations
+  - `useFeedCardVisibility` hook — IntersectionObserver wrapper that fires impression callback at 50% visibility threshold
+  - Updated `FeedCard` — accepts `onImpression` and `onClick` callbacks, wraps in visibility-tracked div
+  - Updated `StudentHomeFeed` — wires engagement tracking into all feed cards
+  - Updated `InstructorHomeFeed` — extracted `InstructorFeedCard` component with engagement tracking
+- **Files Created:**
+  - `nexused-backend/src/modules/feed/entities/feed-engagement.entity.ts`
+  - `nexused-backend/src/modules/feed/feed-personalization.service.ts`
+  - `nexused-backend/src/modules/feed/dto/engagement.types.ts`
+  - `nexused-backend/src/modules/feed/feed-personalization.service.spec.ts`
+  - `nexused-frontend/src/hooks/use-feed-engagement.ts`
+  - `nexused-frontend/src/lib/graphql/mutations/feed-engagement.ts`
+- **Files Modified:**
+  - `nexused-backend/src/modules/feed/feed.service.ts` — Removed sorting (delegated to personalization)
+  - `nexused-backend/src/modules/feed/feed.resolver.ts` — Added engagement mutations, personalized ranking
+  - `nexused-backend/src/modules/feed/feed.module.ts` — Registered FeedEngagement entity and personalization service
+  - `nexused-backend/src/database/entities/index.ts` — Added FeedEngagement to TypeORM
+  - `nexused-backend/src/modules/feed/feed.service.spec.ts` — Updated sort test
+  - `nexused-frontend/src/components/feed/feed-card.tsx` — Added engagement tracking props
+  - `nexused-frontend/src/components/feed/student-home-feed.tsx` — Wired engagement tracking
+  - `nexused-frontend/src/components/feed/instructor-home-feed.tsx` — Wired engagement tracking
+- **Acceptance:** ✓ Engagement events tracked per user. ✓ Feed ranking adapts to user behavior. ✓ New users get rule-based fallback. ✓ Urgent deadlines still prioritized (0.35 weight). ✓ Admin can view engagement stats. ✓ 117 tests pass (13 new).
 
 ---
 
@@ -675,5 +705,5 @@
 
 ---
 
-*Last updated: 2026-02-12 (Session 20 — FEAT-012 AI Governance Console completed)*
+*Last updated: 2026-02-12 (Session 23 — FEAT-014 ML Feed Personalization completed)*
 *This file is the primary task reference for all development sessions.*
