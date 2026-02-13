@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { GovernanceService, GovernanceDecision } from './governance.service';
 import { ToolRegistry } from './tools/tool-registry';
 import { AiUsageLog } from './entities/ai-usage-log.entity';
+import { TenantAiConfig } from './entities/tenant-ai-config.entity';
 import { AgentContext, ToolDefinition } from './tools/tool.interface';
 import {
   createMockRepository,
@@ -15,6 +16,7 @@ describe('GovernanceService', () => {
   let service: GovernanceService;
   let toolRegistry: ToolRegistry;
   let usageLogRepo: MockRepository<AiUsageLog>;
+  let tenantAiConfigRepo: MockRepository<TenantAiConfig>;
   let configService: Partial<ConfigService>;
 
   // Default context for tests
@@ -54,9 +56,21 @@ describe('GovernanceService', () => {
     actionType: 'blocked',
   };
 
+  // Default TenantAiConfig returned by the mock repo
+  const defaultTenantConfig: Partial<TenantAiConfig> = {
+    id: 'config-1',
+    tenantId: 'tenant-1',
+    enabled: true,
+    toolOverrides: {},
+    maxRequestsPerMinute: null,
+    maxTokensPerDay: null,
+    monthlyBudgetUsd: null,
+  };
+
   beforeEach(async () => {
     // Create fresh mocks for each test
     usageLogRepo = createMockRepository<AiUsageLog>();
+    tenantAiConfigRepo = createMockRepository<TenantAiConfig>();
     configService = {
       get: jest.fn((key: string) => {
         const config: Record<string, unknown> = {
@@ -66,6 +80,11 @@ describe('GovernanceService', () => {
         return config[key];
       }),
     };
+
+    // Mock TenantAiConfig repo to return default config
+    tenantAiConfigRepo.findOne!.mockResolvedValue(
+      defaultTenantConfig as TenantAiConfig,
+    );
 
     // Create real ToolRegistry and register test tools
     toolRegistry = new ToolRegistry();
@@ -82,16 +101,31 @@ describe('GovernanceService', () => {
           provide: getRepositoryToken(AiUsageLog),
           useValue: usageLogRepo,
         },
+        {
+          provide: getRepositoryToken(TenantAiConfig),
+          useValue: tenantAiConfigRepo,
+        },
       ],
     }).compile();
 
     service = module.get<GovernanceService>(GovernanceService);
   });
 
+  // Helper to mock query builder for daily token / monthly cost checks
+  function mockBudgetChecks(
+    dailyTokens: string = '0',
+    monthlyCost: string = '0',
+  ) {
+    const qb = createMockQueryBuilder<AiUsageLog>();
+    qb.getRawOne!.mockResolvedValue({ total: dailyTokens });
+    usageLogRepo.createQueryBuilder!.mockReturnValue(qb as any);
+  }
+
   describe('checkToolPermission', () => {
     it('should return allowed=true and actionType=auto for auto tools within rate limit', async () => {
       // Mock: user has made 0 requests in the last minute
       usageLogRepo.count!.mockResolvedValue(0);
+      mockBudgetChecks();
 
       const result = await service.checkToolPermission(
         'get_course',
@@ -107,6 +141,7 @@ describe('GovernanceService', () => {
 
     it('should return allowed=true and actionType=suggest for suggest tools within rate limit', async () => {
       usageLogRepo.count!.mockResolvedValue(5);
+      mockBudgetChecks();
 
       const result = await service.checkToolPermission(
         'enroll_student',
@@ -166,6 +201,7 @@ describe('GovernanceService', () => {
     it('should allow request when under rate limit by 1', async () => {
       // Mock: user has made 59 requests (1 under limit)
       usageLogRepo.count!.mockResolvedValue(59);
+      mockBudgetChecks();
 
       const result = await service.checkToolPermission(
         'get_course',
@@ -173,6 +209,57 @@ describe('GovernanceService', () => {
       );
 
       expect(result.allowed).toBe(true);
+    });
+
+    it('should block when AI is disabled for tenant', async () => {
+      tenantAiConfigRepo.findOne!.mockResolvedValue({
+        ...defaultTenantConfig,
+        enabled: false,
+      } as TenantAiConfig);
+
+      const result = await service.checkToolPermission(
+        'get_course',
+        defaultContext,
+      );
+
+      expect(result).toEqual<GovernanceDecision>({
+        allowed: false,
+        actionType: 'blocked',
+        reason: 'AI features are disabled for this institution',
+      });
+    });
+
+    it('should use tenant tool override instead of default action type', async () => {
+      // Override: enroll_student changed from suggest to auto
+      tenantAiConfigRepo.findOne!.mockResolvedValue({
+        ...defaultTenantConfig,
+        toolOverrides: { enroll_student: 'auto' },
+      } as TenantAiConfig);
+      usageLogRepo.count!.mockResolvedValue(0);
+      mockBudgetChecks();
+
+      const result = await service.checkToolPermission(
+        'enroll_student',
+        defaultContext,
+      );
+
+      expect(result.actionType).toBe('auto');
+      expect(result.allowed).toBe(true);
+    });
+
+    it('should block when tenant overrides tool to blocked', async () => {
+      tenantAiConfigRepo.findOne!.mockResolvedValue({
+        ...defaultTenantConfig,
+        toolOverrides: { get_course: 'blocked' },
+      } as TenantAiConfig);
+
+      const result = await service.checkToolPermission(
+        'get_course',
+        defaultContext,
+      );
+
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('blocked by governance policy');
     });
   });
 
@@ -281,6 +368,7 @@ describe('GovernanceService', () => {
     it('should handle multiple rapid requests correctly', async () => {
       // First request: 59 (under limit)
       usageLogRepo.count!.mockResolvedValueOnce(59);
+      mockBudgetChecks();
       // Second request: 60 (at limit)
       usageLogRepo.count!.mockResolvedValueOnce(60);
 
@@ -299,6 +387,7 @@ describe('GovernanceService', () => {
 
     it('should work with different tenant contexts', async () => {
       usageLogRepo.count!.mockResolvedValue(0);
+      mockBudgetChecks();
 
       const tenant1Ctx: AgentContext = {
         ...defaultContext,
