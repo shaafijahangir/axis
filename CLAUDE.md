@@ -1,5 +1,28 @@
 # CLAUDE.md
 
+## Context Loading (MANDATORY — Every Conversation)
+
+**Before doing ANY work**, read these docs to understand the system you're working in. This is not optional — skipping this leads to wrong decisions, inconsistent code, and wasted time.
+
+### Always Read First (every session, every task)
+1. **`ARCHITECTURE.md`** — System design, module map, data flow, AI engine. Read this to know where things live and how they connect.
+2. **`CONVENTIONS.md`** — Code patterns, naming rules, file structure. Read this to write code that matches the codebase.
+3. **`DESIGN-SYSTEM.md`** — UI principles, color tokens, component patterns. Read this before touching any frontend code.
+
+### Read When Relevant
+4. **`DATA-MODEL.md`** — Entity fields, relationships, JSONB contracts. Read before creating/modifying entities or writing queries.
+5. **`SECURITY.md`** — Auth model, tenant isolation, FERPA. Read before touching auth, tenancy, or user data.
+6. **`TECH_STACK.md`** — Technology decisions with rationale. Read before proposing new dependencies or architectural changes.
+
+### Read During Chef Mode (task execution)
+7. **`.claude/session-log.md`** — What was done last session, current state.
+8. **`BACKLOG.md`** — Prioritized task list.
+9. **`ROADMAP.md`** — Phase structure.
+
+**The first 3 docs give you the mental model. Without them, you're coding blind.**
+
+---
+
 ## Quick Start — "Chef Mode"
 
 When Shaafi says **"chef it up"**, **"start cooking"**, **"build"**, or any variation — this is the protocol:
@@ -8,6 +31,7 @@ When Shaafi says **"chef it up"**, **"start cooking"**, **"build"**, or any vari
    - `.claude/session-log.md` → What was done last, what's the current state
    - `BACKLOG.md` → The prioritized task list (P0 → P1 → P2 → P3 → Features)
    - `ROADMAP.md` → The phase structure and what phase we're in
+   - (The core docs — ARCHITECTURE, CONVENTIONS, DESIGN-SYSTEM — should already be loaded per the Context Loading section above)
 2. **Pick up the next task** — Find the highest-priority `TODO` item in `BACKLOG.md`. P0 before P1. P1 before P2. Never skip priority levels.
 3. **Announce what you're cooking** — Tell Shaafi in 1-2 sentences what you're about to build and why it's the right next thing.
 4. **Cook** — Implement it fully. Production-quality. No placeholders. No "we'll add this later."
