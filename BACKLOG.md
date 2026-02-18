@@ -847,7 +847,8 @@
 - **Acceptance:** Students receive feed notifications for all enrollment status changes. New course enrollment triggers onboarding checklist. Course appears in navigation immediately.
 
 ### ENROLL-005: Enroll-from-AI (Course Planner Integration)
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-18
 - **Priority:** MEDIUM — The AI-native differentiator
 - **Depends on:** ENROLL-002, FEAT-015 (Course Planner — already DONE)
 - **Scope:**
