@@ -467,6 +467,175 @@ export class CoursesService {
       .getMany();
   }
 
+  // ─── ENROLL-003: Enrollment lifecycle ────────────────────────────────────────
+
+  /** Returns the calling student's enrollment for a specific section, or null. */
+  async getMyEnrollmentForSection(
+    userId: string,
+    sectionId: string,
+    tenantId: string,
+  ): Promise<Enrollment | null> {
+    return this.enrollmentsRepository.findOne({
+      where: { userId, sectionId, tenantId },
+    });
+  }
+
+  /**
+   * ENROLL-003: Student drops an active enrollment before the drop deadline.
+   *
+   * Drop = clean removal, no transcript record.
+   * Only valid before the term's dropDeadline (if set).
+   */
+  async dropCourse(
+    enrollmentId: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<Enrollment> {
+    const enrollment = await this.enrollmentsRepository.findOne({
+      where: { id: enrollmentId, tenantId },
+    });
+    if (!enrollment) throw new NotFoundException('Enrollment not found');
+    if (enrollment.userId !== userId) {
+      throw new ForbiddenException('You can only drop your own enrollments');
+    }
+    if (enrollment.status !== EnrollmentStatus.ACTIVE) {
+      throw new ForbiddenException('Only active enrollments can be dropped');
+    }
+
+    // Load section + term to validate deadline
+    const section = await this.sectionsRepository.findOne({
+      where: { id: enrollment.sectionId },
+      relations: ['term'],
+    });
+    const now = new Date();
+    if (
+      section?.term?.dropDeadline &&
+      now > new Date(section.term.dropDeadline)
+    ) {
+      throw new ForbiddenException(
+        'The drop deadline has passed. You may be able to withdraw instead.',
+      );
+    }
+
+    await this.enrollmentsRepository.update(enrollmentId, {
+      status: EnrollmentStatus.DROPPED,
+    });
+
+    this.eventEmitter.emit(NexusEvents.ENROLLMENT_DROPPED, {
+      enrollmentId,
+      userId,
+      sectionId: enrollment.sectionId,
+      tenantId,
+    });
+
+    return this.enrollmentsRepository.findOneOrFail({
+      where: { id: enrollmentId },
+    });
+  }
+
+  /**
+   * ENROLL-003: Student withdraws from an active enrollment.
+   *
+   * Withdraw = "W" on transcript. Only valid before the term's withdrawDeadline.
+   * After the drop deadline, withdraw is the only option.
+   */
+  async withdrawFromCourse(
+    enrollmentId: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<Enrollment> {
+    const enrollment = await this.enrollmentsRepository.findOne({
+      where: { id: enrollmentId, tenantId },
+    });
+    if (!enrollment) throw new NotFoundException('Enrollment not found');
+    if (enrollment.userId !== userId) {
+      throw new ForbiddenException(
+        'You can only withdraw from your own enrollments',
+      );
+    }
+    if (enrollment.status !== EnrollmentStatus.ACTIVE) {
+      throw new ForbiddenException(
+        'Only active enrollments can be withdrawn from',
+      );
+    }
+
+    // Load section + term to validate deadline
+    const section = await this.sectionsRepository.findOne({
+      where: { id: enrollment.sectionId },
+      relations: ['term'],
+    });
+    const now = new Date();
+    if (
+      section?.term?.withdrawDeadline &&
+      now > new Date(section.term.withdrawDeadline)
+    ) {
+      throw new ForbiddenException(
+        'The withdrawal deadline has passed. Contact your institution for assistance.',
+      );
+    }
+
+    await this.enrollmentsRepository.update(enrollmentId, {
+      status: EnrollmentStatus.WITHDRAWN,
+    });
+
+    this.eventEmitter.emit(NexusEvents.ENROLLMENT_WITHDRAWN, {
+      enrollmentId,
+      userId,
+      sectionId: enrollment.sectionId,
+      tenantId,
+    });
+
+    return this.enrollmentsRepository.findOneOrFail({
+      where: { id: enrollmentId },
+    });
+  }
+
+  /**
+   * ENROLL-003: Admin forces any enrollment to any status, bypassing deadlines.
+   * Fires the appropriate event so downstream listeners stay consistent.
+   */
+  async adminForceEnrollmentStatus(
+    enrollmentId: string,
+    tenantId: string,
+    status: EnrollmentStatus,
+  ): Promise<Enrollment> {
+    const enrollment = await this.enrollmentsRepository.findOne({
+      where: { id: enrollmentId, tenantId },
+    });
+    if (!enrollment) throw new NotFoundException('Enrollment not found');
+
+    await this.enrollmentsRepository.update(enrollmentId, { status });
+
+    // Emit the relevant lifecycle event
+    if (status === EnrollmentStatus.ACTIVE) {
+      this.eventEmitter.emit(NexusEvents.ENROLLMENT_CREATED, {
+        enrollmentId,
+        userId: enrollment.userId,
+        sectionId: enrollment.sectionId,
+        tenantId,
+      });
+    } else if (status === EnrollmentStatus.DROPPED) {
+      this.eventEmitter.emit(NexusEvents.ENROLLMENT_DROPPED, {
+        enrollmentId,
+        userId: enrollment.userId,
+        sectionId: enrollment.sectionId,
+        tenantId,
+      });
+    } else if (status === EnrollmentStatus.WITHDRAWN) {
+      this.eventEmitter.emit(NexusEvents.ENROLLMENT_WITHDRAWN, {
+        enrollmentId,
+        userId: enrollment.userId,
+        sectionId: enrollment.sectionId,
+        tenantId,
+      });
+    }
+
+    return this.enrollmentsRepository.findOneOrFail({
+      where: { id: enrollmentId },
+      relations: ['user'],
+    });
+  }
+
   async findEnrollmentsForSection(
     sectionId: string,
     tenantId: string,

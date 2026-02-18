@@ -1,10 +1,29 @@
 'use client';
 
-import { useQuery } from '@apollo/client/react';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { SECTION_ENROLLMENTS_QUERY } from '@/lib/graphql/queries/courses';
+import { ADMIN_FORCE_ENROLLMENT_STATUS_MUTATION } from '@/lib/graphql/mutations/enrollment';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useAuthStore } from '@/stores/auth.store';
+import { UserRole } from '@/types/auth';
+
+type EnrollmentStatus =
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'DROPPED'
+  | 'WITHDRAWN'
+  | 'WAITLISTED'
+  | 'REJECTED';
 
 interface EnrollmentData {
   id: string;
@@ -23,8 +42,86 @@ interface SectionRosterProps {
   sectionId: string;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  active: 'Active',
+  pending: 'Pending',
+  completed: 'Completed',
+  dropped: 'Dropped',
+  withdrawn: 'Withdrawn',
+  waitlisted: 'Waitlisted',
+  rejected: 'Rejected',
+};
+
+/** Admin-only select to force an enrollment to any status. */
+function EnrollmentStatusSelect({
+  enrollmentId,
+  currentStatus,
+  onChanged,
+}: {
+  enrollmentId: string;
+  currentStatus: string;
+  onChanged: (newStatus: string) => void;
+}) {
+  const [forceStatus, { loading }] = useMutation(
+    ADMIN_FORCE_ENROLLMENT_STATUS_MUTATION,
+    {
+      onCompleted: (data) => {
+        onChanged(
+          (
+            data as {
+              adminForceEnrollmentStatus: { status: string };
+            }
+          ).adminForceEnrollmentStatus.status,
+        );
+      },
+    },
+  );
+
+  return (
+    <Select
+      value={currentStatus.toUpperCase() as EnrollmentStatus}
+      onValueChange={(val) =>
+        forceStatus({
+          variables: {
+            enrollmentId,
+            status: val as EnrollmentStatus,
+          },
+        })
+      }
+      disabled={loading}
+    >
+      <SelectTrigger
+        className="h-7 w-32 text-xs"
+        aria-label="Change enrollment status"
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {(
+          [
+            'ACTIVE',
+            'PENDING',
+            'COMPLETED',
+            'DROPPED',
+            'WITHDRAWN',
+            'WAITLISTED',
+            'REJECTED',
+          ] as const
+        ).map((s) => (
+          <SelectItem key={s} value={s} className="text-xs">
+            {STATUS_LABELS[s.toLowerCase()]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function SectionRoster({ sectionId }: SectionRosterProps) {
-  const { data, loading } = useQuery<{
+  const { user } = useAuthStore();
+  const isAdmin = user?.roles.includes(UserRole.ADMIN);
+
+  const { data, loading, refetch } = useQuery<{
     sectionEnrollments: EnrollmentData[];
   }>(SECTION_ENROLLMENTS_QUERY, { variables: { sectionId } });
 
@@ -60,9 +157,9 @@ export function SectionRoster({ sectionId }: SectionRosterProps) {
   return (
     <div className="space-y-1">
       {enrollments.map((enrollment) => {
-        const { user } = enrollment;
+        const { user: rUser } = enrollment;
         const initials =
-          `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+          `${rUser.firstName[0]}${rUser.lastName[0]}`.toUpperCase();
 
         return (
           <div
@@ -74,10 +171,10 @@ export function SectionRoster({ sectionId }: SectionRosterProps) {
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">
-                {user.firstName} {user.lastName}
+                {rUser.firstName} {rUser.lastName}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                {user.email}
+                {rUser.email}
               </p>
             </div>
             {enrollment.role !== 'student' && (
@@ -85,10 +182,19 @@ export function SectionRoster({ sectionId }: SectionRosterProps) {
                 {enrollment.role}
               </Badge>
             )}
-            {enrollment.status !== 'active' && (
-              <Badge variant="outline" className="text-xs capitalize">
-                {enrollment.status}
-              </Badge>
+            {/* Admin: force-status select; others: read-only badge for non-active */}
+            {isAdmin ? (
+              <EnrollmentStatusSelect
+                enrollmentId={enrollment.id}
+                currentStatus={enrollment.status}
+                onChanged={() => refetch()}
+              />
+            ) : (
+              enrollment.status !== 'active' && (
+                <Badge variant="outline" className="text-xs capitalize">
+                  {enrollment.status}
+                </Badge>
+              )
             )}
           </div>
         );

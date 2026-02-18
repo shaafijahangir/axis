@@ -103,6 +103,11 @@ export const SECTION_QUERY = gql`
       enrollmentMode
       inviteCode
       autoApprove
+      termId
+      term {
+        dropDeadline
+        withdrawDeadline
+      }
       course {
         id
         code
@@ -114,6 +119,16 @@ export const SECTION_QUERY = gql`
         firstName
         lastName
       }
+    }
+  }
+`;
+
+export const MY_ENROLLMENT_FOR_SECTION_QUERY = gql`
+  query MyEnrollmentForSection($sectionId: String!) {
+    myEnrollmentForSection(sectionId: $sectionId) {
+      id
+      status
+      enrolledAt
     }
   }
 `;

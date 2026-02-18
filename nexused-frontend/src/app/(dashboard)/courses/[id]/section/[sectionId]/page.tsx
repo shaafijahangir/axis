@@ -1,10 +1,14 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
 import { BarChart3, Plus, Users } from 'lucide-react';
-import { SECTION_QUERY } from '@/lib/graphql/queries/courses';
+import {
+  SECTION_QUERY,
+  MY_ENROLLMENT_FOR_SECTION_QUERY,
+} from '@/lib/graphql/queries/courses';
 import { SECTION_TIMELINE_QUERY } from '@/lib/graphql/queries/timeline';
 import { CourseHeader } from '@/components/courses/course-header';
 import { TimelineEntryCard } from '@/components/courses/timeline-entry-card';
@@ -13,10 +17,20 @@ import { ExtendDeadlineDialog } from '@/components/courses/extend-deadline-dialo
 import { SendAnnouncementDialog } from '@/components/courses/send-announcement-dialog';
 import { ContentEditorDialog } from '@/components/courses/content-editor-dialog';
 import { EnrollmentSettingsPanel } from '@/components/courses/enrollment-settings-panel';
+import { EnrollmentStatusWidget } from '@/components/courses/enrollment-status-widget';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
+
+type EnrollmentStatus =
+  | 'pending'
+  | 'active'
+  | 'completed'
+  | 'dropped'
+  | 'withdrawn'
+  | 'waitlisted'
+  | 'rejected';
 
 interface SectionData {
   id: string;
@@ -24,6 +38,11 @@ interface SectionData {
   enrollmentMode: 'open' | 'invite_only';
   inviteCode: string | null;
   autoApprove: boolean;
+  termId: string;
+  term?: {
+    dropDeadline?: string | null;
+    withdrawDeadline?: string | null;
+  } | null;
   course: { id: string; code: string; title: string };
   instructor: { firstName: string; lastName: string };
 }
@@ -55,10 +74,33 @@ export default function SectionTimelinePage() {
   const canCreate = user?.roles.some((r) =>
     [UserRole.INSTRUCTOR, UserRole.ADMIN].includes(r),
   );
+  const isStudent = !canCreate;
+
+  // Track enrollment status locally so the widget can update without a refetch
+  const [enrollmentStatus, setEnrollmentStatus] =
+    useState<EnrollmentStatus | null>(null);
 
   const { data: sectionData, loading: sectionLoading } = useQuery<{
     section: SectionData;
   }>(SECTION_QUERY, { variables: { id: sectionId } });
+
+  const { data: enrollmentData } = useQuery<{
+    myEnrollmentForSection: {
+      id: string;
+      status: EnrollmentStatus;
+      enrolledAt: string;
+    } | null;
+  }>(MY_ENROLLMENT_FOR_SECTION_QUERY, {
+    variables: { sectionId },
+    skip: canCreate, // instructors don't need their own enrollment status
+  });
+
+  // Initialize enrollment status from query data (separate from local optimistic state)
+  useEffect(() => {
+    if (enrollmentData?.myEnrollmentForSection) {
+      setEnrollmentStatus(enrollmentData.myEnrollmentForSection.status);
+    }
+  }, [enrollmentData]);
 
   const { data: timelineData, loading: timelineLoading } = useQuery<{
     sectionTimeline: TimelineEntryData[];
@@ -133,6 +175,20 @@ export default function SectionTimelinePage() {
             }}
           />
         )}
+
+        {/* Enrollment status — students only */}
+        {isStudent &&
+          enrollmentData?.myEnrollmentForSection &&
+          enrollmentStatus && (
+            <EnrollmentStatusWidget
+              enrollmentId={enrollmentData.myEnrollmentForSection.id}
+              status={enrollmentStatus}
+              dropDeadline={section?.term?.dropDeadline}
+              withdrawDeadline={section?.term?.withdrawDeadline}
+              courseId={courseId}
+              onStatusChange={setEnrollmentStatus}
+            />
+          )}
 
         {timelineLoading ? (
           <TimelineSkeleton />

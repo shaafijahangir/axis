@@ -40,6 +40,7 @@ export class CourseSection extends BaseEntity {
   @Column()
   termId: string;
 
+  @Field(() => AcademicTerm, { nullable: true })
   @ManyToOne(() => AcademicTerm)
   @JoinColumn({ name: 'termId' })
   term: AcademicTerm;

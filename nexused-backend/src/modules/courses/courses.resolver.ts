@@ -13,6 +13,7 @@ import { CurrentUser } from '../../decorators/current-user.decorator';
 import { Roles } from '../../decorators/roles.decorator';
 import { UserRole } from '../../database/entities/user.entity';
 import { EnrollmentMode } from '../../database/entities/course-section.entity';
+import { EnrollmentStatus } from '../../database/entities/enrollment.entity';
 import { CreateCourseInput, CreateSectionInput } from './dto/course.types';
 
 @Resolver()
@@ -189,6 +190,70 @@ export class CoursesResolver {
     return this.coursesService.pendingEnrollmentsForSection(
       sectionId,
       user.tenantId,
+    );
+  }
+
+  // ─── ENROLL-003: Enrollment lifecycle ────────────────────────────────────────
+
+  /**
+   * Returns the calling user's enrollment for a specific section (nullable).
+   * Students use this to show their enrollment status and action buttons.
+   */
+  @Query(() => Enrollment, { nullable: true })
+  async myEnrollmentForSection(
+    @CurrentUser() user: User,
+    @Args('sectionId') sectionId: string,
+  ): Promise<Enrollment | null> {
+    return this.coursesService.getMyEnrollmentForSection(
+      user.id,
+      sectionId,
+      user.tenantId,
+    );
+  }
+
+  /**
+   * Drop an active enrollment before the drop deadline.
+   * No-record removal — clean slate if re-enrolled later.
+   */
+  @Mutation(() => Enrollment)
+  async dropEnrollment(
+    @CurrentUser() user: User,
+    @Args('enrollmentId') enrollmentId: string,
+  ): Promise<Enrollment> {
+    return this.coursesService.dropCourse(enrollmentId, user.id, user.tenantId);
+  }
+
+  /**
+   * Withdraw from an active enrollment after drop deadline.
+   * Records "W" on transcript.
+   */
+  @Mutation(() => Enrollment)
+  async withdrawFromCourse(
+    @CurrentUser() user: User,
+    @Args('enrollmentId') enrollmentId: string,
+  ): Promise<Enrollment> {
+    return this.coursesService.withdrawFromCourse(
+      enrollmentId,
+      user.id,
+      user.tenantId,
+    );
+  }
+
+  /**
+   * Admin-only: force an enrollment to any status, bypassing deadlines.
+   */
+  @Mutation(() => Enrollment)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async adminForceEnrollmentStatus(
+    @CurrentUser() user: User,
+    @Args('enrollmentId') enrollmentId: string,
+    @Args('status', { type: () => EnrollmentStatus }) status: EnrollmentStatus,
+  ): Promise<Enrollment> {
+    return this.coursesService.adminForceEnrollmentStatus(
+      enrollmentId,
+      user.tenantId,
+      status,
     );
   }
 }

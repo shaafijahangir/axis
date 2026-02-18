@@ -21,6 +21,8 @@ export const NexusEvents = {
 
   // Enrollment lifecycle
   ENROLLMENT_CREATED: 'enrollment.created',
+  ENROLLMENT_DROPPED: 'enrollment.dropped',
+  ENROLLMENT_WITHDRAWN: 'enrollment.withdrawn',
 
   // Assignment lifecycle
   ASSIGNMENT_CREATED: 'assignment.created',
@@ -61,6 +63,20 @@ export interface SectionCreatedEvent {
 }
 
 export interface EnrollmentCreatedEvent {
+  enrollmentId: string;
+  userId: string;
+  sectionId: string;
+  tenantId: string;
+}
+
+export interface EnrollmentDroppedEvent {
+  enrollmentId: string;
+  userId: string;
+  sectionId: string;
+  tenantId: string;
+}
+
+export interface EnrollmentWithdrawnEvent {
   enrollmentId: string;
   userId: string;
   sectionId: string;

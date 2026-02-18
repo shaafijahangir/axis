@@ -805,7 +805,7 @@
 - **Acceptance:** Student can self-enroll in open sections. Student can enter invite code for invite-only sections. Instructor can generate/share invite codes. Instructor can approve/reject pending enrollments.
 
 ### ENROLL-003: Enrollment Lifecycle (Status Machine)
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** HIGH — Required for drop/withdraw functionality
 - **Depends on:** ENROLL-002
 - **Scope:**

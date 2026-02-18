@@ -64,3 +64,39 @@ export const REJECT_ENROLLMENT_MUTATION = gql`
     }
   }
 `;
+
+export const DROP_ENROLLMENT_MUTATION = gql`
+  mutation DropEnrollment($enrollmentId: String!) {
+    dropEnrollment(enrollmentId: $enrollmentId) {
+      id
+      status
+    }
+  }
+`;
+
+export const WITHDRAW_FROM_COURSE_MUTATION = gql`
+  mutation WithdrawFromCourse($enrollmentId: String!) {
+    withdrawFromCourse(enrollmentId: $enrollmentId) {
+      id
+      status
+    }
+  }
+`;
+
+export const ADMIN_FORCE_ENROLLMENT_STATUS_MUTATION = gql`
+  mutation AdminForceEnrollmentStatus(
+    $enrollmentId: String!
+    $status: EnrollmentStatus!
+  ) {
+    adminForceEnrollmentStatus(enrollmentId: $enrollmentId, status: $status) {
+      id
+      status
+      user {
+        id
+        firstName
+        lastName
+        email
+      }
+    }
+  }
+`;
