@@ -12,6 +12,7 @@ import { TimelineSkeleton } from '@/components/courses/timeline-skeleton';
 import { ExtendDeadlineDialog } from '@/components/courses/extend-deadline-dialog';
 import { SendAnnouncementDialog } from '@/components/courses/send-announcement-dialog';
 import { ContentEditorDialog } from '@/components/courses/content-editor-dialog';
+import { EnrollmentSettingsPanel } from '@/components/courses/enrollment-settings-panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth.store';
@@ -20,6 +21,9 @@ import { UserRole } from '@/types/auth';
 interface SectionData {
   id: string;
   location?: string;
+  enrollmentMode: 'open' | 'invite_only';
+  inviteCode: string | null;
+  autoApprove: boolean;
   course: { id: string; code: string; title: string };
   instructor: { firstName: string; lastName: string };
 }
@@ -116,6 +120,18 @@ export default function SectionTimelinePage() {
               </Link>
             </Button>
           </div>
+        )}
+
+        {/* Enrollment settings — instructors/admins only */}
+        {canCreate && section && (
+          <EnrollmentSettingsPanel
+            sectionId={sectionId}
+            initialSettings={{
+              enrollmentMode: section.enrollmentMode,
+              inviteCode: section.inviteCode,
+              autoApprove: section.autoApprove,
+            }}
+          />
         )}
 
         {timelineLoading ? (

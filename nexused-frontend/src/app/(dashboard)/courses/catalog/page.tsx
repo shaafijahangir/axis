@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpen,
+  Lock,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ import {
   COURSE_CATALOG_QUERY,
   DEPARTMENT_LIST_QUERY,
 } from '@/lib/graphql/queries/student-catalog';
+import { EnrollDialog } from '@/components/courses/enroll-dialog';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -151,10 +153,12 @@ function CourseDetailDialog({
   course,
   open,
   onClose,
+  onEnroll,
 }: {
   course: CatalogCourse | null;
   open: boolean;
   onClose: () => void;
+  onEnroll: (section: CatalogSection) => void;
 }) {
   if (!course) return null;
 
@@ -217,10 +221,13 @@ function CourseDetailDialog({
             <div className="space-y-3">
               {course.sections.map((section) => {
                 const schedStr = formatSchedule(section.schedule);
+                const full =
+                  section.capacity != null &&
+                  (section.seatsAvailable ?? 0) <= 0;
                 return (
                   <div
                     key={section.id}
-                    className="rounded-lg border p-4 space-y-2"
+                    className="rounded-lg border p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-2">
@@ -229,7 +236,11 @@ function CourseDetailDialog({
                           {section.instructor.lastName}
                         </span>
                         {section.enrollmentMode === 'invite_only' && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge
+                            variant="secondary"
+                            className="text-xs flex items-center gap-1"
+                          >
+                            <Lock className="h-3 w-3" aria-hidden="true" />
                             Invite Only
                           </Badge>
                         )}
@@ -256,6 +267,15 @@ function CourseDetailDialog({
                       )}
                       <span>{section.termName}</span>
                     </div>
+
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      disabled={full}
+                      onClick={() => onEnroll(section)}
+                    >
+                      {full ? 'Section Full' : 'Enroll in This Section'}
+                    </Button>
                   </div>
                 );
               })}
@@ -551,6 +571,10 @@ export default function CourseCatalogPage() {
   const [selectedCourse, setSelectedCourse] = useState<CatalogCourse | null>(
     null,
   );
+  const [enrollTarget, setEnrollTarget] = useState<{
+    section: CatalogSection;
+    course: CatalogCourse;
+  } | null>(null);
 
   const activeFilterCount = [
     filters.department,
@@ -747,6 +771,20 @@ export default function CourseCatalogPage() {
         course={selectedCourse}
         open={selectedCourse !== null}
         onClose={() => setSelectedCourse(null)}
+        onEnroll={(section) => {
+          if (!selectedCourse) return;
+          setEnrollTarget({ section, course: selectedCourse });
+          setSelectedCourse(null);
+        }}
+      />
+
+      {/* Enrollment confirmation/invite-code dialog */}
+      <EnrollDialog
+        courseName={enrollTarget?.course.title ?? ''}
+        courseCode={enrollTarget?.course.code ?? ''}
+        section={enrollTarget?.section ?? null}
+        open={enrollTarget !== null}
+        onClose={() => setEnrollTarget(null)}
       />
     </div>
   );

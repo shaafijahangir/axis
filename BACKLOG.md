@@ -784,7 +784,8 @@
 - **Acceptance:** Student can browse available courses, search by name/code, filter by term/department, see seat availability, and view course details. All data is tenant-scoped.
 
 ### ENROLL-002: Self-Enrollment + Invite Codes
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-18
 - **Priority:** HIGH — Core enrollment mechanism
 - **Depends on:** ENROLL-001
 - **Scope:**

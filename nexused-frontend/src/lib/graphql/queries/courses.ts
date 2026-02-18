@@ -100,6 +100,9 @@ export const SECTION_QUERY = gql`
       location
       capacity
       status
+      enrollmentMode
+      inviteCode
+      autoApprove
       course {
         id
         code
@@ -110,6 +113,22 @@ export const SECTION_QUERY = gql`
         id
         firstName
         lastName
+      }
+    }
+  }
+`;
+
+export const PENDING_ENROLLMENTS_QUERY = gql`
+  query PendingEnrollments($sectionId: String!) {
+    pendingEnrollments(sectionId: $sectionId) {
+      id
+      status
+      enrolledAt
+      user {
+        id
+        firstName
+        lastName
+        email
       }
     }
   }

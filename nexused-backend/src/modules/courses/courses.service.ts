@@ -5,14 +5,17 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import {
   CatalogCourse,
   CatalogSection,
   StudentCatalogFilter,
   StudentCatalogPage,
 } from './dto/catalog-student.types';
-import { SectionStatus } from '../../database/entities/course-section.entity';
+import {
+  SectionStatus,
+  EnrollmentMode,
+} from '../../database/entities/course-section.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   Course,
@@ -228,27 +231,240 @@ export class CoursesService {
       .getMany();
   }
 
+  /**
+   * ENROLL-002: Student self-enrollment with full validation.
+   *
+   * Validates in order:
+   *  1. Section exists in this tenant
+   *  2. Enrollment mode (invite_only → code must match)
+   *  3. No duplicate active/pending enrollment
+   *  4. Seat availability (skipped when capacity is null)
+   *  5. Creates enrollment — status depends on section.autoApprove
+   *
+   * WHY: The old enrollStudent() had none of these checks. Admin-forced
+   * enrollment (adminEnroll) bypasses this for manual overrides.
+   */
   async enrollStudent(
     tenantId: string,
     userId: string,
     sectionId: string,
+    inviteCode?: string,
   ): Promise<Enrollment> {
+    // 1. Load section + course for tenant validation
+    const section = await this.sectionsRepository.findOne({
+      where: { id: sectionId },
+      relations: ['course'],
+    });
+    if (!section || section.course.tenantId !== tenantId) {
+      throw new NotFoundException('Section not found');
+    }
+
+    // 2. Invite code check
+    if (section.enrollmentMode === EnrollmentMode.INVITE_ONLY) {
+      if (!inviteCode || inviteCode.toUpperCase() !== section.inviteCode) {
+        throw new ForbiddenException('Invalid or missing invite code');
+      }
+    }
+
+    // 3. Duplicate enrollment check (ignore dropped/withdrawn/rejected)
+    const duplicate = await this.enrollmentsRepository.findOne({
+      where: {
+        userId,
+        sectionId,
+        status: In([
+          EnrollmentStatus.ACTIVE,
+          EnrollmentStatus.PENDING,
+          EnrollmentStatus.WAITLISTED,
+        ]),
+      },
+    });
+    if (duplicate) {
+      throw new ConflictException(
+        'You are already enrolled or have a pending enrollment in this section',
+      );
+    }
+
+    // 4. Seat availability check
+    if (section.capacity != null) {
+      const occupiedCount = await this.enrollmentsRepository.count({
+        where: {
+          sectionId,
+          status: In([
+            EnrollmentStatus.ACTIVE,
+            EnrollmentStatus.PENDING,
+            EnrollmentStatus.WAITLISTED,
+          ]),
+        },
+      });
+      if (occupiedCount >= section.capacity) {
+        throw new ForbiddenException(
+          'This section is full — no seats available',
+        );
+      }
+    }
+
+    // 5. Create enrollment — active if autoApprove, pending if manual approval required
+    const status = section.autoApprove
+      ? EnrollmentStatus.ACTIVE
+      : EnrollmentStatus.PENDING;
+
     const enrollment = this.enrollmentsRepository.create({
       tenantId,
       userId,
       sectionId,
+      status,
       enrolledAt: new Date(),
     });
     const saved = await this.enrollmentsRepository.save(enrollment);
 
+    // Only trigger the Study Coach welcome for confirmed (active) enrollments.
+    // Pending enrollments fire the event when approved (see approveEnrollment).
+    if (status === EnrollmentStatus.ACTIVE) {
+      this.eventEmitter.emit(NexusEvents.ENROLLMENT_CREATED, {
+        enrollmentId: saved.id,
+        userId,
+        sectionId,
+        tenantId,
+      });
+    }
+
+    return saved;
+  }
+
+  // ─── ENROLL-002: Invite codes & approval ─────────────────────────────────────
+
+  /**
+   * Generates a new random 6-character alphanumeric invite code for a section
+   * and switches the section's enrollment mode to invite_only.
+   *
+   * WHY: Instructor calls this when they want to restrict self-enrollment to
+   * students who have the code (shared out-of-band).
+   */
+  async generateInviteCode(
+    sectionId: string,
+    tenantId: string,
+  ): Promise<CourseSection> {
+    const section = await this.sectionsRepository.findOne({
+      where: { id: sectionId },
+      relations: ['course'],
+    });
+    if (!section || section.course.tenantId !== tenantId) {
+      throw new NotFoundException('Section not found');
+    }
+
+    // 6-char base-36 code, uppercased. Collision probability is negligible at scale.
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    await this.sectionsRepository.update(sectionId, {
+      inviteCode: code,
+      enrollmentMode: EnrollmentMode.INVITE_ONLY,
+    });
+
+    return this.sectionsRepository.findOneOrFail({
+      where: { id: sectionId },
+      relations: ['course', 'instructor'],
+    });
+  }
+
+  /**
+   * Updates the enrollment mode and autoApprove settings for a section.
+   * If switching to OPEN, the invite code is cleared.
+   */
+  async updateSectionEnrollmentSettings(
+    sectionId: string,
+    tenantId: string,
+    mode: EnrollmentMode,
+    autoApprove: boolean,
+  ): Promise<CourseSection> {
+    const section = await this.sectionsRepository.findOne({
+      where: { id: sectionId },
+      relations: ['course'],
+    });
+    if (!section || section.course.tenantId !== tenantId) {
+      throw new NotFoundException('Section not found');
+    }
+
+    await this.sectionsRepository.update(sectionId, {
+      enrollmentMode: mode,
+      autoApprove,
+    });
+
+    return this.sectionsRepository.findOneOrFail({
+      where: { id: sectionId },
+      relations: ['course', 'instructor'],
+    });
+  }
+
+  /** Approve a pending enrollment → active. Fires ENROLLMENT_CREATED event. */
+  async approveEnrollment(
+    enrollmentId: string,
+    tenantId: string,
+  ): Promise<Enrollment> {
+    const enrollment = await this.enrollmentsRepository.findOne({
+      where: { id: enrollmentId, tenantId },
+    });
+    if (!enrollment) throw new NotFoundException('Enrollment not found');
+    if (enrollment.status !== EnrollmentStatus.PENDING) {
+      throw new ForbiddenException('Only pending enrollments can be approved');
+    }
+
+    await this.enrollmentsRepository.update(enrollmentId, {
+      status: EnrollmentStatus.ACTIVE,
+    });
+    const updated = await this.enrollmentsRepository.findOneOrFail({
+      where: { id: enrollmentId },
+      relations: ['user', 'section'],
+    });
+
     this.eventEmitter.emit(NexusEvents.ENROLLMENT_CREATED, {
-      enrollmentId: saved.id,
-      userId,
-      sectionId,
+      enrollmentId: updated.id,
+      userId: updated.userId,
+      sectionId: updated.sectionId,
       tenantId,
     });
 
-    return saved;
+    return updated;
+  }
+
+  /** Reject a pending enrollment. */
+  async rejectEnrollment(
+    enrollmentId: string,
+    tenantId: string,
+  ): Promise<Enrollment> {
+    const enrollment = await this.enrollmentsRepository.findOne({
+      where: { id: enrollmentId, tenantId },
+    });
+    if (!enrollment) throw new NotFoundException('Enrollment not found');
+    if (enrollment.status !== EnrollmentStatus.PENDING) {
+      throw new ForbiddenException('Only pending enrollments can be rejected');
+    }
+
+    await this.enrollmentsRepository.update(enrollmentId, {
+      status: EnrollmentStatus.REJECTED,
+    });
+    return this.enrollmentsRepository.findOneOrFail({
+      where: { id: enrollmentId },
+      relations: ['user'],
+    });
+  }
+
+  /** Returns all pending enrollments for a section (for instructor review). */
+  async pendingEnrollmentsForSection(
+    sectionId: string,
+    tenantId: string,
+  ): Promise<Enrollment[]> {
+    return this.enrollmentsRepository
+      .createQueryBuilder('enrollment')
+      .innerJoinAndSelect('enrollment.user', 'user')
+      .innerJoin('enrollment.section', 'section')
+      .innerJoin('section.course', 'course')
+      .where('enrollment.sectionId = :sectionId', { sectionId })
+      .andWhere('enrollment.status = :status', {
+        status: EnrollmentStatus.PENDING,
+      })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .orderBy('enrollment.enrolledAt', 'ASC')
+      .getMany();
   }
 
   async findEnrollmentsForSection(

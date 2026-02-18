@@ -2028,3 +2028,240 @@ nexused-frontend/src/app/(dashboard)/admin/catalog/page.tsx — Added Link/Uploa
 ### Next Session Priorities
 1. **ONBOARD-004: AI-Assisted Catalog Import** — upload PDF → Claude extracts courses → admin reviews → import
 2. **ENROLL-001: Course Catalog Student View** — student-facing catalog with search, filters, enrollment CTA
+
+---
+
+## Session 27 — ONBOARD-004: AI-Assisted Catalog Import
+
+**Date:** 2026-02-18
+**Goal:** Upload a PDF/text academic catalog → Claude extracts courses & programs → admin reviews → one-click import
+**Status:** COMPLETE
+
+### What Was Built
+
+**Backend — CatalogExtractModule (new module):**
+- `pdf-parse` installed via pnpm (PDF text extraction in Node.js, no native binary issues)
+- `CatalogExtractService` — core extraction logic:
+  - Decodes base64 file payload (PDF or plain text)
+  - For PDF: uses pdf-parse to extract raw text; for text: UTF-8 decode
+  - Truncates at 500,000 chars (~150K tokens) to stay within Claude's context window
+  - Single-shot Claude call (no tools, no agentic loop) using claude-haiku-4-5-20251001 (cost-optimized for extraction)
+  - Strips markdown code fences from Claude's response before JSON.parse
+  - Maps extracted JSON → typed `ExtractedCourse` / `ExtractedProgram` / `ExtractionFlag` objects
+  - Maps category strings → `CourseCategory` enum, program type strings → `DegreeProgramType` enum
+  - Sets `confidence < 0.75` → `flagged: true` for admin review attention
+  - Logs token usage via `UsageTrackingService`
+  - Returns `ExtractionResult` with courses, programs, flags, token counts, estimated cost USD
+- `CatalogExtractResolver` — Admin-gated `extractCatalogFromDocument(fileBase64, mimeType): ExtractionResult` mutation
+- `CatalogExtractModule` — imports `AiModule` (gets AI_PROVIDER + UsageTrackingService), avoids circular dep with CoursesModule
+
+**Backend — CoursesModule additions:**
+- `BatchCourseItem` InputType added to `course.types.ts` (uses `prerequisiteCodes: [String]` not IDs)
+- `CoursesService.batchCreate()` — best-effort loop (not all-or-nothing): creates each course independently, resolves prereq codes → IDs from existing catalog, unmatched prereqs silently skipped, returns `ImportResult` with per-row errors
+- `AdminCoursesResolver.batchCreateCourses()` — new Admin mutation
+
+**Frontend — 5-step wizard at `/admin/catalog/import/document`:**
+- Step 1 Upload: Drag-and-drop or click-to-browse file picker (PDF/TXT, up to 20 MB), file validation, how-it-works info panel
+- Step 2 Analyzing: Spinner with time warning while Claude API call is in-flight
+- Step 3 Review: Summary bar (X courses, Y programs, Z flags + token/cost display), flags panel (yellow callout), tabbed tables (Courses/Programs) with checkboxes + confidence color badges + yellow row highlight for flagged items
+- Step 4 Importing: Spinner while batch mutations run
+- Step 5 Result: Success/partial-success message with counts, "Go to Catalog" and "Import Another" buttons
+- Programs imported one-by-one using existing `createDegreeProgram` mutation (no requirement groups on import — info banner explains to configure manually)
+- `catalog-extract.ts` mutations: `extractCatalogFromDocument`, `batchCreateCourses`
+- Catalog page updated: "Import CSV" + "AI Import" buttons in header
+
+### Files Created (7)
+```
+nexused-backend/src/modules/catalog-extract/dto/extraction.types.ts
+nexused-backend/src/modules/catalog-extract/catalog-extract.service.ts
+nexused-backend/src/modules/catalog-extract/catalog-extract.resolver.ts
+nexused-backend/src/modules/catalog-extract/catalog-extract.module.ts
+nexused-frontend/src/app/(dashboard)/admin/catalog/import/document/page.tsx
+nexused-frontend/src/lib/graphql/mutations/catalog-extract.ts
+```
+
+### Files Modified (6)
+```
+nexused-backend/src/modules/courses/dto/course.types.ts — Added BatchCourseItem InputType
+nexused-backend/src/modules/courses/courses.service.ts — Added batchCreate method
+nexused-backend/src/modules/courses/admin-courses.resolver.ts — Added batchCreateCourses mutation
+nexused-backend/src/app.module.ts — Added CatalogExtractModule
+nexused-frontend/src/app/(dashboard)/admin/catalog/page.tsx — Added AI Import button + Sparkles icon
+BACKLOG.md — Updated ONBOARD-004 to DONE
+```
+
+### Key Design Decisions
+- **Haiku over Sonnet**: 4× cheaper per document extraction. Good enough for structured catalog text.
+- **Single-shot, not agentic**: Extraction is pure JSON output — no tools, no loop. Simpler and cheaper.
+- **Best-effort import**: Unlike CSV (all-or-nothing), batch import is per-course so one duplicate doesn't block 199 good imports.
+- **Frontend sends base64**: Backend does PDF parsing. No pdfjs-dist complexity in the browser.
+- **Programs without requirement groups**: Realistic — course codes aren't in the catalog as UUIDs. Admin configures groups after import.
+
+### Build & Test Status
+- Backend: ✓ Type-checks clean (0 errors)
+- Frontend: ✓ Type-checks clean (0 errors)
+
+### Next Session Priorities
+1. **ENROLL-001: Course Catalog (Browse & Search)** — student-facing catalog page
+2. **ENROLL-002: Self-Enrollment + Invite Codes** — enrollment flow
+
+---
+
+## Session 28 — ENROLL-001: Course Catalog (Browse & Search)
+
+**Started:** 2026-02-18
+**Goal:** Student-facing course catalog with search, filters, seat counts, and detail view
+**Status:** COMPLETE
+
+### What Was Built
+
+**Backend — `StudentCatalogResolver` + `studentCatalog()` service method:**
+- New DTO file `courses/dto/catalog-student.types.ts`:
+  - `CatalogInstructor` (id, firstName, lastName)
+  - `CatalogSection` (id, schedule, location, capacity, enrolledCount, seatsAvailable, enrollmentMode, instructor, termId, termName)
+  - `CatalogCourse` (id, code, title, description, credits, department, category, courseLevel, prerequisiteCourseIds, sections[])
+  - `StudentCatalogPage` (items[], total)
+  - `StudentCatalogFilter` (search, termId, department, category, courseLevel, hasSeats, limit, offset)
+- `CoursesService.studentCatalog(tenantId, filters)`:
+  - QueryBuilder joins: section → course (tenantId scope) + instructor + term
+  - Defaults to current academic term (isCurrent = true) when no termId provided
+  - Search: ILIKE on code, title, or `CONCAT(firstName, ' ', lastName)` (instructor name)
+  - Batch-loads enrollment counts for all matched sections in a single GROUP BY query
+  - Applies `hasSeats` filter in-memory after fetching counts
+  - Groups sections by course and paginates the course list
+- `StudentCatalogResolver`: `@UseGuards(JwtAuthGuard)` only (no role restriction — any authenticated user can browse)
+- `CoursesModule` updated to register `StudentCatalogResolver`
+
+**Frontend — `/courses/catalog` page:**
+- `COURSE_CATALOG_QUERY` and `DEPARTMENT_LIST_QUERY` in `queries/student-catalog.ts`
+- Full-width catalog page with:
+  - Search bar (ILIKE search on title/code/instructor, clear button)
+  - Filter dialog (department, category, course level, available seats only)
+  - Filter count badge on the Filters button
+  - Course grid (1/2/3 columns responsive) with cards showing code, title, description preview, instructor, schedule, location, seats available
+  - Color-coded seat availability (green → orange → red)
+  - Course detail dialog: full description, prerequisites count, all sections with schedules and seat counts
+  - Empty state with clear-filters CTA
+  - Pagination (previous/next with page count)
+  - Loading skeletons
+- `/courses/page.tsx` updated: added "Browse Catalog" button in header linking to `/courses/catalog`
+
+### Key Design Decisions
+- **Sections, not courses as primary unit**: Schedule/instructor/seats are per-section. Cards show first section preview; detail view shows all sections.
+- **Dialog for filters**: `Sheet` component not installed. Used available `Dialog` instead — compact and works well for 4 filter controls.
+- **Two-query seat count**: TypeORM can't cleanly compose aggregate subqueries with entity hydration. A separate `COUNT GROUP BY sectionId` query is simpler and fast at catalog scale.
+- **No role restriction on catalog**: Instructors, admins, and parents should also be able to browse courses — only a JwtAuthGuard to prevent anonymous access.
+- **In-memory hasSeats filter**: Seat count isn't a DB column so it can't be filtered in SQL. Post-fetch filtering is acceptable for catalog sizes (~400 sections).
+
+### Files Created (4)
+```
+nexused-backend/src/modules/courses/dto/catalog-student.types.ts
+nexused-backend/src/modules/courses/student-catalog.resolver.ts
+nexused-frontend/src/lib/graphql/queries/student-catalog.ts
+nexused-frontend/src/app/(dashboard)/courses/catalog/page.tsx
+```
+
+### Files Modified (3)
+```
+nexused-backend/src/modules/courses/courses.service.ts — Added studentCatalog() + SectionStatus import
+nexused-backend/src/modules/courses/courses.module.ts — Registered StudentCatalogResolver
+nexused-frontend/src/app/(dashboard)/courses/page.tsx — Added "Browse Catalog" button
+BACKLOG.md — Updated ENROLL-001 to DONE
+```
+
+### Build & Test Status
+- Backend: ✓ Type-checks clean (0 errors)
+- Frontend: ✓ Type-checks clean (0 errors)
+
+### Next Session Priorities
+1. **ENROLL-002: Self-Enrollment + Invite Codes** — enrollment flow with invite codes, pending approval
+2. **ENROLL-003: Enrollment Lifecycle** — drop/withdraw with deadline validation
+
+---
+
+## Session 29 — ENROLL-002: Self-Enrollment + Invite Codes
+
+**Started:** 2026-02-18
+**Goal:** Full enrollment flow: validated self-enrollment, invite codes, instructor approval queue
+**Status:** COMPLETE
+
+### What Was Built
+
+**Backend — Validated `enrollStudent()` + 5 new service methods:**
+- Replaced basic `enrollStudent()` with full validated version:
+  1. Load section + course (tenant scope check)
+  2. Invite code validation: if `enrollmentMode === INVITE_ONLY`, case-insensitive code match required
+  3. Duplicate check: throws `ConflictException` if ACTIVE/PENDING/WAITLISTED enrollment exists
+  4. Seat check: counts occupied seats (ACTIVE + PENDING + WAITLISTED), throws `ForbiddenException` if at capacity
+  5. Creates enrollment with `status = autoApprove ? ACTIVE : PENDING`
+  6. Fires `ENROLLMENT_CREATED` event only for ACTIVE (pending enrollments don't trigger Study Coach welcome)
+- `generateInviteCode(sectionId, tenantId)` — 6-char base-36 uppercase code, sets `enrollmentMode = INVITE_ONLY`
+- `updateSectionEnrollmentSettings(sectionId, tenantId, mode, autoApprove)` — updates mode and autoApprove
+- `approveEnrollment(enrollmentId, tenantId)` — PENDING → ACTIVE, fires `ENROLLMENT_CREATED`
+- `rejectEnrollment(enrollmentId, tenantId)` — PENDING → REJECTED
+- `pendingEnrollmentsForSection(sectionId, tenantId)` — QueryBuilder joining user, filtered by PENDING status, tenant-scoped via course.tenantId
+
+**Backend — Resolver changes (`courses.resolver.ts`):**
+- Replaced `enrollStudent` mutation with `enrollInSection(sectionId, inviteCode?)` — no role restriction
+- Added INSTRUCTOR/ADMIN-only mutations: `generateInviteCode`, `updateSectionEnrollmentSettings`, `approveEnrollment`, `rejectEnrollment`
+- Added INSTRUCTOR/ADMIN-only query: `pendingEnrollments(sectionId)`
+
+**Frontend — GraphQL layer:**
+- `mutations/enrollment.ts` (new file): `ENROLL_IN_SECTION_MUTATION`, `GENERATE_INVITE_CODE_MUTATION`, `UPDATE_SECTION_ENROLLMENT_SETTINGS_MUTATION`, `APPROVE_ENROLLMENT_MUTATION`, `REJECT_ENROLLMENT_MUTATION`
+- `queries/courses.ts` updated: added `enrollmentMode`, `inviteCode`, `autoApprove` to `SECTION_QUERY`; added `PENDING_ENROLLMENTS_QUERY`
+
+**Frontend — `EnrollDialog` component:**
+- States: `idle | loading | success | error`
+- Open mode: shows section details (instructor, schedule, location, seats) + confirm button
+- Invite-only mode: shows invite code input (uppercase, max 8 chars) + confirm
+- Success: CheckCircle (active enrollment) or Clock (pending approval) with appropriate message
+- Error: inline error message with retry
+
+**Frontend — `EnrollmentSettingsPanel` component:**
+- Collapsible panel (collapsed by default, ChevronDown/Up toggle)
+- Enrollment mode `Select` (open / invite_only) — auto-saves on change
+- `Switch` for autoApprove — auto-saves on change
+- Invite code block (only when invite_only): monospace display, Copy button with Check→Copy animation, RefreshCw regenerate
+- Pending enrollments list (only when autoApprove=false): UserCheck approve / UserX reject per row
+- `skip: collapsed` on `PENDING_ENROLLMENTS_QUERY` — only fetches when expanded
+- `fetchPolicy: 'network-only'` for pending enrollments
+
+**Frontend — Catalog page updated:**
+- "Enroll in This Section" button per section in `CourseDetailDialog`
+- `enrollTarget` state: `{ section, course } | null`
+- Flow: detail dialog → onEnroll → detail closes, EnrollDialog opens at page level
+
+**Frontend — Section page updated:**
+- `SectionData` interface extended with `enrollmentMode`, `inviteCode`, `autoApprove`
+- `<EnrollmentSettingsPanel>` rendered above the timeline for instructors/admins
+
+### Files Created (3)
+```
+nexused-frontend/src/lib/graphql/mutations/enrollment.ts
+nexused-frontend/src/components/courses/enroll-dialog.tsx
+nexused-frontend/src/components/courses/enrollment-settings-panel.tsx
+```
+
+### Files Modified (6)
+```
+nexused-backend/src/modules/courses/courses.service.ts — Validated enrollStudent() + 5 new methods
+nexused-backend/src/modules/courses/courses.resolver.ts — enrollInSection + 4 mutations + 1 query
+nexused-frontend/src/lib/graphql/queries/courses.ts — Extended SECTION_QUERY + PENDING_ENROLLMENTS_QUERY
+nexused-frontend/src/app/(dashboard)/courses/catalog/page.tsx — Wired EnrollDialog
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added EnrollmentSettingsPanel
+BACKLOG.md — ENROLL-002 → DONE
+```
+
+### Key Design Decisions
+- **Invite code stays on mode switch to OPEN**: Clearing `inviteCode` to `null` caused TypeORM TS error. Harmless to keep it — invite check only runs for INVITE_ONLY mode.
+- **ENROLLMENT_CREATED only fires for ACTIVE**: Prevents premature Study Coach welcome for pending students.
+- **`skip: collapsed` on pending query**: Don't hit the DB every render — only when the instructor opens the panel.
+- **EnrollDialog at catalog page level**: Single dialog instance avoids re-mounting on each section click.
+
+### Build & Test Status
+- Backend: ✓ Type-checks clean (0 errors)
+- Frontend: ✓ Type-checks clean (0 errors)
+
+### Next Session Priorities
+1. **ENROLL-003: Enrollment Lifecycle** — drop/withdraw with deadline validation (dropDeadline, withdrawDeadline from AcademicTerm)
+2. **ENROLL-004: Enrollment Notifications** — email/in-app notifications on enroll/approve/reject

@@ -12,6 +12,7 @@ import { RolesGuard } from '../../guards/roles.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { Roles } from '../../decorators/roles.decorator';
 import { UserRole } from '../../database/entities/user.entity';
+import { EnrollmentMode } from '../../database/entities/course-section.entity';
 import { CreateCourseInput, CreateSectionInput } from './dto/course.types';
 
 @Resolver()
@@ -109,11 +110,85 @@ export class CoursesResolver {
     return this.coursesService.createSection(user.id, input);
   }
 
+  /**
+   * ENROLL-002: Validated self-enrollment.
+   * Replaces the old no-op enrollStudent mutation.
+   * Validates invite code (if section is invite_only), seat availability, and duplicates.
+   * Creates the enrollment with status ACTIVE (if autoApprove) or PENDING (if not).
+   */
   @Mutation(() => Enrollment)
-  async enrollStudent(
+  async enrollInSection(
     @CurrentUser() user: User,
     @Args('sectionId') sectionId: string,
+    @Args('inviteCode', { nullable: true }) inviteCode?: string,
   ): Promise<Enrollment> {
-    return this.coursesService.enrollStudent(user.tenantId, user.id, sectionId);
+    return this.coursesService.enrollStudent(
+      user.tenantId,
+      user.id,
+      sectionId,
+      inviteCode,
+    );
+  }
+
+  // ─── ENROLL-002: Instructor enrollment management ─────────────────────────
+
+  @Mutation(() => CourseSection)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async generateInviteCode(
+    @CurrentUser() user: User,
+    @Args('sectionId') sectionId: string,
+  ): Promise<CourseSection> {
+    return this.coursesService.generateInviteCode(sectionId, user.tenantId);
+  }
+
+  @Mutation(() => CourseSection)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async updateSectionEnrollmentSettings(
+    @CurrentUser() user: User,
+    @Args('sectionId') sectionId: string,
+    @Args('mode', { type: () => EnrollmentMode }) mode: EnrollmentMode,
+    @Args('autoApprove') autoApprove: boolean,
+  ): Promise<CourseSection> {
+    return this.coursesService.updateSectionEnrollmentSettings(
+      sectionId,
+      user.tenantId,
+      mode,
+      autoApprove,
+    );
+  }
+
+  @Mutation(() => Enrollment)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async approveEnrollment(
+    @CurrentUser() user: User,
+    @Args('enrollmentId') enrollmentId: string,
+  ): Promise<Enrollment> {
+    return this.coursesService.approveEnrollment(enrollmentId, user.tenantId);
+  }
+
+  @Mutation(() => Enrollment)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async rejectEnrollment(
+    @CurrentUser() user: User,
+    @Args('enrollmentId') enrollmentId: string,
+  ): Promise<Enrollment> {
+    return this.coursesService.rejectEnrollment(enrollmentId, user.tenantId);
+  }
+
+  @Query(() => [Enrollment])
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async pendingEnrollments(
+    @CurrentUser() user: User,
+    @Args('sectionId') sectionId: string,
+  ): Promise<Enrollment[]> {
+    return this.coursesService.pendingEnrollmentsForSection(
+      sectionId,
+      user.tenantId,
+    );
   }
 }
