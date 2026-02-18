@@ -98,6 +98,34 @@ export class CatalogPage {
   total: number;
 }
 
+// ─── CSV Import Types ────────────────────────────────────────────────────────
+
+@ObjectType()
+export class ImportError {
+  @Field(() => Int)
+  row: number;
+
+  @Field()
+  field: string;
+
+  @Field()
+  message: string;
+}
+
+@ObjectType()
+export class ImportResult {
+  @Field(() => Int)
+  imported: number;
+
+  @Field()
+  success: boolean;
+
+  @Field(() => [ImportError])
+  errors: ImportError[];
+}
+
+// ─── Section Input ────────────────────────────────────────────────────────────
+
 @InputType()
 export class CreateSectionInput {
   @Field()

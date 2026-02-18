@@ -706,7 +706,8 @@
 - **Acceptance:** All entities have the extended fields. Migration runs cleanly. Existing seed data still works. No breaking changes to current API.
 
 ### ONBOARD-002: Admin Catalog CRUD
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-18
 - **Priority:** HIGH — Admins need to manage catalog data
 - **Depends on:** ONBOARD-001
 - **Scope:**
@@ -721,7 +722,7 @@
 - **Acceptance:** Admin can create, edit, delete courses. Admin can manage degree program requirements. Search and filters work. All operations are tenant-scoped.
 
 ### ONBOARD-003: CSV Catalog Import
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** HIGH — Structured bulk import for institutions with SIS exports
 - **Depends on:** ONBOARD-002
 - **Scope:**

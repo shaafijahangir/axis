@@ -17,7 +17,9 @@ import {
   CatalogFilterInput,
   CatalogPage,
   CreateCourseInput,
+  ImportResult,
 } from './dto/course.types';
+import { CsvImportService } from './csv-import.service';
 import {
   UpdateSectionInput,
   AdminEnrollInput,
@@ -30,7 +32,10 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminCoursesResolver {
-  constructor(private readonly coursesService: CoursesService) {}
+  constructor(
+    private readonly coursesService: CoursesService,
+    private readonly csvImportService: CsvImportService,
+  ) {}
 
   // ─── Catalog Queries ────────────────────────────────────────────────────
 
@@ -145,5 +150,31 @@ export class AdminCoursesResolver {
     @Args('input') input: BulkEnrollInput,
   ): Promise<Enrollment[]> {
     return this.coursesService.bulkEnroll(user.tenantId, input);
+  }
+
+  // ─── CSV Import Mutations ────────────────────────────────────────────────────
+
+  @Mutation(() => ImportResult)
+  async importCoursesFromCsv(
+    @CurrentUser() user: User,
+    @Args('csvData') csvData: string,
+  ): Promise<ImportResult> {
+    return this.csvImportService.importCourses(user.tenantId, csvData);
+  }
+
+  @Mutation(() => ImportResult)
+  async importProgramsFromCsv(
+    @CurrentUser() user: User,
+    @Args('csvData') csvData: string,
+  ): Promise<ImportResult> {
+    return this.csvImportService.importPrograms(user.tenantId, csvData);
+  }
+
+  @Mutation(() => ImportResult)
+  async importRequirementsFromCsv(
+    @CurrentUser() user: User,
+    @Args('csvData') csvData: string,
+  ): Promise<ImportResult> {
+    return this.csvImportService.importRequirements(user.tenantId, csvData);
   }
 }

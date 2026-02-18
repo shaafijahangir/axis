@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
+import Link from 'next/link';
 import {
   BookOpen,
   Plus,
@@ -13,6 +14,7 @@ import {
   ChevronRight,
   X,
   AlertTriangle,
+  Upload,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1411,17 +1413,25 @@ export default function CatalogPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="rounded-lg bg-primary/10 p-2">
-          <BookOpen className="h-6 w-6 text-primary" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-primary/10 p-2">
+            <BookOpen className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold">Course Catalog</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage courses, requirements, and degree programs for your
+              institution.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-semibold">Course Catalog</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage courses, requirements, and degree programs for your
-            institution.
-          </p>
-        </div>
+        <Button asChild variant="outline">
+          <Link href="/admin/catalog/import">
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Link>
+        </Button>
       </div>
 
       {/* Tabs */}
