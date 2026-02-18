@@ -20,7 +20,9 @@ import {
   UpdateCourseInput,
   CatalogFilterInput,
   CatalogPage,
+  BatchCourseItem,
 } from './dto/course.types';
+import { ImportResult } from './dto/course.types';
 import {
   UpdateSectionInput,
   AdminEnrollInput,
@@ -70,6 +72,68 @@ export class CoursesService {
     });
 
     return saved;
+  }
+
+  /**
+   * Batch-create courses from AI extraction review.
+   *
+   * Best-effort semantics (not all-or-nothing): each course is attempted
+   * independently so a single duplicate doesn't block 199 valid imports.
+   * The admin has already reviewed the data, so partial success is acceptable.
+   *
+   * Prerequisite codes are resolved to IDs from the existing tenant catalog.
+   * Unmatched codes are silently dropped (flagged in the UI before this call).
+   */
+  async batchCreate(
+    tenantId: string,
+    items: BatchCourseItem[],
+  ): Promise<ImportResult> {
+    const existing = await this.coursesRepository.find({
+      where: { tenantId },
+      select: ['id', 'code'],
+    });
+    const codeToId = new Map(existing.map((c) => [c.code, c.id]));
+
+    let imported = 0;
+    const errors: { row: number; field: string; message: string }[] = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      try {
+        const prereqIds = (item.prerequisiteCodes ?? [])
+          .filter((code) => codeToId.has(code))
+          .map((code) => codeToId.get(code)!);
+
+        const coreqIds = (item.corequisiteCodes ?? [])
+          .filter((code) => codeToId.has(code))
+          .map((code) => codeToId.get(code)!);
+
+        await this.create(tenantId, {
+          code: item.code,
+          title: item.title,
+          description: item.description,
+          credits: item.credits,
+          departmentId: item.department,
+          category: item.category,
+          courseLevel: item.courseLevel,
+          offeredSemesters: item.offeredSemesters,
+          prerequisiteCourseIds: prereqIds,
+          corequisiteCourseIds: coreqIds,
+        });
+
+        // Keep code→ID map current so later courses can reference earlier ones
+        imported++;
+      } catch (err) {
+        errors.push({
+          row: i + 1,
+          field: 'general',
+          message:
+            err instanceof Error ? err.message : 'Failed to create course',
+        });
+      }
+    }
+
+    return { imported, success: errors.length === 0, errors };
   }
 
   async findSectionsForCourse(

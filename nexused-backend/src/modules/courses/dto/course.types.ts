@@ -124,6 +124,47 @@ export class ImportResult {
   errors: ImportError[];
 }
 
+// ─── Batch Course Import (from AI extraction review) ─────────────────────────
+
+/**
+ * One course item from the AI-extraction review step.
+ * Uses prerequisiteCodes (strings) instead of prerequisiteCourseIds (UUIDs)
+ * because the extraction gives us course codes, not database IDs.
+ * The service resolves codes → IDs before persisting.
+ */
+@InputType()
+export class BatchCourseItem {
+  @Field()
+  code: string;
+
+  @Field()
+  title: string;
+
+  @Field({ nullable: true })
+  description?: string;
+
+  @Field(() => Float, { nullable: true })
+  credits?: number;
+
+  @Field({ nullable: true })
+  department?: string;
+
+  @Field(() => CourseCategory, { nullable: true })
+  category?: CourseCategory;
+
+  @Field(() => Int, { nullable: true })
+  courseLevel?: number;
+
+  @Field(() => [String], { nullable: true })
+  offeredSemesters?: string[];
+
+  @Field(() => [String], { nullable: true })
+  prerequisiteCodes?: string[];
+
+  @Field(() => [String], { nullable: true })
+  corequisiteCodes?: string[];
+}
+
 // ─── Section Input ────────────────────────────────────────────────────────────
 
 @InputType()

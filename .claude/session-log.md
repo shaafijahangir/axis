@@ -1913,6 +1913,118 @@ BACKLOG.md — Added 3 new sprints: Institutional Onboarding (ONBOARD-001–004)
 6. Everything else (institutional scale, career mapping, mobile)
 
 ### Next Session Priorities
-1. **ONBOARD-001: Catalog Data Model Extensions** — Extend entities with catalog fields (this unblocks everything)
-2. **ONBOARD-002: Admin Catalog CRUD** — Admin interface for managing courses and programs
+1. ~~ONBOARD-001: Catalog Data Model Extensions~~ — DONE
+2. ~~ONBOARD-002: Admin Catalog CRUD~~ — DONE
 3. **ONBOARD-003: CSV Import** — Structured bulk import for institutions with SIS exports
+
+---
+
+## Session 25 — ONBOARD-002: Admin Catalog CRUD
+
+**Date:** 2026-02-18
+**Goal:** Build admin UI for managing course catalog and degree programs
+**Status:** COMPLETE
+
+### What Was Built
+
+**Backend — Catalog Queries (AdminCoursesResolver):**
+- `catalogCourses(filters: CatalogFilterInput): CatalogPage` — paginated catalog search with search, department, category, level filters
+- `catalogCourse(id): Course` — single course fetch for edit form
+- `departmentList: [String]` — distinct department IDs for filter dropdowns
+- `createCatalogCourse(input): Course` — admin-only course creation mutation
+
+**Frontend — /admin/catalog Page:**
+- Two-tab interface: Courses | Degree Programs
+- **Courses tab:**
+  - Search bar + filter dropdowns (department, category, level)
+  - Paginated course table (20/page) with code, title, credits, dept, category, level columns
+  - Create/Edit course dialog with all catalog fields:
+    - Code, title, description, credits, department, category, level
+    - Semester toggles (Fall/Spring/Summer)
+    - Prerequisite picker (searchable multi-select from existing courses)
+  - Delete confirmation dialog with section count validation
+- **Degree Programs tab:**
+  - Program list table with name, code, type, credits, department, status
+  - Create/Edit program dialog:
+    - Name, code, type (major/minor/certificate/diploma), credits, duration, department, catalog year, status
+    - Requirement Group Editor — dynamic list of groups with: name, type, credits required, min courses, course multi-select
+- Added "Catalog" nav item with Library icon to admin navigation
+- New GraphQL queries: `catalog.ts` (5 queries)
+- New GraphQL mutations: `catalog.ts` (5 mutations)
+
+### Files Created (3)
+```
+nexused-frontend/src/app/(dashboard)/admin/catalog/page.tsx
+nexused-frontend/src/lib/graphql/queries/catalog.ts
+nexused-frontend/src/lib/graphql/mutations/catalog.ts
+```
+
+### Files Modified (4)
+```
+nexused-backend/src/modules/courses/admin-courses.resolver.ts — Added 3 catalog queries + createCatalogCourse mutation
+nexused-backend/src/modules/courses/courses.service.ts — (ONBOARD-001 leftovers, already had catalog methods)
+nexused-backend/src/modules/courses/dto/course.types.ts — (ONBOARD-001 leftovers)
+nexused-frontend/src/lib/navigation.ts — Added Library icon, Catalog nav for admin
+```
+
+### Build & Test Status
+- Backend: ✓ Type-checks clean (0 errors)
+- Frontend: ✓ Type-checks clean (0 errors)
+- ESLint: ✓ Clean
+
+### Next Session Priorities
+1. **ONBOARD-003: CSV Catalog Import** — courses.csv, programs.csv, requirements.csv bulk import with validation
+2. **ONBOARD-004: AI-Assisted Import** — upload PDF → Claude extracts courses → admin reviews → import
+
+---
+
+## Session 26 — ONBOARD-003: CSV Catalog Import
+
+**Date:** 2026-02-18
+**Goal:** Bulk CSV import for courses, degree programs, and requirement groups
+**Status:** COMPLETE
+
+### What Was Built
+
+**Backend — CsvImportService:**
+- Hand-rolled RFC-4180 CSV parser (~40 lines) — no external dependency
+- `importCourses(tenantId, csvData)` — upsert by (code, tenantId), resolves prerequisite/corequisite codes → IDs, handles offeredSemesters string splitting
+- `importPrograms(tenantId, csvData)` — upsert by (code, tenantId), maps type string → `DegreeProgramType` enum
+- `importRequirements(tenantId, csvData)` — groups rows by program_code, fully replaces requirement groups per program atomically
+- All three methods: validate-all-first → early return on any error → single transaction upsert (all-or-nothing)
+- `ImportError` and `ImportResult` GraphQL ObjectTypes added to `course.types.ts`
+- 3 new mutations in `AdminCoursesResolver`: `importCoursesFromCsv`, `importProgramsFromCsv`, `importRequirementsFromCsv`
+- `courses.module.ts` updated: added DegreeProgram to TypeORM features, added CsvImportService to providers
+
+**Frontend — 4-Step Import Wizard:**
+- `/admin/catalog/import/page.tsx` — wizard with steps: select-type → upload → preview → result
+- `SelectTypeStep`: radio cards for courses/programs/requirements with ordering note (courses before programs before requirements)
+- `UploadStep`: file input (accept=".csv") + textarea paste area + "Download Template" button (URL.createObjectURL)
+- CSV templates with headers + example rows for all 3 import types — downloadable from the UI
+- `PreviewStep`: client-side CSV parse (first 10 rows, no API call), all-or-nothing import warning, confirm trigger
+- `ResultStep`: success message with import count / failure message with per-row error table (row, field, message)
+- GraphQL mutations: `csv-import.ts` (3 mutations)
+- "Import" button added to `/admin/catalog` page header linking to `/admin/catalog/import`
+
+### Files Created (3)
+```
+nexused-backend/src/modules/courses/csv-import.service.ts
+nexused-frontend/src/app/(dashboard)/admin/catalog/import/page.tsx
+nexused-frontend/src/lib/graphql/mutations/csv-import.ts
+```
+
+### Files Modified (4)
+```
+nexused-backend/src/modules/courses/admin-courses.resolver.ts — Added CsvImportService + 3 import mutations
+nexused-backend/src/modules/courses/dto/course.types.ts — Added ImportError, ImportResult ObjectTypes
+nexused-backend/src/modules/courses/courses.module.ts — Added DegreeProgram entity, CsvImportService provider
+nexused-frontend/src/app/(dashboard)/admin/catalog/page.tsx — Added Link/Upload imports, Import button in header
+```
+
+### Build & Test Status
+- Backend: ✓ Type-checks clean (0 errors)
+- Frontend: ✓ Type-checks clean (0 errors)
+
+### Next Session Priorities
+1. **ONBOARD-004: AI-Assisted Catalog Import** — upload PDF → Claude extracts courses → admin reviews → import
+2. **ENROLL-001: Course Catalog Student View** — student-facing catalog with search, filters, enrollment CTA

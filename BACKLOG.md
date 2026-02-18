@@ -738,7 +738,7 @@
 - **Acceptance:** Admin can upload courses.csv with 500 courses and import them in one operation. Errors are reported per-row. Failed imports roll back completely. Template CSVs are downloadable.
 
 ### ONBOARD-004: AI-Assisted Catalog Import from Documents
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** MEDIUM — The sales demo differentiator
 - **Depends on:** ONBOARD-003
 - **Scope:**

@@ -15,6 +15,7 @@ import {
   X,
   AlertTriangle,
   Upload,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1426,12 +1427,20 @@ export default function CatalogPage() {
             </p>
           </div>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/admin/catalog/import">
-            <Upload className="mr-2 h-4 w-4" />
-            Import
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/catalog/import">
+              <Upload className="mr-2 h-4 w-4" />
+              Import CSV
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/catalog/import/document">
+              <Sparkles className="mr-2 h-4 w-4" />
+              AI Import
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}

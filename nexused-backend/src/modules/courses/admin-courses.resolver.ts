@@ -18,6 +18,7 @@ import {
   CatalogPage,
   CreateCourseInput,
   ImportResult,
+  BatchCourseItem,
 } from './dto/course.types';
 import { CsvImportService } from './csv-import.service';
 import {
@@ -150,6 +151,15 @@ export class AdminCoursesResolver {
     @Args('input') input: BulkEnrollInput,
   ): Promise<Enrollment[]> {
     return this.coursesService.bulkEnroll(user.tenantId, input);
+  }
+
+  @Mutation(() => ImportResult)
+  async batchCreateCourses(
+    @CurrentUser() user: User,
+    @Args('courses', { type: () => [BatchCourseItem] })
+    courses: BatchCourseItem[],
+  ): Promise<ImportResult> {
+    return this.coursesService.batchCreate(user.tenantId, courses);
   }
 
   // ─── CSV Import Mutations ────────────────────────────────────────────────────

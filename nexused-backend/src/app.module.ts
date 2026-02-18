@@ -32,6 +32,7 @@ import { MessagingModule } from './modules/messaging/messaging.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { LtiModule } from './modules/lti/lti.module';
 import { PlannerModule } from './modules/planner/planner.module';
+import { CatalogExtractModule } from './modules/catalog-extract/catalog-extract.module';
 
 @Module({
   imports: [
@@ -92,6 +93,7 @@ import { PlannerModule } from './modules/planner/planner.module';
     AnalyticsModule,
     LtiModule,
     PlannerModule,
+    CatalogExtractModule,
   ],
   controllers: [AppController, HealthController],
   providers: [
