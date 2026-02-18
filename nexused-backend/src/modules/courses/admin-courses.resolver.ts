@@ -12,7 +12,12 @@ import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { Roles } from '../../decorators/roles.decorator';
-import { UpdateCourseInput } from './dto/course.types';
+import {
+  UpdateCourseInput,
+  CatalogFilterInput,
+  CatalogPage,
+  CreateCourseInput,
+} from './dto/course.types';
 import {
   UpdateSectionInput,
   AdminEnrollInput,
@@ -26,6 +31,31 @@ import {
 @Roles(UserRole.ADMIN)
 export class AdminCoursesResolver {
   constructor(private readonly coursesService: CoursesService) {}
+
+  // ─── Catalog Queries ────────────────────────────────────────────────────
+
+  @Query(() => CatalogPage)
+  async catalogCourses(
+    @CurrentUser() user: User,
+    @Args('filters', { nullable: true }) filters?: CatalogFilterInput,
+  ): Promise<CatalogPage> {
+    return this.coursesService.catalogCourses(user.tenantId, filters ?? {});
+  }
+
+  @Query(() => Course)
+  async catalogCourse(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<Course> {
+    return this.coursesService.findById(id, user.tenantId);
+  }
+
+  @Query(() => [String])
+  async departmentList(@CurrentUser() user: User): Promise<string[]> {
+    return this.coursesService.distinctDepartments(user.tenantId);
+  }
+
+  // ─── Existing Admin Queries ──────────────────────────────────────────────
 
   @Query(() => [CourseSection])
   async adminSections(@CurrentUser() user: User): Promise<CourseSection[]> {
@@ -41,6 +71,14 @@ export class AdminCoursesResolver {
       user.tenantId,
       sectionId,
     );
+  }
+
+  @Mutation(() => Course)
+  async createCatalogCourse(
+    @CurrentUser() user: User,
+    @Args('input') input: CreateCourseInput,
+  ): Promise<Course> {
+    return this.coursesService.create(user.tenantId, input);
   }
 
   @Mutation(() => Course)

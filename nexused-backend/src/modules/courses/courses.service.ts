@@ -18,6 +18,8 @@ import {
   CreateCourseInput,
   CreateSectionInput,
   UpdateCourseInput,
+  CatalogFilterInput,
+  CatalogPage,
 } from './dto/course.types';
 import {
   UpdateSectionInput,
@@ -217,6 +219,69 @@ export class CoursesService {
     return enrollments;
   }
 
+  // --- Catalog methods ---
+
+  /**
+   * ONBOARD-002: Paginated catalog search with filters.
+   * WHY: Admins need to browse/search the full course catalog, not just a
+   * flat list. ILIKE search on title+code, plus enum/level filters.
+   */
+  async catalogCourses(
+    tenantId: string,
+    filters: CatalogFilterInput,
+  ): Promise<CatalogPage> {
+    const qb = this.coursesRepository
+      .createQueryBuilder('course')
+      .where('course.tenantId = :tenantId', { tenantId });
+
+    if (filters.search) {
+      qb.andWhere('(course.title ILIKE :search OR course.code ILIKE :search)', {
+        search: `%${filters.search}%`,
+      });
+    }
+    if (filters.departmentId) {
+      qb.andWhere('course.departmentId = :departmentId', {
+        departmentId: filters.departmentId,
+      });
+    }
+    if (filters.category) {
+      qb.andWhere('course.category = :category', {
+        category: filters.category,
+      });
+    }
+    if (filters.courseLevel) {
+      qb.andWhere('course.courseLevel = :courseLevel', {
+        courseLevel: filters.courseLevel,
+      });
+    }
+
+    const total = await qb.getCount();
+
+    const items = await qb
+      .orderBy('course.code', 'ASC')
+      .skip(filters.offset ?? 0)
+      .take(filters.limit ?? 50)
+      .getMany();
+
+    return { items, total };
+  }
+
+  /**
+   * ONBOARD-002: Distinct department IDs for filter dropdowns.
+   * WHY: The catalog filter UI needs a list of departments that actually
+   * have courses — not a static list.
+   */
+  async distinctDepartments(tenantId: string): Promise<string[]> {
+    const rows = await this.coursesRepository
+      .createQueryBuilder('course')
+      .select('DISTINCT course.departmentId', 'departmentId')
+      .where('course.tenantId = :tenantId', { tenantId })
+      .andWhere('course.departmentId IS NOT NULL')
+      .orderBy('course.departmentId', 'ASC')
+      .getRawMany();
+    return rows.map((r) => r.departmentId);
+  }
+
   // --- Admin methods ---
 
   async updateCourse(
@@ -237,6 +302,15 @@ export class CoursesService {
     if (input.credits !== undefined) updateData.credits = input.credits;
     if (input.departmentId !== undefined)
       updateData.departmentId = input.departmentId;
+    if (input.category !== undefined) updateData.category = input.category;
+    if (input.courseLevel !== undefined)
+      updateData.courseLevel = input.courseLevel;
+    if (input.offeredSemesters !== undefined)
+      updateData.offeredSemesters = input.offeredSemesters;
+    if (input.prerequisiteCourseIds !== undefined)
+      updateData.prerequisiteCourseIds = input.prerequisiteCourseIds;
+    if (input.corequisiteCourseIds !== undefined)
+      updateData.corequisiteCourseIds = input.corequisiteCourseIds;
 
     await this.coursesRepository.update(id, updateData);
     return this.coursesRepository.findOneOrFail({ where: { id } });

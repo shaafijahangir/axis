@@ -11,6 +11,7 @@ import {
   Shield,
   Bot,
   Map,
+  Library,
   type LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
@@ -60,6 +61,7 @@ const instructorNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+  { label: 'Catalog', href: '/admin/catalog', icon: Library },
   { label: 'AI Governance', href: '/admin/ai-governance', icon: Shield },
   { label: 'People', href: '/people', icon: Users },
   { label: 'Integrations', href: '/admin/integrations', icon: Link },
