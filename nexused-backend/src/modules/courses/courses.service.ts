@@ -6,6 +6,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import {
+  CatalogCourse,
+  CatalogSection,
+  StudentCatalogFilter,
+  StudentCatalogPage,
+} from './dto/catalog-student.types';
+import { SectionStatus } from '../../database/entities/course-section.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   Course,
@@ -558,6 +565,163 @@ export class CoursesService {
 
     const saved = await this.enrollmentsRepository.save(enrollments);
     return [...existing, ...saved];
+  }
+
+  // ─── Student Catalog ──────────────────────────────────────────────────────
+
+  /**
+   * ENROLL-001: Student-facing course catalog.
+   *
+   * Returns courses that have at least one active section in the requested
+   * term (or the current term if none specified), enriched with:
+   *  - Live seat counts (capacity − active/pending/waitlisted enrollments)
+   *  - Instructor display names
+   *  - Section schedule/location
+   *
+   * WHY two queries (sections + enrollment counts) instead of a GROUP BY?
+   * TypeORM's QueryBuilder doesn't compose aggregate subqueries cleanly with
+   * entity hydration. A separate count query is simpler to read, maintain,
+   * and test. At catalog scale (~200 courses × 2 sections each = 400 rows)
+   * the overhead is negligible.
+   *
+   * TRADEOFF: hasSeats filter is applied in-memory after fetching counts
+   * because the count is not a column. For very large catalogs this could be
+   * optimised with a raw SQL subquery, but it's acceptable here.
+   */
+  async studentCatalog(
+    tenantId: string,
+    filters: StudentCatalogFilter,
+  ): Promise<StudentCatalogPage> {
+    const {
+      search,
+      termId,
+      department,
+      category,
+      courseLevel,
+      hasSeats,
+      limit = 20,
+      offset = 0,
+    } = filters;
+
+    // 1. Load sections with course + instructor + term joined
+    const qb = this.sectionsRepository
+      .createQueryBuilder('section')
+      .innerJoinAndSelect('section.course', 'course')
+      .innerJoinAndSelect('section.instructor', 'instructor')
+      .leftJoinAndSelect('section.term', 'term')
+      .where('course.tenantId = :tenantId', { tenantId })
+      .andWhere('section.status = :status', { status: SectionStatus.ACTIVE });
+
+    if (termId) {
+      qb.andWhere('section.termId = :termId', { termId });
+    } else {
+      qb.andWhere('term.isCurrent = true');
+    }
+
+    if (search) {
+      qb.andWhere(
+        "(course.code ILIKE :search OR course.title ILIKE :search OR CONCAT(instructor.firstName, ' ', instructor.lastName) ILIKE :search)",
+        { search: `%${search}%` },
+      );
+    }
+    if (department) {
+      qb.andWhere('course.departmentId = :department', { department });
+    }
+    if (category) {
+      qb.andWhere('course.category = :category', { category });
+    }
+    if (courseLevel) {
+      qb.andWhere('course.courseLevel = :courseLevel', { courseLevel });
+    }
+
+    const sections = await qb.orderBy('course.code', 'ASC').getMany();
+
+    if (sections.length === 0) {
+      return { items: [], total: 0 };
+    }
+
+    // 2. Batch-load enrollment counts for all matching sections
+    const sectionIds = sections.map((s) => s.id);
+    const rawCounts = await this.enrollmentsRepository
+      .createQueryBuilder('e')
+      .select('e.sectionId', 'sectionId')
+      .addSelect('COUNT(e.id)::int', 'count')
+      .where('e.sectionId IN (:...sectionIds)', { sectionIds })
+      .andWhere('e.status IN (:...statuses)', {
+        statuses: [
+          EnrollmentStatus.ACTIVE,
+          EnrollmentStatus.PENDING,
+          EnrollmentStatus.WAITLISTED,
+        ],
+      })
+      .groupBy('e.sectionId')
+      .getRawMany<{ sectionId: string; count: number }>();
+
+    const countMap = new Map(
+      rawCounts.map((r) => [r.sectionId, Number(r.count)]),
+    );
+
+    // 3. Group sections by course, applying hasSeats filter in-memory
+    const courseMap = new Map<
+      string,
+      { course: (typeof sections)[0]['course']; sections: CatalogSection[] }
+    >();
+
+    for (const section of sections) {
+      const enrolledCount = countMap.get(section.id) ?? 0;
+      const seatsAvailable =
+        section.capacity != null ? section.capacity - enrolledCount : null;
+
+      if (hasSeats && (seatsAvailable === null || seatsAvailable <= 0)) {
+        continue;
+      }
+
+      const catalogSection: CatalogSection = {
+        id: section.id,
+        schedule: section.schedule ? JSON.stringify(section.schedule) : null,
+        location: section.location,
+        capacity: section.capacity ?? null,
+        enrolledCount,
+        seatsAvailable,
+        enrollmentMode: section.enrollmentMode,
+        instructor: {
+          id: section.instructor.id,
+          firstName: section.instructor.firstName,
+          lastName: section.instructor.lastName,
+        },
+        termId: section.termId,
+        termName: section.term?.name ?? '',
+      };
+
+      if (!courseMap.has(section.courseId)) {
+        courseMap.set(section.courseId, {
+          course: section.course,
+          sections: [],
+        });
+      }
+      courseMap.get(section.courseId)!.sections.push(catalogSection);
+    }
+
+    // 4. Flatten to sorted array and paginate
+    const allItems: CatalogCourse[] = [...courseMap.values()].map(
+      ({ course, sections: courseSections }) => ({
+        id: course.id,
+        code: course.code,
+        title: course.title,
+        description: course.description,
+        credits: course.credits,
+        department: course.departmentId ?? null,
+        category: course.category,
+        courseLevel: course.courseLevel,
+        prerequisiteCourseIds: course.prerequisiteCourseIds ?? [],
+        sections: courseSections,
+      }),
+    );
+
+    const total = allItems.length;
+    const items = allItems.slice(offset, offset + limit);
+
+    return { items, total };
   }
 
   async findAllEnrollmentsForTenant(

@@ -2,7 +2,7 @@
 
 import { useQuery } from '@apollo/client/react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -26,12 +26,20 @@ export default function CoursesPage() {
           <h1 className="text-2xl font-bold">Courses</h1>
           <p className="text-muted-foreground">Browse and manage courses.</p>
         </div>
-        <Link href="/courses/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Course
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/courses/catalog">
+            <Button variant="outline">
+              <Library className="mr-2 h-4 w-4" aria-hidden="true" />
+              Browse Catalog
+            </Button>
+          </Link>
+          <Link href="/courses/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Create Course
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {loading ? (

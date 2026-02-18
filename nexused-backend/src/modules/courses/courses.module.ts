@@ -5,6 +5,7 @@ import { DegreeProgram } from '../../database/entities/degree-program.entity';
 import { CoursesService } from './courses.service';
 import { CoursesResolver } from './courses.resolver';
 import { AdminCoursesResolver } from './admin-courses.resolver';
+import { StudentCatalogResolver } from './student-catalog.resolver';
 import { CsvImportService } from './csv-import.service';
 
 @Module({
@@ -20,6 +21,7 @@ import { CsvImportService } from './csv-import.service';
     CoursesService,
     CoursesResolver,
     AdminCoursesResolver,
+    StudentCatalogResolver,
     CsvImportService,
   ],
   exports: [CoursesService],

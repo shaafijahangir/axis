@@ -767,7 +767,8 @@
 > **Innovation thesis:** Every LMS treats enrollment as admin plumbing (CSV imports, manual assignment). NexusEd makes enrollment a student-facing, AI-powered experience. A student can say "I need a 3-credit elective" and the AI finds, recommends, and enrolls them.
 
 ### ENROLL-001: Course Catalog (Browse & Search)
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-18
 - **Priority:** HIGH — Students need to discover courses before they can enroll
 - **Depends on:** Existing Course, CourseSection, AcademicTerm entities
 - **Scope:**
