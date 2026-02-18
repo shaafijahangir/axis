@@ -86,8 +86,8 @@ export class CustomAgent extends TenantScopedEntity {
    * for students enrolled in this course.
    * When null, the agent is available to all users in the tenant.
    */
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   courseId: string | null;
 
   @ManyToOne(() => Course, { nullable: true })

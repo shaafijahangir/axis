@@ -33,11 +33,23 @@ export interface RequirementGroup {
   description?: string;
 }
 
+export enum DegreeProgramType {
+  MAJOR = 'major',
+  MINOR = 'minor',
+  CERTIFICATE = 'certificate',
+  DIPLOMA = 'diploma',
+}
+
 export enum DegreeProgramStatus {
   ACTIVE = 'active',
   ARCHIVED = 'archived',
   DRAFT = 'draft',
 }
+
+registerEnumType(DegreeProgramType, {
+  name: 'DegreeProgramType',
+  description: 'Type of degree program (major, minor, certificate, diploma)',
+});
 
 registerEnumType(DegreeProgramStatus, {
   name: 'DegreeProgramStatus',
@@ -75,9 +87,41 @@ export class DegreeProgram extends TenantScopedEntity {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  /**
+   * ONBOARD-001: What kind of program this is.
+   * WHY: A student might pursue a major AND a minor simultaneously.
+   * The graduation planner needs to know program type to combine
+   * requirements correctly and calculate total credits.
+   */
+  @Field(() => DegreeProgramType, { nullable: true })
+  @Column({
+    type: 'enum',
+    enum: DegreeProgramType,
+    nullable: true,
+  })
+  programType: DegreeProgramType;
+
   @Field(() => Int)
   @Column({ type: 'int' })
   totalCreditsRequired: number;
+
+  /**
+   * ONBOARD-001: Expected duration in semesters (e.g., 8 for a 4-year degree).
+   * WHY: The graduation planner uses this as a baseline when generating
+   * plans and calculating if a student is on track.
+   */
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'int', nullable: true })
+  expectedDurationSemesters: number;
+
+  /**
+   * ONBOARD-001: Which catalog year this program definition applies to.
+   * WHY: Degree requirements change between catalog years. A student
+   * follows the requirements from their enrollment year.
+   */
+  @Field({ nullable: true })
+  @Column({ type: 'varchar', length: 9, nullable: true })
+  catalogYear: string;
 
   /**
    * Structured requirement groups — core, electives, general ed, etc.

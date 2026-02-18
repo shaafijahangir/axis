@@ -85,7 +85,7 @@ export function FeedCard({
   onImpression,
   onClick,
 }: FeedCardProps) {
-  const config = typeConfig[type];
+  const config = typeConfig[type] ?? typeConfig.course_update;
   const Icon = config.icon;
 
   const href =

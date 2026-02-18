@@ -9,7 +9,7 @@ import { DirectMessage } from './direct-message.entity';
 @Index(['tenantId'])
 export class Conversation extends TenantScopedEntity {
   @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   title: string;
 
   @OneToMany(() => ConversationParticipant, (p) => p.conversation)

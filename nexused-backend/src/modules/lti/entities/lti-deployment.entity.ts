@@ -46,8 +46,8 @@ export class LtiDeployment extends TenantScopedEntity {
   /**
    * Human-readable label for this deployment
    */
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   label: string | null;
 
   /**

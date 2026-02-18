@@ -686,6 +686,482 @@
 
 ---
 
+## Sprint: Institutional Onboarding & Catalog Management
+
+> **Goal:** An institution can get set up on NexusEd with their full course catalog and degree programs. This is the data foundation — nothing else (enrollment, graduation planning, AI course discovery) works without it.
+>
+> **Competitive angle:** DegreeWorks (Ellucian) charges $100k+/year and requires weeks of manual setup. NexusEd's AI-assisted import can onboard an institution's catalog in hours. This is the "wow" moment in a sales demo.
+
+### ONBOARD-001: Catalog Data Model Extensions
+- **Status:** `DONE`
+- **Completed:** 2026-02-17
+- **Priority:** HIGH — Data foundation for everything
+- **Scope:**
+  - Extend `Course` entity with catalog fields: `credits` (int), `department` (varchar), `category` (enum: core/elective/gen-ed/lab/seminar), `description` (text), `courseLevel` (int: 100-400+), `offeredSemesters` (JSONB array: ['Fall', 'Spring', 'Summer']), `prerequisiteCourseIds` (JSONB string array), `corequisiteCourseIds` (JSONB string array)
+  - Extend `CourseSection` entity: `maxEnrollment` (int, seat capacity), `schedule` (JSONB: { days: string[], startTime: string, endTime: string }), `location` (varchar), `enrollmentMode` (enum: 'open' | 'invite_only', default 'open'), `inviteCode` (varchar, nullable, 6-char alphanumeric), `autoApprove` (boolean, default true)
+  - Extend `AcademicTerm` entity: `enrollmentWindowStart` (timestamp), `enrollmentWindowEnd` (timestamp), `dropDeadline` (timestamp), `withdrawDeadline` (timestamp)
+  - Extend `DegreeProgram` entity (from FEAT-015): `programType` (enum: 'major' | 'minor' | 'certificate' | 'diploma'), `department` (varchar), `expectedDurationSemesters` (int), `catalogYear` (varchar)
+  - Add `@Index` decorators on new columns used in queries (department, category, courseLevel)
+  - Generate TypeORM migration for all schema changes
+- **Acceptance:** All entities have the extended fields. Migration runs cleanly. Existing seed data still works. No breaking changes to current API.
+
+### ONBOARD-002: Admin Catalog CRUD
+- **Status:** `TODO`
+- **Priority:** HIGH — Admins need to manage catalog data
+- **Depends on:** ONBOARD-001
+- **Scope:**
+  - Backend: `CatalogService` with CRUD operations for courses and programs, search (title, code, department), filter (category, level, credits, offered semesters), pagination
+  - Backend: `CatalogResolver` — admin-only mutations: `createCatalogCourse`, `updateCatalogCourse`, `deleteCatalogCourse`, `updateDegreeProgram`. Queries: `catalogCourses(filters)`, `catalogCourse(id)`, `departmentList`
+  - Frontend: `/admin/catalog` page with:
+    - Course list table with search, filter by department/category/level, pagination
+    - Create/edit course form (all catalog fields, prerequisite picker — select from existing courses)
+    - Bulk course operations (deactivate, change department)
+    - Degree program list and editor (requirement group management, assign courses to groups)
+  - Frontend: Add "Catalog" nav item with BookOpen icon to admin navigation
+- **Acceptance:** Admin can create, edit, delete courses. Admin can manage degree program requirements. Search and filters work. All operations are tenant-scoped.
+
+### ONBOARD-003: CSV Catalog Import
+- **Status:** `TODO`
+- **Priority:** HIGH — Structured bulk import for institutions with SIS exports
+- **Depends on:** ONBOARD-002
+- **Scope:**
+  - Backend: CSV parsing service with standard templates:
+    - `courses.csv`: code, title, credits, department, category, level, description, prerequisites (comma-separated codes), corequisites, offered_semesters
+    - `programs.csv`: name, type, department, total_credits, expected_duration, catalog_year
+    - `requirements.csv`: program_code, group_name, group_type (core/elective/gen-ed), course_codes (comma-separated), min_credits, min_courses
+  - Backend: Validation pipeline — parse → validate required fields → check referential integrity (prerequisite course exists) → generate error report (row-by-row)
+  - Backend: Import as transaction — all-or-nothing with rollback on any failure
+  - Backend: Mutation: `importCatalogFromCsv(type, csvData)` → returns `{ imported: number, errors: [{ row, field, message }] }`
+  - Frontend: Admin import wizard — select CSV type → upload file → preview parsed data in table → review/fix errors → confirm import
+  - Frontend: Downloadable CSV templates with example data
+- **Acceptance:** Admin can upload courses.csv with 500 courses and import them in one operation. Errors are reported per-row. Failed imports roll back completely. Template CSVs are downloadable.
+
+### ONBOARD-004: AI-Assisted Catalog Import from Documents
+- **Status:** `TODO`
+- **Priority:** MEDIUM — The sales demo differentiator
+- **Depends on:** ONBOARD-003
+- **Scope:**
+  - Backend: Document upload endpoint — accepts PDF (academic calendar, course catalog) or plain text
+  - Backend: AI extraction pipeline using Claude (via AI provider abstraction):
+    - Parse course entries: code, title, credits, description, prerequisites (handle natural language: "Prerequisite: CS 101 with minimum C+ or permission of instructor")
+    - Parse degree requirements: program name, requirement groups, course lists, credit thresholds
+    - Handle ambiguity: flag low-confidence extractions for human review
+  - Backend: Extraction review queue — store extracted data as draft, admin reviews/edits in UI, then confirms import
+  - Backend: `importCatalogFromDocument(file)` → returns `{ extractedCourses: [...], extractedPrograms: [...], confidence: number, flaggedItems: [...] }`
+  - Frontend: "Import from Document" wizard:
+    1. Upload PDF or paste text
+    2. AI processes (show progress — "Extracting courses... Found 247 courses so far")
+    3. Review extracted data in editable table (flagged items highlighted in yellow)
+    4. Fix errors, resolve flags
+    5. Confirm import
+  - Cost tracking: Log AI tokens used for extraction via UsageTrackingService
+- **Acceptance:** Admin uploads a 50-page academic calendar PDF → AI extracts 200+ courses with prerequisites and 10+ degree programs → admin reviews in <30 minutes → catalog is live. Extraction accuracy > 90% on well-structured documents.
+
+---
+
+## Sprint: Student Enrollment & Course Discovery
+
+> **Goal:** Build the complete enrollment flow — from course discovery to AI-assisted enrollment to institutional-scale management. This is the first AI-native enrollment system in any LMS.
+>
+> **Innovation thesis:** Every LMS treats enrollment as admin plumbing (CSV imports, manual assignment). NexusEd makes enrollment a student-facing, AI-powered experience. A student can say "I need a 3-credit elective" and the AI finds, recommends, and enrolls them.
+
+### ENROLL-001: Course Catalog (Browse & Search)
+- **Status:** `TODO`
+- **Priority:** HIGH — Students need to discover courses before they can enroll
+- **Depends on:** Existing Course, CourseSection, AcademicTerm entities
+- **Scope:**
+  - Backend: `CatalogService` with tenant-scoped course listing, search (title, code, instructor name), filters (term, department, credits, schedule, availability)
+  - Backend: `CatalogResolver` with `courseCatalog(filters)` query — public within tenant (any authenticated user)
+  - Frontend: `/courses/catalog` page with search bar, filter sidebar (or mobile-friendly filter sheet), course cards showing: title, code, instructor, schedule, seats available/total, prerequisite summary
+  - Frontend: Course detail modal or page with full description, syllabus link, instructor bio, enrollment button
+- **Entities:** No new entities — uses existing Course, CourseSection, Enrollment (for seat counts), AcademicTerm (for term filter)
+- **Key decisions:**
+  - Catalog shows sections for the current (or selected) academic term only
+  - Seat count = `section.maxEnrollment - activeEnrollmentCount` (add `maxEnrollment` column to CourseSection if missing)
+  - Search uses PostgreSQL `ILIKE` for now (full-text search is a future optimization)
+- **Acceptance:** Student can browse available courses, search by name/code, filter by term/department, see seat availability, and view course details. All data is tenant-scoped.
+
+### ENROLL-002: Self-Enrollment + Invite Codes
+- **Status:** `TODO`
+- **Priority:** HIGH — Core enrollment mechanism
+- **Depends on:** ENROLL-001
+- **Scope:**
+  - Backend: Add `enrollmentMode` column to CourseSection entity: `'open' | 'invite_only'` (default: `'open'`)
+  - Backend: Add `inviteCode` column to CourseSection entity: nullable 6-char alphanumeric, auto-generated when mode is `invite_only`
+  - Backend: `EnrollmentService.enrollStudent(userId, sectionId, inviteCode?)`:
+    - Validates enrollment mode (open → no code needed, invite_only → code must match)
+    - Checks seat availability
+    - Checks if student is already enrolled
+    - Creates Enrollment record with status `pending` or `active` (configurable per section: `autoApprove` boolean)
+    - Emits `ENROLLMENT_CREATED` event (already wired to Study Coach welcome in FEAT-002)
+  - Backend: `EnrollmentService.generateInviteCode(sectionId, instructorId)` — instructor generates/regenerates invite codes
+  - Backend: Mutations: `enrollInSection(sectionId, inviteCode?)`, `generateInviteCode(sectionId)`, `approveEnrollment(enrollmentId)`, `rejectEnrollment(enrollmentId)`
+  - Frontend: "Enroll" button on catalog course cards → confirms enrollment or prompts for invite code
+  - Frontend: Instructor section settings → enrollment mode toggle + invite code display/copy/regenerate
+  - Frontend: Instructor pending enrollments list → approve/reject buttons
+- **Acceptance:** Student can self-enroll in open sections. Student can enter invite code for invite-only sections. Instructor can generate/share invite codes. Instructor can approve/reject pending enrollments.
+
+### ENROLL-003: Enrollment Lifecycle (Status Machine)
+- **Status:** `TODO`
+- **Priority:** HIGH — Required for drop/withdraw functionality
+- **Depends on:** ENROLL-002
+- **Scope:**
+  - Backend: Formalize `EnrollmentStatus` transitions: `pending → active → completed | dropped | withdrawn`
+    - `pending → active`: Approved by instructor or auto-approved
+    - `pending → rejected`: Instructor rejects
+    - `active → dropped`: Student drops before drop deadline (reversible — student can re-enroll)
+    - `active → withdrawn`: Student withdraws after drop deadline (permanent, may appear on transcript)
+    - `active → completed`: Term ends, student has completed the course
+    - Admin can force any transition (with audit log)
+  - Backend: Add `dropDeadline` and `withdrawDeadline` to AcademicTerm entity
+  - Backend: `EnrollmentService.dropCourse(enrollmentId, userId)` — validates deadline, changes status
+  - Backend: `EnrollmentService.withdrawCourse(enrollmentId, userId)` — validates deadline, changes status
+  - Backend: Emit events for status changes (new event types: `ENROLLMENT_DROPPED`, `ENROLLMENT_WITHDRAWN`)
+  - Frontend: "Drop Course" button on enrolled course page (shows deadline warning)
+  - Frontend: Enrollment status badge on course cards (pending, active, dropped, withdrawn, completed)
+  - Frontend: Admin enrollment management — override status for any student
+- **Acceptance:** Students can drop/withdraw courses within deadline constraints. Status transitions are validated and audited. Admin can override. Events fire for AI integration.
+
+### ENROLL-004: Enrollment Notifications & Onboarding
+- **Status:** `TODO`
+- **Priority:** MEDIUM — Quality-of-life, but leverages existing infrastructure
+- **Depends on:** ENROLL-003
+- **Scope:**
+  - Backend: On `ENROLLMENT_CREATED` with status `active`:
+    - Create feed item: "You're enrolled in {courseCode}: {courseTitle}!"
+    - Study Coach welcome message already handled by FEAT-002 event listener
+  - Backend: On enrollment status changes:
+    - `pending → active`: Feed item + Study Coach welcome
+    - `active → dropped`: Feed item "You've dropped {courseCode}"
+    - `pending → rejected`: Feed item "Your enrollment in {courseCode} was not approved"
+  - Frontend: Onboarding checklist widget on first visit to a new course:
+    - [ ] Review syllabus
+    - [ ] Check upcoming assignments
+    - [ ] Say hi in the Study Coach
+    - Checklist dismissable, stored in user preferences JSONB
+  - Frontend: Course appears in sidebar immediately after enrollment activation
+- **Acceptance:** Students receive feed notifications for all enrollment status changes. New course enrollment triggers onboarding checklist. Course appears in navigation immediately.
+
+### ENROLL-005: Enroll-from-AI (Course Planner Integration)
+- **Status:** `TODO`
+- **Priority:** MEDIUM — The AI-native differentiator
+- **Depends on:** ENROLL-002, FEAT-015 (Course Planner — already DONE)
+- **Scope:**
+  - Backend: New AI tool `enroll_in_course`:
+    - Input: `{ sectionId: string }` or `{ courseCode: string, termId?: string }`
+    - Resolves section from course code if needed
+    - Checks prerequisites via `PlannerService.checkPrerequisites()`
+    - Checks seat availability
+    - Checks enrollment mode (if invite-only, AI tells student they need a code)
+    - Creates enrollment via `EnrollmentService.enrollStudent()`
+    - Returns confirmation or error message to the conversation
+    - **Governance default:** `suggest` (AI recommends, shows confirmation, student says "yes" to proceed)
+  - Backend: New AI tool `check_enrollment_status`:
+    - Input: `{ courseCode?: string }` (optional — if omitted, returns all enrollments)
+    - Returns current enrollment status for the student
+  - Backend: Register tools in Course Planner agent definition
+  - Frontend: No changes needed — tool results display in AI chat like any other tool
+- **Acceptance:** Student can ask Course Planner "Enroll me in CS 201" and the AI checks prerequisites, availability, and creates the enrollment. Governance controls whether this is auto or requires student confirmation.
+
+### ENROLL-006: Proactive Prerequisite Alerts
+- **Status:** `TODO`
+- **Priority:** MEDIUM
+- **Depends on:** ENROLL-005
+- **Scope:**
+  - Backend: When `enroll_in_course` tool detects unmet prerequisites:
+    - Return structured response: which prereqs are missing, which are in-progress, which are completed
+    - AI suggests: "You need CS 101 first. You could take it next semester, or ask your advisor for a prerequisite override."
+  - Backend: When student enrolls via UI (ENROLL-002) with unmet prerequisites:
+    - Show warning modal: "This course requires CS 101 (not completed). Enroll anyway?" (if institution allows override)
+    - If institution enforces strict prerequisites: block enrollment, show which are missing
+  - Backend: `PlannerService.checkPrerequisites()` already exists — extend to return detailed status per prerequisite
+  - Frontend: Prerequisite warning modal in catalog enrollment flow
+  - Frontend: Badge on catalog cards: "Prerequisites met" (green) or "Missing prerequisites" (amber)
+- **Acceptance:** Students are warned about missing prerequisites before enrolling. AI provides alternative paths. Institutions can configure strict vs warning-only prerequisite enforcement.
+
+### ENROLL-007: Smart Course Discovery (AI-Powered Search)
+- **Status:** `TODO`
+- **Priority:** LOW — Enhancement over catalog search
+- **Depends on:** ENROLL-001, ENROLL-005
+- **Scope:**
+  - Backend: New AI tool `discover_courses`:
+    - Input: `{ query: string }` — natural language query
+    - Searches catalog by: credits, category/department, schedule, instructor, seat availability
+    - Cross-references with degree requirements (via PlannerService) to highlight which results count toward the student's degree
+    - Returns top 5-10 results with relevance explanation
+  - Backend: Register in Course Planner agent
+  - Examples:
+    - "I need a 3-credit lab science" → filters by credits and category
+    - "What counts toward my CS electives?" → cross-refs degree program requirements
+    - "Morning classes on MWF" → schedule-based filter
+    - "Courses with Dr. Smith" → instructor search
+- **Acceptance:** Student can describe what they need in natural language and get relevant course recommendations that account for their degree progress.
+
+### ENROLL-008: Bulk Enrollment (Admin)
+- **Status:** `TODO`
+- **Priority:** LOW — Institutional scale feature
+- **Depends on:** ENROLL-002
+- **Scope:**
+  - Backend: `EnrollmentService.bulkEnroll(csvData, sectionId, adminId)`:
+    - Parse CSV (columns: email, optional role)
+    - Validate all emails exist in tenant
+    - Create enrollment records in a transaction
+    - Return success/failure report (which enrolled, which failed and why)
+  - Backend: `EnrollmentService.bulkDrop(enrollmentIds, adminId)` — with audit log
+  - Backend: `EnrollmentService.bulkMoveSection(enrollmentIds, targetSectionId, adminId)` — drop from old + enroll in new, transactional
+  - Backend: Mutations: `bulkEnrollFromCsv(sectionId, csvData)`, `bulkDropEnrollments(enrollmentIds)`, `bulkMoveEnrollments(enrollmentIds, targetSectionId)`
+  - Frontend: Admin section management → "Bulk Enroll" button → CSV upload with preview
+  - Frontend: Admin section management → multi-select students → "Move to Section" / "Drop Selected"
+- **Acceptance:** Admin can upload CSV to bulk-enroll students. Admin can bulk-move/drop students across sections. All operations are transactional with error reporting.
+
+### ENROLL-009: Enrollment Policy Engine
+- **Status:** `TODO`
+- **Priority:** LOW — Enterprise tier
+- **Depends on:** ENROLL-003
+- **Scope:**
+  - Backend: Add enrollment policy fields to Tenant settings (JSONB):
+    - `maxEnrollmentPerSection`: default section capacity
+    - `enrollmentWindowStart` / `enrollmentWindowEnd`: per-term enrollment dates
+    - `prerequisiteEnforcement`: `'strict' | 'warn' | 'off'`
+    - `creditHourLimitPerTerm`: max credits a student can take
+    - `crossListingEnabled`: boolean
+  - Backend: Policy checks run on every enrollment attempt (UI or AI)
+  - Backend: Admin UI for managing policies (extend existing admin panel)
+  - Frontend: Admin settings page → enrollment policies section
+- **Acceptance:** Tenant admin can configure enrollment policies. All enrollment paths (UI, AI, bulk) respect the configured policies.
+
+### ENROLL-010: Waitlist Intelligence
+- **Status:** `TODO`
+- **Priority:** LOW — Nice-to-have for large institutions
+- **Depends on:** ENROLL-009
+- **Scope:**
+  - Backend: New `Waitlist` entity or extend Enrollment with `waitlistPosition` column
+  - Backend: When section is full → student placed on waitlist (new status: `waitlisted`)
+  - Backend: `WaitlistService`:
+    - On drop/withdraw → check waitlist → promote top student
+    - Configurable: auto-enroll or send 24h confirmation window
+    - Notification: "A spot opened in CS 101! Confirm by {deadline}"
+    - If no confirmation → promote next student
+  - Backend: Scheduled job for confirmation deadline expiration
+  - Frontend: Waitlist position display: "You are #3 on the waitlist for CS 101"
+  - Frontend: Confirmation prompt when promoted from waitlist
+- **Acceptance:** Students are placed on waitlist when section is full. Auto-promotion on drops. Confirmation window is configurable. Position is visible to students.
+
+### ENROLL-011: SIS Event-Driven Sync
+- **Status:** `TODO`
+- **Priority:** LOW — Enterprise integration
+- **Depends on:** ENROLL-003
+- **Scope:**
+  - Backend: Webhook receiver endpoint: `POST /api/sis/webhook`
+  - Backend: Support for common SIS event types: `enrollment.created`, `enrollment.updated`, `enrollment.deleted`
+  - Backend: Student matching by email or external ID
+  - Backend: Section matching by external code or LTI context (FEAT-011)
+  - Backend: Conflict resolution: SIS is source of truth
+  - Backend: Audit log for all SIS-originated changes
+  - Backend: Webhook signature verification for security
+  - Frontend: Admin integrations page → SIS configuration section
+- **Acceptance:** External SIS can send enrollment events via webhook. NexusEd creates/updates/drops enrollments based on SIS data. All changes are audited.
+
+---
+
+## Sprint: AI Graduation Planner
+
+> **Goal:** Every student gets a personalized, semester-by-semester graduation roadmap that adapts to their timeline, finances, and life circumstances. This is the DegreeWorks killer — 10x better UX, 10x cheaper, and AI-native.
+>
+> **Product thesis:** This may be a stronger product than the LMS itself. Many universities already have Canvas/Moodle but hate their degree audit tool or don't have one. NexusEd can be "the AI-native graduation planner that also has an LMS built in."
+>
+> **How it differs from FEAT-015:** The existing Course Planner tracks progress and checks prerequisites. This sprint generates a **complete semester-by-semester plan** that accounts for time, money, course availability, and life changes.
+
+### GRAD-001: Constraint-Based Plan Generator
+- **Status:** `TODO`
+- **Priority:** HIGH — Core planning algorithm
+- **Depends on:** ONBOARD-001 (needs course availability data), FEAT-015 (existing planner infrastructure)
+- **Scope:**
+  - Backend: `GraduationPlannerService` that models planning as constraint satisfaction:
+    - **Inputs:** StudentDegreeProfile (completed courses), target DegreeProgram, `maxCreditsPerSemester` (default 15), `targetGraduationDate` (or null = ASAP), `availableSemesters` (array of term types: Fall/Spring/Summer, plus specific terms to exclude like "Summer 2027"), `startTerm` (next available)
+    - **Constraints:**
+      - Prerequisites must be satisfied before a course can be scheduled
+      - Corequisites must be in the same semester
+      - Course availability — respect `offeredSemesters` from Course entity
+      - Max credits per semester
+      - Don't schedule completed or in-progress courses
+    - **Algorithm:** Topological sort of prerequisite DAG → priority-based assignment (required courses first, then courses that unblock the most prerequisites, then electives) → greedy bin-packing into semesters respecting constraints → backtrack if a semester is infeasible
+    - **Output:** `GraduationPlan` — ordered array of `PlannedSemester` (term, year, courses with credits, total credits, cumulative credits, cumulative progress %)
+  - Backend: New entity `GraduationPlan` — stores generated plans per student (JSONB semesters, constraints used, generated timestamp, status: draft/active/archived)
+  - Backend: Resolver: `generateGraduationPlan(input)` → GraduationPlan, `myGraduationPlans` → [GraduationPlan], `activateGraduationPlan(planId)`
+  - Frontend: `/planner/roadmap` page — semester-by-semester view (columns or rows), courses shown as cards with code/title/credits, progress bar per semester, overall completion progress
+- **Acceptance:** Student with 45 completed credits in a 120-credit CS program gets a semester-by-semester plan that respects prerequisites and course availability. Changing max credits from 15 to 9 stretches the plan from 5 semesters to ~9 semesters.
+
+### GRAD-002: Dynamic Replanning
+- **Status:** `TODO`
+- **Priority:** HIGH — Plans must adapt to reality
+- **Depends on:** GRAD-001
+- **Scope:**
+  - Backend: `GraduationPlannerService.replan(planId, changes)` — regenerates from current state forward:
+    - **Failed course:** Re-insert into next available semester, cascade downstream prerequisites
+    - **Dropped course:** Rebalance remaining semesters
+    - **Changed major:** Call `PlannerService.simulateMajorChange()` for credit transfer, generate new plan with remaining requirements
+    - **Changed max credits/semester:** Stretch or compress timeline
+    - **Semester off:** Shift everything forward, maintain prerequisite ordering
+    - **Added/removed summer terms:** Rebalance accordingly
+  - Backend: Plan diff — show what changed between old and new plan (courses moved, semesters added/removed, graduation date change)
+  - Frontend: "What if..." controls on the roadmap page:
+    - Toggle summer terms on/off
+    - Slider for max credits per semester (9-18)
+    - Graduation date picker (or "ASAP" toggle)
+    - "Skip a semester" checkbox per future term
+    - Plan regenerates on any change (debounced, ~500ms)
+  - Frontend: Diff view — highlight changes from previous plan (courses that moved, new courses, removed courses)
+  - AI integration: New tool `regenerate_graduation_plan` for Course Planner agent — student says "What if I take next summer off?" → AI replans
+- **Acceptance:** Student toggles off Summer 2027 → plan regenerates instantly with courses redistributed. Student changes max credits from 15 to 12 → graduation date extends by N semesters. Diff shows exactly what changed.
+
+### GRAD-003: Financial Projections
+- **Status:** `TODO`
+- **Priority:** MEDIUM — Financial transparency is a differentiator
+- **Depends on:** GRAD-001
+- **Scope:**
+  - Backend: Add tuition configuration to Tenant settings (JSONB):
+    - `perCreditCost` (decimal), `flatRateRange` (min/max credits for flat rate, e.g., 12-18), `flatRateCost` (decimal), `summerPerCreditCost` (decimal, if different), `fees` (JSONB array of { name, amount, perSemester/perCredit })
+  - Backend: `FinancialProjectionService`:
+    - `calculateSemesterCost(credits, isSummer, tenantTuitionConfig)` — applies flat-rate logic, fees
+    - `calculatePlanCost(graduationPlan, tenantTuitionConfig)` — total cost, per-semester breakdown
+    - `comparePlans(planA, planB, config)` — "Plan A costs $48,000 over 8 semesters, Plan B costs $54,000 over 11 semesters"
+  - Backend: Financial data included in GraduationPlan response — `estimatedCostPerSemester`, `estimatedTotalCost`
+  - Frontend: Financial overlay on roadmap:
+    - Cost shown per semester (below credit total)
+    - Running total column
+    - Comparison callout: "Taking 15 credits instead of 12 this Fall saves ~$6,000 total (graduate 1 semester earlier)"
+  - AI integration: Course Planner can answer "How much will it cost if I go part-time next year?" — calls plan generator with modified constraints, returns cost comparison
+- **Acceptance:** Student sees estimated cost per semester on their graduation plan. Changing max credits/semester shows updated cost projection. Admin configures tuition rates per tenant.
+
+### GRAD-004: Financial Aid Awareness
+- **Status:** `TODO`
+- **Priority:** MEDIUM — Critical for students on aid
+- **Depends on:** GRAD-003
+- **Scope:**
+  - Backend: Financial aid rules per tenant (JSONB in Tenant settings):
+    - `fullTimeThreshold` (int, typically 12 credits)
+    - `halfTimeThreshold` (int, typically 6 credits)
+    - `maxTimeframePercent` (int, typically 150 — SAP rule: can't exceed 150% of program length)
+  - Backend: Aid status check per planned semester — flag semesters where credits drop below full-time
+  - Frontend: Warning badges on roadmap:
+    - Yellow: "Below full-time (12 credits) — may affect financial aid"
+    - Red: "At 145% of program length — contact financial aid office about SAP"
+  - AI integration: Proactive alerts — when student modifies plan in AI chat and it would affect aid, Course Planner warns them before confirming
+- **Acceptance:** Student with a plan that drops to 9 credits in Spring 2027 sees a warning about aid eligibility on that semester. AI warns student before confirming a plan change that would affect aid status.
+
+### GRAD-005: Course Availability Modeling
+- **Status:** `TODO`
+- **Priority:** LOW — Enhancement for planning accuracy
+- **Depends on:** GRAD-001, ONBOARD-001
+- **Scope:**
+  - Backend: Use `offeredSemesters` from Course entity (set during ONBOARD-001) as primary availability data
+  - Backend: Historical enrollment analysis — based on past enrollment data, flag courses that historically fill up within the first week of enrollment
+  - Backend: Availability warnings included in GraduationPlan — `{ courseId, warning: 'only_offered_fall' | 'fills_quickly' | 'not_offered_next_year' }`
+  - Frontend: Availability indicators on planned courses:
+    - Info badge: "Only offered in Fall"
+    - Warning badge: "Fills up fast — enroll early"
+    - Error badge: "Not offered in 2027-2028" (if admin marks it)
+  - Admin UI: Course offering schedule management — set/override availability patterns per course per academic year
+- **Acceptance:** Plan generator correctly avoids scheduling a Fall-only course in Spring. Courses that fill quickly are flagged on the roadmap. Admin can override availability per year.
+
+### GRAD-006: Career-to-Curriculum Mapping
+- **Status:** `TODO`
+- **Priority:** LOW — Future differentiator ("what do I want to be when I grow up?")
+- **Depends on:** GRAD-001
+- **Scope:**
+  - Backend: `CareerProfile` entity — job title, description, median salary range, required skills (JSONB), recommended degree programs (relation to DegreeProgram), recommended courses (relation to Course — for students in any program who want to build this skill set)
+  - Backend: `CareerService` — CRUD, career-to-program matching, skill gap analysis (compare student's completed courses against career's recommended courses)
+  - Backend: AI tool `explore_careers` — student describes interests → AI returns matching careers with program recommendations
+  - Backend: AI tool `career_skill_gap` — given a career target, returns what courses the student still needs
+  - Frontend: `/planner/careers` career explorer page:
+    - Browse careers by category (tech, healthcare, business, education, etc.)
+    - Career detail: description, salary range, required skills, recommended programs, recommended courses
+    - "How do I get there?" button → shows skill gap → generates graduation plan optimized for that career
+  - Admin UI: Career profile management (or seed with common careers per department)
+- **Acceptance:** Student says "I want to be a data scientist" → AI shows relevant programs (CS, Stats, Data Science), identifies skill gap (needs STAT 301, CS 340), suggests courses. Student can generate a graduation plan optimized for that career path.
+
+---
+
+## Sprint: Mobile Readiness
+
+> **Prerequisites:** All P0/P1 items DONE, core features stable. This sprint makes the web app fully usable on phones before considering a native app.
+>
+> **Goal:** Students can use NexusEd on their phones via a responsive web app. No native app needed yet.
+
+### MOB-001: Responsive audit and fixes for all dashboard layouts
+- **Status:** `TODO`
+- **Priority:** HIGH
+- **Scope:** Sidebar navigation, top nav, all dashboard pages
+- **Problem:** Dashboard layouts (sidebar, data tables, stat cards, course grids) haven't been tested or optimized for 375px-428px screens. Sidebar likely overlaps or is unusable on mobile.
+- **Fix:**
+  - Audit every `(dashboard)` page at 375px, 390px, and 428px breakpoints
+  - Convert sidebar to a slide-out drawer on `md:` breakpoint (if not already)
+  - Ensure top nav collapses gracefully (hamburger menu)
+  - Fix any horizontal overflow on cards, tables, or grids
+- **Acceptance:** Every dashboard page renders correctly on iPhone SE (375px) through iPhone 15 Pro Max (430px). No horizontal scroll. No overlapping elements. All interactive elements have minimum 44px touch targets.
+
+### MOB-002: Responsive audit for course and assignment pages
+- **Status:** `TODO`
+- **Priority:** HIGH
+- **Scope:** Course list, course detail, timeline, assignment detail, submission form, grade view
+- **Problem:** Course pages likely use fixed-width layouts or multi-column grids that break on small screens.
+- **Fix:**
+  - Course list: Stack cards vertically on mobile
+  - Course detail/timeline: Single column, full-width cards
+  - Submission form: Full-width textarea and file inputs
+  - Grade view: Stack score/feedback vertically
+- **Acceptance:** Student can browse courses, view timeline, submit assignments, and see grades — all on a phone without zooming or horizontal scrolling.
+
+### MOB-003: Responsive audit for AI chat and messaging
+- **Status:** `TODO`
+- **Priority:** HIGH
+- **Scope:** AI chat (conversation list + thread), messaging (conversation list + thread)
+- **Problem:** Two-panel chat layouts (list + thread side by side) don't work on small screens.
+- **Fix:**
+  - Mobile: Show conversation list OR thread (not both). Use back button to toggle.
+  - Verify the existing `?conversation=` URL param pattern works for this
+  - Ensure message input is sticky at the bottom and doesn't get hidden by mobile keyboard
+  - Agent selector cards should stack or scroll horizontally
+- **Acceptance:** Student can have a full AI conversation or send messages entirely on mobile. Keyboard doesn't obscure the input. Navigation between list and thread is intuitive.
+
+### MOB-004: Responsive audit for admin pages
+- **Status:** `TODO`
+- **Priority:** MEDIUM
+- **Scope:** Analytics dashboard, AI governance, integrations, agent builder
+- **Problem:** Admin pages use data-dense layouts (tables, charts, stat grids) that are hardest to make responsive.
+- **Fix:**
+  - Stat card grids: 2-col on mobile instead of 4-col
+  - Data tables: Horizontal scroll with sticky first column, or switch to card-based layout
+  - Charts: Full-width, reduce label density on small screens
+  - Tabbed sections (governance): Horizontal scrollable tabs
+- **Acceptance:** Admin can view analytics and manage governance settings on a tablet (768px). Phone (375px) is functional but tables may require horizontal scroll.
+
+### MOB-005: Touch interaction polish
+- **Status:** `TODO`
+- **Priority:** MEDIUM
+- **Problem:** Web apps on mobile often have usability issues: tiny tap targets, no swipe gestures, hover-dependent interactions.
+- **Fix:**
+  - Ensure all buttons and interactive elements have minimum 44x44px touch targets (WCAG 2.5.8)
+  - Remove hover-only interactions (tooltip content must be accessible via tap)
+  - Add pull-to-refresh on feed page (if PWA supports it)
+  - Test and fix any `title` attributes that rely on hover for information
+- **Acceptance:** Lighthouse mobile accessibility score >= 95. No tap targets smaller than 44px. No information accessible only via hover.
+
+### MOB-006: PWA enhancement — offline feed caching
+- **Status:** `TODO`
+- **Priority:** LOW
+- **Depends on:** FEAT-009 (PWA already done)
+- **Problem:** FEAT-009 added PWA shell but service worker uses network-first for pages. Students on spotty campus WiFi lose access entirely when offline.
+- **Fix:**
+  - Cache the last-fetched feed data in IndexedDB (via service worker or in-app)
+  - Show stale feed with "Last updated X minutes ago" banner when offline
+  - Cache course detail pages the student has visited recently
+  - Queue assignment submissions for retry when back online (stretch goal)
+- **Acceptance:** Student can open the app offline and see their last-loaded feed and recently visited course pages. Submissions queue when offline and submit when reconnected.
+
+---
+
 ## 10x Differentiators (Already Built — Protect These)
 
 > These are what separate NexusEd from every competitor. Don't remove, simplify, or refactor these unless you fully understand why they exist.
@@ -703,7 +1179,17 @@
 | GEM-009 | Tenant entity with SaaS billing | `tenant.entity.ts` |
 | GEM-010 | Unified course timeline | Timeline types + frontend components |
 
+### Planned Differentiators (Not Yet Built)
+
+| ID | Gem | Sprint | Why It Matters |
+|----|-----|--------|----------------|
+| GEM-011 | AI-assisted institutional onboarding | ONBOARD-004 | Upload a PDF academic calendar → AI extracts your entire course catalog. No competitor does this. |
+| GEM-012 | AI-native enrollment | ENROLL-005/007 | "Enroll me in a 3-credit elective" in conversation. First LMS where enrollment is AI-powered. |
+| GEM-013 | Constraint-based graduation planner | GRAD-001/002 | Semester-by-semester plan that adapts to finances, timeline, and life changes. DegreeWorks killer. |
+| GEM-014 | Financial-aware academic planning | GRAD-003/004 | "Going part-time adds 3 semesters and $18,000" — no LMS shows financial impact of academic decisions. |
+| GEM-015 | Career-to-curriculum mapping | GRAD-006 | "I want to be a data scientist" → AI builds a graduation plan toward that career. |
+
 ---
 
-*Last updated: 2026-02-12 (Session 23 — FEAT-014 ML Feed Personalization completed)*
+*Last updated: 2026-02-17 (Added ONBOARD-001–004, ENROLL-001–011, GRAD-001–006)*
 *This file is the primary task reference for all development sessions.*

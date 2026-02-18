@@ -60,15 +60,15 @@ export class LtiUser extends TenantScopedEntity {
   /**
    * Cached email from LTI claims (may differ from User.email)
    */
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   email: string | null;
 
   /**
    * Cached name from LTI claims
    */
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   name: string | null;
 
   /**
@@ -82,7 +82,7 @@ export class LtiUser extends TenantScopedEntity {
   /**
    * Timestamp of last successful LTI launch
    */
-  @Field({ nullable: true })
-  @Column({ name: 'last_launch_at', nullable: true })
+  @Field(() => Date, { nullable: true })
+  @Column({ type: 'timestamp', name: 'last_launch_at', nullable: true })
   lastLaunchAt: Date | null;
 }

@@ -41,15 +41,20 @@ export function SubmissionForm({ assignmentId }: SubmissionFormProps) {
   );
 
   const onSubmit = async (values: SubmissionFormValues) => {
-    await submitAssignment({
-      variables: {
-        input: {
-          assignmentId,
-          content: JSON.stringify({ text: values.text }),
+    try {
+      await submitAssignment({
+        variables: {
+          input: {
+            assignmentId,
+            content: JSON.stringify({ text: values.text }),
+          },
         },
-      },
-    });
-    reset();
+      });
+      reset();
+    } catch {
+      // Apollo useMutation sets `error` state automatically —
+      // the UI below will display the error message.
+    }
   };
 
   return (

@@ -47,30 +47,30 @@ export class LtiContext extends TenantScopedEntity {
   /**
    * Context type from the LTI claim (usually "CourseSection")
    */
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   contextType: string | null;
 
   /**
    * Cached context title from the platform
    */
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   title: string | null;
 
   /**
    * Cached context label (short code) from the platform
    */
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   label: string | null;
 
   /**
    * Linked NexusEd CourseSection (if mapped)
    * An admin or instructor must link the LTI context to a section
    */
-  @Field({ nullable: true })
-  @Column({ name: 'section_id', nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'uuid', name: 'section_id', nullable: true })
   sectionId: string | null;
 
   @ManyToOne(() => CourseSection, { onDelete: 'SET NULL', nullable: true })

@@ -56,10 +56,13 @@ export enum SectionStatus {
 }
 
 export enum EnrollmentStatus {
+  PENDING = 'pending',
   ACTIVE = 'active',
-  DROPPED = 'dropped',
   COMPLETED = 'completed',
+  DROPPED = 'dropped',
   WITHDRAWN = 'withdrawn',
+  WAITLISTED = 'waitlisted',
+  REJECTED = 'rejected',
 }
 
 export enum AssignmentType {

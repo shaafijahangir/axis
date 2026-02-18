@@ -50,8 +50,8 @@ import { PlannerModule } from './modules/planner/planner.module';
         database: configService.get('database.database'),
         schema: configService.get('database.schema'),
         entities: entities,
-        // Migrations configuration - NEVER use synchronize: true
-        synchronize: false,
+        // TODO: Set back to false before production. Enabled for dev to create missing tables.
+        synchronize: true,
         migrationsRun: configService.get('database.migrationsRun'),
         migrations: ['dist/database/migrations/*.js'],
         logging: configService.get('database.logging'),
