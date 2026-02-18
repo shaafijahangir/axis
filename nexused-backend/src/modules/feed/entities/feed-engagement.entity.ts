@@ -72,15 +72,15 @@ export class FeedEngagement {
   @Column()
   feedItemId: string;
 
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   courseCode?: string;
 
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   sectionId?: string;
 
-  @Field({ nullable: true })
+  @Field(() => Number, { nullable: true })
   @Column({ type: 'int', nullable: true })
   dwellTimeMs?: number;
 

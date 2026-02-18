@@ -18,7 +18,7 @@ export default function RegisterPage() {
     password: '',
     firstName: '',
     lastName: '',
-    tenantId: 'default',
+    tenantId: '00000000-0000-0000-0000-000000000001',
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);

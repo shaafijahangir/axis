@@ -1695,3 +1695,224 @@ nexused-frontend/src/components/ai/ai-conversation-list.tsx — Custom agent lab
 ### Next Session Priorities
 - FEAT-014: ML-based feed personalization (requires data)
 - TEST-001: Add unit and integration tests
+
+---
+
+## Session 22 — FEAT-015: AI Course Planner
+
+**Date:** 2026-02-12
+**Goal:** Build the AI Course Planner — "the feature that started the entire project"
+
+### What Was Built
+
+**Backend — Degree Planning System:**
+- `DegreeProgram` entity — stores degree definitions with JSONB requirement groups (core, elective, general education, concentration) each specifying course IDs, credit requirements, and minimum courses needed
+- `StudentDegreeProfile` entity — links student to degree program, tracks completed and current course IDs (JSONB), enrollment year, expected graduation
+- `PlannerService` — full CRUD, progress calculation (per-requirement-group credit and course counting), course eligibility (prerequisite checking + unfulfilled requirement matching), major change simulation (credit transfer analysis)
+- `PlannerResolver` — GraphQL API with queries (degreePrograms, myDegreeProfiles, degreeProgress, eligibleCourses, simulateMajorChange) and mutations for CRUD
+- `PlannerModule` — exports PlannerService for AI module
+
+**AI Tools & Agent:**
+- 6 new planner tools: get_degree_progress, get_student_degree_profiles, get_eligible_courses, get_degree_requirements, list_degree_programs, simulate_major_change
+- Course Planner agent definition — 20 max turns, 9 tools (6 planner + 3 course), Socratic-directive hybrid system prompt optimized for academic advising
+- Registered in AI module — tools and agent available to students
+
+**Frontend — Degree Planner Page:**
+- Planner page at `/planner` with SVG progress ring (animated), stat cards (credits completed/remaining, est. semesters), requirements breakdown grid with per-group progress bars, eligible courses list with prerequisite badges
+- What-if simulator (select target program, see credit transfer analysis)
+- Setup dialog for new students to select degree program
+- CTA linking to AI Course Planner conversation
+- Added "Planner" nav item with Map icon to student sidebar
+- Updated conversation list with Course Planner icon and label
+
+### Files Created (11)
+```
+nexused-backend/src/database/entities/degree-program.entity.ts
+nexused-backend/src/database/entities/student-degree-profile.entity.ts
+nexused-backend/src/modules/planner/planner.service.ts
+nexused-backend/src/modules/planner/planner.resolver.ts
+nexused-backend/src/modules/planner/planner.module.ts
+nexused-backend/src/modules/planner/dto/planner.types.ts
+nexused-backend/src/modules/ai/tools/planner.tools.ts
+nexused-backend/src/modules/ai/agents/course-planner.agent.ts
+nexused-frontend/src/lib/graphql/queries/planner.ts
+nexused-frontend/src/lib/graphql/mutations/planner.ts
+nexused-frontend/src/app/(dashboard)/planner/page.tsx
+```
+
+### Files Modified (5)
+```
+nexused-backend/src/database/entities/index.ts — Added DegreeProgram, StudentDegreeProfile
+nexused-backend/src/modules/ai/ai.module.ts — Registered planner tools and Course Planner agent
+nexused-backend/src/app.module.ts — Added PlannerModule
+nexused-frontend/src/lib/navigation.ts — Added Planner nav for students
+nexused-frontend/src/components/ai/ai-conversation-list.tsx — Course Planner icon and label
+```
+
+### Build & Test Status
+- Backend: ✓ Type-checks clean
+- Frontend: ✓ Type-checks clean
+- Tests: ✓ 104 tests pass
+- Lint: ✓ No errors
+
+### Session 22 Status
+**COMPLETE** — FEAT-015 done. The AI Course Planner is live.
+
+### Next Session Priorities
+- FEAT-014: ML-based feed personalization (requires data)
+- More test coverage for planner service and custom agent service
+
+---
+
+## Session 23 — FEAT-014: ML-based Feed Personalization
+
+**Date:** 2026-02-12
+**Goal:** Replace rule-based feed ranking with behavior-based personalization
+**Status:** COMPLETE
+
+### What Was Built
+
+**Backend — Engagement Tracking & Scoring Model:**
+- `FeedEngagement` entity — append-only event log tracking clicks, impressions, dismissals per user per feed item. Indexed on tenantId, userId, userId+feedItemType, createdAt.
+- `FeedPersonalizationService` — 3 core capabilities:
+  1. `recordEngagement()` / `recordEngagementBatch()` — store raw events
+  2. `buildUserProfile()` — compute per-user engagement features from last 30 days (type CTR, course CTR, seen items)
+  3. `rankFeedItems()` — 5-feature weighted scoring model:
+     - Urgency (0.35) — deadline proximity, exponential scaling
+     - Type affinity (0.20) — user's click-through rate for this item type
+     - Course affinity (0.15) — user's click-through rate for this course
+     - Recency (0.20) — 7-day half-life exponential decay
+     - Novelty (0.10) — new items score 1.0, previously seen items score 0.3
+  4. Rule-based fallback for new users (0 engagement history)
+  5. `getEngagementStats()` — admin analytics (total events, CTR, top clicked types)
+- GraphQL mutations: `recordFeedEngagement`, `recordFeedEngagementBatch`
+- GraphQL query: `feedEngagementStats` (admin-only)
+- Updated `FeedResolver.studentFeed` to apply personalized ranking
+- 13 new unit tests covering scoring model, profiles, stats, edge cases
+
+**Frontend — Engagement Tracking Hooks:**
+- `useFeedEngagement` hook — tracks clicks (immediate), impressions (batched every 5s), dismissals (immediate). Fire-and-forget mutations. Deduplicates impressions within batch.
+- `useFeedCardVisibility` hook — IntersectionObserver at 50% threshold, tracks once per card.
+- Updated `FeedCard` — accepts `onImpression` and `onClick` callbacks, wraps in visibility-tracked div
+- Updated `StudentHomeFeed` — wires tracking into all feed cards
+- Updated `InstructorHomeFeed` — extracted `InstructorFeedCard` component with engagement tracking
+
+### Files Created (6)
+```
+nexused-backend/src/modules/feed/entities/feed-engagement.entity.ts
+nexused-backend/src/modules/feed/feed-personalization.service.ts
+nexused-backend/src/modules/feed/feed-personalization.service.spec.ts
+nexused-backend/src/modules/feed/dto/engagement.types.ts
+nexused-frontend/src/hooks/use-feed-engagement.ts
+nexused-frontend/src/lib/graphql/mutations/feed-engagement.ts
+```
+
+### Files Modified (9)
+```
+nexused-backend/src/modules/feed/feed.service.ts — Removed sort (delegated to personalization)
+nexused-backend/src/modules/feed/feed.resolver.ts — Added engagement mutations + personalized ranking
+nexused-backend/src/modules/feed/feed.module.ts — Registered FeedEngagement and FeedPersonalizationService
+nexused-backend/src/database/entities/index.ts — Added FeedEngagement to TypeORM
+nexused-backend/src/modules/feed/feed.service.spec.ts — Updated sort test for new architecture
+nexused-frontend/src/components/feed/feed-card.tsx — Added engagement tracking props
+nexused-frontend/src/components/feed/student-home-feed.tsx — Wired engagement tracking
+nexused-frontend/src/components/feed/instructor-home-feed.tsx — Wired engagement tracking
+BACKLOG.md — Updated FEAT-014 to DONE
+```
+
+### Build & Test Status
+- Backend: ✓ Type-checks clean
+- Frontend: ✓ Type-checks clean
+- Tests: ✓ 117 tests pass (13 new)
+- Lint: ✓ New files clean
+
+### Session 23 Status
+**COMPLETE** — FEAT-014 done. The entire BACKLOG.md is now DONE.
+
+### Backlog Status: ALL ITEMS COMPLETE
+Every P0, P1, P2, P3, and feature item in BACKLOG.md is now DONE.
+- 4 P0 Security items: DONE
+- 7 P1 Data Integrity items: DONE
+- 6 P2 Architecture items: DONE
+- 4 P3 Testing items: DONE
+- 15 Feature items: DONE (FEAT-001 through FEAT-015)
+
+---
+
+## Session 24 — Bug Fix + Enrollment Planning
+
+**Date:** 2026-02-17
+**Goal:** Fix submission bug, help Shaafi understand the architecture, plan enrollment feature
+**Status:** COMPLETE
+
+### Bug Fix: Assignment Submission Failure
+
+**Problem:** Submitting an assignment returned "Failed to submit. Please try again." because the `Submission` entity had `@Field(() => String)` on a JSONB column that stores JS objects — GraphQL String scalar can't serialize a JS object.
+
+**Fix (2 files):**
+1. `nexused-backend/src/database/entities/submission.entity.ts` — Separated JSONB storage column from GraphQL field. Added a getter `contentJson` with `@Field(() => String, { name: 'content', nullable: true })` that returns `JSON.stringify(this.content)`.
+2. `nexused-frontend/src/components/assignments/submission-form.tsx` — Added try-catch in `onSubmit` so `reset()` only runs on success path.
+
+### Architecture Deep Dive
+
+Walked Shaafi through:
+- How to connect pgAdmin 4 to the local PostgreSQL instance (port 5433)
+- How AI agents interact with the database (Frontend → GraphQL → NestJS Services → TypeORM → PostgreSQL)
+- How the agentic loop works (system prompt + tool definitions + while loop in `runAgentLoop()`)
+- How governance checks run before every tool execution
+- Full student enrollment journey traced via SQL queries (user → enrollments → assignments → submissions → grades)
+
+### Feature Research & Planning
+
+**Research conducted:** Analyzed enrollment models across Canvas, Moodle, Blackboard, Google Classroom, Coursera, and edX. Also researched institutional onboarding (DegreeWorks, Banner, PeopleSoft) and graduation planning tools.
+
+**Key findings:**
+1. NO academic LMS has AI-native enrollment — all treat it as admin plumbing
+2. DegreeWorks (Ellucian) dominates degree audit space but costs $100k+/year, has terrible UX, and is not AI-native
+3. No LMS shows students the financial impact of their academic decisions
+4. AI-assisted catalog import (upload PDF → AI extracts courses) is completely untouched
+
+**Plan documented across 3 new phases in ROADMAP.md and 3 new sprints in BACKLOG.md:**
+
+**Phase 6: Institutional Onboarding & Catalog Management (ONBOARD-001 through ONBOARD-004)**
+- ONBOARD-001: Catalog data model extensions (Course, CourseSection, AcademicTerm, DegreeProgram)
+- ONBOARD-002: Admin catalog CRUD (course management, degree program editor)
+- ONBOARD-003: CSV catalog import (structured bulk import with templates and validation)
+- ONBOARD-004: AI-assisted catalog import from PDF documents (THE sales demo feature)
+
+**Phase 7: Student Enrollment & Course Discovery (ENROLL-001 through ENROLL-011)**
+- Phase 7A (HIGH): Course catalog, self-enrollment + invite codes, enrollment lifecycle, notifications
+- Phase 7B (MEDIUM): Enroll-from-AI, prerequisite alerts, smart course discovery
+- Phase 7C (LOW): Bulk enrollment, policy engine, waitlists, SIS sync
+
+**Phase 8: AI Graduation Planner (GRAD-001 through GRAD-006)**
+- GRAD-001: Constraint-based plan generator (semester-by-semester roadmap with prerequisite DAG)
+- GRAD-002: Dynamic replanning (failed course, changed major, semester off → instant replan)
+- GRAD-003: Financial projections (cost per semester, total cost, plan comparison)
+- GRAD-004: Financial aid awareness (full-time threshold warnings, SAP alerts)
+- GRAD-005: Course availability modeling (offered semesters, fills-quickly warnings)
+- GRAD-006: Career-to-curriculum mapping ("I want to be a data scientist" → plan optimized for career)
+
+**Total: 21 new backlog items across 3 sprints, with dependency chains, acceptance criteria, and priority levels.**
+
+Also added 5 planned differentiators (GEM-011 through GEM-015) to the backlog.
+
+### Files Modified
+```
+ROADMAP.md — Added Phase 6 (Institutional Onboarding), Phase 7 (Enrollment), Phase 8 (Graduation Planner)
+BACKLOG.md — Added 3 new sprints: Institutional Onboarding (ONBOARD-001–004), Enrollment (ENROLL-001–011), Graduation Planner (GRAD-001–006), plus 5 planned differentiators
+.claude/session-log.md — This entry
+```
+
+### Build Order (Recommended)
+1. ONBOARD-001 → ONBOARD-002 → ONBOARD-003 → ONBOARD-004 (data foundation first)
+2. ENROLL-001 → ENROLL-002 → ENROLL-003 → ENROLL-004 (working enrollment)
+3. GRAD-001 → GRAD-002 (core graduation planning)
+4. ENROLL-005 → ENROLL-006 → ENROLL-007 (AI-assisted enrollment)
+5. GRAD-003 → GRAD-004 (financial projections)
+6. Everything else (institutional scale, career mapping, mobile)
+
+### Next Session Priorities
+1. **ONBOARD-001: Catalog Data Model Extensions** — Extend entities with catalog fields (this unblocks everything)
+2. **ONBOARD-002: Admin Catalog CRUD** — Admin interface for managing courses and programs
+3. **ONBOARD-003: CSV Import** — Structured bulk import for institutions with SIS exports

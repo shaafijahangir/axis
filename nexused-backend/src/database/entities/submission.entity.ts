@@ -35,9 +35,17 @@ export class Submission extends TenantScopedEntity {
   @Column({ type: 'int', default: 1 })
   attempt: number;
 
-  @Field(() => String, { nullable: true })
   @Column({ type: 'jsonb', nullable: true })
   content: Record<string, any>;
+
+  /**
+   * GraphQL can't serialize a JS object as a String scalar.
+   * Expose the JSONB content as a stringified JSON field for the API.
+   */
+  @Field(() => String, { name: 'content', nullable: true })
+  get contentJson(): string | null {
+    return this.content ? JSON.stringify(this.content) : null;
+  }
 
   @Field({ nullable: true })
   @Column({ type: 'timestamp', nullable: true })

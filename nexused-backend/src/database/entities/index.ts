@@ -2,8 +2,12 @@
 export { Tenant, SubscriptionPlan, BillingStatus } from './tenant.entity';
 export { User, UserRole, UserStatus } from './user.entity';
 export { AcademicTerm } from './academic-term.entity';
-export { Course } from './course.entity';
-export { CourseSection, SectionStatus } from './course-section.entity';
+export { Course, CourseCategory } from './course.entity';
+export {
+  CourseSection,
+  SectionStatus,
+  EnrollmentMode,
+} from './course-section.entity';
 export {
   Enrollment,
   EnrollmentRole,
@@ -12,7 +16,11 @@ export {
 export { Assignment, AssignmentType } from './assignment.entity';
 export { Submission } from './submission.entity';
 export { Announcement, AnnouncementPriority } from './announcement.entity';
-export { DegreeProgram, DegreeProgramStatus } from './degree-program.entity';
+export {
+  DegreeProgram,
+  DegreeProgramType,
+  DegreeProgramStatus,
+} from './degree-program.entity';
 export {
   StudentDegreeProfile,
   DegreeProfileStatus,

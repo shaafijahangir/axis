@@ -268,17 +268,160 @@ These architectural and design decisions are final and should not be revisited:
 
 ---
 
+## Phase 6: Institutional Onboarding & Catalog Management
+
+**Estimated:** 2-3 weeks
+**Goal:** An institution can get set up on NexusEd with their full course catalog and degree programs — from AI-assisted PDF import to structured CSV import to manual admin CRUD.
+
+> **Why this phase comes first:** Nothing else works without the data. Enrollment, graduation planning, AI course discovery — all depend on the institution's courses and degree requirements being in the system. This is the foundation for everything in Phase 7 and 8.
+>
+> **Competitive angle:** DegreeWorks (Ellucian) charges $100k+/year and requires weeks of manual setup. NexusEd's AI-assisted import can onboard an institution's catalog in hours, not weeks. This is the "wow" moment in a sales demo.
+
+### Catalog Data Model (ONBOARD-001)
+- [ ] Extend Course entity with catalog-specific fields: credits, department, category (core/elective/gen-ed/lab), description, prerequisite references, corequisites, course level (100-400+), offered semesters (Fall/Spring/Summer)
+- [ ] Extend CourseSection with: maxEnrollment (seat capacity), schedule (meeting times/days), location, enrollmentMode (open/invite-only), inviteCode
+- [ ] Extend AcademicTerm with: enrollmentWindowStart, enrollmentWindowEnd, dropDeadline, withdrawDeadline
+- [ ] Extend DegreeProgram entity (from FEAT-015) with: programType (major/minor/certificate/diploma), department, totalCredits, expectedDuration (in semesters), catalog year
+
+### Admin Catalog CRUD (ONBOARD-002)
+- [ ] Backend: `CatalogService` for full course and program management — CRUD, bulk operations, catalog versioning by academic year
+- [ ] Frontend: Admin catalog management pages — course list with search/filter, course create/edit forms, department management, prerequisite chain editor (visual or form-based)
+- [ ] Frontend: Admin degree program editor — requirement group management (add/remove groups, assign courses to groups, set credit thresholds)
+
+### CSV Catalog Import (ONBOARD-003)
+- [ ] Backend: CSV parser for standard templates: `courses.csv` (code, title, credits, department, prerequisites, description), `programs.csv` (name, type, department, total credits, requirements), `prerequisites.csv` (course_code, prerequisite_code, min_grade)
+- [ ] Backend: Bulk validation with detailed error reporting (row-by-row errors: "Row 42: CS 301 lists prerequisite CS 201 which doesn't exist in the import")
+- [ ] Backend: Import as transaction — all-or-nothing with rollback on failure
+- [ ] Frontend: Admin import wizard — upload CSV → preview parsed data → review errors → confirm import
+- [ ] Template downloads for each CSV type
+
+### AI-Assisted Catalog Import (ONBOARD-004) — THE DIFFERENTIATOR
+- [ ] Backend: PDF/document parsing endpoint — accept academic calendar PDF, course catalog PDF, or plain text
+- [ ] Backend: AI extraction pipeline — use Claude to extract structured course data from unstructured documents:
+  - Course code, title, credits, description, prerequisites (parse "Prerequisite: CS 101 or permission of instructor")
+  - Degree requirements (parse "Complete 15 credits from the following: CS 301, CS 302, CS 310, CS 315, CS 320")
+  - Program definitions (parse "Bachelor of Science in Computer Science — 120 credits")
+- [ ] Backend: Extraction review queue — AI extracts, admin reviews/corrects, then confirms import
+- [ ] Frontend: "Import from Document" wizard — upload PDF → AI processes → review extracted data in editable table → fix errors → confirm
+- [ ] **This is the sales demo feature** — "Upload your academic calendar, and NexusEd sets itself up"
+
+### Outcome
+An institution can onboard in hours: upload their academic calendar PDF → AI extracts courses and programs → admin reviews and confirms → catalog is live. Alternatively, use CSV import or manual entry. All degree programs and prerequisites are modeled for the graduation planner.
+
+---
+
+## Phase 7: Student Enrollment & Course Discovery
+
+**Estimated:** 3-4 weeks (3 sub-phases)
+**Goal:** Students can discover, enroll in, and get onboarded into courses — from self-serve to AI-assisted to institutional-scale.
+
+> **Why this matters:** Every LMS has enrollment, but none have AI-native enrollment. Canvas uses CSV imports, Moodle uses manual enrollment plugins, Google Classroom uses invite codes. NexusEd can be the first LMS where a student says "I need a 3-credit elective that counts toward my CS degree" and the AI finds, recommends, and enrolls them — all in one conversation.
+
+### Phase 7A: Working Enrollment (ENROLL-001 through ENROLL-004)
+**Goal:** Students can find and join courses. Instructors and admins control who gets in.
+
+- [ ] **Course Catalog** (ENROLL-001) — Browseable, searchable, filterable catalog of courses available for the current term. Tenant-scoped. Students can view course details (instructor, schedule, seats, prerequisites) before enrolling.
+- [ ] **Self-Enrollment + Invite Codes** (ENROLL-002) — Two enrollment modes per section, configurable by instructor/admin:
+  - **Open enrollment:** Student clicks "Enroll" from the catalog
+  - **Invite-only:** Student enters a 6-character alphanumeric code generated by the instructor
+  - Enrollment creates a `pending` enrollment record → instructor can auto-approve or manually approve
+- [ ] **Enrollment Lifecycle** (ENROLL-003) — Full status machine: `pending` → `active` → `completed` | `dropped` | `withdrawn`. Drop/withdraw deadlines configurable per term. Students can drop courses before the deadline. Instructors can remove students. Admins can override any status.
+- [ ] **Enrollment Notifications & Onboarding** (ENROLL-004) — When enrollment status changes to `active`:
+  - Feed item: "You're enrolled in CS 101!"
+  - Study Coach welcome message (already wired via FEAT-002 event listener)
+  - Course appears in student's sidebar navigation
+  - Student sees course timeline from day 1
+
+### Phase 7B: AI-Assisted Enrollment (ENROLL-005 through ENROLL-007)
+**Goal:** The Course Planner agent (FEAT-015) can enroll students, not just recommend courses.
+
+- [ ] **Enroll-from-AI** (ENROLL-005) — New AI tool `enroll_in_course` that checks prerequisites, seat availability, and enrollment policy, then creates the enrollment. Governance default: `suggest` (AI recommends, student confirms).
+- [ ] **Proactive Prerequisite Alerts** (ENROLL-006) — When a student tries to enroll in a course with unmet prerequisites, show what's missing and suggest alternative paths. Configurable enforcement: strict, warn, or off.
+- [ ] **Smart Course Discovery** (ENROLL-007) — New AI tool `discover_courses` for natural language queries: "I need a 3-credit lab science", "What counts toward my CS electives?", "Morning classes on MWF". Cross-references degree requirements.
+
+### Phase 7C: Institutional Scale (ENROLL-008 through ENROLL-011)
+**Goal:** Universities can bulk-manage enrollment at scale with policy enforcement.
+
+- [ ] **Bulk Enrollment** (ENROLL-008) — Admin CSV upload for bulk enroll/move/drop with error reporting
+- [ ] **Enrollment Policy Engine** (ENROLL-009) — Per-tenant policies: capacity limits, enrollment windows, prerequisite enforcement, credit hour limits per term
+- [ ] **Waitlist Intelligence** (ENROLL-010) — Auto-promotion from waitlist on drops, configurable confirmation window, position tracking
+- [ ] **SIS Event-Driven Sync** (ENROLL-011) — Webhook receiver for Banner/PeopleSoft/Workday Student enrollment events
+
+### Outcome
+Students can self-enroll from a catalog, use invite codes, or ask the AI Course Planner to find and enroll them in courses. Institutions can bulk-manage enrollment with policy enforcement, waitlists, and SIS integration. NexusEd becomes the first LMS with AI-native enrollment.
+
+---
+
+## Phase 8: AI Graduation Planner
+
+**Estimated:** 3-4 weeks
+**Goal:** Every student gets a personalized, semester-by-semester graduation roadmap that adapts to their timeline, finances, and life circumstances.
+
+> **Product thesis:** This is a stronger product than the LMS itself. Many universities already have Canvas/Moodle but hate their degree audit tool (DegreeWorks) or don't have one. NexusEd can be "the AI-native graduation planner that also has an LMS built in."
+>
+> **Why this is different from FEAT-015:** The existing Course Planner (FEAT-015) tracks progress and checks prerequisites. This phase generates a **complete semester-by-semester plan** that accounts for constraints — time, money, course availability, and life changes.
+
+### Constraint-Based Plan Generator (GRAD-001)
+- [ ] Backend: `GraduationPlannerService` that models planning as constraint satisfaction:
+  - **Inputs:** completed courses, target degree, max credits per semester, target graduation date (or "ASAP"), available semesters (include/exclude summer, specific terms off), course availability by semester
+  - **Constraints:** prerequisites must be satisfied before scheduling, max credits per term, course availability (CS 301 only offered in Fall), corequisites scheduled in same term
+  - **Output:** Ordered list of semesters, each with assigned courses, credit totals, and cumulative progress
+  - **Algorithm:** Topological sort of prerequisite DAG → greedy bin-packing into semesters respecting constraints → backtrack if infeasible
+- [ ] Backend: `GraduationPlannerResolver` — `generateGraduationPlan(input)`, `regeneratePlan(planId, changedConstraints)`
+- [ ] Frontend: Graduation plan view — semester columns/rows showing assigned courses, drag-to-reorder (stretch), "what if I skip Summer 2027?" instant replan
+
+### Dynamic Replanning (GRAD-002)
+- [ ] Backend: When a student's situation changes, replan automatically:
+  - Failed a course → re-insert into a future semester, cascade downstream prerequisites
+  - Dropped a course → rebalance remaining semesters
+  - Changed major → simulate credit transfer, generate new plan with remaining requirements
+  - Changed max credits/semester → stretch or compress the timeline
+  - Took a semester off → shift everything forward
+- [ ] Frontend: "What if..." controls — toggle summer terms, adjust credits per semester, change target graduation date → plan regenerates in real time
+- [ ] AI integration: Course Planner agent can call `regenerate_graduation_plan` tool when student describes a change in conversation
+
+### Financial Projections (GRAD-003)
+- [ ] Backend: Per-tenant tuition configuration: per-credit cost, flat-rate thresholds (e.g., 12-18 credits = same price), summer premium, fees
+- [ ] Backend: Financial calculations per plan: estimated cost per semester (credits × rate), cumulative total, cost of extending by N semesters, full-time vs part-time cost comparison
+- [ ] Frontend: Financial overlay on graduation plan — cost per semester, running total, comparison view:
+  - "15 credits/semester → graduate May 2028 → est. $48,000 total"
+  - "9 credits/semester → graduate Dec 2029 → est. $54,000 total (3 extra semesters × $6,000)"
+  - "If you take 15 credits this Fall instead of 12, you graduate one semester earlier and save ~$6,000"
+- [ ] AI integration: Course Planner can answer "How much will it cost if I go part-time next year?"
+
+### Financial Aid Awareness (GRAD-004)
+- [ ] Backend: Financial aid rules per tenant (configurable): full-time credit threshold (typically 12), minimum credits for aid eligibility, maximum timeframe (150% of program length)
+- [ ] Frontend: Warnings when plan triggers aid issues:
+  - "Dropping below 12 credits in Fall 2027 may affect your financial aid eligibility"
+  - "You're at 140% of program length — check with financial aid office about SAP (Satisfactory Academic Progress)"
+- [ ] AI integration: Proactive alerts when a student's plan change would affect aid status
+
+### Course Availability Modeling (GRAD-005)
+- [ ] Backend: Course offering patterns — historical/configured data on which courses are offered in which semesters (Fall only, Spring only, every semester, alternating years)
+- [ ] Backend: Seat availability forecasting — based on historical enrollment data, flag courses likely to fill up early
+- [ ] Frontend: Availability indicators in the plan view — "CS 301 is only offered in Fall" (info), "CS 450 fills up fast — enroll early" (warning)
+- [ ] Admin UI: Course offering schedule management — set availability patterns per course
+
+### Career-to-Curriculum Mapping (GRAD-006) — FUTURE DIFFERENTIATOR
+- [ ] Backend: Career profile definitions — job titles mapped to recommended degree programs, skills, and course clusters
+- [ ] AI integration: Student says "I want to be a data scientist" → AI maps to relevant programs (CS, Stats, Data Science), identifies skill gaps, suggests course sequences that build toward that career
+- [ ] Frontend: Career explorer — browse careers, see required skills, see which NexusEd programs align
+- [ ] This is the "what do I want to be when I grow up?" feature Shaafi described
+
+### Outcome
+Every student has a personalized graduation roadmap. A student who can only afford 9 credits/semester sees a 5.5-year plan with cost estimates. A transfer student with 60 credits sees a 2-year plan. When life changes (failed course, changed major, took a semester off), the plan regenerates instantly. Financial impact is visible at every decision point. NexusEd becomes the AI-native DegreeWorks killer — 10x better UX, 10x cheaper, and actually intelligent.
+
+---
+
 ## Open Questions
 
 1. **Should the course view support both timeline and module views?** Timeline is the default, but some instructors may want to organize by topic/module. Do we support both or commit fully to timeline?
 
 2. **How does the parent role link to student accounts?** Invitation system? Verification? What prevents someone from claiming to be a parent?
 
-3. **Tenant onboarding flow.** How does an institution get set up? Self-serve? Manual? What's the minimum configuration needed?
-
-4. **AI model strategy.** Claude primary, abstraction layer in place — but do we need a local model option for institutions with strict data residency requirements?
+3. **AI model strategy.** Claude primary, abstraction layer in place — but do we need a local model option for institutions with strict data residency requirements?
 
 ---
 
-*Last updated: 2026-02-07 (Phase 2 completion — Messaging + Content Builder merged)*
+*Last updated: 2026-02-17 (Phase 6-8 — Institutional Onboarding, Enrollment, and Graduation Planner)*
 *Companion documents: [BACKLOG.md](./BACKLOG.md) | [STORY.md](./STORY.md) | [TECH_STACK.md](./TECH_STACK.md)*

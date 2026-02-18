@@ -89,7 +89,7 @@ export class StudentDegreeProfile extends TenantScopedEntity {
   status: DegreeProfileStatus;
 
   /** Advisor notes, transfer credit explanations, etc. */
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 }

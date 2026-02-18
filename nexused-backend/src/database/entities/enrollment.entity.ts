@@ -11,10 +11,13 @@ export enum EnrollmentRole {
 }
 
 export enum EnrollmentStatus {
+  PENDING = 'pending',
   ACTIVE = 'active',
   COMPLETED = 'completed',
   DROPPED = 'dropped',
   WITHDRAWN = 'withdrawn',
+  WAITLISTED = 'waitlisted',
+  REJECTED = 'rejected',
 }
 
 registerEnumType(EnrollmentRole, { name: 'EnrollmentRole' });

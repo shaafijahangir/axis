@@ -54,13 +54,13 @@ export class LtiState {
    * Expected redirect URL after launch
    * Stored so we know where to send the user
    */
-  @Column({ name: 'target_link_uri', nullable: true })
+  @Column({ type: 'varchar', name: 'target_link_uri', nullable: true })
   targetLinkUri: string | null;
 
   /**
    * Login hint from the platform (if provided)
    */
-  @Column({ name: 'login_hint', nullable: true })
+  @Column({ type: 'varchar', name: 'login_hint', nullable: true })
   loginHint: string | null;
 
   /**
