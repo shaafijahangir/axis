@@ -55,8 +55,6 @@ export class FeedService {
       relations: ['section', 'section.course'],
     });
 
-    if (enrollments.length === 0) return [];
-
     const sectionIds = enrollments.map((e) => e.sectionId);
     const sectionMap = new Map(
       enrollments.map((e) => [
@@ -67,84 +65,148 @@ export class FeedService {
 
     const items: FeedItem[] = [];
 
-    // 2. Upcoming assignments (dueAt > now)
-    const now = new Date();
-    const upcomingAssignments = await this.assignmentRepo.find({
-      where: { sectionId: In(sectionIds), dueAt: MoreThan(now) },
-      order: { dueAt: 'ASC' },
-      take: 20,
-    });
-
-    for (const a of upcomingAssignments) {
-      const course = sectionMap.get(a.sectionId);
-      if (!course) continue;
-      items.push({
-        type: FeedItemType.DEADLINE,
-        id: `deadline-${a.id}`,
-        title: a.title,
-        subtitle: `Due ${a.dueAt.toLocaleDateString()}`,
-        courseCode: course.code,
-        courseTitle: course.title,
-        sectionId: a.sectionId,
-        assignmentId: a.id,
-        dueAt: a.dueAt,
-        pointsPossible: a.pointsPossible,
-        timestamp: a.dueAt,
+    if (sectionIds.length > 0) {
+      // 2. Upcoming assignments (dueAt > now)
+      const now = new Date();
+      const upcomingAssignments = await this.assignmentRepo.find({
+        where: { sectionId: In(sectionIds), dueAt: MoreThan(now) },
+        order: { dueAt: 'ASC' },
+        take: 20,
       });
+
+      for (const a of upcomingAssignments) {
+        const course = sectionMap.get(a.sectionId);
+        if (!course) continue;
+        items.push({
+          type: FeedItemType.DEADLINE,
+          id: `deadline-${a.id}`,
+          title: a.title,
+          subtitle: `Due ${a.dueAt.toLocaleDateString()}`,
+          courseCode: course.code,
+          courseTitle: course.title,
+          sectionId: a.sectionId,
+          assignmentId: a.id,
+          dueAt: a.dueAt,
+          pointsPossible: a.pointsPossible,
+          timestamp: a.dueAt,
+        });
+      }
+
+      // 3. Recent grades (gradedAt in last 14 days)
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+      const recentGrades = await this.submissionRepo
+        .createQueryBuilder('sub')
+        .leftJoinAndSelect('sub.assignment', 'assignment')
+        .where('sub.userId = :userId', { userId })
+        .andWhere('sub.gradedAt IS NOT NULL')
+        .andWhere('sub.gradedAt >= :since', { since: fourteenDaysAgo })
+        .andWhere('assignment.sectionId IN (:...sectionIds)', { sectionIds })
+        .orderBy('sub.gradedAt', 'DESC')
+        .take(10)
+        .getMany();
+
+      for (const sub of recentGrades) {
+        const course = sectionMap.get(sub.assignment.sectionId);
+        if (!course) continue;
+        items.push({
+          type: FeedItemType.GRADE_POSTED,
+          id: `grade-${sub.id}`,
+          title: sub.assignment.title,
+          subtitle: `${sub.score}/${sub.assignment.pointsPossible} points`,
+          courseCode: course.code,
+          courseTitle: course.title,
+          sectionId: sub.assignment.sectionId,
+          assignmentId: sub.assignmentId,
+          score: sub.score,
+          pointsPossible: sub.assignment.pointsPossible,
+          timestamp: sub.gradedAt,
+        });
+      }
+
+      // 4. Recent announcements (last 14 days)
+      const announcements =
+        await this.announcementsService.findRecentBySectionIds(sectionIds, 14);
+
+      for (const ann of announcements) {
+        const course = sectionMap.get(ann.sectionId);
+        if (!course) continue;
+        items.push({
+          type: FeedItemType.ANNOUNCEMENT,
+          id: `announcement-${ann.id}`,
+          title: ann.title,
+          body: ann.body,
+          subtitle: ann.author
+            ? `${ann.author.firstName} ${ann.author.lastName}`
+            : undefined,
+          courseCode: course.code,
+          courseTitle: course.title,
+          sectionId: ann.sectionId,
+          timestamp: ann.createdAt,
+        });
+      }
     }
 
-    // 3. Recent grades (gradedAt in last 14 days)
+    // 5. ENROLL-004: Recent enrollment status changes (last 14 days).
+    // Pull-based — reads updatedAt so no persistent notification entity is needed.
+    // Covers: newly active enrollments, drops, withdrawals, rejections.
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-    const recentGrades = await this.submissionRepo
-      .createQueryBuilder('sub')
-      .leftJoinAndSelect('sub.assignment', 'assignment')
-      .where('sub.userId = :userId', { userId })
-      .andWhere('sub.gradedAt IS NOT NULL')
-      .andWhere('sub.gradedAt >= :since', { since: fourteenDaysAgo })
-      .andWhere('assignment.sectionId IN (:...sectionIds)', { sectionIds })
-      .orderBy('sub.gradedAt', 'DESC')
-      .take(10)
-      .getMany();
+    const recentEnrollmentChanges = await this.enrollmentRepo.find({
+      where: {
+        userId,
+        status: In([
+          EnrollmentStatus.ACTIVE,
+          EnrollmentStatus.DROPPED,
+          EnrollmentStatus.WITHDRAWN,
+          EnrollmentStatus.REJECTED,
+        ]),
+        updatedAt: MoreThan(fourteenDaysAgo),
+      },
+      relations: ['section', 'section.course'],
+      order: { updatedAt: 'DESC' },
+      take: 10,
+    });
 
-    for (const sub of recentGrades) {
-      const course = sectionMap.get(sub.assignment.sectionId);
+    for (const enrollment of recentEnrollmentChanges) {
+      const course = enrollment.section?.course;
       if (!course) continue;
+
+      let title: string;
+      let subtitle: string;
+
+      switch (enrollment.status) {
+        case EnrollmentStatus.ACTIVE:
+          title = `Enrolled in ${course.code}: ${course.title}`;
+          subtitle = "You're all set! Check out your course timeline.";
+          break;
+        case EnrollmentStatus.DROPPED:
+          title = `Dropped: ${course.code}`;
+          subtitle = `You've dropped ${course.title}.`;
+          break;
+        case EnrollmentStatus.WITHDRAWN:
+          title = `Withdrawn from ${course.code}`;
+          subtitle = `A "W" has been recorded for ${course.title}.`;
+          break;
+        case EnrollmentStatus.REJECTED:
+          title = `Enrollment not approved: ${course.code}`;
+          subtitle = `Your enrollment request for ${course.title} was declined.`;
+          break;
+        default:
+          continue;
+      }
+
       items.push({
-        type: FeedItemType.GRADE_POSTED,
-        id: `grade-${sub.id}`,
-        title: sub.assignment.title,
-        subtitle: `${sub.score}/${sub.assignment.pointsPossible} points`,
+        type: FeedItemType.ENROLLMENT_UPDATE,
+        id: `enrollment-update-${enrollment.id}`,
+        title,
+        subtitle,
         courseCode: course.code,
         courseTitle: course.title,
-        sectionId: sub.assignment.sectionId,
-        assignmentId: sub.assignmentId,
-        score: sub.score,
-        pointsPossible: sub.assignment.pointsPossible,
-        timestamp: sub.gradedAt,
-      });
-    }
-
-    // 4. Recent announcements (last 14 days)
-    const announcements =
-      await this.announcementsService.findRecentBySectionIds(sectionIds, 14);
-
-    for (const ann of announcements) {
-      const course = sectionMap.get(ann.sectionId);
-      if (!course) continue;
-      items.push({
-        type: FeedItemType.ANNOUNCEMENT,
-        id: `announcement-${ann.id}`,
-        title: ann.title,
-        body: ann.body,
-        subtitle: ann.author
-          ? `${ann.author.firstName} ${ann.author.lastName}`
-          : undefined,
-        courseCode: course.code,
-        courseTitle: course.title,
-        sectionId: ann.sectionId,
-        timestamp: ann.createdAt,
+        sectionId: enrollment.sectionId,
+        timestamp: enrollment.updatedAt,
       });
     }
 

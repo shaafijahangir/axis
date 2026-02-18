@@ -18,6 +18,7 @@ import { SendAnnouncementDialog } from '@/components/courses/send-announcement-d
 import { ContentEditorDialog } from '@/components/courses/content-editor-dialog';
 import { EnrollmentSettingsPanel } from '@/components/courses/enrollment-settings-panel';
 import { EnrollmentStatusWidget } from '@/components/courses/enrollment-status-widget';
+import { EnrollmentOnboardingChecklist } from '@/components/courses/enrollment-onboarding-checklist';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth.store';
@@ -189,6 +190,11 @@ export default function SectionTimelinePage() {
               onStatusChange={setEnrollmentStatus}
             />
           )}
+
+        {/* Onboarding checklist — shown once on first visit for active students */}
+        {isStudent && enrollmentStatus === 'active' && (
+          <EnrollmentOnboardingChecklist sectionId={sectionId} />
+        )}
 
         {timelineLoading ? (
           <TimelineSkeleton />

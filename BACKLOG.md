@@ -826,7 +826,8 @@
 - **Acceptance:** Students can drop/withdraw courses within deadline constraints. Status transitions are validated and audited. Admin can override. Events fire for AI integration.
 
 ### ENROLL-004: Enrollment Notifications & Onboarding
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-18
 - **Priority:** MEDIUM — Quality-of-life, but leverages existing infrastructure
 - **Depends on:** ENROLL-003
 - **Scope:**

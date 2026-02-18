@@ -7,6 +7,7 @@ export enum FeedItemType {
   GRADE_POSTED = 'grade_posted',
   ANNOUNCEMENT = 'announcement',
   COURSE_UPDATE = 'course_update',
+  ENROLLMENT_UPDATE = 'enrollment_update',
 }
 
 registerEnumType(FeedItemType, { name: 'FeedItemType' });

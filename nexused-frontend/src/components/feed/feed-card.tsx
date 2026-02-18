@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import Link from 'next/link';
-import { Clock, CheckCircle, Megaphone, Info } from 'lucide-react';
+import { Clock, CheckCircle, Megaphone, Info, UserCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime } from '@/lib/utils/relative-time';
@@ -12,7 +12,8 @@ type FeedItemType =
   | 'deadline'
   | 'grade_posted'
   | 'announcement'
-  | 'course_update';
+  | 'course_update'
+  | 'enrollment_update';
 
 interface FeedCardProps {
   type: FeedItemType;
@@ -66,6 +67,11 @@ const typeConfig: Record<
     borderColor: 'border-l-purple-500',
     iconColor: 'text-purple-500',
   },
+  enrollment_update: {
+    icon: UserCheck,
+    borderColor: 'border-l-indigo-500',
+    iconColor: 'text-indigo-500',
+  },
 };
 
 export function FeedCard({
@@ -100,7 +106,9 @@ export function FeedCard({
         ? 'Grade posted'
         : type === 'announcement'
           ? 'Announcement'
-          : 'Course update';
+          : type === 'enrollment_update'
+            ? 'Enrollment update'
+            : 'Course update';
 
   // FEAT-014: Track impression when card becomes visible
   const handleVisible = useCallback(() => {
