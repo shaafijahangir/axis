@@ -154,7 +154,9 @@ export class AiModule implements OnModuleInit {
     this.toolRegistry.registerAll(createCourseTools(this.coursesService));
 
     // Enrollment tools (wraps CoursesService enrollment methods)
-    this.toolRegistry.registerAll(createEnrollmentTools(this.coursesService));
+    this.toolRegistry.registerAll(
+      createEnrollmentTools(this.coursesService, this.plannerService),
+    );
 
     // Assignment + submission tools (direct repo access)
     this.toolRegistry.registerAll(

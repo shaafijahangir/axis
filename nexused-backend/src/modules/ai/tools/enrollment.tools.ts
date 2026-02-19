@@ -1,5 +1,6 @@
 import { ToolDefinition } from './tool.interface';
 import { CoursesService } from '../../courses/courses.service';
+import { PlannerService } from '../../planner/planner.service';
 
 /**
  * Enrollment tools — wraps enrollment-related CoursesService methods.
@@ -18,6 +19,7 @@ import { CoursesService } from '../../courses/courses.service';
  */
 export function createEnrollmentTools(
   coursesService: CoursesService,
+  plannerService: PlannerService,
 ): ToolDefinition[] {
   return [
     // ─── Admin / instructor tools ──────────────────────────────────────────
@@ -166,7 +168,7 @@ export function createEnrollmentTools(
     {
       name: 'enroll_in_course',
       description:
-        'Enroll the current student in a course section using their own account. Before calling this tool, use get_course_sections to find available sections and get_eligible_courses to verify prerequisites are met. Validates seat availability, enrollment mode, and duplicate enrollments. Always requires student confirmation before executing.',
+        'Enroll the current student in a course section using their own account. Automatically checks prerequisites before enrolling — if prerequisites are not met the tool returns a warning with details instead of enrolling. The student must explicitly set overridePrerequisites=true to bypass the warning. Before calling this tool, use get_course_sections to find available sections. Validates seat availability, enrollment mode, and duplicate enrollments. Always requires student confirmation before executing.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -179,11 +181,44 @@ export function createEnrollmentTools(
             description:
               'Required only if the section enrollment mode is invite_only. Ask the student for this code if needed.',
           },
+          overridePrerequisites: {
+            type: 'boolean',
+            description:
+              'Set to true only after explicitly informing the student that prerequisites are not met and they have confirmed they want to proceed anyway.',
+          },
         },
         required: ['sectionId'],
       },
       handler: async (input, ctx) => {
         try {
+          // ── Prerequisite gate (ENROLL-006) ──────────────────────────────
+          const section = await coursesService.findSectionById(
+            input.sectionId as string,
+            ctx.tenantId,
+          );
+          const prereqResult = await plannerService.checkCoursePrerequisites(
+            section.courseId,
+            ctx.userId,
+            ctx.tenantId,
+          );
+
+          if (!prereqResult.allMet && !input.overridePrerequisites) {
+            const missing = prereqResult.prerequisites
+              .filter((p) => p.status === 'missing')
+              .map((p) => `${p.courseCode} — ${p.courseTitle}`);
+            const inProgress = prereqResult.prerequisites
+              .filter((p) => p.status === 'in_progress')
+              .map((p) => `${p.courseCode} — ${p.courseTitle}`);
+            return {
+              success: false,
+              requiresConfirmation: true,
+              missingPrerequisites: missing,
+              inProgressPrerequisites: inProgress,
+              hint: 'Inform the student which prerequisites are missing. If they confirm they want to enroll anyway, call this tool again with overridePrerequisites=true.',
+            };
+          }
+
+          // ── Enroll ──────────────────────────────────────────────────────
           const enrollment = await coursesService.enrollStudent(
             ctx.tenantId,
             ctx.userId,

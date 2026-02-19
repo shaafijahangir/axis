@@ -869,7 +869,8 @@
 - **Acceptance:** Student can ask Course Planner "Enroll me in CS 201" and the AI checks prerequisites, availability, and creates the enrollment. Governance controls whether this is auto or requires student confirmation.
 
 ### ENROLL-006: Proactive Prerequisite Alerts
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-18
 - **Priority:** MEDIUM
 - **Depends on:** ENROLL-005
 - **Scope:**

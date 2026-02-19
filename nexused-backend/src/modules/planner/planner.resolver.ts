@@ -15,6 +15,7 @@ import {
   UpdateStudentProfileInput,
   DegreeProgress,
   EligibleCourse,
+  PrerequisiteCheckResult,
 } from './dto/planner.types';
 
 /**
@@ -153,6 +154,25 @@ export class PlannerResolver {
       }
     }
     return this.plannerService.findEligibleCourses(profileId, user.tenantId);
+  }
+
+  // ─── ENROLL-006: Prerequisite check ──────────────────────────────────
+
+  /**
+   * Returns per-prerequisite status for a course relative to the calling user.
+   * Used by the EnrollDialog to warn students before enrolling.
+   * Any authenticated user can call this (students, instructors, admins).
+   */
+  @Query(() => PrerequisiteCheckResult)
+  async coursePrerequisites(
+    @CurrentUser() user: User,
+    @Args('courseId') courseId: string,
+  ): Promise<PrerequisiteCheckResult> {
+    return this.plannerService.checkCoursePrerequisites(
+      courseId,
+      user.id,
+      user.tenantId,
+    );
   }
 
   @Query(() => DegreeProgress)

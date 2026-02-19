@@ -74,6 +74,26 @@ export const ELIGIBLE_COURSES_QUERY = gql`
   }
 `;
 
+// ─── ENROLL-006: Prerequisite check ─────────────────────────────────────────
+
+export const COURSE_PREREQUISITES_QUERY = gql`
+  query CoursePrerequisites($courseId: String!) {
+    coursePrerequisites(courseId: $courseId) {
+      courseId
+      courseCode
+      allMet
+      metCount
+      totalRequired
+      prerequisites {
+        courseId
+        courseCode
+        courseTitle
+        status
+      }
+    }
+  }
+`;
+
 export const SIMULATE_MAJOR_CHANGE_QUERY = gql`
   query SimulateMajorChange($profileId: String!, $targetProgramId: String!) {
     simulateMajorChange(

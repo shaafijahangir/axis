@@ -16,6 +16,9 @@ import {
   DegreeProgress,
   RequirementProgress,
   EligibleCourse,
+  PrerequisiteCheckResult,
+  PrerequisiteStatus,
+  PrerequisiteStatusType,
 } from './dto/planner.types';
 
 /**
@@ -438,6 +441,108 @@ export class PlannerService {
         creditsRemaining > 0
           ? Math.ceil(creditsRemaining / this.AVG_CREDITS_PER_SEMESTER)
           : 0,
+    };
+  }
+
+  // ─── ENROLL-006: Public prerequisite check ────────────────────────────
+
+  /**
+   * Returns detailed prerequisite status for a course relative to the student.
+   *
+   * WHY public: The private checkPrerequisites() only returns boolean. AI tools
+   * and the enrollment dialog need per-prerequisite status (completed /
+   * in_progress / missing) plus human-readable course codes and titles.
+   *
+   * PATTERN: Uses the student's degree profile(s) as the source of truth for
+   * completed/current courses. If the student has no profile, all prerequisites
+   * show as MISSING — a safe conservative default.
+   *
+   * TRADEOFF: Requires prerequisite courses to be in the same tenant; cross-
+   * tenant prerequisite references are not supported (return "Unknown").
+   */
+  async checkCoursePrerequisites(
+    courseId: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<PrerequisiteCheckResult> {
+    const course = await this.courseRepo.findOne({
+      where: { id: courseId, tenantId },
+    });
+    if (!course) {
+      throw new NotFoundException(`Course not found: ${courseId}`);
+    }
+
+    // Build prerequisite ID list: prefer structured field (ONBOARD-001),
+    // fall back to legacy freeform JSONB.
+    const prereqIds: string[] = [...(course.prerequisiteCourseIds ?? [])];
+    let minRequired = prereqIds.length;
+
+    if (prereqIds.length === 0 && course.prerequisites) {
+      const legacy = course.prerequisites as Record<string, unknown>;
+      const legacyIds = (legacy.courseIds as string[]) ?? [];
+      prereqIds.push(...legacyIds);
+      minRequired = (legacy.minRequired as number) ?? legacyIds.length;
+    }
+
+    // No prerequisites — fast path
+    if (prereqIds.length === 0) {
+      return {
+        courseId: course.id,
+        courseCode: course.code,
+        allMet: true,
+        metCount: 0,
+        totalRequired: 0,
+        prerequisites: [],
+      };
+    }
+
+    // Aggregate completed/current course IDs from all the student's profiles
+    const profiles = await this.profileRepo.find({
+      where: { userId, tenantId },
+    });
+    const completedIds = new Set<string>();
+    const currentIds = new Set<string>();
+    for (const profile of profiles) {
+      profile.completedCourseIds.forEach((id) => completedIds.add(id));
+      profile.currentCourseIds.forEach((id) => currentIds.add(id));
+    }
+
+    // Load course details for human-readable output
+    const prereqCourses =
+      prereqIds.length > 0
+        ? await this.courseRepo.find({ where: { id: In(prereqIds) } })
+        : [];
+    const prereqMap = new Map(prereqCourses.map((c) => [c.id, c]));
+
+    const prerequisites: PrerequisiteStatus[] = prereqIds.map((id) => {
+      const prereqCourse = prereqMap.get(id);
+      let status: PrerequisiteStatusType;
+      if (completedIds.has(id)) {
+        status = PrerequisiteStatusType.COMPLETED;
+      } else if (currentIds.has(id)) {
+        status = PrerequisiteStatusType.IN_PROGRESS;
+      } else {
+        status = PrerequisiteStatusType.MISSING;
+      }
+      return {
+        courseId: id,
+        courseCode: prereqCourse?.code ?? 'Unknown',
+        courseTitle: prereqCourse?.title ?? 'Unknown',
+        status,
+      };
+    });
+
+    const metCount = prerequisites.filter(
+      (p) => p.status === PrerequisiteStatusType.COMPLETED,
+    ).length;
+
+    return {
+      courseId: course.id,
+      courseCode: course.code,
+      allMet: metCount >= minRequired,
+      metCount,
+      totalRequired: minRequired,
+      prerequisites,
     };
   }
 

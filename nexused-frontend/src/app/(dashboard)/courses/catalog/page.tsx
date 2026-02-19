@@ -782,6 +782,7 @@ export default function CourseCatalogPage() {
       <EnrollDialog
         courseName={enrollTarget?.course.title ?? ''}
         courseCode={enrollTarget?.course.code ?? ''}
+        courseId={enrollTarget?.course.id}
         section={enrollTarget?.section ?? null}
         open={enrollTarget !== null}
         onClose={() => setEnrollTarget(null)}

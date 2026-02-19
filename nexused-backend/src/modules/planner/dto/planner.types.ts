@@ -1,4 +1,11 @@
-import { ObjectType, Field, Int, Float, InputType } from '@nestjs/graphql';
+import {
+  ObjectType,
+  Field,
+  Int,
+  Float,
+  InputType,
+  registerEnumType,
+} from '@nestjs/graphql';
 import {
   IsString,
   IsOptional,
@@ -248,4 +255,62 @@ export class EligibleCourse {
 
   @Field()
   prerequisitesMet: boolean;
+}
+
+// ─── ENROLL-006: Prerequisite Check Types ─────────────────────────────────
+
+export enum PrerequisiteStatusType {
+  COMPLETED = 'completed',
+  IN_PROGRESS = 'in_progress',
+  MISSING = 'missing',
+}
+
+registerEnumType(PrerequisiteStatusType, { name: 'PrerequisiteStatusType' });
+
+/**
+ * Status of a single prerequisite course relative to the calling student.
+ */
+@ObjectType()
+export class PrerequisiteStatus {
+  @Field()
+  courseId: string;
+
+  @Field()
+  courseCode: string;
+
+  @Field()
+  courseTitle: string;
+
+  /** COMPLETED — student has passed this course.
+   *  IN_PROGRESS — student is currently enrolled.
+   *  MISSING — student has not taken it. */
+  @Field(() => PrerequisiteStatusType)
+  status: PrerequisiteStatusType;
+}
+
+/**
+ * Result of checking whether a student meets the prerequisites for a course.
+ *
+ * allMet: true even if prerequisites is empty (no prerequisites required).
+ * metCount/totalRequired allow "any N of M" prerequisite rules.
+ */
+@ObjectType()
+export class PrerequisiteCheckResult {
+  @Field()
+  courseId: string;
+
+  @Field()
+  courseCode: string;
+
+  @Field()
+  allMet: boolean;
+
+  @Field(() => Int)
+  metCount: number;
+
+  @Field(() => Int)
+  totalRequired: number;
+
+  @Field(() => [PrerequisiteStatus])
+  prerequisites: PrerequisiteStatus[];
 }
