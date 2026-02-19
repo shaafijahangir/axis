@@ -979,7 +979,8 @@
 > **How it differs from FEAT-015:** The existing Course Planner tracks progress and checks prerequisites. This sprint generates a **complete semester-by-semester plan** that accounts for time, money, course availability, and life changes.
 
 ### GRAD-001: Constraint-Based Plan Generator
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-18
 - **Priority:** HIGH — Core planning algorithm
 - **Depends on:** ONBOARD-001 (needs course availability data), FEAT-015 (existing planner infrastructure)
 - **Scope:**

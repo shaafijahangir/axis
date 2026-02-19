@@ -1,0 +1,57 @@
+import { gql } from '@apollo/client';
+
+const GRADUATION_PLAN_FIELDS = gql`
+  fragment GradPlanFields on GraduationPlanResult {
+    id
+    profileId
+    degreeProgramId
+    status
+    totalSemesters
+    estimatedGraduationTerm
+    estimatedGraduationYear
+    totalCreditsPlanned
+    totalCreditsCompleted
+    overallCompletionPercentage
+    createdAt
+    constraints {
+      maxCreditsPerSemester
+      startTerm
+      startYear
+      includeSummer
+      excludedTermKeys
+    }
+    semesters {
+      termKey
+      term
+      year
+      totalCredits
+      cumulativeCredits
+      completionPercentage
+      courses {
+        courseId
+        code
+        title
+        credits
+        fulfillsRequirement
+      }
+    }
+  }
+`;
+
+export const GENERATE_GRADUATION_PLAN_MUTATION = gql`
+  ${GRADUATION_PLAN_FIELDS}
+  mutation GenerateGraduationPlan($input: GenerateGraduationPlanInput!) {
+    generateGraduationPlan(input: $input) {
+      ...GradPlanFields
+    }
+  }
+`;
+
+export const ACTIVATE_GRADUATION_PLAN_MUTATION = gql`
+  ${GRADUATION_PLAN_FIELDS}
+  mutation ActivateGraduationPlan($planId: String!) {
+    activateGraduationPlan(planId: $planId) {
+      ...GradPlanFields
+    }
+  }
+`;

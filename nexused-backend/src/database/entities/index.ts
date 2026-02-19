@@ -55,6 +55,7 @@ import { DirectMessage } from '../../modules/messaging/entities/direct-message.e
 // Degree/planner entities
 import { DegreeProgram } from './degree-program.entity';
 import { StudentDegreeProfile } from './student-degree-profile.entity';
+import { GraduationPlan } from '../../modules/planner/entities/graduation-plan.entity';
 
 // LTI entities
 import { LtiPlatform } from '../../modules/lti/entities/lti-platform.entity';
@@ -93,5 +94,6 @@ export const entities = [
   LtiState,
   DegreeProgram,
   StudentDegreeProfile,
+  GraduationPlan,
   FeedEngagement,
 ];

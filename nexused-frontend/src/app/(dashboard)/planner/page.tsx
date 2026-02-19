@@ -478,12 +478,20 @@ export default function PlannerPage() {
               ` — ${activeProfile.degreeProgram.department}`}
           </p>
         </div>
-        <Link href="/ai?agent=course-planner">
-          <Button className="gap-2">
-            <Sparkles className="h-4 w-4" aria-hidden="true" />
-            Ask Course Planner AI
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/planner/roadmap">
+            <Button variant="outline" className="gap-2">
+              <Map className="h-4 w-4" aria-hidden="true" />
+              View Roadmap
+            </Button>
+          </Link>
+          <Link href="/ai?agent=course-planner">
+            <Button className="gap-2">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+              Ask Course Planner AI
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Progress Overview */}
