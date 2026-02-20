@@ -30,6 +30,12 @@ const GRADUATION_PLAN_FIELDS = gql`
       completionPercentage
       estimatedCost
       estimatedCumulativeCost
+      aidStatus {
+        isFullTime
+        isHalfTime
+        aidWarning
+        sapWarning
+      }
       courses {
         courseId
         code
@@ -103,5 +109,21 @@ export const UPDATE_TUITION_CONFIG_MUTATION = gql`
 export const CLEAR_TUITION_CONFIG_MUTATION = gql`
   mutation ClearTuitionConfig {
     clearTuitionConfig
+  }
+`;
+
+export const UPDATE_FINANCIAL_AID_CONFIG_MUTATION = gql`
+  mutation UpdateFinancialAidConfig($config: FinancialAidConfigInput!) {
+    updateFinancialAidConfig(config: $config) {
+      fullTimeThreshold
+      halfTimeThreshold
+      maxTimeframePercent
+    }
+  }
+`;
+
+export const CLEAR_FINANCIAL_AID_CONFIG_MUTATION = gql`
+  mutation ClearFinancialAidConfig {
+    clearFinancialAidConfig
   }
 `;

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import {
   TuitionConfig,
   SemesterCostResult,
+  FinancialAidConfig,
+  SemesterAidStatus,
 } from './dto/financial-projection.types';
 import { GraduationPlanResult } from './dto/graduation-planner.types';
 import { PlannedSemesterData } from './entities/graduation-plan.entity';
@@ -174,5 +176,93 @@ export class FinancialProjectionService {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  }
+
+  // ─── Financial Aid Status ────────────────────────────────────────────
+
+  /**
+   * Compute financial aid eligibility status for a single semester.
+   *
+   * THRESHOLDS:
+   *   - aidWarning (yellow): semester credits < fullTimeThreshold
+   *     Below half-time → stronger message
+   *   - sapWarning (red): cumulative credits ≥ 90% of the SAP limit
+   *     SAP limit = totalRequired * maxTimeframePercent / 100
+   *
+   * WHY pure function: No DB access, deterministic, easy to unit test.
+   */
+  checkSemesterAidStatus(
+    semesterCredits: number,
+    cumulativeCredits: number,
+    totalRequired: number,
+    config: FinancialAidConfig,
+  ): SemesterAidStatus {
+    const fullTimeThreshold = config.fullTimeThreshold ?? 12;
+    const halfTimeThreshold = config.halfTimeThreshold ?? 6;
+    const maxTimeframePercent = config.maxTimeframePercent ?? 150;
+
+    const isFullTime = semesterCredits >= fullTimeThreshold;
+    const isHalfTime = semesterCredits >= halfTimeThreshold;
+
+    // ── Enrollment intensity warning ──────────────────────────────────
+    let aidWarning: string | undefined;
+    if (!isFullTime) {
+      if (!isHalfTime) {
+        aidWarning = `Below half-time (${semesterCredits} < ${halfTimeThreshold} credits) — significant impact on financial aid eligibility`;
+      } else {
+        aidWarning = `Below full-time (${semesterCredits} < ${fullTimeThreshold} credits) — may affect financial aid`;
+      }
+    }
+
+    // ── SAP maximum timeframe warning ─────────────────────────────────
+    // SAP limit = total required credits * (maxTimeframePercent / 100)
+    // Warn when cumulative credits reach 90% of that limit.
+    let sapWarning: string | undefined;
+    if (totalRequired > 0) {
+      const sapLimit = totalRequired * (maxTimeframePercent / 100);
+      const pct = Math.round((cumulativeCredits / totalRequired) * 100);
+
+      if (cumulativeCredits >= sapLimit) {
+        sapWarning = `At ${pct}% of maximum timeframe (${maxTimeframePercent}% limit) — contact financial aid office immediately`;
+      } else if (cumulativeCredits >= sapLimit * 0.9) {
+        sapWarning = `Approaching maximum timeframe (${pct}% of ${maxTimeframePercent}% limit) — review SAP status with financial aid office`;
+      }
+    }
+
+    return { isFullTime, isHalfTime, aidWarning, sapWarning };
+  }
+
+  /**
+   * Annotate each semester in a GraduationPlanResult with its financial
+   * aid eligibility status.
+   *
+   * WHY: Like enrichPlanWithCosts(), this is a pure enrichment step that
+   * runs after the plan is built. Keeping it here keeps GraduationPlannerService
+   * thin.
+   *
+   * When aidConfig is absent, aidStatus fields remain null on every semester.
+   */
+  enrichPlanWithAidStatus(
+    plan: GraduationPlanResult,
+    aidConfig: FinancialAidConfig | null | undefined,
+  ): GraduationPlanResult {
+    if (!aidConfig) return plan;
+
+    // totalRequired ≈ completed + planned (the plan covers exactly what's needed)
+    const totalRequired = plan.totalCreditsCompleted + plan.totalCreditsPlanned;
+    if (totalRequired === 0) return plan;
+
+    return {
+      ...plan,
+      semesters: plan.semesters.map((sem) => ({
+        ...sem,
+        aidStatus: this.checkSemesterAidStatus(
+          sem.totalCredits,
+          sem.cumulativeCredits,
+          totalRequired,
+          aidConfig,
+        ),
+      })),
+    };
   }
 }

@@ -6,6 +6,7 @@ import {
   InputType,
   registerEnumType,
 } from '@nestjs/graphql';
+import { SemesterAidStatus } from './financial-projection.types';
 import {
   IsString,
   IsInt,
@@ -242,6 +243,13 @@ export class PlannedSemester {
    */
   @Field(() => Float, { nullable: true })
   estimatedCumulativeCost?: number | null;
+
+  /**
+   * Financial aid eligibility status for this semester.
+   * Null when the tenant has not configured financial aid thresholds (GRAD-004).
+   */
+  @Field(() => SemesterAidStatus, { nullable: true })
+  aidStatus?: SemesterAidStatus | null;
 }
 
 /**

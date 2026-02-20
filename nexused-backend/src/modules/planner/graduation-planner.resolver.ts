@@ -40,11 +40,16 @@ export class GraduationPlannerResolver {
     @CurrentUser() user: User,
     @Args('input') input: GenerateGraduationPlanInput,
   ): Promise<GraduationPlanResult> {
-    const [{ plan, diff }, tuitionConfig] = await Promise.all([
+    const [{ plan, diff }, { tuitionConfig, aidConfig }] = await Promise.all([
       this.graduationPlannerService.generatePlan(user.id, user.tenantId, input),
-      this.graduationPlannerService.loadTuitionConfig(user.tenantId),
+      this.graduationPlannerService.loadTenantConfigs(user.tenantId),
     ]);
-    return this.graduationPlannerService.toResult(plan, diff, tuitionConfig);
+    return this.graduationPlannerService.toResult(
+      plan,
+      diff,
+      tuitionConfig,
+      aidConfig,
+    );
   }
 
   /**
@@ -57,15 +62,20 @@ export class GraduationPlannerResolver {
     @CurrentUser() user: User,
     @Args('planId') planId: string,
   ): Promise<GraduationPlanResult> {
-    const [plan, tuitionConfig] = await Promise.all([
+    const [plan, { tuitionConfig, aidConfig }] = await Promise.all([
       this.graduationPlannerService.activatePlan(
         planId,
         user.id,
         user.tenantId,
       ),
-      this.graduationPlannerService.loadTuitionConfig(user.tenantId),
+      this.graduationPlannerService.loadTenantConfigs(user.tenantId),
     ]);
-    return this.graduationPlannerService.toResult(plan, null, tuitionConfig);
+    return this.graduationPlannerService.toResult(
+      plan,
+      null,
+      tuitionConfig,
+      aidConfig,
+    );
   }
 
   // ─── Queries ───────────────────────────────────────────────────────────
@@ -81,16 +91,16 @@ export class GraduationPlannerResolver {
     @Args('profileId') profileId: string,
   ): Promise<GraduationPlanResult[]> {
     // Ownership check is enforced inside the service (userId filter)
-    const [plans, tuitionConfig] = await Promise.all([
+    const [plans, { tuitionConfig, aidConfig }] = await Promise.all([
       this.graduationPlannerService.findPlansForProfile(
         profileId,
         user.id,
         user.tenantId,
       ),
-      this.graduationPlannerService.loadTuitionConfig(user.tenantId),
+      this.graduationPlannerService.loadTenantConfigs(user.tenantId),
     ]);
     return plans.map((p) =>
-      this.graduationPlannerService.toResult(p, null, tuitionConfig),
+      this.graduationPlannerService.toResult(p, null, tuitionConfig, aidConfig),
     );
   }
 }

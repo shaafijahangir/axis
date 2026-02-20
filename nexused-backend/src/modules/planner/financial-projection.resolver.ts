@@ -8,7 +8,10 @@ import { Roles } from '../../decorators/roles.decorator';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { User, UserRole } from '../../database/entities';
 import { Tenant } from '../../database/entities/tenant.entity';
-import { TuitionConfig } from './dto/financial-projection.types';
+import {
+  TuitionConfig,
+  FinancialAidConfig,
+} from './dto/financial-projection.types';
 
 /**
  * GraphQL resolver for tuition configuration.
@@ -94,6 +97,73 @@ export class FinancialProjectionResolver {
     if (!tenant) return false;
 
     const { tuitionConfig: _removed, ...remainingSettings } =
+      tenant.settings ?? {};
+    tenant.settings = remainingSettings;
+    await this.tenantRepo.save(tenant);
+    return true;
+  }
+
+  // ─── Financial Aid Config ───────────────────────────────────────────────
+  // GRAD-004: Financial Aid Awareness
+
+  /**
+   * Return the current financial aid threshold config for this tenant.
+   * Null if no config has been set (warnings won't appear on plans).
+   */
+  @Query(() => FinancialAidConfig, { nullable: true })
+  @Roles(UserRole.STUDENT, UserRole.INSTRUCTOR, UserRole.ADMIN, UserRole.TA)
+  async getFinancialAidConfig(
+    @CurrentUser() user: User,
+  ): Promise<FinancialAidConfig | null> {
+    const tenant = await this.tenantRepo.findOne({
+      where: { id: user.tenantId },
+    });
+    if (!tenant) return null;
+    return (
+      (tenant.settings?.financialAidConfig as FinancialAidConfig | undefined) ??
+      null
+    );
+  }
+
+  /**
+   * Set (or replace) the financial aid configuration for this tenant.
+   * Stored under `Tenant.settings.financialAidConfig`. No migration needed.
+   */
+  @Mutation(() => FinancialAidConfig)
+  @Roles(UserRole.ADMIN)
+  async updateFinancialAidConfig(
+    @CurrentUser() user: User,
+    @Args('config', { type: () => FinancialAidConfig })
+    config: FinancialAidConfig,
+  ): Promise<FinancialAidConfig> {
+    const tenant = await this.tenantRepo.findOne({
+      where: { id: user.tenantId },
+    });
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+
+    tenant.settings = {
+      ...(tenant.settings ?? {}),
+      financialAidConfig: config,
+    };
+    await this.tenantRepo.save(tenant);
+    return config;
+  }
+
+  /**
+   * Clear the financial aid configuration.
+   * Aid status warnings will no longer appear on graduation plan semesters.
+   */
+  @Mutation(() => Boolean)
+  @Roles(UserRole.ADMIN)
+  async clearFinancialAidConfig(@CurrentUser() user: User): Promise<boolean> {
+    const tenant = await this.tenantRepo.findOne({
+      where: { id: user.tenantId },
+    });
+    if (!tenant) return false;
+
+    const { financialAidConfig: _removed, ...remainingSettings } =
       tenant.settings ?? {};
     tenant.settings = remainingSettings;
     await this.tenantRepo.save(tenant);

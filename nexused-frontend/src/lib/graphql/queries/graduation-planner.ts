@@ -30,6 +30,12 @@ const GRADUATION_PLAN_FIELDS = gql`
       completionPercentage
       estimatedCost
       estimatedCumulativeCost
+      aidStatus {
+        isFullTime
+        isHalfTime
+        aidWarning
+        sapWarning
+      }
       courses {
         courseId
         code
@@ -63,6 +69,16 @@ export const GET_TUITION_CONFIG_QUERY = gql`
         amount
         type
       }
+    }
+  }
+`;
+
+export const GET_FINANCIAL_AID_CONFIG_QUERY = gql`
+  query GetFinancialAidConfig {
+    getFinancialAidConfig {
+      fullTimeThreshold
+      halfTimeThreshold
+      maxTimeframePercent
     }
   }
 `;

@@ -22,7 +22,10 @@ import {
   MovedCourse,
 } from './dto/graduation-planner.types';
 import { FinancialProjectionService } from './financial-projection.service';
-import { TuitionConfig } from './dto/financial-projection.types';
+import {
+  TuitionConfig,
+  FinancialAidConfig,
+} from './dto/financial-projection.types';
 import { Tenant } from '../../database/entities/tenant.entity';
 
 /**
@@ -480,6 +483,7 @@ export class GraduationPlannerService {
     plan: GraduationPlan,
     diff?: PlanDiff | null,
     tuitionConfig?: TuitionConfig | null,
+    aidConfig?: FinancialAidConfig | null,
   ): GraduationPlanResult {
     const base: GraduationPlanResult = {
       id: plan.id,
@@ -497,6 +501,7 @@ export class GraduationPlannerService {
           completionPercentage: Number(s.completionPercentage),
           estimatedCost: null,
           estimatedCumulativeCost: null,
+          aidStatus: null,
           courses: (s.courses ?? []).map(
             (c): PlannedCourse => ({
               courseId: c.courseId,
@@ -519,22 +524,47 @@ export class GraduationPlannerService {
       diff: diff ?? null,
     };
 
-    // Enrich with financial projections if tuition config is available
-    return this.financialProjectionService.enrichPlanWithCosts(
+    // Enrich with financial projections (GRAD-003) then aid status (GRAD-004)
+    const withCosts = this.financialProjectionService.enrichPlanWithCosts(
       base,
       tuitionConfig,
+    );
+    return this.financialProjectionService.enrichPlanWithAidStatus(
+      withCosts,
+      aidConfig,
     );
   }
 
   /**
-   * Load the tenant's tuition config from the settings JSONB column.
-   * Returns null if the tenant has no tuition config set.
+   * Load both tuition and financial aid configs from the tenant's settings JSONB
+   * in a single DB query.
+   *
+   * WHY: The resolver calls this alongside generatePlan() in Promise.all().
+   * A single tenant fetch is cheaper than two separate repo.findOne() calls.
+   */
+  async loadTenantConfigs(tenantId: string): Promise<{
+    tuitionConfig: TuitionConfig | null;
+    aidConfig: FinancialAidConfig | null;
+  }> {
+    const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } });
+    return {
+      tuitionConfig:
+        (tenant?.settings?.tuitionConfig as TuitionConfig | undefined) ?? null,
+      aidConfig:
+        (tenant?.settings?.financialAidConfig as
+          | FinancialAidConfig
+          | undefined) ?? null,
+    };
+  }
+
+  /**
+   * @deprecated Use loadTenantConfigs() instead — it fetches both configs
+   * in a single DB call. Kept for backward compatibility with tools that
+   * only need tuition config.
    */
   async loadTuitionConfig(tenantId: string): Promise<TuitionConfig | null> {
-    const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } });
-    return (
-      (tenant?.settings?.tuitionConfig as TuitionConfig | undefined) ?? null
-    );
+    const { tuitionConfig } = await this.loadTenantConfigs(tenantId);
+    return tuitionConfig;
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────

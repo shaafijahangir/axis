@@ -1,4 +1,4 @@
-import { ObjectType, Field, Float, InputType } from '@nestjs/graphql';
+import { ObjectType, Field, Float, InputType, Int } from '@nestjs/graphql';
 import {
   IsNumber,
   IsOptional,
@@ -6,7 +6,9 @@ import {
   ValidateNested,
   IsString,
   IsIn,
+  IsInt,
   Min,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -127,4 +129,108 @@ export class SemesterCostResult {
   /** Whether this semester used the flat-rate model. */
   @Field()
   usedFlatRate: boolean;
+}
+
+// ─── Financial Aid Configuration ──────────────────────────────────────────────
+
+/**
+ * Financial aid eligibility thresholds per tenant.
+ *
+ * WHY: Aid eligibility rules vary by institution and aid type (Pell Grant,
+ * subsidized loans, institutional aid). Configuring these here lets NexusEd
+ * flag at-risk semesters without hard-coding federal defaults (which may not
+ * apply to all institutions or aid types).
+ *
+ * DEFAULTS (federal standards):
+ *   - fullTimeThreshold: 12 credits
+ *   - halfTimeThreshold: 6 credits
+ *   - maxTimeframePercent: 150 (SAP rule — can't exceed 150% of program length)
+ *
+ * Stored in `Tenant.settings.financialAidConfig` (JSONB). No migration needed.
+ *
+ * GRAD-004: Financial Aid Awareness
+ */
+@ObjectType('FinancialAidConfigResult')
+@InputType('FinancialAidConfigInput')
+export class FinancialAidConfig {
+  /**
+   * Minimum credits per semester to be considered full-time.
+   * Below this threshold → yellow "may affect aid" warning.
+   * Federal default: 12 credits.
+   */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  fullTimeThreshold?: number;
+
+  /**
+   * Minimum credits per semester to maintain half-time status.
+   * Below this threshold → stronger "significant impact" warning.
+   * Federal default: 6 credits.
+   */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  halfTimeThreshold?: number;
+
+  /**
+   * Satisfactory Academic Progress (SAP) maximum timeframe as a percentage
+   * of total program credits. A student cannot attempt more than this
+   * percentage of the total required credits.
+   *
+   * Example: 150 means a 120-credit program allows at most 180 attempted credits.
+   * A warning triggers when cumulative credits reach 90% of this limit.
+   *
+   * Federal default: 150%.
+   */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(100)
+  @Max(300)
+  maxTimeframePercent?: number;
+}
+
+// ─── Aid Status Result ────────────────────────────────────────────────────────
+
+/**
+ * Financial aid eligibility status for a single planned semester.
+ *
+ * WHY: Students need to understand which semesters in their plan may
+ * affect their financial aid before they commit to that plan. A proactive
+ * warning is far better than a surprise financial aid suspension.
+ *
+ * Computed by FinancialProjectionService.enrichPlanWithAidStatus() when
+ * the tenant has a financialAidConfig set.
+ *
+ * GRAD-004: Financial Aid Awareness
+ */
+@ObjectType()
+export class SemesterAidStatus {
+  /** Whether this semester meets the full-time credit threshold. */
+  @Field()
+  isFullTime: boolean;
+
+  /** Whether this semester meets the half-time credit threshold. */
+  @Field()
+  isHalfTime: boolean;
+
+  /**
+   * Yellow warning: semester is below full-time (or half-time) threshold.
+   * e.g. "Below full-time (9 < 12 credits) — may affect financial aid"
+   * Null when the student is enrolled full-time.
+   */
+  @Field({ nullable: true })
+  aidWarning?: string;
+
+  /**
+   * Red warning: cumulative credits are approaching or exceeding the SAP
+   * maximum timeframe limit.
+   * e.g. "At 148% of maximum timeframe (150% limit) — contact financial aid"
+   * Null when the student is within safe timeframe.
+   */
+  @Field({ nullable: true })
+  sapWarning?: string;
 }

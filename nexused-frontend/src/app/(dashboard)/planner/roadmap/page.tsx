@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * GRAD-001 / GRAD-002 / GRAD-003: Graduation Roadmap
+ * GRAD-001 / GRAD-002 / GRAD-003 / GRAD-004: Graduation Roadmap
  *
  * Displays the student's active graduation plan as a semester timeline.
  * GRAD-002 additions:
@@ -13,12 +13,17 @@
  *   - Running total cost column.
  *   - Estimated total cost in the summary bar.
  *   - "Configure tuition rates" prompt when no tuition config is set.
+ * GRAD-004 additions:
+ *   - Per-semester financial aid status (full-time / SAP warnings).
+ *   - Yellow badge: below full-time threshold.
+ *   - Red badge: approaching SAP maximum timeframe.
+ *   - "Configure Aid Rules" admin prompt when no aid config is set.
  *
  * LAYOUT:
  *  - Left panel (280px sticky): plan controls + skip-semester checkboxes
  *  - Top bar: summary stats (grad date, semesters, credits, % complete, total cost)
  *  - Diff panel: shown after regeneration (dismissible)
- *  - Right panel: semester card timeline with per-semester cost
+ *  - Right panel: semester card timeline with per-semester cost + aid badges
  */
 
 import { useState, useRef, useCallback } from 'react';
@@ -38,6 +43,8 @@ import {
   GitCompare,
   DollarSign,
   Settings,
+  AlertTriangle,
+  ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +62,7 @@ import { MY_DEGREE_PROFILES_QUERY } from '@/lib/graphql/queries/planner';
 import {
   MY_GRADUATION_PLANS_QUERY,
   GET_TUITION_CONFIG_QUERY,
+  GET_FINANCIAL_AID_CONFIG_QUERY,
 } from '@/lib/graphql/queries/graduation-planner';
 import { GENERATE_GRADUATION_PLAN_MUTATION } from '@/lib/graphql/mutations/graduation-planner';
 import { useAuthStore } from '@/stores/auth.store';
@@ -81,6 +89,13 @@ interface PlannedCourse {
   fulfillsRequirement: string;
 }
 
+interface SemesterAidStatus {
+  isFullTime: boolean;
+  isHalfTime: boolean;
+  aidWarning?: string | null;
+  sapWarning?: string | null;
+}
+
 interface PlannedSemester {
   termKey: string;
   term: string;
@@ -91,6 +106,13 @@ interface PlannedSemester {
   completionPercentage: number;
   estimatedCost?: number | null;
   estimatedCumulativeCost?: number | null;
+  aidStatus?: SemesterAidStatus | null;
+}
+
+interface FinancialAidConfig {
+  fullTimeThreshold?: number | null;
+  halfTimeThreshold?: number | null;
+  maxTimeframePercent?: number | null;
 }
 
 interface GraduationPlanConstraints {
@@ -363,9 +385,20 @@ function SemesterCard({
   const pct = Math.min(100, semester.completionPercentage);
   const isFull = pct >= 100;
   const hasCost = semester.estimatedCost != null;
+  const aid = semester.aidStatus;
+  const hasAidWarning = aid?.aidWarning != null;
+  const hasSapWarning = aid?.sapWarning != null;
 
   return (
-    <div className="rounded-xl border bg-card overflow-hidden">
+    <div
+      className={`rounded-xl border bg-card overflow-hidden ${
+        hasSapWarning
+          ? 'border-red-300 dark:border-red-700'
+          : hasAidWarning
+            ? 'border-amber-300 dark:border-amber-700'
+            : ''
+      }`}
+    >
       {/* Semester header */}
       <button
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/40 transition-colors"
@@ -383,8 +416,29 @@ function SemesterCard({
             {index + 1}
           </span>
           <div className="text-left">
-            <p className="font-semibold text-sm">
+            <p className="font-semibold text-sm flex items-center gap-2">
               {formatTerm(semester.term, semester.year)}
+              {/* Aid warning badges (GRAD-004) */}
+              {hasSapWarning && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                  title={aid?.sapWarning ?? undefined}
+                >
+                  <ShieldAlert className="h-3 w-3" aria-hidden="true" />
+                  SAP Risk
+                </span>
+              )}
+              {!hasSapWarning && hasAidWarning && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                  title={aid?.aidWarning ?? undefined}
+                >
+                  <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                  {aid?.isHalfTime === false
+                    ? 'Below Half-Time'
+                    : 'Below Full-Time'}
+                </span>
+              )}
             </p>
             <p className="text-xs text-muted-foreground">
               {semester.courses.length} course
@@ -444,6 +498,31 @@ function SemesterCard({
       {expanded && (
         <div className="px-5 pb-4 space-y-2">
           <Separator className="mb-3" />
+
+          {/* Aid warnings expanded detail (GRAD-004) */}
+          {(hasSapWarning || hasAidWarning) && (
+            <div className="space-y-1.5 mb-3">
+              {hasSapWarning && (
+                <div className="flex items-start gap-2 text-xs p-2.5 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
+                  <ShieldAlert
+                    className="h-3.5 w-3.5 mt-0.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span>{aid?.sapWarning}</span>
+                </div>
+              )}
+              {hasAidWarning && (
+                <div className="flex items-start gap-2 text-xs p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400">
+                  <AlertTriangle
+                    className="h-3.5 w-3.5 mt-0.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span>{aid?.aidWarning}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {semester.courses.map((course) => (
             <div
               key={course.courseId}
@@ -684,6 +763,12 @@ export default function RoadmapPage() {
     getTuitionConfig: TuitionConfig | null;
   }>(GET_TUITION_CONFIG_QUERY, { fetchPolicy: 'cache-and-network' });
   const tuitionConfig = tuitionData?.getTuitionConfig ?? null;
+
+  // ── Load financial aid config (GRAD-004) ───────────────────────────
+  const { data: aidData } = useQuery<{
+    getFinancialAidConfig: FinancialAidConfig | null;
+  }>(GET_FINANCIAL_AID_CONFIG_QUERY, { fetchPolicy: 'cache-and-network' });
+  const aidConfig = aidData?.getFinancialAidConfig ?? null;
 
   // ── Load active profile ────────────────────────────────────────────
   const { data: profilesData, loading: profilesLoading } = useQuery<{
@@ -952,6 +1037,27 @@ export default function RoadmapPage() {
                 >
                   <DollarSign className="h-3 w-3" />
                   Configure Rates
+                </Button>
+              </Link>
+            </div>
+          )}
+
+          {/* Admin prompt to configure financial aid rules (GRAD-004) */}
+          {isAdmin && !aidConfig && (
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-dashed bg-card text-sm text-muted-foreground">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>
+                No financial aid thresholds configured — aid warnings won&apos;t
+                appear on student plans.
+              </span>
+              <Link href="/admin/financial-aid-config" className="ml-auto">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 h-7 text-xs"
+                >
+                  <Settings className="h-3 w-3" />
+                  Configure Aid Rules
                 </Button>
               </Link>
             </div>

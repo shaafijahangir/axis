@@ -112,22 +112,36 @@ export function createGraduationPlannerTools(
         required: ['profileId'],
       },
       handler: async (input, ctx) => {
-        const { plan, diff } = await graduationPlannerService.generatePlan(
-          ctx.userId!,
-          ctx.tenantId,
-          {
-            profileId: input.profileId as string,
-            maxCreditsPerSemester: input.maxCreditsPerSemester as
-              | number
-              | undefined,
-            startTerm: input.startTerm as string | undefined,
-            startYear: input.startYear as number | undefined,
-            includeSummer: input.includeSummer as boolean | undefined,
-            excludedTermKeys: input.excludedTermKeys as string[] | undefined,
-          },
+        const [{ plan, diff }, { tuitionConfig, aidConfig }] =
+          await Promise.all([
+            graduationPlannerService.generatePlan(ctx.userId!, ctx.tenantId, {
+              profileId: input.profileId as string,
+              maxCreditsPerSemester: input.maxCreditsPerSemester as
+                | number
+                | undefined,
+              startTerm: input.startTerm as string | undefined,
+              startYear: input.startYear as number | undefined,
+              includeSummer: input.includeSummer as boolean | undefined,
+              excludedTermKeys: input.excludedTermKeys as string[] | undefined,
+            }),
+            graduationPlannerService.loadTenantConfigs(ctx.tenantId),
+          ]);
+
+        const result = graduationPlannerService.toResult(
+          plan,
+          diff,
+          tuitionConfig,
+          aidConfig,
         );
 
-        const result = graduationPlannerService.toResult(plan, diff);
+        // Collect aid warnings so the AI can proactively surface them (GRAD-004)
+        const aidWarnings = result.semesters
+          .filter((s) => s.aidStatus?.aidWarning || s.aidStatus?.sapWarning)
+          .map((s) => ({
+            semester: `${s.term} ${s.year}`,
+            aidWarning: s.aidStatus?.aidWarning ?? null,
+            sapWarning: s.aidStatus?.sapWarning ?? null,
+          }));
 
         return {
           success: true,
@@ -136,6 +150,9 @@ export function createGraduationPlannerTools(
           creditsCompleted: result.totalCreditsCompleted,
           creditsPlanned: result.totalCreditsPlanned,
           overallProgress: `${result.overallCompletionPercentage.toFixed(1)}%`,
+          estimatedTotalCost: result.estimatedTotalCost
+            ? `$${Math.round(result.estimatedTotalCost).toLocaleString()}`
+            : null,
           semesters: result.semesters.map((s) => ({
             term: `${s.term} ${s.year}`,
             termKey: s.termKey,
@@ -158,6 +175,16 @@ export function createGraduationPlannerTools(
                   ),
               }
             : null,
+          // GRAD-004: Proactive aid warnings — AI should surface these BEFORE confirming
+          financialAidWarnings:
+            aidWarnings.length > 0
+              ? {
+                  count: aidWarnings.length,
+                  warnings: aidWarnings,
+                  instruction:
+                    'IMPORTANT: Before confirming this plan change with the student, proactively mention these financial aid risks. Ask if they have checked with their financial aid office.',
+                }
+              : null,
           hint: 'The plan has been saved as the new active graduation plan. The student can view it at /planner/roadmap.',
         };
       },
@@ -215,30 +242,47 @@ export function createGraduationPlannerTools(
         // WHY not a dry-run: the algorithm is stateless; generating is cheap.
         // The trade-off is that the simulation becomes the new active plan,
         // which is acceptable — students can just regenerate the original.
-        const { plan, diff } = await graduationPlannerService.generatePlan(
-          ctx.userId!,
-          ctx.tenantId,
-          {
-            profileId: input.profileId as string,
-            maxCreditsPerSemester:
-              (input.maxCreditsPerSemester as number | undefined) ??
-              baseConstraints.maxCreditsPerSemester,
-            startTerm: baseConstraints.startTerm,
-            startYear: baseConstraints.startYear,
-            includeSummer:
-              (input.includeSummer as boolean | undefined) ??
-              baseConstraints.includeSummer,
-            excludedTermKeys:
-              (input.excludedTermKeys as string[] | undefined) ??
-              baseConstraints.excludedTermKeys,
-          },
+        const [{ plan, diff }, { tuitionConfig, aidConfig }] =
+          await Promise.all([
+            graduationPlannerService.generatePlan(ctx.userId!, ctx.tenantId, {
+              profileId: input.profileId as string,
+              maxCreditsPerSemester:
+                (input.maxCreditsPerSemester as number | undefined) ??
+                baseConstraints.maxCreditsPerSemester,
+              startTerm: baseConstraints.startTerm,
+              startYear: baseConstraints.startYear,
+              includeSummer:
+                (input.includeSummer as boolean | undefined) ??
+                baseConstraints.includeSummer,
+              excludedTermKeys:
+                (input.excludedTermKeys as string[] | undefined) ??
+                baseConstraints.excludedTermKeys,
+            }),
+            graduationPlannerService.loadTenantConfigs(ctx.tenantId),
+          ]);
+
+        const result = graduationPlannerService.toResult(
+          plan,
+          diff,
+          tuitionConfig,
+          aidConfig,
         );
 
-        const result = graduationPlannerService.toResult(plan, diff);
+        // Collect aid warnings for proactive surfacing (GRAD-004)
+        const aidWarnings = result.semesters
+          .filter((s) => s.aidStatus?.aidWarning || s.aidStatus?.sapWarning)
+          .map((s) => ({
+            semester: `${s.term} ${s.year}`,
+            aidWarning: s.aidStatus?.aidWarning ?? null,
+            sapWarning: s.aidStatus?.sapWarning ?? null,
+          }));
 
         return {
           estimatedGraduation: `${result.estimatedGraduationTerm} ${result.estimatedGraduationYear}`,
           totalSemesters: result.totalSemesters,
+          estimatedTotalCost: result.estimatedTotalCost
+            ? `$${Math.round(result.estimatedTotalCost).toLocaleString()}`
+            : null,
           semesterBreakdown: result.semesters.map((s) => ({
             term: `${s.term} ${s.year}`,
             courseCount: s.courses.length,
@@ -250,6 +294,13 @@ export function createGraduationPlannerTools(
                 coursesMoved: diff.moved.length,
               }
             : null,
+          financialAidWarnings:
+            aidWarnings.length > 0
+              ? {
+                  count: aidWarnings.length,
+                  warnings: aidWarnings,
+                }
+              : null,
           note: 'This simulation has been saved as your new active plan.',
         };
       },
