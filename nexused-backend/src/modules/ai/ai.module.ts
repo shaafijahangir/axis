@@ -41,6 +41,7 @@ import { createAssignmentTools } from './tools/assignment.tools';
 import { createGradingTools } from './tools/grading.tools';
 import { createAnalyticsTools } from './tools/analytics.tools';
 import { createPlannerTools } from './tools/planner.tools';
+import { createGraduationPlannerTools } from './tools/graduation-planner.tools';
 
 // Agent definitions
 import { studyCoachAgent } from './agents/study-coach.agent';
@@ -63,6 +64,7 @@ import { CoursesModule } from '../courses/courses.module';
 import { CoursesService } from '../courses/courses.service';
 import { PlannerModule } from '../planner/planner.module';
 import { PlannerService } from '../planner/planner.service';
+import { GraduationPlannerService } from '../planner/graduation-planner.service';
 
 /**
  * The AI module — core of the AI-native architecture.
@@ -133,6 +135,7 @@ export class AiModule implements OnModuleInit {
     private agentRegistry: AgentRegistry,
     private coursesService: CoursesService,
     private plannerService: PlannerService,
+    private graduationPlannerService: GraduationPlannerService,
     @InjectRepository(Assignment)
     private assignmentRepo: Repository<Assignment>,
     @InjectRepository(Submission)
@@ -177,6 +180,14 @@ export class AiModule implements OnModuleInit {
 
     // Planner tools (degree progress, eligibility, major simulation)
     this.toolRegistry.registerAll(createPlannerTools(this.plannerService));
+
+    // Graduation planner tools (plan generation, what-if replanning, simulation)
+    this.toolRegistry.registerAll(
+      createGraduationPlannerTools(
+        this.plannerService,
+        this.graduationPlannerService,
+      ),
+    );
   }
 
   private registerAgents(): void {

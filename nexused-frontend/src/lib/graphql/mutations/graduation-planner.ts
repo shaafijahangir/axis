@@ -35,6 +35,30 @@ const GRADUATION_PLAN_FIELDS = gql`
         fulfillsRequirement
       }
     }
+    diff {
+      semestersAdded
+      semestersRemoved
+      graduationDateChange
+      added {
+        courseId
+        code
+        title
+        termKey
+      }
+      removed {
+        courseId
+        code
+        title
+        termKey
+      }
+      moved {
+        courseId
+        code
+        title
+        fromTermKey
+        toTermKey
+      }
+    }
   }
 `;
 

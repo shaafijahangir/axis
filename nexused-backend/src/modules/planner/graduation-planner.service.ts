@@ -17,6 +17,9 @@ import {
   PlannedCourse,
   PlannedSemester,
   GraduationPlanConstraintsResult,
+  PlanDiff,
+  DiffCourse,
+  MovedCourse,
 } from './dto/graduation-planner.types';
 
 /**
@@ -68,13 +71,16 @@ export class GraduationPlannerService {
    * plan for this profile is archived. The student always has exactly one
    * ACTIVE plan per profile.
    *
+   * Returns the new plan entity AND a diff vs. the previous plan (null on
+   * first-ever generation when there's nothing to diff against).
+   *
    * @throws NotFoundException if the profile doesn't belong to this user/tenant
    */
   async generatePlan(
     userId: string,
     tenantId: string,
     input: GenerateGraduationPlanInput,
-  ): Promise<GraduationPlan> {
+  ): Promise<{ plan: GraduationPlan; diff: PlanDiff | null }> {
     // ── 1. Load profile + program ────────────────────────────────────────
     const profile = await this.profileRepo.findOne({
       where: { id: input.profileId, tenantId, userId },
@@ -157,6 +163,17 @@ export class GraduationPlannerService {
         totalRequired: program.totalCreditsRequired,
       });
     }
+
+    // Capture the current active plan BEFORE the algorithm runs, so we can
+    // diff the old vs. new semester layout after generation completes.
+    const previousActivePlan = await this.planRepo.findOne({
+      where: {
+        userId,
+        profileId: input.profileId,
+        tenantId,
+        status: GraduationPlanStatus.ACTIVE,
+      },
+    });
 
     // ── 6. Build prerequisite graph (over remaining courses only) ────────
     //   prereqsFor[id]  = prereq IDs that must be scheduled BEFORE id
@@ -406,6 +423,7 @@ export class GraduationPlannerService {
       semesters,
       completedCredits,
       totalRequired: program.totalCreditsRequired,
+      previousActivePlan: previousActivePlan ?? null,
     });
   }
 
@@ -452,7 +470,7 @@ export class GraduationPlannerService {
   // ─── Mapping ──────────────────────────────────────────────────────────
 
   /** Map a GraduationPlan entity to the GraphQL result type. */
-  toResult(plan: GraduationPlan): GraduationPlanResult {
+  toResult(plan: GraduationPlan, diff?: PlanDiff | null): GraduationPlanResult {
     return {
       id: plan.id,
       profileId: plan.profileId,
@@ -485,6 +503,7 @@ export class GraduationPlannerService {
       totalCreditsCompleted: Number(plan.totalCreditsCompleted),
       overallCompletionPercentage: Number(plan.overallCompletionPercentage),
       createdAt: plan.createdAt,
+      diff: diff ?? null,
     };
   }
 
@@ -493,6 +512,9 @@ export class GraduationPlannerService {
   /**
    * Persist the generated plan. Archives any existing ACTIVE plan for the
    * same profile first (idempotent — safe to call on re-generation).
+   *
+   * Returns the newly saved plan AND a diff vs. the previous plan (null when
+   * there was no prior active plan to compare against).
    */
   private async savePlan(
     userId: string,
@@ -504,16 +526,16 @@ export class GraduationPlannerService {
       semesters: PlannedSemesterData[];
       completedCredits: number;
       totalRequired: number;
+      previousActivePlan?: GraduationPlan | null;
     },
-  ): Promise<GraduationPlan> {
-    // Archive existing active plan
-    await this.planRepo.update(
-      { userId, profileId, tenantId, status: GraduationPlanStatus.ACTIVE },
-      { status: GraduationPlanStatus.ARCHIVED },
-    );
-
-    const { semesters, completedCredits, totalRequired, constraints } =
-      computed;
+  ): Promise<{ plan: GraduationPlan; diff: PlanDiff | null }> {
+    const {
+      semesters,
+      completedCredits,
+      totalRequired,
+      constraints,
+      previousActivePlan,
+    } = computed;
 
     const lastSemester = semesters[semesters.length - 1];
     const plannedCredits = semesters.reduce(
@@ -529,6 +551,29 @@ export class GraduationPlannerService {
           )
         : 100;
 
+    const newGradTerm = lastSemester?.term ?? constraints.startTerm;
+    const newGradYear = lastSemester?.year ?? constraints.startYear;
+
+    // Compute diff against the previous active plan before archiving it
+    const diff = previousActivePlan
+      ? this.computeDiff(
+          previousActivePlan.semesters ?? [],
+          semesters,
+          previousActivePlan.estimatedGraduationTerm,
+          previousActivePlan.estimatedGraduationYear,
+          previousActivePlan.totalSemesters,
+          newGradTerm,
+          newGradYear,
+          semesters.length,
+        )
+      : null;
+
+    // Archive existing active plan (after diff is computed — order matters)
+    await this.planRepo.update(
+      { userId, profileId, tenantId, status: GraduationPlanStatus.ACTIVE },
+      { status: GraduationPlanStatus.ARCHIVED },
+    );
+
     const plan = this.planRepo.create({
       tenantId,
       userId,
@@ -538,14 +583,139 @@ export class GraduationPlannerService {
       constraints,
       semesters,
       totalSemesters: semesters.length,
-      estimatedGraduationTerm: lastSemester?.term ?? constraints.startTerm,
-      estimatedGraduationYear: lastSemester?.year ?? constraints.startYear,
+      estimatedGraduationTerm: newGradTerm,
+      estimatedGraduationYear: newGradYear,
       totalCreditsPlanned: Math.round(plannedCredits * 100) / 100,
       totalCreditsCompleted: Math.round(completedCredits * 100) / 100,
       overallCompletionPercentage: pct,
     });
 
-    return this.planRepo.save(plan);
+    return { plan: await this.planRepo.save(plan), diff };
+  }
+
+  /**
+   * Compute a structural diff between two plan semester layouts.
+   *
+   * ALGORITHM:
+   *   1. Build courseId → termKey maps for old and new semesters.
+   *   2. New courses not in old map = added.
+   *   3. Old courses not in new map = removed.
+   *   4. Courses in both maps with different termKey = moved.
+   *   5. Semester-slot count delta = semestersAdded / semestersRemoved.
+   *   6. Graduation date change = human-readable delta string.
+   *
+   * WHY: Students need to understand the *impact* of changing a constraint.
+   * "3 courses moved, graduation pushed 1 semester" is more actionable than
+   * a silent full plan replacement.
+   */
+  private computeDiff(
+    oldSemesters: PlannedSemesterData[],
+    newSemesters: PlannedSemesterData[],
+    oldGradTerm: string,
+    oldGradYear: number,
+    oldTotalSemesters: number,
+    newGradTerm: string,
+    newGradYear: number,
+    newTotalSemesters: number,
+  ): PlanDiff {
+    // ── Build course → termKey lookup maps ───────────────────────────
+    type CourseInfo = { termKey: string; code: string; title: string };
+    const oldMap = new Map<string, CourseInfo>();
+    for (const sem of oldSemesters) {
+      for (const c of sem.courses) {
+        oldMap.set(c.courseId, {
+          termKey: sem.termKey,
+          code: c.code,
+          title: c.title,
+        });
+      }
+    }
+    const newMap = new Map<string, CourseInfo>();
+    for (const sem of newSemesters) {
+      for (const c of sem.courses) {
+        newMap.set(c.courseId, {
+          termKey: sem.termKey,
+          code: c.code,
+          title: c.title,
+        });
+      }
+    }
+
+    // ── Categorize changes ────────────────────────────────────────────
+    const added: DiffCourse[] = [];
+    const removed: DiffCourse[] = [];
+    const moved: MovedCourse[] = [];
+
+    for (const [id, info] of newMap) {
+      if (!oldMap.has(id)) {
+        added.push({
+          courseId: id,
+          code: info.code,
+          title: info.title,
+          termKey: info.termKey,
+        });
+      }
+    }
+    for (const [id, info] of oldMap) {
+      if (!newMap.has(id)) {
+        removed.push({
+          courseId: id,
+          code: info.code,
+          title: info.title,
+          termKey: info.termKey,
+        });
+      }
+    }
+    for (const [id, oldInfo] of oldMap) {
+      const newInfo = newMap.get(id);
+      if (newInfo && oldInfo.termKey !== newInfo.termKey) {
+        moved.push({
+          courseId: id,
+          code: oldInfo.code,
+          title: oldInfo.title,
+          fromTermKey: oldInfo.termKey,
+          toTermKey: newInfo.termKey,
+        });
+      }
+    }
+
+    // ── Semester slot delta ───────────────────────────────────────────
+    const oldTermKeys = new Set(oldSemesters.map((s) => s.termKey));
+    const newTermKeys = new Set(newSemesters.map((s) => s.termKey));
+    const semestersAdded = [...newTermKeys].filter(
+      (k) => !oldTermKeys.has(k),
+    ).length;
+    const semestersRemoved = [...oldTermKeys].filter(
+      (k) => !newTermKeys.has(k),
+    ).length;
+
+    // ── Graduation date change ────────────────────────────────────────
+    const oldLabel = `${this.capitalize(oldGradTerm)} ${oldGradYear}`;
+    const newLabel = `${this.capitalize(newGradTerm)} ${newGradYear}`;
+    let graduationDateChange: string | undefined;
+    if (oldLabel !== newLabel) {
+      const delta = newTotalSemesters - oldTotalSemesters;
+      const sign = delta > 0 ? '+' : '';
+      const semWord = Math.abs(delta) === 1 ? 'semester' : 'semesters';
+      if (delta !== 0) {
+        graduationDateChange = `${sign}${delta} ${semWord} (${oldLabel} → ${newLabel})`;
+      } else {
+        graduationDateChange = `Same duration, different schedule (${oldLabel} → ${newLabel})`;
+      }
+    }
+
+    return {
+      added,
+      removed,
+      moved,
+      semestersAdded,
+      semestersRemoved,
+      graduationDateChange,
+    };
+  }
+
+  private capitalize(s: string): string {
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   }
 
   /**

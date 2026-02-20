@@ -40,12 +40,12 @@ export class GraduationPlannerResolver {
     @CurrentUser() user: User,
     @Args('input') input: GenerateGraduationPlanInput,
   ): Promise<GraduationPlanResult> {
-    const plan = await this.graduationPlannerService.generatePlan(
+    const { plan, diff } = await this.graduationPlannerService.generatePlan(
       user.id,
       user.tenantId,
       input,
     );
-    return this.graduationPlannerService.toResult(plan);
+    return this.graduationPlannerService.toResult(plan, diff);
   }
 
   /**

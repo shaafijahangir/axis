@@ -17,6 +17,92 @@ import {
 } from 'class-validator';
 import { GraduationPlanStatus } from '../entities/graduation-plan.entity';
 
+// ─── Plan Diff Types ──────────────────────────────────────────────────────────
+
+/**
+ * A course that appears in one plan's semester timeline.
+ * Used for added/removed entries in a PlanDiff.
+ */
+@ObjectType()
+export class DiffCourse {
+  @Field()
+  courseId: string;
+
+  @Field()
+  code: string;
+
+  @Field()
+  title: string;
+
+  /** The term this course was scheduled in (e.g. 'fall_2026') */
+  @Field()
+  termKey: string;
+}
+
+/**
+ * A course that moved from one semester to another between two plan versions.
+ */
+@ObjectType()
+export class MovedCourse {
+  @Field()
+  courseId: string;
+
+  @Field()
+  code: string;
+
+  @Field()
+  title: string;
+
+  @Field()
+  fromTermKey: string;
+
+  @Field()
+  toTermKey: string;
+}
+
+/**
+ * Structural diff between an old graduation plan and a freshly generated one.
+ *
+ * WHY: When a student adjusts a constraint (e.g. drops summer terms, reduces
+ * credits/semester), they need to see exactly what changed — not just a new
+ * plan. "3 courses moved, graduation pushed 1 semester" is actionable;
+ * a silent full-replacement is not.
+ *
+ * Computed transiently in GraduationPlannerService.computeDiff() at generation
+ * time. Not persisted — included only in the generateGraduationPlan mutation
+ * response (null on first-ever generation when there's no prior plan to diff).
+ */
+@ObjectType()
+export class PlanDiff {
+  /** Courses present in the new plan but not the old (e.g. newly required). */
+  @Field(() => [DiffCourse])
+  added: DiffCourse[];
+
+  /** Courses present in the old plan but dropped from the new. */
+  @Field(() => [DiffCourse])
+  removed: DiffCourse[];
+
+  /** Courses that appear in both plans but shifted to a different semester. */
+  @Field(() => [MovedCourse])
+  moved: MovedCourse[];
+
+  /** Number of new semester slots that didn't exist in the old plan. */
+  @Field(() => Int)
+  semestersAdded: number;
+
+  /** Number of old semester slots that were removed from the new plan. */
+  @Field(() => Int)
+  semestersRemoved: number;
+
+  /**
+   * Human-readable description of the graduation date change.
+   * e.g. "+2 semesters (Fall 2028 → Spring 2029)"
+   * Absent when the graduation date is unchanged.
+   */
+  @Field({ nullable: true })
+  graduationDateChange?: string;
+}
+
 // Re-export so resolver can reference it without circular import
 export { GraduationPlanStatus };
 
@@ -191,4 +277,11 @@ export class GraduationPlanResult {
 
   @Field()
   createdAt: Date;
+
+  /**
+   * Diff vs. the previous active plan. Null when this is the first plan ever
+   * generated for this profile (nothing to compare against).
+   */
+  @Field(() => PlanDiff, { nullable: true })
+  diff?: PlanDiff | null;
 }

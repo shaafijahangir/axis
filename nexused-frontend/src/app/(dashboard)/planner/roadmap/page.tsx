@@ -1,19 +1,26 @@
 'use client';
 
 /**
- * GRAD-001: Graduation Roadmap — semester-by-semester course plan.
+ * GRAD-001 / GRAD-002: Graduation Roadmap
  *
- * Displays the student's generated graduation plan as a vertical timeline of
- * semester cards. If no plan exists, shows a "Generate Plan" panel with
- * constraint controls. If a profile doesn't exist yet, redirects to /planner.
+ * Displays the student's active graduation plan as a semester timeline.
+ * GRAD-002 additions:
+ *   - Debounced auto-regeneration: changing any control triggers a 600ms
+ *     debounced regen so the student can see the impact of their changes
+ *     immediately without clicking "Regenerate".
+ *   - Skip-semester checkboxes: student can exclude specific future terms
+ *     (time off, summer break) via the controls panel.
+ *   - Diff panel: after any regeneration the "What Changed" panel shows
+ *     moved/added/removed courses and graduation date delta.
  *
  * LAYOUT:
- *  - Left panel: plan controls (max credits, start term, include summer)
- *  - Right panel: semester timeline with course cards per semester
- *  - Top bar: overall completion progress + estimated graduation
+ *  - Left panel (280px sticky): plan controls + skip-semester checkboxes
+ *  - Top bar: summary stats (grad date, semesters, credits, % complete)
+ *  - Diff panel: shown after regeneration (dismissible)
+ *  - Right panel: semester card timeline
  */
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import Link from 'next/link';
 import {
@@ -25,6 +32,9 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronUp,
+  ArrowRight,
+  X,
+  GitCompare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -81,6 +91,30 @@ interface GraduationPlanConstraints {
   excludedTermKeys: string[];
 }
 
+interface DiffCourse {
+  courseId: string;
+  code: string;
+  title: string;
+  termKey: string;
+}
+
+interface MovedCourse {
+  courseId: string;
+  code: string;
+  title: string;
+  fromTermKey: string;
+  toTermKey: string;
+}
+
+interface PlanDiff {
+  semestersAdded: number;
+  semestersRemoved: number;
+  graduationDateChange?: string | null;
+  added: DiffCourse[];
+  removed: DiffCourse[];
+  moved: MovedCourse[];
+}
+
 interface GraduationPlan {
   id: string;
   profileId: string;
@@ -93,7 +127,16 @@ interface GraduationPlan {
   overallCompletionPercentage: number;
   constraints: GraduationPlanConstraints;
   semesters: PlannedSemester[];
+  diff?: PlanDiff | null;
   createdAt: string;
+}
+
+interface PlanControls {
+  maxCredits: number;
+  startTerm: string;
+  startYear: number;
+  includeSummer: boolean;
+  excludedTermKeys: string[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -105,6 +148,11 @@ function formatTerm(term: string, year: number): string {
     summer: 'Summer',
   };
   return `${labels[term] ?? term} ${year}`;
+}
+
+function formatTermKey(termKey: string): string {
+  const [term, year] = termKey.split('_');
+  return formatTerm(term, parseInt(year));
 }
 
 const REQUIREMENT_COLORS: Record<string, string> = {
@@ -122,6 +170,153 @@ function reqColor(groupName: string): string {
     if (groupName.toLowerCase().includes(key)) return cls;
   }
   return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+}
+
+// ─── Plan Diff Panel ──────────────────────────────────────────────────────────
+
+function PlanDiffPanel({
+  diff,
+  onDismiss,
+}: {
+  diff: PlanDiff;
+  onDismiss: () => void;
+}) {
+  const totalChanges =
+    diff.moved.length + diff.added.length + diff.removed.length;
+
+  if (totalChanges === 0 && !diff.graduationDateChange) return null;
+
+  return (
+    <div className="rounded-xl border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 p-4 space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold flex items-center gap-2 text-amber-800 dark:text-amber-300">
+          <GitCompare className="h-4 w-4" aria-hidden="true" />
+          What Changed
+          {totalChanges > 0 && (
+            <Badge
+              variant="secondary"
+              className="text-[10px] bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 border-0"
+            >
+              {totalChanges} change{totalChanges !== 1 ? 's' : ''}
+            </Badge>
+          )}
+        </h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDismiss}
+          className="h-7 w-7 p-0 text-amber-600 hover:text-amber-800 dark:text-amber-400"
+          aria-label="Dismiss diff"
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
+      {/* Graduation date change */}
+      {diff.graduationDateChange && (
+        <div className="text-sm font-medium text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+          <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+          {diff.graduationDateChange}
+        </div>
+      )}
+
+      {/* Semester count delta */}
+      {(diff.semestersAdded > 0 || diff.semestersRemoved > 0) && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          {diff.semestersAdded > 0 &&
+            `${diff.semestersAdded} semester slot${diff.semestersAdded !== 1 ? 's' : ''} added`}
+          {diff.semestersAdded > 0 && diff.semestersRemoved > 0 && ', '}
+          {diff.semestersRemoved > 0 &&
+            `${diff.semestersRemoved} semester slot${diff.semestersRemoved !== 1 ? 's' : ''} removed`}
+        </p>
+      )}
+
+      {/* Moved courses */}
+      {diff.moved.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wide">
+            Moved ({diff.moved.length})
+          </p>
+          <div className="space-y-1">
+            {diff.moved.slice(0, 6).map((c) => (
+              <div
+                key={c.courseId}
+                className="flex items-center gap-1.5 text-xs"
+              >
+                <span className="font-mono text-amber-800 dark:text-amber-200 shrink-0">
+                  {c.code}
+                </span>
+                <span className="text-amber-600 dark:text-amber-400 truncate min-w-0">
+                  {c.title}
+                </span>
+                <ArrowRight
+                  className="h-3 w-3 text-amber-500 shrink-0"
+                  aria-hidden="true"
+                />
+                <span className="text-amber-700 dark:text-amber-300 shrink-0 whitespace-nowrap">
+                  {formatTermKey(c.toTermKey)}
+                </span>
+              </div>
+            ))}
+            {diff.moved.length > 6 && (
+              <p className="text-xs text-amber-500 dark:text-amber-500">
+                +{diff.moved.length - 6} more moved
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Added / Removed in a two-column layout when both exist */}
+      <div className="grid sm:grid-cols-2 gap-3">
+        {diff.added.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide">
+              Added ({diff.added.length})
+            </p>
+            {diff.added.slice(0, 4).map((c) => (
+              <div key={c.courseId} className="text-xs flex items-center gap-1">
+                <span className="font-mono text-green-700 dark:text-green-400">
+                  {c.code}
+                </span>
+                <span className="text-muted-foreground truncate">
+                  {c.title}
+                </span>
+              </div>
+            ))}
+            {diff.added.length > 4 && (
+              <p className="text-xs text-muted-foreground">
+                +{diff.added.length - 4} more
+              </p>
+            )}
+          </div>
+        )}
+        {diff.removed.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wide">
+              Removed ({diff.removed.length})
+            </p>
+            {diff.removed.slice(0, 4).map((c) => (
+              <div key={c.courseId} className="text-xs flex items-center gap-1">
+                <span className="font-mono text-red-700 dark:text-red-400">
+                  {c.code}
+                </span>
+                <span className="text-muted-foreground truncate">
+                  {c.title}
+                </span>
+              </div>
+            ))}
+            {diff.removed.length > 4 && (
+              <p className="text-xs text-muted-foreground">
+                +{diff.removed.length - 4} more
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ─── Semester Card ────────────────────────────────────────────────────────────
@@ -240,21 +435,17 @@ function SemesterCard({
 
 // ─── Controls Panel ───────────────────────────────────────────────────────────
 
-interface PlanControls {
-  maxCredits: number;
-  startTerm: string;
-  startYear: number;
-  includeSummer: boolean;
-}
-
 function ControlsPanel({
   controls,
+  planSemesters,
   onChange,
   onGenerate,
   generating,
   hasActivePlan,
 }: {
   controls: PlanControls;
+  /** Future semesters from the active plan — used to render skip-semester checkboxes */
+  planSemesters: PlannedSemester[];
   onChange: (partial: Partial<PlanControls>) => void;
   onGenerate: () => void;
   generating: boolean;
@@ -263,12 +454,26 @@ function ControlsPanel({
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear + i);
 
+  function toggleExcludedTerm(termKey: string, excluded: boolean) {
+    if (excluded) {
+      onChange({
+        excludedTermKeys: [...controls.excludedTermKeys, termKey],
+      });
+    } else {
+      onChange({
+        excludedTermKeys: controls.excludedTermKeys.filter(
+          (k) => k !== termKey,
+        ),
+      });
+    }
+  }
+
   return (
     <div className="rounded-xl border bg-card p-5 space-y-5 sticky top-6">
       <div>
         <h2 className="font-semibold text-sm">Plan Settings</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Adjust constraints and regenerate
+          Changes auto-update your plan
         </p>
       </div>
 
@@ -286,8 +491,7 @@ function ControlsPanel({
             <SelectContent>
               {[9, 12, 15, 18, 21].map((n) => (
                 <SelectItem key={n} value={String(n)}>
-                  {n} credits
-                  {n === 15 ? ' (default)' : ''}
+                  {n} credits{n === 15 ? ' (default)' : ''}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -345,6 +549,49 @@ function ControlsPanel({
             Include summer terms
           </Label>
         </div>
+
+        {/* Skip individual semesters */}
+        {planSemesters.length > 0 && (
+          <div className="space-y-2 pt-1">
+            <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+              Skip semesters (time off)
+            </Label>
+            <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+              {planSemesters.map((sem) => {
+                const isExcluded = controls.excludedTermKeys.includes(
+                  sem.termKey,
+                );
+                return (
+                  <div key={sem.termKey} className="flex items-center gap-2">
+                    <input
+                      id={`skip-${sem.termKey}`}
+                      type="checkbox"
+                      className="rounded"
+                      checked={isExcluded}
+                      onChange={(e) =>
+                        toggleExcludedTerm(sem.termKey, e.target.checked)
+                      }
+                    />
+                    <Label
+                      htmlFor={`skip-${sem.termKey}`}
+                      className="text-xs cursor-pointer"
+                    >
+                      {formatTerm(sem.term, sem.year)}
+                    </Label>
+                    {isExcluded && (
+                      <Badge
+                        variant="secondary"
+                        className="text-[9px] py-0 px-1 h-4 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0"
+                      >
+                        skipped
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <Button
@@ -370,14 +617,18 @@ function ControlsPanel({
 
 export default function RoadmapPage() {
   const currentYear = new Date().getFullYear();
+
   const [controls, setControls] = useState<PlanControls>({
     maxCredits: 15,
     startTerm: 'fall',
     startYear: currentYear,
     includeSummer: false,
+    excludedTermKeys: [],
   });
 
-  // ── Load active profile ────────────────────────────────────────────────
+  const [planDiff, setPlanDiff] = useState<PlanDiff | null>(null);
+
+  // ── Load active profile ────────────────────────────────────────────
   const { data: profilesData, loading: profilesLoading } = useQuery<{
     myDegreeProfiles: DegreeProfile[];
   }>(MY_DEGREE_PROFILES_QUERY, { fetchPolicy: 'cache-and-network' });
@@ -386,7 +637,7 @@ export default function RoadmapPage() {
     (p) => p.status === 'active',
   );
 
-  // ── Load existing plans ────────────────────────────────────────────────
+  // ── Load existing plans ────────────────────────────────────────────
   const {
     data: plansData,
     loading: plansLoading,
@@ -404,32 +655,28 @@ export default function RoadmapPage() {
     (p) => p.status === 'active',
   );
 
-  // ── Generate mutation ──────────────────────────────────────────────────
+  // ── Generate mutation ──────────────────────────────────────────────
   const [generatePlan, { loading: generating }] = useMutation<{
     generateGraduationPlan: GraduationPlan;
-  }>(GENERATE_GRADUATION_PLAN_MUTATION, {
-    onCompleted: () => refetchPlans(),
-  });
+  }>(GENERATE_GRADUATION_PLAN_MUTATION);
 
-  function handleGenerate() {
-    if (!activeProfile) return;
-    generatePlan({
-      variables: {
-        input: {
-          profileId: activeProfile.id,
-          maxCreditsPerSemester: controls.maxCredits,
-          startTerm: controls.startTerm,
-          startYear: controls.startYear,
-          includeSummer: controls.includeSummer,
-        },
-      },
-    }).catch((err) => {
-      console.error('Plan generation failed:', err);
-    });
-  }
+  // ── Refs for debounced auto-regen (avoids stale closures) ─────────
+  //
+  // WHY refs: The debounce callback fires 600ms after the last control
+  // change. By the time it fires, React state may have changed multiple
+  // times. Refs let us read the latest values without creating new
+  // debounce timers on every render.
+  const activePlanRef = useRef<GraduationPlan | null>(null);
+  const activeProfileRef = useRef<DegreeProfile | null>(null);
+  const controlsRef = useRef<PlanControls>(controls);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Sync controls from active plan ────────────────────────────────────
-  // Populate controls from the active plan's constraints on first load
+  // Keep refs current on every render
+  activePlanRef.current = activePlan ?? null;
+  activeProfileRef.current = activeProfile ?? null;
+  controlsRef.current = controls;
+
+  // ── Sync controls from active plan on first load ───────────────────
   const [synced, setSynced] = useState(false);
   if (activePlan && !synced) {
     setSynced(true);
@@ -438,10 +685,65 @@ export default function RoadmapPage() {
       startTerm: activePlan.constraints.startTerm,
       startYear: activePlan.constraints.startYear,
       includeSummer: activePlan.constraints.includeSummer,
+      excludedTermKeys: activePlan.constraints.excludedTermKeys ?? [],
     });
   }
 
-  // ── Loading ────────────────────────────────────────────────────────────
+  // ── Core generate function ─────────────────────────────────────────
+  const triggerGenerate = useCallback(
+    (ctrl: PlanControls, profile: DegreeProfile) => {
+      generatePlan({
+        variables: {
+          input: {
+            profileId: profile.id,
+            maxCreditsPerSemester: ctrl.maxCredits,
+            startTerm: ctrl.startTerm,
+            startYear: ctrl.startYear,
+            includeSummer: ctrl.includeSummer,
+            excludedTermKeys: ctrl.excludedTermKeys,
+          },
+        },
+      })
+        .then((result) => {
+          const diff = result.data?.generateGraduationPlan?.diff ?? null;
+          setPlanDiff(diff);
+          return refetchPlans();
+        })
+        .catch(console.error);
+    },
+    [generatePlan, refetchPlans],
+  );
+
+  // ── Control-change handler — triggers debounced auto-regen ─────────
+  //
+  // WHY: We want immediate visual feedback as the student adjusts
+  // constraints without requiring a button click. The 600ms debounce
+  // prevents a regen on every keystroke/tick while still feeling instant.
+  function handleControlChange(partial: Partial<PlanControls>) {
+    const updated = { ...controlsRef.current, ...partial };
+    setControls(updated);
+    controlsRef.current = updated;
+
+    // Only auto-regen if there's already an active plan and a profile loaded
+    if (!activePlanRef.current || !activeProfileRef.current) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const profile = activeProfileRef.current;
+      if (!profile) return;
+      triggerGenerate(controlsRef.current, profile);
+    }, 600);
+  }
+
+  // ── Explicit generate (button click) ──────────────────────────────
+  function handleGenerate() {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!activeProfile) return;
+    setPlanDiff(null);
+    triggerGenerate(controls, activeProfile);
+  }
+
+  // ── Loading ────────────────────────────────────────────────────────
   if (profilesLoading) {
     return (
       <div className="space-y-6">
@@ -458,7 +760,7 @@ export default function RoadmapPage() {
     );
   }
 
-  // ── No profile → send to /planner ─────────────────────────────────────
+  // ── No profile → send to /planner ─────────────────────────────────
   if (!activeProfile) {
     return (
       <div className="space-y-6">
@@ -559,14 +861,18 @@ export default function RoadmapPage() {
         </div>
       )}
 
+      {/* Diff panel — shown after any regeneration */}
+      {planDiff && (
+        <PlanDiffPanel diff={planDiff} onDismiss={() => setPlanDiff(null)} />
+      )}
+
       {/* Main two-column layout */}
       <div className="grid lg:grid-cols-[280px_1fr] gap-6 items-start">
         {/* Controls */}
         <ControlsPanel
           controls={controls}
-          onChange={(partial) =>
-            setControls((prev) => ({ ...prev, ...partial }))
-          }
+          planSemesters={activePlan?.semesters ?? []}
+          onChange={handleControlChange}
           onGenerate={handleGenerate}
           generating={generating}
           hasActivePlan={!!activePlan}
@@ -580,6 +886,14 @@ export default function RoadmapPage() {
                 <Skeleton key={i} className="h-24 w-full" />
               ))}
             </>
+          )}
+
+          {/* Generating overlay hint */}
+          {generating && activePlan && (
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 animate-pulse">
+              <RefreshCw className="h-3 w-3 animate-spin" aria-hidden="true" />
+              Recalculating plan…
+            </div>
           )}
 
           {!plansLoading && !activePlan && (
