@@ -21,6 +21,9 @@ import {
   DiffCourse,
   MovedCourse,
 } from './dto/graduation-planner.types';
+import { FinancialProjectionService } from './financial-projection.service';
+import { TuitionConfig } from './dto/financial-projection.types';
+import { Tenant } from '../../database/entities/tenant.entity';
 
 /**
  * Constraint-based graduation plan generator.
@@ -60,6 +63,9 @@ export class GraduationPlannerService {
     private programRepo: Repository<DegreeProgram>,
     @InjectRepository(Course)
     private courseRepo: Repository<Course>,
+    @InjectRepository(Tenant)
+    private tenantRepo: Repository<Tenant>,
+    private financialProjectionService: FinancialProjectionService,
   ) {}
 
   // ─── Plan Generation ──────────────────────────────────────────────────
@@ -470,8 +476,12 @@ export class GraduationPlannerService {
   // ─── Mapping ──────────────────────────────────────────────────────────
 
   /** Map a GraduationPlan entity to the GraphQL result type. */
-  toResult(plan: GraduationPlan, diff?: PlanDiff | null): GraduationPlanResult {
-    return {
+  toResult(
+    plan: GraduationPlan,
+    diff?: PlanDiff | null,
+    tuitionConfig?: TuitionConfig | null,
+  ): GraduationPlanResult {
+    const base: GraduationPlanResult = {
       id: plan.id,
       profileId: plan.profileId,
       degreeProgramId: plan.degreeProgramId,
@@ -485,6 +495,8 @@ export class GraduationPlannerService {
           totalCredits: Number(s.totalCredits),
           cumulativeCredits: Number(s.cumulativeCredits),
           completionPercentage: Number(s.completionPercentage),
+          estimatedCost: null,
+          estimatedCumulativeCost: null,
           courses: (s.courses ?? []).map(
             (c): PlannedCourse => ({
               courseId: c.courseId,
@@ -502,9 +514,27 @@ export class GraduationPlannerService {
       totalCreditsPlanned: Number(plan.totalCreditsPlanned),
       totalCreditsCompleted: Number(plan.totalCreditsCompleted),
       overallCompletionPercentage: Number(plan.overallCompletionPercentage),
+      estimatedTotalCost: null,
       createdAt: plan.createdAt,
       diff: diff ?? null,
     };
+
+    // Enrich with financial projections if tuition config is available
+    return this.financialProjectionService.enrichPlanWithCosts(
+      base,
+      tuitionConfig,
+    );
+  }
+
+  /**
+   * Load the tenant's tuition config from the settings JSONB column.
+   * Returns null if the tenant has no tuition config set.
+   */
+  async loadTuitionConfig(tenantId: string): Promise<TuitionConfig | null> {
+    const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } });
+    return (
+      (tenant?.settings?.tuitionConfig as TuitionConfig | undefined) ?? null
+    );
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────

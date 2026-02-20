@@ -20,6 +20,7 @@ const GRADUATION_PLAN_FIELDS = gql`
       includeSummer
       excludedTermKeys
     }
+    estimatedTotalCost
     semesters {
       termKey
       term
@@ -27,6 +28,8 @@ const GRADUATION_PLAN_FIELDS = gql`
       totalCredits
       cumulativeCredits
       completionPercentage
+      estimatedCost
+      estimatedCumulativeCost
       courses {
         courseId
         code
@@ -77,5 +80,28 @@ export const ACTIVATE_GRADUATION_PLAN_MUTATION = gql`
     activateGraduationPlan(planId: $planId) {
       ...GradPlanFields
     }
+  }
+`;
+
+export const UPDATE_TUITION_CONFIG_MUTATION = gql`
+  mutation UpdateTuitionConfig($config: TuitionConfigInput!) {
+    updateTuitionConfig(config: $config) {
+      perCreditCost
+      flatRateMin
+      flatRateMax
+      flatRateCost
+      summerPerCreditCost
+      fees {
+        name
+        amount
+        type
+      }
+    }
+  }
+`;
+
+export const CLEAR_TUITION_CONFIG_MUTATION = gql`
+  mutation ClearTuitionConfig {
+    clearTuitionConfig
   }
 `;

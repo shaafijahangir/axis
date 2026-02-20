@@ -40,12 +40,11 @@ export class GraduationPlannerResolver {
     @CurrentUser() user: User,
     @Args('input') input: GenerateGraduationPlanInput,
   ): Promise<GraduationPlanResult> {
-    const { plan, diff } = await this.graduationPlannerService.generatePlan(
-      user.id,
-      user.tenantId,
-      input,
-    );
-    return this.graduationPlannerService.toResult(plan, diff);
+    const [{ plan, diff }, tuitionConfig] = await Promise.all([
+      this.graduationPlannerService.generatePlan(user.id, user.tenantId, input),
+      this.graduationPlannerService.loadTuitionConfig(user.tenantId),
+    ]);
+    return this.graduationPlannerService.toResult(plan, diff, tuitionConfig);
   }
 
   /**
@@ -58,12 +57,15 @@ export class GraduationPlannerResolver {
     @CurrentUser() user: User,
     @Args('planId') planId: string,
   ): Promise<GraduationPlanResult> {
-    const plan = await this.graduationPlannerService.activatePlan(
-      planId,
-      user.id,
-      user.tenantId,
-    );
-    return this.graduationPlannerService.toResult(plan);
+    const [plan, tuitionConfig] = await Promise.all([
+      this.graduationPlannerService.activatePlan(
+        planId,
+        user.id,
+        user.tenantId,
+      ),
+      this.graduationPlannerService.loadTuitionConfig(user.tenantId),
+    ]);
+    return this.graduationPlannerService.toResult(plan, null, tuitionConfig);
   }
 
   // ─── Queries ───────────────────────────────────────────────────────────
@@ -79,11 +81,16 @@ export class GraduationPlannerResolver {
     @Args('profileId') profileId: string,
   ): Promise<GraduationPlanResult[]> {
     // Ownership check is enforced inside the service (userId filter)
-    const plans = await this.graduationPlannerService.findPlansForProfile(
-      profileId,
-      user.id,
-      user.tenantId,
+    const [plans, tuitionConfig] = await Promise.all([
+      this.graduationPlannerService.findPlansForProfile(
+        profileId,
+        user.id,
+        user.tenantId,
+      ),
+      this.graduationPlannerService.loadTuitionConfig(user.tenantId),
+    ]);
+    return plans.map((p) =>
+      this.graduationPlannerService.toResult(p, null, tuitionConfig),
     );
-    return plans.map((p) => this.graduationPlannerService.toResult(p));
   }
 }

@@ -1,23 +1,24 @@
 'use client';
 
 /**
- * GRAD-001 / GRAD-002: Graduation Roadmap
+ * GRAD-001 / GRAD-002 / GRAD-003: Graduation Roadmap
  *
  * Displays the student's active graduation plan as a semester timeline.
  * GRAD-002 additions:
- *   - Debounced auto-regeneration: changing any control triggers a 600ms
- *     debounced regen so the student can see the impact of their changes
- *     immediately without clicking "Regenerate".
- *   - Skip-semester checkboxes: student can exclude specific future terms
- *     (time off, summer break) via the controls panel.
- *   - Diff panel: after any regeneration the "What Changed" panel shows
- *     moved/added/removed courses and graduation date delta.
+ *   - Debounced auto-regeneration on control changes.
+ *   - Skip-semester checkboxes for time off.
+ *   - Diff panel showing what changed vs. previous plan.
+ * GRAD-003 additions:
+ *   - Per-semester cost display (estimated tuition + fees).
+ *   - Running total cost column.
+ *   - Estimated total cost in the summary bar.
+ *   - "Configure tuition rates" prompt when no tuition config is set.
  *
  * LAYOUT:
  *  - Left panel (280px sticky): plan controls + skip-semester checkboxes
- *  - Top bar: summary stats (grad date, semesters, credits, % complete)
+ *  - Top bar: summary stats (grad date, semesters, credits, % complete, total cost)
  *  - Diff panel: shown after regeneration (dismissible)
- *  - Right panel: semester card timeline
+ *  - Right panel: semester card timeline with per-semester cost
  */
 
 import { useState, useRef, useCallback } from 'react';
@@ -35,6 +36,8 @@ import {
   ArrowRight,
   X,
   GitCompare,
+  DollarSign,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,8 +52,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { MY_DEGREE_PROFILES_QUERY } from '@/lib/graphql/queries/planner';
-import { MY_GRADUATION_PLANS_QUERY } from '@/lib/graphql/queries/graduation-planner';
+import {
+  MY_GRADUATION_PLANS_QUERY,
+  GET_TUITION_CONFIG_QUERY,
+} from '@/lib/graphql/queries/graduation-planner';
 import { GENERATE_GRADUATION_PLAN_MUTATION } from '@/lib/graphql/mutations/graduation-planner';
+import { useAuthStore } from '@/stores/auth.store';
+import { UserRole } from '@/types/auth';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -81,6 +89,8 @@ interface PlannedSemester {
   totalCredits: number;
   cumulativeCredits: number;
   completionPercentage: number;
+  estimatedCost?: number | null;
+  estimatedCumulativeCost?: number | null;
 }
 
 interface GraduationPlanConstraints {
@@ -125,10 +135,20 @@ interface GraduationPlan {
   totalCreditsPlanned: number;
   totalCreditsCompleted: number;
   overallCompletionPercentage: number;
+  estimatedTotalCost?: number | null;
   constraints: GraduationPlanConstraints;
   semesters: PlannedSemester[];
   diff?: PlanDiff | null;
   createdAt: string;
+}
+
+interface TuitionConfig {
+  perCreditCost?: number | null;
+  flatRateMin?: number | null;
+  flatRateMax?: number | null;
+  flatRateCost?: number | null;
+  summerPerCreditCost?: number | null;
+  fees?: Array<{ name: string; amount: number; type: string }> | null;
 }
 
 interface PlanControls {
@@ -170,6 +190,15 @@ function reqColor(groupName: string): string {
     if (groupName.toLowerCase().includes(key)) return cls;
   }
   return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+}
+
+function formatCost(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 // ─── Plan Diff Panel ──────────────────────────────────────────────────────────
@@ -333,6 +362,7 @@ function SemesterCard({
   const [expanded, setExpanded] = useState(true);
   const pct = Math.min(100, semester.completionPercentage);
   const isFull = pct >= 100;
+  const hasCost = semester.estimatedCost != null;
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
@@ -360,11 +390,30 @@ function SemesterCard({
               {semester.courses.length} course
               {semester.courses.length !== 1 ? 's' : ''} ·{' '}
               {semester.totalCredits} credits
+              {hasCost && (
+                <>
+                  {' · '}
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                    {formatCost(semester.estimatedCost!)}
+                  </span>
+                </>
+              )}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Cost running total (GRAD-003) */}
+          {hasCost && (
+            <div className="hidden lg:flex flex-col items-end">
+              <span className="text-xs font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {formatCost(semester.estimatedCumulativeCost ?? 0)}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                cumulative cost
+              </span>
+            </div>
+          )}
           {/* Cumulative progress */}
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-xs font-semibold tabular-nums">
@@ -617,6 +666,8 @@ function ControlsPanel({
 
 export default function RoadmapPage() {
   const currentYear = new Date().getFullYear();
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.roles?.includes(UserRole.ADMIN) ?? false;
 
   const [controls, setControls] = useState<PlanControls>({
     maxCredits: 15,
@@ -627,6 +678,12 @@ export default function RoadmapPage() {
   });
 
   const [planDiff, setPlanDiff] = useState<PlanDiff | null>(null);
+
+  // ── Load tuition config (GRAD-003) ────────────────────────────────
+  const { data: tuitionData } = useQuery<{
+    getTuitionConfig: TuitionConfig | null;
+  }>(GET_TUITION_CONFIG_QUERY, { fetchPolicy: 'cache-and-network' });
+  const tuitionConfig = tuitionData?.getTuitionConfig ?? null;
 
   // ── Load active profile ────────────────────────────────────────────
   const { data: profilesData, loading: profilesLoading } = useQuery<{
@@ -821,44 +878,85 @@ export default function RoadmapPage() {
 
       {/* Summary bar (only when plan exists) */}
       {activePlan && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Est. Graduation</p>
-            <p className="text-lg font-bold capitalize">
-              {activePlan.estimatedGraduationTerm}{' '}
-              {activePlan.estimatedGraduationYear}
-            </p>
-          </div>
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Semesters Planned</p>
-            <p className="text-lg font-bold">{activePlan.totalSemesters}</p>
-          </div>
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Credits Completed</p>
-            <p className="text-lg font-bold tabular-nums">
-              {activePlan.totalCreditsCompleted}
-              <span className="text-sm font-normal text-muted-foreground">
-                /{activeProfile.degreeProgram.totalCreditsRequired}
-              </span>
-            </p>
-          </div>
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Overall Progress</p>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{
-                    width: `${activePlan.overallCompletionPercentage}%`,
-                  }}
-                />
-              </div>
-              <span className="text-sm font-semibold tabular-nums">
-                {activePlan.overallCompletionPercentage.toFixed(1)}%
-              </span>
+        <>
+          <div
+            className={`grid gap-3 ${
+              activePlan.estimatedTotalCost != null
+                ? 'grid-cols-2 sm:grid-cols-5'
+                : 'grid-cols-2 sm:grid-cols-4'
+            }`}
+          >
+            <div className="rounded-lg border bg-card p-4">
+              <p className="text-xs text-muted-foreground">Est. Graduation</p>
+              <p className="text-lg font-bold capitalize">
+                {activePlan.estimatedGraduationTerm}{' '}
+                {activePlan.estimatedGraduationYear}
+              </p>
             </div>
+            <div className="rounded-lg border bg-card p-4">
+              <p className="text-xs text-muted-foreground">Semesters Planned</p>
+              <p className="text-lg font-bold">{activePlan.totalSemesters}</p>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <p className="text-xs text-muted-foreground">Credits Completed</p>
+              <p className="text-lg font-bold tabular-nums">
+                {activePlan.totalCreditsCompleted}
+                <span className="text-sm font-normal text-muted-foreground">
+                  /{activeProfile.degreeProgram.totalCreditsRequired}
+                </span>
+              </p>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <p className="text-xs text-muted-foreground">Overall Progress</p>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all"
+                    style={{
+                      width: `${activePlan.overallCompletionPercentage}%`,
+                    }}
+                  />
+                </div>
+                <span className="text-sm font-semibold tabular-nums">
+                  {activePlan.overallCompletionPercentage.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+            {/* Total cost card — only when tuition is configured (GRAD-003) */}
+            {activePlan.estimatedTotalCost != null && (
+              <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 p-4">
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <DollarSign className="h-3 w-3" aria-hidden="true" />
+                  Est. Total Cost
+                </p>
+                <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
+                  {formatCost(activePlan.estimatedTotalCost)}
+                </p>
+              </div>
+            )}
           </div>
-        </div>
+
+          {/* Admin prompt to configure tuition (GRAD-003) */}
+          {isAdmin && !tuitionConfig && (
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-dashed bg-card text-sm text-muted-foreground">
+              <Settings className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>
+                No tuition rates configured — students can&apos;t see cost
+                projections.
+              </span>
+              <Link href="/admin/tuition-config" className="ml-auto">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 h-7 text-xs"
+                >
+                  <DollarSign className="h-3 w-3" />
+                  Configure Rates
+                </Button>
+              </Link>
+            </div>
+          )}
+        </>
       )}
 
       {/* Diff panel — shown after any regeneration */}

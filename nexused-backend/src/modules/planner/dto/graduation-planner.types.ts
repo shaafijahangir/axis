@@ -228,6 +228,20 @@ export class PlannedSemester {
   /** Cumulative completion percentage relative to totalCreditsRequired */
   @Field(() => Float)
   completionPercentage: number;
+
+  /**
+   * Estimated cost for this semester (tuition + fees).
+   * Null when the tenant has not configured tuition rates (GRAD-003).
+   */
+  @Field(() => Float, { nullable: true })
+  estimatedCost?: number | null;
+
+  /**
+   * Running total cost through this semester (all prior semesters + this one).
+   * Null when the tenant has not configured tuition rates (GRAD-003).
+   */
+  @Field(() => Float, { nullable: true })
+  estimatedCumulativeCost?: number | null;
 }
 
 /**
@@ -277,6 +291,13 @@ export class GraduationPlanResult {
 
   @Field()
   createdAt: Date;
+
+  /**
+   * Estimated total cost of the plan (sum of all semester costs).
+   * Null when the tenant has not configured tuition rates (GRAD-003).
+   */
+  @Field(() => Float, { nullable: true })
+  estimatedTotalCost?: number | null;
 
   /**
    * Diff vs. the previous active plan. Null when this is the first plan ever

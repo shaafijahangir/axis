@@ -12,6 +12,7 @@ const GRADUATION_PLAN_FIELDS = gql`
     totalCreditsPlanned
     totalCreditsCompleted
     overallCompletionPercentage
+    estimatedTotalCost
     createdAt
     constraints {
       maxCreditsPerSemester
@@ -27,6 +28,8 @@ const GRADUATION_PLAN_FIELDS = gql`
       totalCredits
       cumulativeCredits
       completionPercentage
+      estimatedCost
+      estimatedCumulativeCost
       courses {
         courseId
         code
@@ -43,6 +46,23 @@ export const MY_GRADUATION_PLANS_QUERY = gql`
   query MyGraduationPlans($profileId: String!) {
     myGraduationPlans(profileId: $profileId) {
       ...GraduationPlanFields
+    }
+  }
+`;
+
+export const GET_TUITION_CONFIG_QUERY = gql`
+  query GetTuitionConfig {
+    getTuitionConfig {
+      perCreditCost
+      flatRateMin
+      flatRateMax
+      flatRateCost
+      summerPerCreditCost
+      fees {
+        name
+        amount
+        type
+      }
     }
   }
 `;
