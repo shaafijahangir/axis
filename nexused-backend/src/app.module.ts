@@ -18,6 +18,7 @@ import databaseConfig from './config/database.config';
 import authConfig from './config/auth.config';
 import aiConfig from './config/ai.config';
 import ltiConfig from './config/lti.config';
+import storageConfig from './config/storage.config';
 import { entities } from './database/entities';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -33,12 +34,20 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { LtiModule } from './modules/lti/lti.module';
 import { PlannerModule } from './modules/planner/planner.module';
 import { CatalogExtractModule } from './modules/catalog-extract/catalog-extract.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, authConfig, aiConfig, ltiConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        authConfig,
+        aiConfig,
+        ltiConfig,
+        storageConfig,
+      ],
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -94,6 +103,7 @@ import { CatalogExtractModule } from './modules/catalog-extract/catalog-extract.
     LtiModule,
     PlannerModule,
     CatalogExtractModule,
+    UploadsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [

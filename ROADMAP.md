@@ -8,26 +8,26 @@
 
 ## Where We Are
 
-### What's Built and Working (Merged to Main)
+### Completed Phases
 
 **Phase 0 — Foundation** ✅
 - [x] Next.js 16 + NestJS project scaffolding
-- [x] Authentication system (JWT + bcrypt + Google OAuth)
-- [x] Multi-tenant foundation (Tenant entity with subscription plans, billing status, RLS)
-- [x] Core database entities (9 core + 3 AI = 12 total): Tenants, Users, Academic Terms, Courses, Course Sections, Enrollments, Assignments, Submissions, Announcements, AI Conversations, AI Messages, AI Usage Logs
+- [x] Authentication system (JWT httpOnly cookies + bcrypt + Google OAuth)
+- [x] Multi-tenant foundation (Tenant entity with subscription plans, billing status)
+- [x] Core database entities (28 total): Tenants, Users, Academic Terms, Courses, Course Sections, Enrollments, Assignments, Submissions, Announcements, AI Conversations, AI Messages, AI Usage Logs, TenantAiConfig, CustomAgent, DegreeProgram, StudentDegreeProfile, GraduationPlan, Conversation, ConversationParticipant, DirectMessage, CourseContent, FeedEngagement, LtiPlatform, LtiDeployment, LtiContext, LtiUser, LtiState, BaseEntity, TenantScopedEntity
 - [x] GraphQL API with Apollo Server 5
-- [x] Tenant CRUD operations
 - [x] Login and registration pages
 - [x] Base UI components (shadcn/ui)
 
 **Phase 1 — Feed & Navigation** ✅
 - [x] Role-based navigation shell (Student, Instructor, Admin, Parent — 3 nav items each)
 - [x] Mobile-responsive layout (bottom bar on mobile, sidebar on desktop)
-- [x] Student home feed with server-side aggregation and urgency ranking
+- [x] Student home feed with ML-weighted personalization (5-feature model)
 - [x] Instructor home feed (grading queue, deadline reminders)
 - [x] Admin home feed (stat cards)
 - [x] Unified course timeline (content + assignments + announcements in one stream)
 - [x] Assignment detail view with submission
+- [x] Toggleable dashboard widgets with user preference persistence
 
 **Phase 2 — Core Academic** ✅
 - [x] Assignment creation (5 types: standard, quiz, exam, discussion, project)
@@ -36,194 +36,250 @@
 - [x] Course roster view
 - [x] Gradebook with statistics (mean, median, distribution)
 - [x] CSV grade export
-- [x] Messaging system (DMs, threads, unread badges, enrollment-based contacts)
+- [x] Messaging system (DMs, real-time Socket.IO, typing indicators, unread badges, enrollment-based contacts)
 - [x] Content builder (Tiptap rich text, draft/publish workflow, timeline integration)
 - [x] Admin panel (user/term/catalog/enrollment management)
 - [x] Bulk operations (extend deadline, send announcement)
 
-**AI Module (Backend Only)** ✅
-- [x] AgentExecutor — Production-grade agentic loop with multi-turn tool use
-- [x] GovernanceService — Three-tier action types (auto/suggest/blocked) with rate limiting
-- [x] UsageTrackingService — Per-tenant AI cost tracking
-- [x] ToolRegistry — 16 tools (course, enrollment, assignment, grading, analytics)
-- [x] AgentRegistry — Study Coach + Feedback Copilot (declarative definitions)
-- [x] AiEventListener — 4 event handler stubs (logging-only, needs FEAT-002 to wire up)
-- [x] ContextService — Snapshot system to prevent hallucination
-- [ ] No frontend UI for AI features
+**Phase 2.5 — Infrastructure Hardening** ✅
+- [x] SEC-001–004: All P0 security fixes (tenant scoping, auth on queries, httpOnly JWT, database indexes)
+- [x] DATA-001–007: All P1 data integrity fixes (tenantId on all entities, per-tenant email, transactions, Apollo type policies, error boundaries)
+- [x] ARCH-001–006: All P2 architecture (base entities, tenant interceptor, DataLoader verification, AI provider abstraction, remove unused deps, Turborepo + pnpm)
+- [x] TEST-001–004: Testing foundation (117 unit tests, 22 integration tests, Playwright E2E for 5 critical flows)
 
-### Infrastructure Audit Findings (Session 9)
+**Phase 3 — AI Intelligence Layer** ✅
+- [x] FEAT-001: AI Chat UI (two-panel, agents, tool indicators, conversation history)
+- [x] FEAT-002: Wired event listeners (enrollment → welcome, submission → feedback draft, low grade → support)
+- [x] FEAT-005: Socket.IO real-time messaging
+- [x] FEAT-006: Dashboard toggleable widgets
+- [x] FEAT-012: Per-tenant AI governance console (tool permissions, rate limits, budgets, audit log)
+- [x] FEAT-013: Agent Builder (instructors create custom agents via UI)
+- [x] FEAT-014: ML-based feed personalization (5-feature weighted model, engagement tracking)
+- [x] FEAT-015: AI Course Planner agent (degree progress, eligible courses, what-if simulator)
 
-A comprehensive code audit found **4 P0 security issues**, **7 P1 data integrity issues**, and **5 P2 architecture improvements** needed. These are fully documented in [BACKLOG.md](./BACKLOG.md).
+**Phase 4 — Production & Compliance** ✅
+- [x] FEAT-007: Database migration infrastructure (synchronize: false, CLI commands)
+- [x] FEAT-008: Admin analytics dashboard (institution-wide metrics, at-risk students)
+- [x] FEAT-009: PWA setup (manifest, service worker, install prompt, offline page)
+- [x] FEAT-010: WCAG 2.1 AA accessibility (axe-core enforcement, reduced motion, high contrast, focus management)
+- [x] FEAT-011: LTI 1.3 integration (OIDC login, JWT verification, user provisioning, role mapping)
 
-**The audit also identified 10 "Hidden Gem" differentiators** — architectural decisions already in the codebase that competitors would need months to replicate. These are documented in [STORY.md](./STORY.md) and protected in the backlog.
+**Phase 5 — Institutional Onboarding** ✅
+- [x] ONBOARD-001: Catalog data model extensions (credits, prerequisites, corequisites, schedule, seat capacity, enrollment modes)
+- [x] ONBOARD-002: Admin catalog CRUD (course management, degree program editor, department management)
+- [x] ONBOARD-003: CSV catalog import (template downloads, validation pipeline, transactional import)
+- [x] ONBOARD-004: AI-assisted catalog import from PDF documents (Claude extraction, review queue)
+
+**Phase 6 — Student Enrollment** ✅ (ENROLL-001–006)
+- [x] ENROLL-001: Course catalog (browse, search, filter, seat availability)
+- [x] ENROLL-002: Self-enrollment + invite codes (two enrollment modes)
+- [x] ENROLL-003: Enrollment lifecycle (status machine: pending → active → completed/dropped/withdrawn)
+- [x] ENROLL-004: Enrollment notifications & onboarding checklist
+- [x] ENROLL-005: Enroll-from-AI (Course Planner can enroll students via tool)
+- [x] ENROLL-006: Proactive prerequisite alerts (strict/warn/off enforcement modes)
+
+**Phase 7 — AI Graduation Planner** ✅ (in branch, pending merge)
+- [x] GRAD-001: Constraint-based plan generator (topological sort + greedy bin-packing)
+- [x] GRAD-002: Dynamic replanning with diff view (what-if controls)
+- [x] GRAD-003: Financial projections (per-credit/flat-rate, cost overlay on roadmap)
+- [x] GRAD-004: Financial aid awareness (SAP warnings, full-time threshold alerts)
 
 ---
 
-## Phase 2.5: Infrastructure Hardening ← NEXT
+## Current Phase: Phase A — Complete Web Platform ← NOW
 
-**Estimated:** 1-2 weeks
-**Why before features:** FERPA compliance, institutional trust, and data integrity. An LMS that leaks student data across tenants or stores tokens insecurely will never be adopted by a university. Fix the foundation before building the floors.
+**Estimated:** 4-5 weeks
+**Goal:** Fill remaining gaps so the backend API is complete and the mobile app can build against a stable, feature-complete API. Also add a minimal public-facing presence so the product is discoverable.
 
-### Security (P0 — Backlog SEC-001 through SEC-004)
-- [ ] Tenant scoping on all findById methods
-- [ ] Authorization on assignmentSubmissions query
-- [ ] JWT migration from localStorage to httpOnly cookies
-- [ ] Database indexes on all entities
+> **Why this phase:** The mobile app (Phase B) will consume the same GraphQL API. Every feature we add here — file uploads, notifications, discussions, quizzes — is automatically available to the mobile app. Building this first means the mobile app doesn't block on backend work.
 
-### Data Integrity (P1 — Backlog DATA-001 through DATA-007)
-- [ ] Add tenantId to Enrollment, Assignment, Submission, Announcement
-- [ ] Per-tenant email unique constraint
-- [ ] TypeORM transactions for multi-step operations
-- [ ] Apollo Client type policies and error link
-- [ ] Frontend error boundaries
-- [ ] Fix `as any` casts in feed.service.ts
+### A1: Merge Graduation Planner Branch ✅
+- [x] GRAD-001–004 already merged to main (commits on main branch)
+- **Completed:** 2026-02-23
 
-### Architecture Quick Wins (P2 — selected)
-- [ ] BaseEntity + TenantScopedEntity abstract classes (ARCH-001)
-- [ ] Remove unused @tanstack/react-query (ARCH-003)
-- [ ] Turborepo + pnpm monorepo setup (ARCH-006)
+### A2: File Upload Service (Cloudflare R2) — INFRA-001 ✅
+- [x] `uploads` module with presigned URL two-phase upload (request → PUT to R2 → confirm)
+- [x] `FileUpload` entity (key, originalName, mimeType, size, context, contextId, confirmed, tenantId)
+- [x] Per-context validation constraints (size limits + allowed mime types for 4 contexts)
+- [x] Frontend: `FileUpload` drag-and-drop component with XHR progress tracking
+- [x] Frontend: `FileAttachmentList` component with presigned download URLs
+- [x] Integrated into assignment submission form
+- [x] `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` — R2/S3 interchangeable
+- **Completed:** 2026-02-23
+
+### A3: Email Notification Service — INFRA-002
+- [ ] Resend (or SendGrid) integration via NestJS module
+- [ ] Event-driven: `SUBMISSION_GRADED` → email student, `ASSIGNMENT_CREATED` → email section, due date reminders (cron)
+- [ ] Templated emails matching NexusEd design system
+- [ ] User notification preferences (email on/off per event type)
+- **Effort:** 3-4 days
+
+### A4: Push Notification Infrastructure — INFRA-003
+- [ ] Notification entity (userId, type, title, body, read, data)
+- [ ] User device token storage (web push VAPID + FCM for mobile later)
+- [ ] Backend provider abstraction (web push now, FCM added in Phase B)
+- [ ] Web push via VAPID keys (builds on existing PWA service worker handlers)
+- [ ] Notification inbox page (bell icon in nav)
+- **Effort:** 3-4 days
+
+### A5: Discussion Threads — FEAT-016
+- [ ] `Discussion` + `DiscussionReply` entities (threaded, tenant-scoped, on course timeline)
+- [ ] @mentions with notification triggers
+- [ ] Instructor pinning, locking, marking as answered
+- [ ] Frontend: discussion view in timeline, reply threading, inline reply form
+- **Effort:** 4-5 days
+
+### A6: Quiz Engine — FEAT-017
+- [ ] MCQ question builder for instructors (question text, options, correct answer, points)
+- [ ] Quiz delivery UI for students (one question at a time or all-at-once, configurable)
+- [ ] Auto-grading on submission
+- [ ] Attempt tracking with configurable max attempts
+- [ ] Optional time limits with countdown
+- **Effort:** 5-6 days
+
+### A7: Mobile Responsive Audit — MOB-001 through MOB-005
+- [ ] Dashboard layouts at 375-428px
+- [ ] Course/assignment pages at mobile
+- [ ] AI chat and messaging two-panel collapse
+- [ ] Admin pages on tablet/phone
+- [ ] Touch interaction polish (44px tap targets)
+- **Effort:** 3-4 days
+
+### A8: Marketing & Public Pages — SITE-001 through SITE-003
+- [ ] SITE-001: Landing page at `/` (hero, problem statement, feature showcase, CTA)
+- [ ] SITE-002: Features page at `/features` (detailed breakdowns of 10x differentiators)
+- [ ] SITE-003: About page at `/about` (the UVic story from MISSION.md, team, contact form)
+- [ ] `(marketing)` route group in existing Next.js app — public, no auth required
+- [ ] Responsive, accessible, shares existing Tailwind design system
+- **Effort:** 3-4 days
 
 ### Outcome
-Every query is tenant-scoped, authorized, indexed, and transactional. The frontend gracefully handles errors. The monorepo builds in parallel with caching.
+The web platform is feature-complete for a working LMS demo. Students can upload files, receive email/push notifications, participate in discussions, take quizzes, and view grades — all on mobile-responsive layouts. The product has a public face that anyone can visit.
 
 ---
 
-## Phase 3: Complete Core Experience
+## Phase B: React Native Mobile App (Expo)
 
-**Estimated:** 3-4 weeks
-**Goal:** The platform works end-to-end for a real course with AI visible to users.
+**Estimated:** 5-6 weeks
+**Goal:** A focused student mobile app with the 20% of features students use 80% of the time.
 
-### AI Chat UI (FEAT-001) — The Differentiator
-- [ ] Chat interface with message bubbles and streaming
-- [ ] Tool-use indicators (show when AI is looking up grades, checking enrollments)
-- [ ] Agent selector (Study Coach vs Feedback Copilot)
-- [ ] Conversation history
-- [ ] Integration into course view and standalone page
+> **Architecture:** `nexused-mobile/` in the monorepo. Shared GraphQL schema and TypeScript types from the backend. Expo Router for navigation. Apollo Client for data fetching. Socket.IO for real-time messaging. expo-secure-store for token storage. Firebase Cloud Messaging for push.
+>
+> **Scope:** Students only. Instructors and admins use the web app. The mobile app is for checking grades, reading the feed, submitting assignments, messaging, and talking to AI.
 
-### Messaging System (FEAT-003)
-- [ ] Conversation, Participant, Message entities
-- [ ] Enrollment-based contact resolution
-- [ ] Cursor-based message pagination
-- [ ] Read tracking with unread badges
-- [ ] Two-panel frontend (list + thread)
+### B1: Project Setup — MOB-APP-001
+- [ ] Expo + Expo Router project in `nexused-mobile/`
+- [ ] Apollo Client mobile configuration (credentials, token from secure storage)
+- [ ] Shared GraphQL types from backend
+- [ ] Secure token storage (expo-secure-store)
+- [ ] Biometric auth (Face ID / fingerprint unlock)
 
-### Content Builder (FEAT-004)
-- [ ] Content entity with rich text (Tiptap)
-- [ ] Draft/published workflow
-- [ ] Timeline integration
-- [ ] Instructor CRUD (create, edit, publish, unpublish, delete)
+### B2: Auth Flow — MOB-APP-002
+- [ ] Login screen, register screen
+- [ ] Biometric unlock for returning users
+- [ ] Persistent session with secure token refresh
 
-### Real-time (FEAT-005)
-- [ ] Socket.IO gateway for messaging
-- [ ] SSE for AI response streaming
-- [ ] Feed push updates
+### B3: Feed / Home — MOB-APP-003
+- [ ] AI-prioritized feed (same GraphQL query as web)
+- [ ] Pull-to-refresh
+- [ ] Tap to navigate to assignment/course/message
 
-### Dashboard Widgets (FEAT-006)
-- [ ] Toggleable feed widgets (pin/unpin/collapse)
-- [ ] User preferences persistence
+### B4: Courses — MOB-APP-004
+- [ ] Course list (enrolled courses)
+- [ ] Course detail with section selector
+- [ ] Timeline view (assignments + content + announcements)
 
-### Test Foundation (TEST-001 through TEST-003)
-- [ ] Jest configuration and mock factories
-- [ ] Unit tests for GovernanceService, FeedService, AssignmentsService
-- [ ] Resolver integration tests for auth and tenant scoping
+### B5: Assignments — MOB-APP-005
+- [ ] Assignment detail view
+- [ ] Text submission + camera photo upload + file upload (via R2 presigned URLs)
+- [ ] Submission history with grades
+
+### B6: Grades — MOB-APP-006
+- [ ] Grades summary across all courses
+- [ ] Per-course grade breakdown
+
+### B7: Messages — MOB-APP-007
+- [ ] Conversation list with unread badges
+- [ ] Message thread with real-time (Socket.IO)
+- [ ] New message compose
+
+### B8: AI Chat — MOB-APP-008
+- [ ] Agent selection
+- [ ] Conversation thread with tool indicators
+- [ ] Quick-access from feed items
+
+### B9: Push Notifications — MOB-APP-009
+- [ ] Firebase Cloud Messaging (FCM) integration
+- [ ] Device token registration with backend
+- [ ] Notification inbox with badge counts
+- [ ] Deep linking from notifications to relevant screens
+
+### B10: Profile & Settings — MOB-APP-010
+- [ ] Profile view/edit
+- [ ] Notification preferences
+- [ ] Theme selection (light/dark)
 
 ### Outcome
-Students can chat with the Study Coach, message their instructors, view rich content in the timeline, and customize their feed. Instructors can create content and use Feedback Copilot. Critical paths have test coverage.
+Students have a native iOS + Android app for their daily LMS interactions. Push notifications for grades, due dates, and messages. Camera uploads for assignments. AI chat on the go.
 
 ---
 
-## Phase 4: AI Intelligence Layer
-
-**Estimated:** 3-4 weeks
-**Goal:** AI becomes proactive, intelligent, and configurable.
-
-### Wire Event Listeners (FEAT-002)
-- [ ] ENROLLMENT_CREATED → Study Coach welcome message
-- [ ] SUBMISSION_CREATED → FeedbackCopilot draft feedback
-- [ ] GRADE_UPDATED → Threshold alerts
-- [ ] ASSIGNMENT_CREATED → Rubric suggestions
-
-### Feed ML Ranking (FEAT-014)
-- [ ] Track user engagement signals (clicks, time-on-item, dismissals)
-- [ ] Replace rule-based ranking with behavior-based model
-- [ ] A/B testing framework
-
-### AI Course Planner (New Agent)
-- [ ] Student degree profile: major, completed courses, credits earned
-- [ ] Prerequisite chain analysis
-- [ ] "What should I take next semester?" recommendations
-- [ ] "How many credits until graduation?" calculator
-- [ ] "What if I change my major?" scenario modeling
-
-### Instructor AI Tools
-- [ ] Syllabus-to-course-structure generator
-- [ ] Quiz auto-generation from course content
-- [ ] Feedback Copilot UI (review + approve AI-drafted feedback)
-- [ ] At-risk student detection (engagement pattern analysis)
-
-### AI Provider Abstraction (ARCH-005)
-- [ ] AiProvider interface
-- [ ] AnthropicProvider implementation
-- [ ] OpenAI fallback provider
-
-### AI Governance Console (FEAT-012)
-- [ ] Admin UI for per-tenant AI settings
-- [ ] Tool action type configuration
-- [ ] Rate limit adjustment
-- [ ] Usage and cost dashboards
-- [ ] Audit log viewer
-
-### Outcome
-AI proactively engages with students. Instructors have AI-assisted tools. Administrators control AI behavior at the institutional level. The AI Course Planner — the feature that started this entire project — is live.
-
----
-
-## Phase 5: Production & Market Readiness
+## Phase C: Go-to-Market Infrastructure (When Ready)
 
 **Estimated:** 4-6 weeks
-**Goal:** Ready for institutional pilots. Performance, accessibility, integrations, and the features that make procurement teams say yes.
+**Goal:** Everything needed for institutional pilots, fundraising, or paid adoption.
 
-### Database & Infrastructure
-- [ ] Database migrations — disable synchronize, generate baseline (FEAT-007)
-- [ ] NestJS Fastify adapter swap (3x throughput)
-- [ ] DataLoader for all GraphQL relations (ARCH-004)
-- [ ] Connection pooling
-- [ ] Global tenant interceptor (ARCH-002)
+> **Deferred until the product is solid.** These are business infrastructure, not product features. The product must be complete and tested before we build the sales funnel.
 
-### Compliance & Accessibility
-- [ ] WCAG 2.1 AA audit and fixes (FEAT-010)
-- [ ] FERPA compliance documentation
-- [ ] Accessibility linting in CI (axe-core)
+### C1: Stripe Billing — BIZ-001
+- [ ] Subscription plans (Free pilot, Institutional, Enterprise)
+- [ ] Stripe Checkout integration
+- [ ] Plan enforcement (feature gating per tier)
+- [ ] Invoice generation and billing portal
+- [ ] Webhook handlers for subscription lifecycle
 
-### Integrations
-- [ ] LTI 1.3 provider + consumer (FEAT-011)
-- [ ] SAML 2.0 / institutional SSO
-- [ ] Calendar export (iCal)
-- [ ] Stripe billing integration
+### C2: Tenant Self-Serve Onboarding — BIZ-002
+- [ ] "Create your institution" wizard (institution name, domain, admin account)
+- [ ] Default plan assignment
+- [ ] Welcome email sequence
+- [ ] Quick-start guide (upload catalog, create first course, invite students)
 
-### Mobile & Performance
-- [ ] PWA setup (FEAT-009)
-- [ ] Lazy loading and code splitting
-- [ ] Image optimization for course content
+### C3: SAML 2.0 / Institutional SSO — BIZ-003
+- [ ] SAML 2.0 Service Provider implementation
+- [ ] IdP metadata import (Shibboleth, Azure AD, Okta)
+- [ ] Attribute mapping (email, name, roles)
+- [ ] Per-tenant SSO configuration
+- [ ] JIT user provisioning from SAML assertions
 
-### Analytics & Reporting
-- [ ] Admin analytics dashboard (FEAT-008)
-- [ ] Student engagement analytics (for instructors)
-- [ ] AI usage and impact metrics
+### C4: LTI Grade Passback (AGS) — BIZ-004
+- [ ] Assignment and Grade Services 2.0 implementation
+- [ ] Grades assigned in NexusEd flow back to Canvas/Blackboard/Moodle gradebook
+- [ ] Line item management
 
-### Advanced Features
-- [ ] Agent Builder admin UI (FEAT-013)
-- [ ] Parent dashboard (child progress, grade notifications)
-- [ ] Playwright E2E tests for 5 critical flows (TEST-004)
+### C5: Advanced Enrollment Features
+- [ ] ENROLL-007: Smart course discovery (AI natural language search)
+- [ ] ENROLL-008: Bulk enrollment (admin CSV upload)
+- [ ] ENROLL-009: Enrollment policy engine
+- [ ] ENROLL-010: Waitlist intelligence
+- [ ] ENROLL-011: SIS event-driven sync (Banner/PeopleSoft/Workday)
+
+### C6: Advanced Graduation Planning
+- [ ] GRAD-005: Course availability modeling (only-offered-Fall, fills-quickly flags)
+- [ ] GRAD-006: Career-to-curriculum mapping ("I want to be a data scientist" → plan)
+
+### C7: Parent Role (Functional)
+- [ ] Parent-student linking mechanism
+- [ ] Parent dashboard (child's grades, upcoming deadlines, activity summary)
+- [ ] Configurable visibility (what parents can/can't see)
 
 ### Outcome
-NexusEd is production-ready, accessible, and integrates with institutional infrastructure. Ready for pilot deployments.
+NexusEd is commercially ready. Universities can self-onboard, pay for subscriptions, use institutional SSO, and integrate with their existing LMS via LTI. The product has a sales funnel from landing page → demo → onboarding → paid.
 
 ---
 
 ## 10x Differentiators
 
-Already built. These create the competitive moat. Competitors would need months to replicate any single one.
+Already built. These create the competitive moat.
 
 | # | Differentiator | Why Competitors Can't Copy |
 |---|---------------|---------------------------|
@@ -235,16 +291,16 @@ Already built. These create the competitive moat. Competitors would need months 
 | 6 | Pedagogically defensible Study Coach | Socratic enforcement at the architecture level. Other AI tutors just prompt-engineer and hope. |
 | 7 | Feed-first architecture | The entire UX is built around the feed. Competitors have dashboards they'd need to replace, not supplement. |
 | 8 | Context snapshot | Anti-hallucination by design. Other systems query live data, which changes between AI turns. |
-| 9 | SaaS billing in data model | Business model embedded in the tenant entity. Competitors build billing as an afterthought. |
+| 9 | Constraint-based graduation planner | Semester-by-semester plan with financial projections and aid awareness. DegreeWorks killer. |
 | 10 | Unified course timeline | Content + assignments + discussions in one stream. Competitors have separate tabs they can't merge without UX redesign. |
+| 11 | AI-assisted institutional onboarding | Upload a PDF academic calendar → AI extracts your entire course catalog. No competitor does this. |
+| 12 | AI-native enrollment | "Enroll me in a 3-credit elective" in conversation. First LMS where enrollment is AI-powered. |
 
 > Full narrative: [STORY.md](./STORY.md)
 
 ---
 
 ## Decisions That Are Locked
-
-These architectural and design decisions are final and should not be revisited:
 
 | Decision | Rationale |
 |----------|-----------|
@@ -263,165 +319,12 @@ These architectural and design decisions are final and should not be revisited:
 | Database indexes on every entity | Performance is not optional. Every entity gets `@Index`. |
 | tenantId on every data entity | Denormalization is correct here. No multi-join tenant scoping. |
 | AI provider abstraction | No direct SDK imports in feature code. Go through the abstraction. |
-| DataLoader for GraphQL relations | N+1 prevention is mandatory, not optional. |
 | Content format = Tiptap | Rich text editor with prose rendering. Decision made. |
+| File storage = Cloudflare R2 | S3-compatible, zero egress fees. If we move to S3 later, it's a config change. |
+| Mobile app = React Native (Expo) in monorepo | Shared GraphQL types, same backend, one CI pipeline. Student-focused. |
+| Web app = power users (instructors, admins) | Mobile handles the 20% of features students use 80% of the time. |
 
 ---
 
-## Phase 6: Institutional Onboarding & Catalog Management
-
-**Estimated:** 2-3 weeks
-**Goal:** An institution can get set up on NexusEd with their full course catalog and degree programs — from AI-assisted PDF import to structured CSV import to manual admin CRUD.
-
-> **Why this phase comes first:** Nothing else works without the data. Enrollment, graduation planning, AI course discovery — all depend on the institution's courses and degree requirements being in the system. This is the foundation for everything in Phase 7 and 8.
->
-> **Competitive angle:** DegreeWorks (Ellucian) charges $100k+/year and requires weeks of manual setup. NexusEd's AI-assisted import can onboard an institution's catalog in hours, not weeks. This is the "wow" moment in a sales demo.
-
-### Catalog Data Model (ONBOARD-001)
-- [ ] Extend Course entity with catalog-specific fields: credits, department, category (core/elective/gen-ed/lab), description, prerequisite references, corequisites, course level (100-400+), offered semesters (Fall/Spring/Summer)
-- [ ] Extend CourseSection with: maxEnrollment (seat capacity), schedule (meeting times/days), location, enrollmentMode (open/invite-only), inviteCode
-- [ ] Extend AcademicTerm with: enrollmentWindowStart, enrollmentWindowEnd, dropDeadline, withdrawDeadline
-- [ ] Extend DegreeProgram entity (from FEAT-015) with: programType (major/minor/certificate/diploma), department, totalCredits, expectedDuration (in semesters), catalog year
-
-### Admin Catalog CRUD (ONBOARD-002)
-- [ ] Backend: `CatalogService` for full course and program management — CRUD, bulk operations, catalog versioning by academic year
-- [ ] Frontend: Admin catalog management pages — course list with search/filter, course create/edit forms, department management, prerequisite chain editor (visual or form-based)
-- [ ] Frontend: Admin degree program editor — requirement group management (add/remove groups, assign courses to groups, set credit thresholds)
-
-### CSV Catalog Import (ONBOARD-003)
-- [ ] Backend: CSV parser for standard templates: `courses.csv` (code, title, credits, department, prerequisites, description), `programs.csv` (name, type, department, total credits, requirements), `prerequisites.csv` (course_code, prerequisite_code, min_grade)
-- [ ] Backend: Bulk validation with detailed error reporting (row-by-row errors: "Row 42: CS 301 lists prerequisite CS 201 which doesn't exist in the import")
-- [ ] Backend: Import as transaction — all-or-nothing with rollback on failure
-- [ ] Frontend: Admin import wizard — upload CSV → preview parsed data → review errors → confirm import
-- [ ] Template downloads for each CSV type
-
-### AI-Assisted Catalog Import (ONBOARD-004) — THE DIFFERENTIATOR
-- [ ] Backend: PDF/document parsing endpoint — accept academic calendar PDF, course catalog PDF, or plain text
-- [ ] Backend: AI extraction pipeline — use Claude to extract structured course data from unstructured documents:
-  - Course code, title, credits, description, prerequisites (parse "Prerequisite: CS 101 or permission of instructor")
-  - Degree requirements (parse "Complete 15 credits from the following: CS 301, CS 302, CS 310, CS 315, CS 320")
-  - Program definitions (parse "Bachelor of Science in Computer Science — 120 credits")
-- [ ] Backend: Extraction review queue — AI extracts, admin reviews/corrects, then confirms import
-- [ ] Frontend: "Import from Document" wizard — upload PDF → AI processes → review extracted data in editable table → fix errors → confirm
-- [ ] **This is the sales demo feature** — "Upload your academic calendar, and NexusEd sets itself up"
-
-### Outcome
-An institution can onboard in hours: upload their academic calendar PDF → AI extracts courses and programs → admin reviews and confirms → catalog is live. Alternatively, use CSV import or manual entry. All degree programs and prerequisites are modeled for the graduation planner.
-
----
-
-## Phase 7: Student Enrollment & Course Discovery
-
-**Estimated:** 3-4 weeks (3 sub-phases)
-**Goal:** Students can discover, enroll in, and get onboarded into courses — from self-serve to AI-assisted to institutional-scale.
-
-> **Why this matters:** Every LMS has enrollment, but none have AI-native enrollment. Canvas uses CSV imports, Moodle uses manual enrollment plugins, Google Classroom uses invite codes. NexusEd can be the first LMS where a student says "I need a 3-credit elective that counts toward my CS degree" and the AI finds, recommends, and enrolls them — all in one conversation.
-
-### Phase 7A: Working Enrollment (ENROLL-001 through ENROLL-004)
-**Goal:** Students can find and join courses. Instructors and admins control who gets in.
-
-- [ ] **Course Catalog** (ENROLL-001) — Browseable, searchable, filterable catalog of courses available for the current term. Tenant-scoped. Students can view course details (instructor, schedule, seats, prerequisites) before enrolling.
-- [ ] **Self-Enrollment + Invite Codes** (ENROLL-002) — Two enrollment modes per section, configurable by instructor/admin:
-  - **Open enrollment:** Student clicks "Enroll" from the catalog
-  - **Invite-only:** Student enters a 6-character alphanumeric code generated by the instructor
-  - Enrollment creates a `pending` enrollment record → instructor can auto-approve or manually approve
-- [ ] **Enrollment Lifecycle** (ENROLL-003) — Full status machine: `pending` → `active` → `completed` | `dropped` | `withdrawn`. Drop/withdraw deadlines configurable per term. Students can drop courses before the deadline. Instructors can remove students. Admins can override any status.
-- [ ] **Enrollment Notifications & Onboarding** (ENROLL-004) — When enrollment status changes to `active`:
-  - Feed item: "You're enrolled in CS 101!"
-  - Study Coach welcome message (already wired via FEAT-002 event listener)
-  - Course appears in student's sidebar navigation
-  - Student sees course timeline from day 1
-
-### Phase 7B: AI-Assisted Enrollment (ENROLL-005 through ENROLL-007)
-**Goal:** The Course Planner agent (FEAT-015) can enroll students, not just recommend courses.
-
-- [ ] **Enroll-from-AI** (ENROLL-005) — New AI tool `enroll_in_course` that checks prerequisites, seat availability, and enrollment policy, then creates the enrollment. Governance default: `suggest` (AI recommends, student confirms).
-- [ ] **Proactive Prerequisite Alerts** (ENROLL-006) — When a student tries to enroll in a course with unmet prerequisites, show what's missing and suggest alternative paths. Configurable enforcement: strict, warn, or off.
-- [ ] **Smart Course Discovery** (ENROLL-007) — New AI tool `discover_courses` for natural language queries: "I need a 3-credit lab science", "What counts toward my CS electives?", "Morning classes on MWF". Cross-references degree requirements.
-
-### Phase 7C: Institutional Scale (ENROLL-008 through ENROLL-011)
-**Goal:** Universities can bulk-manage enrollment at scale with policy enforcement.
-
-- [ ] **Bulk Enrollment** (ENROLL-008) — Admin CSV upload for bulk enroll/move/drop with error reporting
-- [ ] **Enrollment Policy Engine** (ENROLL-009) — Per-tenant policies: capacity limits, enrollment windows, prerequisite enforcement, credit hour limits per term
-- [ ] **Waitlist Intelligence** (ENROLL-010) — Auto-promotion from waitlist on drops, configurable confirmation window, position tracking
-- [ ] **SIS Event-Driven Sync** (ENROLL-011) — Webhook receiver for Banner/PeopleSoft/Workday Student enrollment events
-
-### Outcome
-Students can self-enroll from a catalog, use invite codes, or ask the AI Course Planner to find and enroll them in courses. Institutions can bulk-manage enrollment with policy enforcement, waitlists, and SIS integration. NexusEd becomes the first LMS with AI-native enrollment.
-
----
-
-## Phase 8: AI Graduation Planner
-
-**Estimated:** 3-4 weeks
-**Goal:** Every student gets a personalized, semester-by-semester graduation roadmap that adapts to their timeline, finances, and life circumstances.
-
-> **Product thesis:** This is a stronger product than the LMS itself. Many universities already have Canvas/Moodle but hate their degree audit tool (DegreeWorks) or don't have one. NexusEd can be "the AI-native graduation planner that also has an LMS built in."
->
-> **Why this is different from FEAT-015:** The existing Course Planner (FEAT-015) tracks progress and checks prerequisites. This phase generates a **complete semester-by-semester plan** that accounts for constraints — time, money, course availability, and life changes.
-
-### Constraint-Based Plan Generator (GRAD-001)
-- [ ] Backend: `GraduationPlannerService` that models planning as constraint satisfaction:
-  - **Inputs:** completed courses, target degree, max credits per semester, target graduation date (or "ASAP"), available semesters (include/exclude summer, specific terms off), course availability by semester
-  - **Constraints:** prerequisites must be satisfied before scheduling, max credits per term, course availability (CS 301 only offered in Fall), corequisites scheduled in same term
-  - **Output:** Ordered list of semesters, each with assigned courses, credit totals, and cumulative progress
-  - **Algorithm:** Topological sort of prerequisite DAG → greedy bin-packing into semesters respecting constraints → backtrack if infeasible
-- [ ] Backend: `GraduationPlannerResolver` — `generateGraduationPlan(input)`, `regeneratePlan(planId, changedConstraints)`
-- [ ] Frontend: Graduation plan view — semester columns/rows showing assigned courses, drag-to-reorder (stretch), "what if I skip Summer 2027?" instant replan
-
-### Dynamic Replanning (GRAD-002)
-- [ ] Backend: When a student's situation changes, replan automatically:
-  - Failed a course → re-insert into a future semester, cascade downstream prerequisites
-  - Dropped a course → rebalance remaining semesters
-  - Changed major → simulate credit transfer, generate new plan with remaining requirements
-  - Changed max credits/semester → stretch or compress the timeline
-  - Took a semester off → shift everything forward
-- [ ] Frontend: "What if..." controls — toggle summer terms, adjust credits per semester, change target graduation date → plan regenerates in real time
-- [ ] AI integration: Course Planner agent can call `regenerate_graduation_plan` tool when student describes a change in conversation
-
-### Financial Projections (GRAD-003)
-- [ ] Backend: Per-tenant tuition configuration: per-credit cost, flat-rate thresholds (e.g., 12-18 credits = same price), summer premium, fees
-- [ ] Backend: Financial calculations per plan: estimated cost per semester (credits × rate), cumulative total, cost of extending by N semesters, full-time vs part-time cost comparison
-- [ ] Frontend: Financial overlay on graduation plan — cost per semester, running total, comparison view:
-  - "15 credits/semester → graduate May 2028 → est. $48,000 total"
-  - "9 credits/semester → graduate Dec 2029 → est. $54,000 total (3 extra semesters × $6,000)"
-  - "If you take 15 credits this Fall instead of 12, you graduate one semester earlier and save ~$6,000"
-- [ ] AI integration: Course Planner can answer "How much will it cost if I go part-time next year?"
-
-### Financial Aid Awareness (GRAD-004)
-- [ ] Backend: Financial aid rules per tenant (configurable): full-time credit threshold (typically 12), minimum credits for aid eligibility, maximum timeframe (150% of program length)
-- [ ] Frontend: Warnings when plan triggers aid issues:
-  - "Dropping below 12 credits in Fall 2027 may affect your financial aid eligibility"
-  - "You're at 140% of program length — check with financial aid office about SAP (Satisfactory Academic Progress)"
-- [ ] AI integration: Proactive alerts when a student's plan change would affect aid status
-
-### Course Availability Modeling (GRAD-005)
-- [ ] Backend: Course offering patterns — historical/configured data on which courses are offered in which semesters (Fall only, Spring only, every semester, alternating years)
-- [ ] Backend: Seat availability forecasting — based on historical enrollment data, flag courses likely to fill up early
-- [ ] Frontend: Availability indicators in the plan view — "CS 301 is only offered in Fall" (info), "CS 450 fills up fast — enroll early" (warning)
-- [ ] Admin UI: Course offering schedule management — set availability patterns per course
-
-### Career-to-Curriculum Mapping (GRAD-006) — FUTURE DIFFERENTIATOR
-- [ ] Backend: Career profile definitions — job titles mapped to recommended degree programs, skills, and course clusters
-- [ ] AI integration: Student says "I want to be a data scientist" → AI maps to relevant programs (CS, Stats, Data Science), identifies skill gaps, suggests course sequences that build toward that career
-- [ ] Frontend: Career explorer — browse careers, see required skills, see which NexusEd programs align
-- [ ] This is the "what do I want to be when I grow up?" feature Shaafi described
-
-### Outcome
-Every student has a personalized graduation roadmap. A student who can only afford 9 credits/semester sees a 5.5-year plan with cost estimates. A transfer student with 60 credits sees a 2-year plan. When life changes (failed course, changed major, took a semester off), the plan regenerates instantly. Financial impact is visible at every decision point. NexusEd becomes the AI-native DegreeWorks killer — 10x better UX, 10x cheaper, and actually intelligent.
-
----
-
-## Open Questions
-
-1. **Should the course view support both timeline and module views?** Timeline is the default, but some instructors may want to organize by topic/module. Do we support both or commit fully to timeline?
-
-2. **How does the parent role link to student accounts?** Invitation system? Verification? What prevents someone from claiming to be a parent?
-
-3. **AI model strategy.** Claude primary, abstraction layer in place — but do we need a local model option for institutions with strict data residency requirements?
-
----
-
-*Last updated: 2026-02-17 (Phase 6-8 — Institutional Onboarding, Enrollment, and Graduation Planner)*
-*Companion documents: [BACKLOG.md](./BACKLOG.md) | [STORY.md](./STORY.md) | [TECH_STACK.md](./TECH_STACK.md)*
+*Last updated: 2026-02-21 (Restructured into Phase A/B/C based on commercial readiness assessment)*
+*This file is the strategic overview. See [BACKLOG.md](./BACKLOG.md) for detailed task specs.*

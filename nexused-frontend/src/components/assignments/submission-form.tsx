@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,8 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { SUBMIT_ASSIGNMENT_MUTATION } from '@/lib/graphql/mutations/assignments';
+import { ATTACH_UPLOAD_MUTATION } from '@/lib/graphql/mutations/uploads';
 import { MY_SUBMISSIONS_QUERY } from '@/lib/graphql/queries/assignments';
+import {
+  FileUpload,
+  type UploadedFile,
+} from '@/components/uploads/file-upload';
 
 const submissionSchema = z.object({
   text: z.string().min(1, 'Submission cannot be empty'),
@@ -22,6 +29,8 @@ interface SubmissionFormProps {
 }
 
 export function SubmissionForm({ assignmentId }: SubmissionFormProps) {
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+
   const {
     register,
     handleSubmit,
@@ -31,7 +40,7 @@ export function SubmissionForm({ assignmentId }: SubmissionFormProps) {
     resolver: zodResolver(submissionSchema),
   });
 
-  const [submitAssignment, { loading, error }] = useMutation(
+  const [submitAssignment, { loading: submitting, error }] = useMutation(
     SUBMIT_ASSIGNMENT_MUTATION,
     {
       refetchQueries: [
@@ -39,10 +48,15 @@ export function SubmissionForm({ assignmentId }: SubmissionFormProps) {
       ],
     },
   );
+  const [attachUpload] = useMutation(ATTACH_UPLOAD_MUTATION);
+
+  const handleUploadComplete = (file: UploadedFile) => {
+    setUploadedFiles((prev) => [...prev, file]);
+  };
 
   const onSubmit = async (values: SubmissionFormValues) => {
     try {
-      await submitAssignment({
+      const { data } = await submitAssignment({
         variables: {
           input: {
             assignmentId,
@@ -50,7 +64,25 @@ export function SubmissionForm({ assignmentId }: SubmissionFormProps) {
           },
         },
       });
+
+      const submissionId: string =
+        (data as { submitAssignment?: { id: string } })?.submitAssignment?.id ??
+        '';
+
+      // Link any uploaded files to this submission now that we have an ID.
+      // Fire-and-forget in parallel — submission already succeeded.
+      if (submissionId && uploadedFiles.length > 0) {
+        await Promise.all(
+          uploadedFiles.map((f) =>
+            attachUpload({
+              variables: { input: { fileId: f.id, contextId: submissionId } },
+            }),
+          ),
+        );
+      }
+
       reset();
+      setUploadedFiles([]);
     } catch {
       // Apollo useMutation sets `error` state automatically —
       // the UI below will display the error message.
@@ -73,16 +105,33 @@ export function SubmissionForm({ assignmentId }: SubmissionFormProps) {
               {...register('text')}
             />
             {errors.text && (
-              <p className="text-sm text-red-500">{errors.text.message}</p>
+              <p className="text-sm text-destructive">{errors.text.message}</p>
             )}
           </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label>Attachments</Label>
+            <p className="text-xs text-muted-foreground">
+              Upload files before submitting. They will be linked to your
+              submission automatically.
+            </p>
+            <FileUpload
+              context="assignment_submission"
+              onUploadComplete={handleUploadComplete}
+              maxFiles={5}
+            />
+          </div>
+
           {error && (
-            <p className="text-sm text-red-500">
+            <p className="text-sm text-destructive">
               Failed to submit. Please try again.
             </p>
           )}
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Submitting...' : 'Submit'}
+
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Submitting…' : 'Submit'}
           </Button>
         </form>
       </CardContent>

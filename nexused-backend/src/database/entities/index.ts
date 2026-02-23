@@ -1,5 +1,9 @@
 // Entity exports
 export { Tenant, SubscriptionPlan, BillingStatus } from './tenant.entity';
+export {
+  FileUpload,
+  UploadContext,
+} from '../../modules/uploads/entities/file-upload.entity';
 export { User, UserRole, UserStatus } from './user.entity';
 export { AcademicTerm } from './academic-term.entity';
 export { Course, CourseCategory } from './course.entity';
@@ -67,6 +71,9 @@ import { LtiState } from '../../modules/lti/entities/lti-state.entity';
 // Feed engagement entity
 import { FeedEngagement } from '../../modules/feed/entities/feed-engagement.entity';
 
+// Uploads entity
+import { FileUpload } from '../../modules/uploads/entities/file-upload.entity';
+
 // Array of entity classes for TypeORM
 export const entities = [
   Tenant,
@@ -96,4 +103,5 @@ export const entities = [
   StudentDegreeProfile,
   GraduationPlan,
   FeedEngagement,
+  FileUpload,
 ];

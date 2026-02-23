@@ -1000,7 +1000,8 @@
 - **Acceptance:** Student with 45 completed credits in a 120-credit CS program gets a semester-by-semester plan that respects prerequisites and course availability. Changing max credits from 15 to 9 stretches the plan from 5 semesters to ~9 semesters.
 
 ### GRAD-002: Dynamic Replanning
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-19
 - **Priority:** HIGH — Plans must adapt to reality
 - **Depends on:** GRAD-001
 - **Scope:**
@@ -1023,7 +1024,8 @@
 - **Acceptance:** Student toggles off Summer 2027 → plan regenerates instantly with courses redistributed. Student changes max credits from 15 to 12 → graduation date extends by N semesters. Diff shows exactly what changed.
 
 ### GRAD-003: Financial Projections
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-19
 - **Priority:** MEDIUM — Financial transparency is a differentiator
 - **Depends on:** GRAD-001
 - **Scope:**
@@ -1042,7 +1044,8 @@
 - **Acceptance:** Student sees estimated cost per semester on their graduation plan. Changing max credits/semester shows updated cost projection. Admin configures tuition rates per tenant.
 
 ### GRAD-004: Financial Aid Awareness
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-19
 - **Priority:** MEDIUM — Critical for students on aid
 - **Depends on:** GRAD-003
 - **Scope:**
@@ -1169,6 +1172,248 @@
 
 ---
 
+## Sprint: Phase A — Complete Web Platform
+
+> **Goal:** Fill remaining gaps so the backend API is complete and stable for the mobile app. Add a public-facing presence so people can discover the product.
+>
+> **Sequence:** A1 → A2 → A3 → A4 → A5 → A6 → A7 → A8 (roughly, some can run in parallel)
+
+### A1: Merge Graduation Planner Branch
+- **Status:** `DONE`
+- **Completed:** 2026-02-23 — GRAD-001–004 commits already on main branch
+- **Acceptance:** ✓ GRAD-001–004 code is on main. Build passes.
+
+### INFRA-001: File Upload Service (Cloudflare R2)
+- **Status:** `DONE`
+- **Completed:** 2026-02-23
+- **Files Created:**
+  - Backend: `src/config/storage.config.ts`, `src/modules/uploads/uploads.module.ts`, `src/modules/uploads/uploads.service.ts`, `src/modules/uploads/uploads.resolver.ts`, `src/modules/uploads/entities/file-upload.entity.ts`, `src/modules/uploads/dto/uploads.types.ts`
+  - Frontend: `src/lib/graphql/mutations/uploads.ts`, `src/lib/graphql/queries/uploads.ts`, `src/components/uploads/file-upload.tsx`, `src/components/uploads/file-attachment-list.tsx`
+- **Files Modified:** `app.module.ts`, `database/entities/index.ts`, `.env.example`, `submission-form.tsx`
+- **Key decisions:**
+  - Two-phase upload: `requestUpload` → client PUT to R2 → `confirmUpload`. Backend never handles file bytes.
+  - `confirmed` flag prevents orphan records from failed uploads appearing in queries
+  - R2 key structure: `{tenantId}/{context}/{userId}/{uuid}.{ext}` — tenant isolation at storage level
+  - Per-context constraints: 4 contexts (assignment_submission/profile_picture/course_content/import_document) each with size limits and allowed mime types
+  - `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` — R2/S3 interchangeable via endpoint config
+- **Acceptance:** ✓ Backend builds clean. ✓ Frontend builds clean. Student can attach files to assignment submissions with drag-and-drop and progress tracking. Presigned download URLs generated on demand.
+- **Priority:** HIGH — Both web and mobile depend on this
+- **Scope:**
+  - Backend: New `uploads` module with:
+    - `UploadMetadata` entity: filename, originalName, mimeType, sizeBytes, storageKey, tenantId, uploadedById, context (enum: assignment_submission, profile_picture, content_attachment, course_image), createdAt
+    - `UploadsService`: generatePresignedUploadUrl(context, mimeType, sizeBytes), generatePresignedDownloadUrl(key), validateUpload(context, mimeType, sizeBytes), deleteFile(key)
+    - `UploadsResolver`: GraphQL mutations — requestUpload(input) → { uploadUrl, key, expiresAt }, confirmUpload(key) → UploadMetadata; Query — uploads(context, entityId) → [UploadMetadata]
+    - Size limits per context: assignments 50MB, profiles 5MB, content 25MB
+    - Type restrictions: assignments (pdf, doc, docx, png, jpg, txt), profiles (png, jpg, webp), content (pdf, png, jpg, gif, svg)
+  - Frontend: Reusable `FileUpload` component — drag-and-drop zone, progress bar, file type/size validation on client
+  - Frontend: Integrate into assignment submission form (attach files alongside text)
+  - Frontend: Profile picture upload in user settings
+  - Frontend: Image/file insertion in Tiptap content editor
+  - Infrastructure: Cloudflare R2 bucket with S3-compatible API, `@aws-sdk/client-s3` for presigned URLs
+- **Acceptance:** Student can attach a PDF to an assignment submission. Instructor can upload images into course content. Profile pictures work. All uploads are tenant-scoped and presigned (NestJS never handles file bytes).
+
+### INFRA-002: Email Notification Service
+- **Status:** `TODO`
+- **Priority:** HIGH — Universities expect email notifications
+- **Scope:**
+  - Backend: New `notifications` module with:
+    - Resend SDK integration (or SendGrid — Resend is simpler, better DX)
+    - Email template system with NexusEd branding (from address, logo, colors)
+    - Event-driven triggers via EventEmitter2:
+      - `SUBMISSION_GRADED` → email student: "Your submission for {assignment} was graded: {score}/{points}"
+      - `ASSIGNMENT_CREATED` → email section: "New assignment in {courseCode}: {title}, due {dueDate}"
+      - `ENROLLMENT_CREATED` (active) → email student: "You're enrolled in {courseCode}"
+      - Due date reminders (cron job): 24h before and 2h before unsubmitted assignments
+    - User notification preferences: `notificationPreferences` JSONB on User entity (emailOnGrade, emailOnAssignment, emailOnDueReminder, emailOnMessage — all default true)
+  - Frontend: Notification preferences page in user settings
+  - Infrastructure: Resend API key in env vars, domain verification
+- **Acceptance:** Student gets an email when graded. Instructor's section gets email when assignment created. Due date reminders fire. Users can disable specific email types.
+
+### INFRA-003: Push Notification Infrastructure
+- **Status:** `TODO`
+- **Priority:** HIGH — Foundation for mobile push (Phase B) and web push
+- **Scope:**
+  - Backend:
+    - `Notification` entity: userId, tenantId, type (enum), title, body, data (JSONB for deep linking), read (boolean), createdAt
+    - `DeviceToken` entity: userId, tenantId, platform (web/ios/android), token, createdAt, lastUsedAt
+    - `NotificationsService`: create, markAsRead, markAllAsRead, getUnread, getAll (paginated)
+    - `PushService`: provider abstraction interface, WebPushProvider (VAPID), FCMProvider (added in Phase B)
+    - `NotificationsResolver`: GraphQL queries (myNotifications, unreadNotificationCount) and mutations (markNotificationRead, markAllNotificationsRead, registerDeviceToken)
+    - Event-driven: same events as email, but push as well (user preference controls which channel)
+  - Frontend: VAPID web push subscription in service worker
+  - Frontend: Notification inbox (bell icon in top nav, dropdown with notification list, link to full page)
+  - Frontend: Badge count on bell icon
+- **Acceptance:** Student gets a web push notification when graded. Bell icon shows unread count. Clicking notification navigates to relevant page. Device token stored for future mobile push.
+
+### FEAT-016: Discussion Threads
+- **Status:** `TODO`
+- **Priority:** MEDIUM — Core LMS table stakes
+- **Scope:**
+  - Backend:
+    - `Discussion` entity: tenantId, sectionId, authorId, title, body (rich text), isPinned, isLocked, isAnswered, replyCount, createdAt, updatedAt
+    - `DiscussionReply` entity: tenantId, discussionId, authorId, parentReplyId (for threading), body (rich text), isInstructorAnswer, createdAt
+    - `DiscussionsService`: CRUD, reply, pin/lock/markAnswered (instructor), tenant-scoped, paginated
+    - `DiscussionsResolver`: queries (sectionDiscussions, discussion, discussionReplies) and mutations (createDiscussion, replyToDiscussion, pinDiscussion, lockDiscussion, markAsAnswered)
+    - Integration: Discussions appear in course timeline as `DISCUSSION` type entries
+    - @mention parsing: extract @username from body, create notification for mentioned user
+  - Frontend:
+    - Discussion list view in timeline (card with title, author, reply count, answered badge)
+    - Discussion detail page: OP + threaded replies, reply form with Tiptap editor
+    - Instructor controls: pin, lock, mark as answered
+    - "New Discussion" button in timeline (all enrolled users)
+- **Acceptance:** Students can create discussions in a course section. Replies are threaded. Instructors can pin/lock/mark answered. Discussions show in timeline. @mentions trigger notifications.
+
+### FEAT-017: Quiz Engine
+- **Status:** `TODO`
+- **Priority:** MEDIUM — Core LMS table stakes
+- **Scope:**
+  - Backend:
+    - `QuizQuestion` entity: assignmentId, questionText, questionType (enum: multiple_choice, true_false, short_answer), options (JSONB: [{ text, isCorrect }]), points, order
+    - Extend `Submission` entity: answers (JSONB: [{ questionId, selectedOption, textAnswer }]), autoScore (number, auto-calculated)
+    - `QuizService`: createQuiz (assignment + questions), submitQuiz (auto-grade MCQ/TF, manual grade short-answer), getQuizWithQuestions (instructor), getQuizForStudent (no answers shown)
+    - `QuizResolver`: mutations (addQuizQuestions, updateQuizQuestion, deleteQuizQuestion, submitQuiz), queries (quizQuestions — instructor only)
+    - Auto-grading: sum points for correct MCQ/TF answers, skip short-answer (instructor grades manually)
+    - Attempt tracking: configurable maxAttempts on Assignment entity, reject submission if exceeded
+    - Optional time limit: startedAt on Submission, reject if submission time exceeds Assignment.timeLimitMinutes
+  - Frontend:
+    - Quiz builder UI for instructors: add/edit/reorder questions, set points, set correct answers
+    - Quiz delivery UI for students: question-by-question or all-at-once (configurable), countdown timer, submit confirmation
+    - Auto-score display after submission (MCQ/TF), "Pending manual review" for short-answer
+    - Attempt counter: "Attempt 2 of 3"
+- **Acceptance:** Instructor can create a quiz with 10 MCQ questions. Student takes the quiz and sees auto-graded score immediately. Short-answer questions require manual grading. Time limits and attempt limits work.
+
+### MOB-001: Responsive Dashboard Layouts
+- **Status:** `TODO`
+- **Priority:** MEDIUM
+- **Scope:** Audit and fix all `(dashboard)` pages at 375px, 390px, 428px. Sidebar → slide-out drawer. Top nav collapses. No horizontal overflow.
+- **Acceptance:** Every dashboard page renders correctly on iPhone SE through iPhone 15 Pro Max.
+
+### MOB-002: Responsive Course & Assignment Pages
+- **Status:** `TODO`
+- **Priority:** MEDIUM
+- **Scope:** Course list, detail, timeline, assignment detail, submission form, gradebook — all single-column on mobile.
+- **Acceptance:** Student can browse, submit, and view grades on phone without zooming.
+
+### MOB-003: Responsive AI Chat & Messaging
+- **Status:** `TODO`
+- **Priority:** MEDIUM
+- **Scope:** Two-panel → single-panel with back button on mobile. Keyboard doesn't obscure input. Agent selector stacks.
+- **Acceptance:** Full AI conversation and messaging on mobile.
+
+### MOB-004: Responsive Admin Pages
+- **Status:** `TODO`
+- **Priority:** LOW
+- **Scope:** Stat grids → 2-col on mobile. Tables → horizontal scroll or card layout. Functional on tablet, usable on phone.
+- **Acceptance:** Admin can view analytics on tablet. Phone is functional.
+
+### MOB-005: Touch Interaction Polish
+- **Status:** `TODO`
+- **Priority:** LOW
+- **Scope:** 44px tap targets, remove hover-only interactions, pull-to-refresh on feed.
+- **Acceptance:** Lighthouse mobile accessibility >= 95.
+
+### SITE-001: Landing Page
+- **Status:** `TODO`
+- **Priority:** HIGH — Product must be discoverable
+- **Scope:**
+  - New `(marketing)` route group in existing Next.js app — public, no auth required
+  - Landing page at `/` replacing current redirect to `/login`:
+    - Hero section: "The AI-native LMS that puts students first" + product screenshot or animated demo
+    - Problem statement: The 4 problems from MISSION.md (filing cabinet UX, fragmented experience, no personalization, broken advising)
+    - Feature showcase: 6-8 key features with screenshots (feed, graduation planner, AI chat, catalog import, course timeline, governance console)
+    - Differentiator callouts: "Upload your PDF catalog → AI sets up your institution" and "I need a 3-credit elective → AI enrolls you"
+    - Social proof section (placeholder for testimonials/university logos)
+    - CTA: "Request a Demo" / "Try it Free"
+    - Footer: links to Features, About, Login, Register
+  - Shared layout with marketing nav (NexusEd logo, Features, About, Login, Get Started)
+  - Responsive, accessible (same Tailwind + shadcn system)
+- **Acceptance:** Visiting nexused.app (or localhost:3000) shows a professional landing page. Login/Register are accessible from nav. Page is responsive and accessible.
+
+### SITE-002: Features Page
+- **Status:** `TODO`
+- **Priority:** MEDIUM
+- **Scope:**
+  - `/features` page with detailed breakdown of each feature category:
+    - AI-Powered Learning (Study Coach, Feedback Copilot, Custom Agents)
+    - Smart Enrollment (catalog, AI discovery, prerequisite alerts)
+    - Graduation Planning (constraint-based plans, financial projections, aid awareness)
+    - Institutional Management (AI governance, analytics, LTI, catalog import)
+    - For Students / For Instructors / For Admins sections
+  - Screenshots or mockup images for each feature
+- **Acceptance:** A prospective user can understand what NexusEd does and how it differs from Canvas/Moodle/Brightspace.
+
+### SITE-003: About Page
+- **Status:** `TODO`
+- **Priority:** MEDIUM
+- **Scope:**
+  - `/about` page with:
+    - The story (adapted from MISSION.md — the UVic frustration, the advisor who liked it but couldn't act, building it yourself)
+    - Vision statement
+    - Contact form or email for institutional inquiries
+  - Authentic, human — this story is NexusEd's strongest marketing asset
+- **Acceptance:** A university decision-maker can read why NexusEd exists and reach out.
+
+---
+
+## Sprint: Phase B — React Native Mobile App
+
+> **Goal:** Focused student mobile app in the monorepo. Shares backend GraphQL API. Student-only — instructors and admins use the web.
+>
+> **Prerequisites:** Phase A must be complete (file uploads, notifications, discussions, quizzes all available via API).
+>
+> See [ROADMAP.md](./ROADMAP.md) Phase B for the full breakdown of MOB-APP-001 through MOB-APP-010.
+
+### MOB-APP-001: Expo Project Setup
+- **Status:** `TODO`
+- **Priority:** HIGH — Foundation for all mobile work
+- **Scope:** Expo + Expo Router in `nexused-mobile/`, Apollo Client, shared types, expo-secure-store, biometric auth
+- **Acceptance:** App scaffolded, builds for iOS simulator, can reach backend GraphQL endpoint.
+
+### MOB-APP-002: Mobile Auth Flow
+- **Status:** `TODO`
+- **Scope:** Login, register, biometric unlock, persistent session
+
+### MOB-APP-003: Mobile Feed / Home
+- **Status:** `TODO`
+- **Scope:** AI-prioritized feed, pull-to-refresh, navigation to items
+
+### MOB-APP-004: Mobile Courses
+- **Status:** `TODO`
+- **Scope:** Course list, detail, timeline view
+
+### MOB-APP-005: Mobile Assignments
+- **Status:** `TODO`
+- **Scope:** Detail view, text + camera + file submission, submission history
+
+### MOB-APP-006: Mobile Grades
+- **Status:** `TODO`
+- **Scope:** Grade summary, per-course breakdown
+
+### MOB-APP-007: Mobile Messages
+- **Status:** `TODO`
+- **Scope:** Conversation list, thread with Socket.IO, compose
+
+### MOB-APP-008: Mobile AI Chat
+- **Status:** `TODO`
+- **Scope:** Agent selection, conversation, tool indicators
+
+### MOB-APP-009: Mobile Push Notifications
+- **Status:** `TODO`
+- **Scope:** FCM integration, device token registration, notification inbox, deep linking
+
+### MOB-APP-010: Mobile Profile & Settings
+- **Status:** `TODO`
+- **Scope:** Profile edit, notification preferences, theme
+
+---
+
+## Sprint: Phase C — Go-to-Market (Deferred)
+
+> **Deferred until product is complete and tested.** See [ROADMAP.md](./ROADMAP.md) Phase C for full details.
+> Tasks: BIZ-001 (Stripe), BIZ-002 (Onboarding), BIZ-003 (SAML), BIZ-004 (LTI AGS), ENROLL-007–011, GRAD-005–006, Parent Role
+
+---
+
 ## 10x Differentiators (Already Built — Protect These)
 
 > These are what separate NexusEd from every competitor. Don't remove, simplify, or refactor these unless you fully understand why they exist.
@@ -1186,17 +1431,23 @@
 | GEM-009 | Tenant entity with SaaS billing | `tenant.entity.ts` |
 | GEM-010 | Unified course timeline | Timeline types + frontend components |
 
+### Built Differentiators (Moved from Planned)
+
+| ID | Gem | Status | Key Files |
+|----|-----|--------|-----------|
+| GEM-011 | AI-assisted institutional onboarding | ✅ DONE | `catalog-extract.service.ts` |
+| GEM-012 | AI-native enrollment | ✅ DONE | `enroll_in_course` tool, enrollment tools |
+| GEM-013 | Constraint-based graduation planner | ✅ DONE (in branch) | `graduation-planner.service.ts` |
+| GEM-014 | Financial-aware academic planning | ✅ DONE (in branch) | `financial-projection.service.ts` |
+
 ### Planned Differentiators (Not Yet Built)
 
 | ID | Gem | Sprint | Why It Matters |
 |----|-----|--------|----------------|
-| GEM-011 | AI-assisted institutional onboarding | ONBOARD-004 | Upload a PDF academic calendar → AI extracts your entire course catalog. No competitor does this. |
-| GEM-012 | AI-native enrollment | ENROLL-005/007 | "Enroll me in a 3-credit elective" in conversation. First LMS where enrollment is AI-powered. |
-| GEM-013 | Constraint-based graduation planner | GRAD-001/002 | Semester-by-semester plan that adapts to finances, timeline, and life changes. DegreeWorks killer. |
-| GEM-014 | Financial-aware academic planning | GRAD-003/004 | "Going part-time adds 3 semesters and $18,000" — no LMS shows financial impact of academic decisions. |
-| GEM-015 | Career-to-curriculum mapping | GRAD-006 | "I want to be a data scientist" → AI builds a graduation plan toward that career. |
+| GEM-015 | Career-to-curriculum mapping | GRAD-006 (Phase C) | "I want to be a data scientist" → AI builds a graduation plan toward that career. |
+| GEM-016 | Native mobile app with push | Phase B | Students get due dates, grades, messages via native push. Camera submissions from phone. |
 
 ---
 
-*Last updated: 2026-02-17 (Added ONBOARD-001–004, ENROLL-001–011, GRAD-001–006)*
+*Last updated: 2026-02-21 (Added Phase A/B/C sprints: INFRA-001–003, FEAT-016–017, MOB-001–005, SITE-001–003, MOB-APP-001–010)*
 *This file is the primary task reference for all development sessions.*
