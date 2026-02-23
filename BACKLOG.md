@@ -1213,7 +1213,8 @@
 - **Acceptance:** Student can attach a PDF to an assignment submission. Instructor can upload images into course content. Profile pictures work. All uploads are tenant-scoped and presigned (NestJS never handles file bytes).
 
 ### INFRA-002: Email Notification Service
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-23
 - **Priority:** HIGH — Universities expect email notifications
 - **Scope:**
   - Backend: New `notifications` module with:

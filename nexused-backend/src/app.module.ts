@@ -19,6 +19,7 @@ import authConfig from './config/auth.config';
 import aiConfig from './config/ai.config';
 import ltiConfig from './config/lti.config';
 import storageConfig from './config/storage.config';
+import emailConfig from './config/email.config';
 import { entities } from './database/entities';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -35,6 +36,8 @@ import { LtiModule } from './modules/lti/lti.module';
 import { PlannerModule } from './modules/planner/planner.module';
 import { CatalogExtractModule } from './modules/catalog-extract/catalog-extract.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -47,6 +50,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
         aiConfig,
         ltiConfig,
         storageConfig,
+        emailConfig,
       ],
     }),
     TypeOrmModule.forRootAsync({
@@ -104,6 +108,8 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     PlannerModule,
     CatalogExtractModule,
     UploadsModule,
+    NotificationsModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController, HealthController],
   providers: [

@@ -107,12 +107,14 @@
 - [x] `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` — R2/S3 interchangeable
 - **Completed:** 2026-02-23
 
-### A3: Email Notification Service — INFRA-002
-- [ ] Resend (or SendGrid) integration via NestJS module
-- [ ] Event-driven: `SUBMISSION_GRADED` → email student, `ASSIGNMENT_CREATED` → email section, due date reminders (cron)
-- [ ] Templated emails matching NexusEd design system
-- [ ] User notification preferences (email on/off per event type)
-- **Effort:** 3-4 days
+### A3: Email Notification Service — INFRA-002 ✅
+- [x] Resend SDK integration via `NotificationsModule`
+- [x] Event-driven: `SUBMISSION_GRADED` → email student, `ASSIGNMENT_CREATED` → email section, `ENROLLMENT_CREATED` → email student
+- [x] Due date reminders cron (8am + 6pm UTC, skips already-submitted assignments)
+- [x] HTML email templates with NexusEd branding (inline styles, email-client compatible)
+- [x] User notification preferences stored in user.preferences JSONB (5 toggle types)
+- [x] Settings page at `/settings` with toggle UI; "Settings" added to user menu
+- **Completed:** 2026-02-23
 
 ### A4: Push Notification Infrastructure — INFRA-003
 - [ ] Notification entity (userId, type, title, body, read, data)
