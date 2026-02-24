@@ -81,18 +81,45 @@ export class WebPushService implements OnModuleInit {
     return this.deviceTokenRepo.save(record);
   }
 
-  /** Send a push notification to all registered web devices for a user. */
+  /**
+   * Send a push notification to all registered devices for a user.
+   * Handles web (VAPID) and mobile (Expo Push API) in parallel.
+   */
   async sendToUser(
     userId: string,
     tenantId: string,
     payload: PushPayload,
   ): Promise<void> {
-    if (!this.enabled) return;
-
-    const tokens = await this.deviceTokenRepo.find({
-      where: { userId, tenantId, platform: DevicePlatform.WEB },
+    const allTokens = await this.deviceTokenRepo.find({
+      where: [
+        { userId, tenantId, platform: DevicePlatform.WEB },
+        { userId, tenantId, platform: DevicePlatform.IOS },
+        { userId, tenantId, platform: DevicePlatform.ANDROID },
+      ],
     });
-    if (tokens.length === 0) return;
+    if (allTokens.length === 0) return;
+
+    const webTokens = allTokens.filter(
+      (dt) => dt.platform === DevicePlatform.WEB,
+    );
+    const mobileTokens = allTokens.filter(
+      (dt) =>
+        dt.platform === DevicePlatform.IOS ||
+        dt.platform === DevicePlatform.ANDROID,
+    );
+
+    await Promise.all([
+      this.sendWebPush(webTokens, payload),
+      this.sendExpoPush(mobileTokens, payload),
+    ]);
+  }
+
+  /** Send via VAPID web-push to browser subscriptions. */
+  private async sendWebPush(
+    tokens: DeviceToken[],
+    payload: PushPayload,
+  ): Promise<void> {
+    if (!this.enabled || tokens.length === 0) return;
 
     const payloadStr = JSON.stringify(payload);
     const staleTokenIds: string[] = [];
@@ -105,7 +132,7 @@ export class WebPushService implements OnModuleInit {
           dt.lastUsedAt = new Date();
           await this.deviceTokenRepo.save(dt);
         } catch (err: unknown) {
-          // 410 Gone = subscription expired/unsubscribed — clean it up
+          // 410 Gone = subscription expired — clean it up
           if (
             typeof err === 'object' &&
             err !== null &&
@@ -114,7 +141,7 @@ export class WebPushService implements OnModuleInit {
           ) {
             staleTokenIds.push(dt.id);
           } else {
-            this.logger.error(`Push failed for token ${dt.id}`, err);
+            this.logger.error(`Web push failed for token ${dt.id}`, err);
           }
         }
       }),
@@ -122,6 +149,87 @@ export class WebPushService implements OnModuleInit {
 
     if (staleTokenIds.length > 0) {
       await this.deviceTokenRepo.delete(staleTokenIds);
+    }
+  }
+
+  /**
+   * Send via Expo Push API to iOS/Android devices.
+   * Expo handles FCM/APNs routing transparently.
+   * https://docs.expo.dev/push-notifications/sending-notifications/
+   */
+  private async sendExpoPush(
+    tokens: DeviceToken[],
+    payload: PushPayload,
+  ): Promise<void> {
+    if (tokens.length === 0) return;
+
+    const messages = tokens.map((dt) => ({
+      to: dt.token,
+      title: payload.title,
+      body: payload.body,
+      data: { url: payload.url, type: payload.type },
+      sound: 'default' as const,
+    }));
+
+    let result: {
+      data: Array<{
+        status: string;
+        id?: string;
+        message?: string;
+        details?: { error?: string };
+      }>;
+    };
+
+    try {
+      const res = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Accept-Encoding': 'gzip, deflate',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(messages),
+      });
+
+      if (!res.ok) {
+        this.logger.error(`Expo push HTTP error: ${res.status}`);
+        return;
+      }
+
+      result = (await res.json()) as typeof result;
+    } catch (err) {
+      this.logger.error('Expo push network error', err);
+      return;
+    }
+
+    // Clean up stale tokens (DeviceNotRegistered = app uninstalled)
+    const staleTokenIds: string[] = [];
+    result.data.forEach((receipt, i) => {
+      if (
+        receipt.status === 'error' &&
+        receipt.details?.error === 'DeviceNotRegistered'
+      ) {
+        staleTokenIds.push(tokens[i].id);
+      } else if (receipt.status === 'error') {
+        this.logger.warn(
+          `Expo push error for token ${tokens[i].id}: ${receipt.message ?? 'unknown'}`,
+        );
+      }
+    });
+
+    if (staleTokenIds.length > 0) {
+      await this.deviceTokenRepo.delete(staleTokenIds);
+    }
+
+    // Update lastUsedAt for successful sends
+    const successfulTokens = tokens.filter(
+      (_, i) => result.data[i]?.status === 'ok',
+    );
+    if (successfulTokens.length > 0) {
+      await this.deviceTokenRepo.update(
+        successfulTokens.map((t) => t.id),
+        { lastUsedAt: new Date() },
+      );
     }
   }
 }

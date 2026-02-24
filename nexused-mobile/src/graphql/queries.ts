@@ -202,6 +202,49 @@ export const SEND_MESSAGE_MUTATION = gql`
   }
 `;
 
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export const REGISTER_DEVICE_TOKEN_MUTATION = gql`
+  mutation RegisterDeviceToken($token: String!, $platform: DevicePlatform!) {
+    registerDeviceToken(token: $token, platform: $platform)
+  }
+`;
+
+export const MY_NOTIFICATIONS_QUERY = gql`
+  query MyNotifications($limit: Int, $offset: Int) {
+    myNotifications(limit: $limit, offset: $offset) {
+      id
+      type
+      title
+      body
+      data
+      read
+      createdAt
+    }
+  }
+`;
+
+export const UNREAD_NOTIFICATION_COUNT_QUERY = gql`
+  query UnreadNotificationCount {
+    unreadNotificationCount
+  }
+`;
+
+export const MARK_NOTIFICATION_READ_MUTATION = gql`
+  mutation MarkNotificationRead($id: String!) {
+    markNotificationRead(id: $id) {
+      id
+      read
+    }
+  }
+`;
+
+export const MARK_ALL_NOTIFICATIONS_READ_MUTATION = gql`
+  mutation MarkAllNotificationsRead {
+    markAllNotificationsRead
+  }
+`;
+
 // ─── AI ───────────────────────────────────────────────────────────────────────
 
 export const MY_AI_CONVERSATIONS_QUERY = gql`

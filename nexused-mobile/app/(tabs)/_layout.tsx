@@ -5,12 +5,19 @@
  * WHY: These match the 5 most-used student actions. Desktop has more nav items
  * because screen space allows it; mobile must be ruthless about what gets a tab.
  */
-import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { Tabs, router } from 'expo-router';
+import { Platform, TouchableOpacity, Text, StyleSheet } from 'react-native';
 
-// Simple icon component using text (avoids @expo/vector-icons for now)
-function TabIcon({ symbol, focused }: { symbol: string; focused: boolean }) {
-  return null; // Icons are set via tabBarIcon below with emoji for now
+function ProfileButton() {
+  return (
+    <TouchableOpacity
+      onPress={() => router.push('/profile')}
+      style={tabStyles.profileButton}
+      activeOpacity={0.7}
+    >
+      <Text style={tabStyles.profileButtonText}>⊙</Text>
+    </TouchableOpacity>
+  );
 }
 
 export default function TabsLayout() {
@@ -53,9 +60,7 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) =>
-            // Using emoji as icon placeholder — replace with expo-vector-icons if desired
-            null,
+          headerRight: () => <ProfileButton />,
         }}
       />
       <Tabs.Screen
@@ -89,3 +94,20 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const tabStyles = StyleSheet.create({
+  profileButton: {
+    marginRight: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileButtonText: {
+    fontSize: 18,
+    color: '#475569',
+    lineHeight: 22,
+  },
+});
