@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import {
   Course,
@@ -26,6 +26,8 @@ import {
   AdminEnrollInput,
   AdminUpdateEnrollmentInput,
   BulkEnrollInput,
+  BulkDropInput,
+  BulkMoveInput,
   AdminCreateSectionInput,
 } from './dto/admin-course.types';
 
@@ -151,6 +153,22 @@ export class AdminCoursesResolver {
     @Args('input') input: BulkEnrollInput,
   ): Promise<Enrollment[]> {
     return this.coursesService.bulkEnroll(user.tenantId, input);
+  }
+
+  @Mutation(() => Int)
+  async bulkDropEnrollments(
+    @CurrentUser() user: User,
+    @Args('input') input: BulkDropInput,
+  ): Promise<number> {
+    return this.coursesService.bulkDropEnrollments(user.tenantId, input);
+  }
+
+  @Mutation(() => Int)
+  async bulkMoveEnrollments(
+    @CurrentUser() user: User,
+    @Args('input') input: BulkMoveInput,
+  ): Promise<number> {
+    return this.coursesService.bulkMoveEnrollments(user.tenantId, input);
   }
 
   @Mutation(() => ImportResult)

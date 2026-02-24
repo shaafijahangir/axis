@@ -115,3 +115,15 @@ export const BULK_ENROLL_MUTATION = gql`
     }
   }
 `;
+
+export const BULK_DROP_ENROLLMENTS_MUTATION = gql`
+  mutation BulkDropEnrollments($input: BulkDropInput!) {
+    bulkDropEnrollments(input: $input)
+  }
+`;
+
+export const BULK_MOVE_ENROLLMENTS_MUTATION = gql`
+  mutation BulkMoveEnrollments($input: BulkMoveInput!) {
+    bulkMoveEnrollments(input: $input)
+  }
+`;

@@ -905,7 +905,8 @@
 - **Acceptance:** Student can describe what they need in natural language and get relevant course recommendations that account for their degree progress.
 
 ### ENROLL-008: Bulk Enrollment (Admin)
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-24
 - **Priority:** LOW — Institutional scale feature
 - **Depends on:** ENROLL-002
 - **Scope:**
@@ -1153,7 +1154,8 @@
 - **Acceptance:** Admin can view analytics and manage governance settings on a tablet (768px). Phone (375px) is functional but tables may require horizontal scroll.
 
 ### MOB-005: Touch interaction polish
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-24
 - **Priority:** MEDIUM
 - **Problem:** Web apps on mobile often have usability issues: tiny tap targets, no swipe gestures, hover-dependent interactions.
 - **Fix:**

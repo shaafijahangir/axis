@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
 import {
   CatalogCourse,
   CatalogSection,
@@ -38,6 +38,8 @@ import {
   AdminEnrollInput,
   AdminUpdateEnrollmentInput,
   BulkEnrollInput,
+  BulkDropInput,
+  BulkMoveInput,
   AdminCreateSectionInput,
 } from './dto/admin-course.types';
 import { NexusEvents } from '../ai/events/ai-events';
@@ -52,6 +54,7 @@ export class CoursesService {
     @InjectRepository(Enrollment)
     private enrollmentsRepository: Repository<Enrollment>,
     private eventEmitter: EventEmitter2,
+    private dataSource: DataSource,
   ) {}
 
   async findAllForTenant(tenantId: string): Promise<Course[]> {
@@ -950,6 +953,100 @@ export class CoursesService {
 
     const saved = await this.enrollmentsRepository.save(enrollments);
     return [...existing, ...saved];
+  }
+
+  /**
+   * Drop a batch of enrollments atomically.
+   * Only affects enrollments belonging to this tenant (verified via section.course.tenantId).
+   * Returns the count of enrollments actually dropped.
+   */
+  async bulkDropEnrollments(
+    tenantId: string,
+    input: BulkDropInput,
+  ): Promise<number> {
+    if (input.enrollmentIds.length === 0) return 0;
+
+    const enrollments = await this.enrollmentsRepository.find({
+      where: { id: In(input.enrollmentIds) },
+      relations: ['section', 'section.course'],
+    });
+
+    const tenantOwned = enrollments.filter(
+      (e) => e.section.course.tenantId === tenantId,
+    );
+    if (tenantOwned.length === 0) return 0;
+
+    await this.enrollmentsRepository.update(
+      { id: In(tenantOwned.map((e) => e.id)) },
+      { status: EnrollmentStatus.DROPPED },
+    );
+
+    return tenantOwned.length;
+  }
+
+  /**
+   * Move a batch of enrollments to a different section.
+   * Drops the current enrollment and creates a new active one in the target section.
+   * If the student is already enrolled in the target section the drop still happens
+   * but no duplicate is created.
+   * All writes are wrapped in a transaction.
+   */
+  async bulkMoveEnrollments(
+    tenantId: string,
+    input: BulkMoveInput,
+  ): Promise<number> {
+    if (input.enrollmentIds.length === 0) return 0;
+
+    // Verify target section belongs to this tenant
+    const targetSection = await this.sectionsRepository.findOne({
+      where: { id: input.targetSectionId },
+      relations: ['course'],
+    });
+    if (!targetSection || targetSection.course.tenantId !== tenantId) {
+      throw new NotFoundException('Target section not found');
+    }
+
+    const enrollments = await this.enrollmentsRepository.find({
+      where: { id: In(input.enrollmentIds) },
+      relations: ['section', 'section.course'],
+    });
+
+    const tenantOwned = enrollments.filter(
+      (e) => e.section.course.tenantId === tenantId,
+    );
+    if (tenantOwned.length === 0) return 0;
+
+    await this.dataSource.manager.transaction(async (manager) => {
+      for (const enrollment of tenantOwned) {
+        // Drop the existing enrollment
+        await manager.update(Enrollment, enrollment.id, {
+          status: EnrollmentStatus.DROPPED,
+        });
+
+        // Skip if already enrolled in the target section
+        const alreadyEnrolled = await manager.findOne(Enrollment, {
+          where: {
+            userId: enrollment.userId,
+            sectionId: input.targetSectionId,
+            status: EnrollmentStatus.ACTIVE,
+          },
+        });
+        if (alreadyEnrolled) continue;
+
+        await manager.save(
+          manager.create(Enrollment, {
+            tenantId,
+            userId: enrollment.userId,
+            sectionId: input.targetSectionId,
+            role: enrollment.role,
+            status: EnrollmentStatus.ACTIVE,
+            enrolledAt: new Date(),
+          }),
+        );
+      }
+    });
+
+    return tenantOwned.length;
   }
 
   // ─── Student Catalog ──────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
-import { IsOptional, IsString, IsEnum, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsUUID, IsArray } from 'class-validator';
 import { SectionStatus } from '../../../database/entities/course-section.entity';
 import {
   EnrollmentRole,
@@ -79,6 +79,26 @@ export class BulkEnrollInput {
   @IsOptional()
   @IsEnum(EnrollmentRole)
   role?: EnrollmentRole;
+}
+
+@InputType()
+export class BulkDropInput {
+  @Field(() => [String])
+  @IsArray()
+  @IsUUID('4', { each: true })
+  enrollmentIds: string[];
+}
+
+@InputType()
+export class BulkMoveInput {
+  @Field(() => [String])
+  @IsArray()
+  @IsUUID('4', { each: true })
+  enrollmentIds: string[];
+
+  @Field()
+  @IsUUID()
+  targetSectionId: string;
 }
 
 @InputType()
