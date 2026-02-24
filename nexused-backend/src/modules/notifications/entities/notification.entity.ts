@@ -9,6 +9,8 @@ export enum NotificationType {
   DUE_DATE_REMINDER = 'due_date_reminder',
   NEW_MESSAGE = 'new_message',
   ANNOUNCEMENT = 'announcement',
+  DISCUSSION_REPLY = 'discussion_reply',
+  DISCUSSION_MENTION = 'discussion_mention',
   SYSTEM = 'system',
 }
 

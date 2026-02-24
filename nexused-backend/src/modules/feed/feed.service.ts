@@ -13,6 +13,7 @@ import {
 } from '../../database/entities/course-section.entity';
 import { AnnouncementsService } from '../announcements/announcements.service';
 import { ContentService } from '../content/content.service';
+import { DiscussionsService } from '../discussions/discussions.service';
 import {
   FeedItem,
   FeedItemType,
@@ -44,6 +45,7 @@ export class FeedService {
     private sectionRepo: Repository<CourseSection>,
     private announcementsService: AnnouncementsService,
     private contentService: ContentService,
+    private discussionsService: DiscussionsService,
   ) {}
 
   // ─── Student Feed ─────────────────────────────────────────────────────
@@ -433,6 +435,31 @@ export class FeedService {
         pinned: false,
         timestamp: c.publishedAt ?? c.createdAt,
         publishedAt: c.publishedAt ?? undefined,
+      });
+    }
+
+    // Discussions
+    const discussions = await this.discussionsService.findBySectionId(
+      sectionId,
+      tenantId,
+      1,
+      50,
+    );
+
+    for (const d of discussions) {
+      entries.push({
+        type: TimelineEntryType.DISCUSSION,
+        id: d.id,
+        title: d.title,
+        body: d.body,
+        authorName: d.author
+          ? `${d.author.firstName} ${d.author.lastName}`
+          : undefined,
+        pinned: d.isPinned,
+        timestamp: d.createdAt,
+        replyCount: d.replyCount,
+        isLocked: d.isLocked,
+        isAnswered: d.isAnswered,
       });
     }
 

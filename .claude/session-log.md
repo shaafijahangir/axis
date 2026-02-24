@@ -5,6 +5,80 @@
 
 ---
 
+## Session 29 — Phase A: FEAT-016 Discussion Threads
+
+**Date:** 2026-02-23
+**Goal:** Build A5 — Discussion Threads (FEAT-016)
+**Status:** COMPLETE
+
+### Work Done
+
+**FEAT-016: Discussion Threads — DONE**
+- Backend: `DiscussionsModule` with full CRUD
+  - `Discussion` entity: tenantId, sectionId, authorId, title, body, isPinned, isLocked, isAnswered, replyCount — extends TenantScopedEntity
+  - `DiscussionReply` entity: tenantId, discussionId, authorId, parentReplyId (nullable for threading), body, isInstructorAnswer — extends TenantScopedEntity
+  - `DiscussionsService`: createDiscussion, createReply (transaction for replyCount increment), findBySectionId (paginated), findById, findReplies, pinDiscussion (toggle), lockDiscussion (toggle), markDiscussionAnswered (toggle), markReplyAsInstructorAnswer
+  - `DiscussionsResolver`: all queries + mutations, JwtAuthGuard on all, RolesGuard on instructor-only mutations
+  - @mention parsing: strips HTML → extracts @Name patterns → looks up users in section enrollments → sends notifications
+  - Auto-notifies section members on new discussion (capped 50), notifies discussion author on reply
+- Updated `NotificationType` enum: added `DISCUSSION_REPLY`, `DISCUSSION_MENTION`
+- Updated `TimelineEntryType` enum: added `DISCUSSION`
+- Updated `TimelineEntry` GraphQL type: added `replyCount`, `isLocked`, `isAnswered` nullable fields
+- Updated `FeedService.getSectionTimeline()` to include discussions in unified timeline
+- Registered `Discussion` + `DiscussionReply` in global `entities` array
+- Registered `DiscussionsModule` in `AppModule`
+- Frontend: GraphQL queries (`SECTION_DISCUSSIONS_QUERY`, `DISCUSSION_QUERY`, `DISCUSSION_REPLIES_QUERY`)
+- Frontend: GraphQL mutations (createDiscussion, replyToDiscussion, pin, lock, markAnswered, markReplyAsAnswer)
+- Frontend: Updated `SECTION_TIMELINE_QUERY` to include `replyCount`, `isLocked`, `isAnswered`
+- Frontend: Updated `TimelineEntryCard` — discussion type with orange border/icon, reply count badge, locked/answered badges, links to detail page
+- Frontend: Updated section timeline page — added "New Discussion" button (all enrolled users), updated types
+- Frontend: `/courses/[id]/section/[sectionId]/discussion/create/page.tsx` — create form with Tiptap editor
+- Frontend: `/courses/[id]/section/[sectionId]/discussion/[discussionId]/page.tsx` — detail page with threaded replies, reply form, instructor controls (pin/lock/mark answered/mark reply as answer)
+
+### Key Architectural Decisions
+- **WHY transaction on reply**: replyCount increment + reply create must be atomic. A partial write would corrupt the count.
+- **WHY one-level threading**: Avoid unbounded recursive queries. parentReplyId enables "reply to a reply" (2 levels), but the UI only nests one level deep. Sufficient for LMS discussions.
+- **WHY async notifications**: Notification failure must never break the mutation. Both `notifySectionMembers` and `notifyOnReply` are fire-and-forget (`.catch(() => {})`).
+- **TRADEOFF @mentions**: Parse @FirstName or @FirstName LastName from stripped HTML. No username field on User. Relies on Tiptap HTML output which is predictable.
+
+### Next Session Priorities
+1. **FEAT-017: Quiz Engine** — MCQ/TF/short-answer builder for instructors, auto-grading, attempt tracking, time limits
+2. **MOB-001–005: Mobile Responsive Audit** — All dashboard pages at 375–430px
+3. **SITE-001: Landing Page** — Marketing presence at `/`
+
+---
+
+## Session 28 — Phase A: INFRA-001 File Upload Service
+
+**Date:** 2026-02-23
+**Goal:** Build A2 — File Upload Service (Cloudflare R2)
+**Status:** COMPLETE
+
+### Work Done
+
+**INFRA-001: File Upload Service (Cloudflare R2) — DONE**
+- Backend: `UploadsModule` with two-phase presigned URL pattern
+  - `FileUpload` entity extends `TenantScopedEntity` — key, originalName, mimeType, size, context (enum), contextId, uploadedById, confirmed flag
+  - `UploadsService`: requestUpload (presigned PUT URL), confirmUpload (mark confirmed), attachToContext (link to parent entity), getDownloadUrl (presigned GET), findByContext, deleteFile
+  - `UploadsResolver`: full GraphQL API, JwtAuthGuard on all operations
+  - `storage.config.ts`: typed R2/S3 config registered with NestJS ConfigModule
+  - Per-context validation: 4 contexts (assignment_submission, profile_picture, course_content, import_document), each with size limits and mime type allowlists
+  - `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` — works with R2 and S3 interchangeably
+- Frontend: `FileUpload` component — drag-and-drop, XHR with progress events, two-phase flow
+  - `FileAttachmentList` component — renders confirmed uploads with presigned download links
+  - Integrated into `submission-form.tsx` — files uploaded before submit, linked to submission after creation
+  - `progress` shadcn/ui component added
+
+### Key Architectural Decision
+Two-phase upload: client calls `requestUpload` → gets presigned PUT URL → PUT bytes directly to R2 → calls `confirmUpload`. NestJS never handles file bytes. This is critical — streaming 50MB files through the API would be a memory and throughput bottleneck.
+
+### Next Session Priorities
+1. **INFRA-002: Email Notification Service** — Resend integration, event-driven triggers, user notification preferences
+2. **INFRA-003: Push Notification Infrastructure** — Notification entity, VAPID keys, web push
+3. **FEAT-016: Discussion Threads** — Discussion + DiscussionReply entities, @mentions, pinning
+
+---
+
 ## Current Session
 
 **Started:** 2026-01-30
@@ -2265,3 +2339,325 @@ BACKLOG.md — ENROLL-002 → DONE
 ### Next Session Priorities
 1. **ENROLL-003: Enrollment Lifecycle** — drop/withdraw with deadline validation (dropDeadline, withdrawDeadline from AcademicTerm)
 2. **ENROLL-004: Enrollment Notifications** — email/in-app notifications on enroll/approve/reject
+
+---
+
+## Session 30 — ENROLL-003: Enrollment Lifecycle (Status Machine)
+
+**Started:** 2026-02-18
+**Goal:** Drop/withdraw with deadline enforcement, admin force-status override, student status UI
+**Status:** COMPLETE
+
+### What Was Built
+
+**Backend — New events (`ai-events.ts`):**
+- Added `ENROLLMENT_DROPPED` and `ENROLLMENT_WITHDRAWN` event constants + payload interfaces
+  (`EnrollmentDroppedEvent`, `EnrollmentWithdrawnEvent`)
+
+**Backend — Exposed `term` in GraphQL (`course-section.entity.ts`):**
+- Added `@Field(() => AcademicTerm, { nullable: true })` to `CourseSection.term` relation so
+  `dropDeadline` / `withdrawDeadline` are queryable
+
+**Backend — 4 new service methods (`courses.service.ts`):**
+- `getMyEnrollmentForSection(userId, sectionId, tenantId)` — fetches student's own enrollment
+- `dropCourse(enrollmentId, userId, tenantId)` — validates ownership + ACTIVE + drop deadline;
+  updates to DROPPED; emits `ENROLLMENT_DROPPED`
+- `withdrawFromCourse(enrollmentId, userId, tenantId)` — validates ownership + ACTIVE + withdraw
+  deadline; updates to WITHDRAWN; emits `ENROLLMENT_WITHDRAWN`
+- `adminForceEnrollmentStatus(enrollmentId, tenantId, status)` — bypasses deadlines; fires
+  appropriate lifecycle event
+
+**Backend — 4 new resolver operations (`courses.resolver.ts`):**
+- `myEnrollmentForSection(sectionId)` query (authenticated users)
+- `dropEnrollment(enrollmentId)` mutation (authenticated users)
+- `withdrawFromCourse(enrollmentId)` mutation (authenticated users)
+- `adminForceEnrollmentStatus(enrollmentId, status)` mutation (ADMIN only)
+
+**Frontend — GraphQL layer:**
+- `queries/courses.ts`: SECTION_QUERY extended with `term { dropDeadline withdrawDeadline }`;
+  added `MY_ENROLLMENT_FOR_SECTION_QUERY`
+- `mutations/enrollment.ts`: Added `DROP_ENROLLMENT_MUTATION`, `WITHDRAW_FROM_COURSE_MUTATION`,
+  `ADMIN_FORCE_ENROLLMENT_STATUS_MUTATION`
+
+**Frontend — `EnrollmentStatusWidget` (new):**
+- Student-facing status badge + Drop/Withdraw AlertDialog confirmation
+- `canDrop = active AND (no deadline OR now ≤ dropDeadline)`
+- `canWithdraw = active AND !canDrop AND (no deadline OR now ≤ withdrawDeadline)`
+- `isLockedIn = active AND !canDrop AND !canWithdraw` → info message
+- Deadline dates shown in formatted human-readable form
+- "Browse Catalog" link for dropped/rejected students
+
+**Frontend — Section page (`[sectionId]/page.tsx`):**
+- Queries `myEnrollmentForSection` for students (skipped for instructors)
+- `useEffect` to sync enrollment status from query data (avoids Apollo `onCompleted` TS issue)
+- Renders `<EnrollmentStatusWidget>` for students with section deadlines
+
+**Frontend — `/courses/page.tsx` (rewritten):**
+- Role-aware: pure students see `StudentCoursesView` (MY_ENROLLMENTS_QUERY)
+- Students: sorted by status (active → pending → waitlisted → completed → dropped/withdrawn/rejected),
+  status badges, "Open" button for active/pending
+- Instructors/Admins: `InstructorCoursesView` (unchanged full course list)
+
+**Frontend — `section-roster.tsx` (rewritten):**
+- `EnrollmentStatusSelect` for admins: force-status dropdown via `ADMIN_FORCE_ENROLLMENT_STATUS_MUTATION`
+- Non-admins: read-only badge for non-active enrollments
+
+### Files Created (1)
+```
+nexused-frontend/src/components/courses/enrollment-status-widget.tsx
+```
+
+### Files Modified (9)
+```
+nexused-backend/src/modules/ai/events/ai-events.ts
+nexused-backend/src/database/entities/course-section.entity.ts
+nexused-backend/src/modules/courses/courses.service.ts
+nexused-backend/src/modules/courses/courses.resolver.ts
+nexused-frontend/src/lib/graphql/queries/courses.ts
+nexused-frontend/src/lib/graphql/mutations/enrollment.ts
+nexused-frontend/src/components/courses/section-roster.tsx
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx
+nexused-frontend/src/app/(dashboard)/courses/page.tsx
+BACKLOG.md
+```
+
+### Key Design Decisions
+- **Term deadlines via relation**: `CourseSection.term` was not `@Field` decorated — added decorator
+  so deadlines are accessible in GraphQL without a separate query.
+- **Apollo `onCompleted` typing**: Apollo v3 TypeScript overloads don't always expose `onCompleted`
+  in `useQuery` options. Used `useEffect` with data dependency instead.
+- **Admin force-status fires lifecycle events**: Even admin overrides trigger ENROLLMENT_DROPPED /
+  ENROLLMENT_WITHDRAWN events for consistency with AI/feed reactions.
+
+### Build & Test Status
+- Backend: ✓ 0 type errors
+- Frontend: ✓ 0 type errors
+
+---
+
+## Session 31 — ENROLL-004: Enrollment Notifications & Onboarding
+
+**Started:** 2026-02-18
+**Goal:** Feed notifications for enrollment status changes + onboarding checklist for new students
+**Status:** COMPLETE
+
+### What Was Built
+
+**Backend — `FeedItemType.ENROLLMENT_UPDATE` (`feed.types.ts`):**
+- Added new enum value `ENROLLMENT_UPDATE = 'enrollment_update'`
+
+**Backend — Enrollment feed items (`feed.service.ts`):**
+- Removed early-return when `enrollments.length === 0` (so enrollment updates always load)
+- Guarded deadline/grade/announcement sections behind `if (sectionIds.length > 0)`
+- Added 5th data source: query enrollments with `status IN [ACTIVE, DROPPED, WITHDRAWN, REJECTED]`
+  AND `updatedAt > 14 days ago` → maps to human-readable feed items:
+  - ACTIVE: "Enrolled in {CODE}: {Title} — You're all set!"
+  - DROPPED: "Dropped: {CODE} — You've dropped {Title}"
+  - WITHDRAWN: "Withdrawn from {CODE} — A 'W' has been recorded"
+  - REJECTED: "Enrollment not approved: {CODE} — request declined"
+- Pull-based (computed on read) — no new entity or event handler needed
+
+**Frontend — `feed-card.tsx`:**
+- Added `enrollment_update` to `FeedItemType` union
+- Added `enrollment_update` entry in `typeConfig`: `UserCheck` icon, indigo color
+- Added `'Enrollment update'` to `typeLabel` switch
+
+**Frontend — `EnrollmentOnboardingChecklist` (new):**
+- Shown on section timeline page for active students, once per section (localStorage-keyed)
+- 3 checklist items: Review timeline, Check assignments, Meet Study Coach (with `/ai` link)
+- Dismiss button sets `nexused_onboarding_dismissed_{sectionId}` → `'true'` in localStorage
+- Starts hidden (avoids flash), reveals via `useEffect` if not already dismissed
+
+**Frontend — Section page (`[sectionId]/page.tsx`):**
+- Imported `EnrollmentOnboardingChecklist`
+- Renders checklist between status widget and timeline for `isStudent && enrollmentStatus === 'active'`
+
+### Files Created (1)
+```
+nexused-frontend/src/components/courses/enrollment-onboarding-checklist.tsx
+```
+
+### Files Modified (3)
+```
+nexused-backend/src/modules/feed/dto/feed.types.ts
+nexused-backend/src/modules/feed/feed.service.ts
+nexused-frontend/src/components/feed/feed-card.tsx
+nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx
+```
+
+### Build & Test Status
+- Backend: ✓ 0 type errors
+- Frontend: ✓ 0 type errors
+
+### Next Session Priorities
+1. **ENROLL-005: Enroll-from-AI** — New AI tools `enroll_in_course` + `check_enrollment_status`,
+   governance default = `suggest`
+2. **ENROLL-006: Proactive Prerequisite Alerts** — AI warns before enrolling in courses with
+   unmet prerequisites
+
+---
+
+## Session 14 (2026-02-18) — ENROLL-005 + ENROLL-006
+
+**Goal:** AI enrollment tools + proactive prerequisite alerts
+**Status:** COMPLETE
+
+### Work Done
+
+#### ENROLL-005: Enroll-from-AI (`DONE`)
+- `nexused-backend/src/modules/ai/tools/enrollment.tools.ts`:
+  - Added `check_enrollment_status` tool — uses `ctx.userId` (no userId input), optional courseCode filter, `actionType: 'auto'`
+  - Added `enroll_in_course` tool — uses `ctx.userId`, `actionType: 'suggest'` (requires student confirmation), wraps errors as structured response
+- `nexused-backend/src/modules/ai/agents/course-planner.agent.ts`:
+  - Added `check_enrollment_status`, `enroll_in_course`, `get_course_sections` to agent tools list
+  - Extended system prompt with enrollment workflow (prereq check → section select → confirm → enroll)
+
+#### ENROLL-006: Proactive Prerequisite Alerts (`DONE`)
+- **Backend types** (`planner/dto/planner.types.ts`):
+  - Added `PrerequisiteStatusType` enum (`completed | in_progress | missing`)
+  - Added `PrerequisiteStatus` ObjectType with courseId, courseCode, courseTitle, status
+  - Added `PrerequisiteCheckResult` ObjectType with allMet, metCount, totalRequired, prerequisites[]
+- **Backend service** (`planner/planner.service.ts`):
+  - Added public `checkCoursePrerequisites(courseId, userId, tenantId)` method
+  - Loads course prereqIds from ONBOARD-001 field (`prerequisiteCourseIds`) with legacy JSONB fallback
+  - Maps each prereq to COMPLETED/IN_PROGRESS/MISSING using student profile data
+- **Backend resolver** (`planner/planner.resolver.ts`):
+  - Added `coursePrerequisites(courseId)` query — open to any authenticated user
+- **Backend AI tool** (`ai/tools/enrollment.tools.ts`):
+  - `enroll_in_course` now calls `findSectionById` → `checkCoursePrerequisites` before enrolling
+  - Returns `{ requiresConfirmation: true, missingPrerequisites, inProgressPrerequisites }` if unmet and no override
+  - Added `overridePrerequisites: boolean` input — student must explicitly confirm to bypass warning
+- **Backend module** (`ai/ai.module.ts`):
+  - `createEnrollmentTools(this.coursesService, this.plannerService)` — passes plannerService
+- **Frontend query** (`lib/graphql/queries/planner.ts`):
+  - Added `COURSE_PREREQUISITES_QUERY`
+- **Frontend dialog** (`components/courses/enroll-dialog.tsx`):
+  - Added `courseId?: string` prop
+  - Lazy `useQuery(COURSE_PREREQUISITES_QUERY, { skip: !open || !courseId })`
+  - `PrerequisiteWarning` sub-component — amber alert with missing/in-progress lists + acknowledge checkbox
+  - Confirm button disabled until prerequisite warning acknowledged (if prereqs not met)
+- **Frontend catalog page** (`courses/catalog/page.tsx`):
+  - Passes `courseId={enrollTarget?.course.id}` to `<EnrollDialog>`
+
+### Build & Test Status
+- Backend: ✓ 0 type errors (`npx tsc --noEmit`)
+- Frontend: ✓ 0 type errors (`npx tsc --noEmit`)
+
+### Next Session Priorities
+1. **ENROLL-007** — Next enrollment task per backlog
+2. **ONBOARD-002/003/004** — Onboarding flow if unblocked
+
+---
+
+## Session 15 (2026-02-18) — GRAD-001
+
+**Goal:** Constraint-based graduation plan generator
+**Status:** COMPLETE
+
+### Work Done
+
+#### GRAD-001: Constraint-Based Plan Generator (`DONE`)
+- **Entity** (`modules/planner/entities/graduation-plan.entity.ts`):
+  - `GraduationPlan` entity with JSONB `semesters: PlannedSemesterData[]` and `constraints`
+  - `GraduationPlanStatus` enum (draft/active/archived)
+  - Indexed: `[tenantId, userId]`, `[profileId]`, `[status]`
+- **DTOs** (`modules/planner/dto/graduation-planner.types.ts`):
+  - `GenerateGraduationPlanInput` with optional `maxCreditsPerSemester`, `startTerm`, `startYear`, `includeSummer`, `excludedTermKeys`
+  - `PlannedCourse`, `PlannedSemester`, `GraduationPlanConstraintsResult`, `GraduationPlanResult` ObjectTypes
+- **Algorithm** (`modules/planner/graduation-planner.service.ts`):
+  1. Load profile + degree program + all required course IDs
+  2. Filter remaining (not completed/current)
+  3. Load all courses (remaining + completed for baseline credits)
+  4. Build prereq graph (over remaining courses only; completed prereqs = already satisfied)
+  5. Kahn's topological sort; cycle detection with warning log
+  6. Priority scoring: course level + unlock power (# dependents) + requirement type weight (core>concentration>gen_ed>elective)
+  7. Greedy bin-packing: per semester, find eligible (prereqs satisfied, offeredSemesters matches), sort by score desc, pack until maxCredits
+  8. Corequisite handling: if course has unscheduled coreqs, pack them together or defer
+  9. Save: archive previous ACTIVE plan, create new ACTIVE plan with computed semesters
+- **Resolver** (`modules/planner/graduation-planner.resolver.ts`):
+  - `generateGraduationPlan(input)` mutation — STUDENT/ADMIN
+  - `myGraduationPlans(profileId)` query — STUDENT/ADMIN
+  - `activateGraduationPlan(planId)` mutation — switch between saved drafts
+- **Module**: Added `GraduationPlan` repo, `GraduationPlannerService`, `GraduationPlannerResolver` to `PlannerModule`
+- **Entities index**: Registered `GraduationPlan`
+- **Frontend queries/mutations**:
+  - `MY_GRADUATION_PLANS_QUERY`
+  - `GENERATE_GRADUATION_PLAN_MUTATION`, `ACTIVATE_GRADUATION_PLAN_MUTATION`
+- **Frontend page** (`app/(dashboard)/planner/roadmap/page.tsx`):
+  - Two-column layout: left = ControlsPanel (maxCredits Select, startTerm, startYear, includeSummer checkbox), right = semester timeline
+  - Summary bar: estimated graduation, semesters planned, credits completed, overall % progress bar
+  - SemesterCard: collapsible, shows term + course cards with code/title/credits/requirement badge
+  - Auto-syncs controls from active plan constraints on first load
+  - Empty state (no plan), already-graduated state (0 semesters)
+- **Planner page** (`app/(dashboard)/planner/page.tsx`): Added "View Roadmap" button
+
+### Build & Test Status
+- Backend: ✓ 0 type errors
+- Frontend: ✓ 0 type errors
+
+### Next Session Priorities
+1. **GRAD-002: Dynamic Replanning** — what-if controls, plan diff view
+2. **GRAD-003: Financial Projections** — cost per semester on roadmap
+
+---
+
+## Session 32 — Commercial Readiness Assessment & Roadmap Restructure
+
+**Date:** 2026-02-21
+**Goal:** Comprehensive product audit, mobile strategy decision, roadmap restructure for commercial readiness
+**Status:** COMPLETE
+
+### What Was Done
+
+**1. Full Product Audit**
+Conducted a thorough analysis of the entire codebase to assess commercial readiness:
+- Catalogued all 28 entities, 12+ backend modules, 30+ frontend pages, 95+ components
+- Identified what's built (70% of a commercially viable product), what's in progress (GRAD-001–004 in worktree), and what's missing
+
+**2. Mobile Strategy Decision**
+Evaluated three options for mobile:
+- **Option 1:** Separate native app (React Native) — industry standard but doubles codebase
+- **Option 2:** PWA only — already started but iOS limitations make it unviable for universities
+- **Option 3 (CHOSEN):** Hybrid — responsive web for power users (instructors, admins) + focused React Native app for students
+
+**Decision:** Build a focused React Native (Expo) student app in the monorepo (`nexused-mobile/`). ~15 screens covering feed, grades, assignments, messages, AI chat, notifications. Shares the same GraphQL backend. Web app remains the primary interface for instructors and admins.
+
+**3. Roadmap Restructured into 3 Phases**
+
+**Phase A: Complete Web Platform (4-5 weeks)**
+- A1: Merge graduation planner branch (GRAD-001–004)
+- INFRA-001: File upload service (Cloudflare R2) — presigned URLs, S3-compatible
+- INFRA-002: Email notification service (Resend) — event-driven, templated
+- INFRA-003: Push notification infrastructure — notification entity, VAPID web push, FCM prep
+- FEAT-016: Discussion threads — threaded replies, @mentions, timeline integration
+- FEAT-017: Quiz engine — MCQ builder, auto-grading, attempt tracking, time limits
+- MOB-001–005: Mobile responsive audit
+- SITE-001–003: Landing page, features page, about page (in existing Next.js app)
+
+**Phase B: React Native Mobile App (5-6 weeks)**
+- MOB-APP-001–010: Expo project, auth, feed, courses, assignments, grades, messages, AI chat, push notifications, profile
+
+**Phase C: Go-to-Market Infrastructure (deferred)**
+- BIZ-001–004: Stripe, onboarding, SAML, LTI AGS
+- ENROLL-007–011, GRAD-005–006, parent role
+
+**4. Key Technical Decisions**
+- **File storage:** Cloudflare R2 — S3-compatible API, zero egress fees, generous free tier. Using `@aws-sdk/client-s3` so migration to S3 is a config change.
+- **Marketing pages:** Built inside existing Next.js app as `(marketing)` route group. Same design system, same deploy.
+- **Mobile in monorepo:** `nexused-mobile/` alongside `nexused-backend/` and `nexused-frontend/`. Shared GraphQL types via Turborepo.
+
+### Files Modified
+```
+ROADMAP.md — Complete rewrite with Phase A/B/C structure, updated completed phases, new differentiators
+BACKLOG.md — Added 3 new sprints: Phase A (INFRA-001–003, FEAT-016–017, MOB-001–005, SITE-001–003), Phase B (MOB-APP-001–010), Phase C (deferred). Updated differentiators section.
+.claude/session-log.md — This entry
+```
+
+### Session 32 Status
+**COMPLETE** — Roadmap and backlog fully restructured for commercial readiness.
+
+### Next Session Priorities (Phase A, in order)
+1. **A1: Merge graduation planner branch** — GRAD-001–004 from `claude/crazy-cerf` to main
+2. **INFRA-001: File upload service (Cloudflare R2)** — presigned URLs, assignment uploads, profile pictures
+3. **INFRA-002: Email notification service** — Resend integration, event-driven emails
+4. **SITE-001: Landing page** — public `/` with hero, features, story

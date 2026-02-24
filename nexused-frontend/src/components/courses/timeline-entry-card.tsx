@@ -10,13 +10,15 @@ import {
   Clock,
   Eye,
   EyeOff,
+  MessageSquare,
+  Lock,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime } from '@/lib/utils/relative-time';
 
 interface TimelineEntryCardProps {
-  type: 'assignment' | 'announcement' | 'content';
+  type: 'assignment' | 'announcement' | 'content' | 'discussion';
   id: string;
   title: string;
   body?: string;
@@ -33,6 +35,9 @@ interface TimelineEntryCardProps {
   gradedAt?: string;
   feedback?: string;
   publishedAt?: string;
+  replyCount?: number;
+  isLocked?: boolean;
+  isAnswered?: boolean;
 }
 
 export function TimelineEntryCard({
@@ -52,22 +57,38 @@ export function TimelineEntryCard({
   score,
   gradedAt,
   publishedAt,
+  replyCount,
+  isLocked,
+  isAnswered,
 }: TimelineEntryCardProps) {
   const isAssignment = type === 'assignment';
   const isContent = type === 'content';
+  const isDiscussion = type === 'discussion';
   const isDraft = isContent && !publishedAt;
 
-  const Icon = isContent ? BookOpen : isAssignment ? FileText : Megaphone;
+  const Icon = isContent
+    ? BookOpen
+    : isAssignment
+      ? FileText
+      : isDiscussion
+        ? MessageSquare
+        : Megaphone;
+
   const borderColor = isContent
     ? 'border-l-emerald-500'
     : isAssignment
       ? 'border-l-violet-500'
-      : 'border-l-blue-500';
+      : isDiscussion
+        ? 'border-l-orange-500'
+        : 'border-l-blue-500';
+
   const iconColor = isContent
     ? 'text-emerald-500'
     : isAssignment
       ? 'text-violet-500'
-      : 'text-blue-500';
+      : isDiscussion
+        ? 'text-orange-500'
+        : 'text-blue-500';
 
   const isGraded = isAssignment && gradedAt != null && score != null;
   const isPastDueUngraded =
@@ -77,7 +98,9 @@ export function TimelineEntryCard({
     ? 'Content'
     : isAssignment
       ? 'Assignment'
-      : 'Announcement';
+      : isDiscussion
+        ? 'Discussion'
+        : 'Announcement';
   const content = (
     <Card
       className={`border-l-4 ${borderColor} transition-shadow hover:shadow-md`}
@@ -114,6 +137,24 @@ export function TimelineEntryCard({
             {priority === 'urgent' && (
               <Badge variant="destructive" className="text-xs">
                 Urgent
+              </Badge>
+            )}
+            {isDiscussion && isAnswered && (
+              <Badge className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">
+                <CheckCircle className="mr-1 h-3 w-3" />
+                Answered
+              </Badge>
+            )}
+            {isDiscussion && isLocked && (
+              <Badge variant="secondary" className="text-xs">
+                <Lock className="mr-1 h-3 w-3" />
+                Locked
+              </Badge>
+            )}
+            {isDiscussion && replyCount != null && (
+              <Badge variant="outline" className="ml-auto text-xs">
+                <MessageSquare className="mr-1 h-3 w-3" />
+                {replyCount} {replyCount === 1 ? 'reply' : 'replies'}
               </Badge>
             )}
             {isGraded && (
@@ -164,6 +205,14 @@ export function TimelineEntryCard({
   if (isContent) {
     return (
       <Link href={`/courses/${courseId}/section/${sectionId}/content/${id}`}>
+        {content}
+      </Link>
+    );
+  }
+
+  if (isDiscussion) {
+    return (
+      <Link href={`/courses/${courseId}/section/${sectionId}/discussion/${id}`}>
         {content}
       </Link>
     );

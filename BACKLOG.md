@@ -1231,7 +1231,8 @@
 - **Acceptance:** Student gets an email when graded. Instructor's section gets email when assignment created. Due date reminders fire. Users can disable specific email types.
 
 ### INFRA-003: Push Notification Infrastructure
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-23
 - **Priority:** HIGH — Foundation for mobile push (Phase B) and web push
 - **Scope:**
   - Backend:
@@ -1247,7 +1248,8 @@
 - **Acceptance:** Student gets a web push notification when graded. Bell icon shows unread count. Clicking notification navigates to relevant page. Device token stored for future mobile push.
 
 ### FEAT-016: Discussion Threads
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-23
 - **Priority:** MEDIUM — Core LMS table stakes
 - **Scope:**
   - Backend:

@@ -78,6 +78,10 @@ import { FileUpload } from '../../modules/uploads/entities/file-upload.entity';
 import { Notification } from '../../modules/notifications/entities/notification.entity';
 import { DeviceToken } from '../../modules/notifications/entities/device-token.entity';
 
+// Discussion entities
+import { Discussion } from '../../modules/discussions/entities/discussion.entity';
+import { DiscussionReply } from '../../modules/discussions/entities/discussion-reply.entity';
+
 // Array of entity classes for TypeORM
 export const entities = [
   Tenant,
@@ -110,4 +114,6 @@ export const entities = [
   FileUpload,
   Notification,
   DeviceToken,
+  Discussion,
+  DiscussionReply,
 ];

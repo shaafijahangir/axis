@@ -1,9 +1,16 @@
-import { ObjectType, Field, Float, registerEnumType } from '@nestjs/graphql';
+import {
+  ObjectType,
+  Field,
+  Float,
+  Int,
+  registerEnumType,
+} from '@nestjs/graphql';
 
 export enum TimelineEntryType {
   ASSIGNMENT = 'assignment',
   ANNOUNCEMENT = 'announcement',
   CONTENT = 'content',
+  DISCUSSION = 'discussion',
 }
 
 registerEnumType(TimelineEntryType, { name: 'TimelineEntryType' });
@@ -58,4 +65,15 @@ export class TimelineEntry {
 
   @Field({ nullable: true })
   feedback?: string;
+
+  // ── Discussion fields ──
+
+  @Field(() => Int, { nullable: true })
+  replyCount?: number;
+
+  @Field({ nullable: true })
+  isLocked?: boolean;
+
+  @Field({ nullable: true })
+  isAnswered?: boolean;
 }

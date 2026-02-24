@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
-import { BarChart3, Plus, Users } from 'lucide-react';
+import { BarChart3, Plus, Users, MessageSquare } from 'lucide-react';
 import {
   SECTION_QUERY,
   MY_ENROLLMENT_FOR_SECTION_QUERY,
@@ -49,7 +49,7 @@ interface SectionData {
 }
 
 interface TimelineEntryData {
-  type: 'assignment' | 'announcement' | 'content';
+  type: 'assignment' | 'announcement' | 'content' | 'discussion';
   id: string;
   title: string;
   body?: string;
@@ -64,6 +64,9 @@ interface TimelineEntryData {
   gradedAt?: string;
   feedback?: string;
   publishedAt?: string;
+  replyCount?: number;
+  isLocked?: boolean;
+  isAnswered?: boolean;
 }
 
 export default function SectionTimelinePage() {
@@ -132,6 +135,17 @@ export default function SectionTimelinePage() {
       ) : null}
 
       <div className="space-y-3 p-6">
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link
+              href={`/courses/${courseId}/section/${sectionId}/discussion/create`}
+            >
+              <MessageSquare className="mr-1 h-4 w-4" />
+              New Discussion
+            </Link>
+          </Button>
+        </div>
+
         {canCreate && (
           <div className="flex flex-wrap justify-end gap-2">
             <Button asChild size="sm" variant="outline">
@@ -220,6 +234,9 @@ export default function SectionTimelinePage() {
               gradedAt={entry.gradedAt}
               feedback={entry.feedback}
               publishedAt={entry.publishedAt}
+              replyCount={entry.replyCount}
+              isLocked={entry.isLocked}
+              isAnswered={entry.isAnswered}
             />
           ))
         ) : (

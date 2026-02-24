@@ -18,6 +18,9 @@ export const SECTION_TIMELINE_QUERY = gql`
       score
       gradedAt
       feedback
+      replyCount
+      isLocked
+      isAnswered
     }
   }
 `;
