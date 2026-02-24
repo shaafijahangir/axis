@@ -886,7 +886,8 @@
 - **Acceptance:** Students are warned about missing prerequisites before enrolling. AI provides alternative paths. Institutions can configure strict vs warning-only prerequisite enforcement.
 
 ### ENROLL-007: Smart Course Discovery (AI-Powered Search)
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-24
 - **Priority:** LOW — Enhancement over catalog search
 - **Depends on:** ENROLL-001, ENROLL-005
 - **Scope:**
@@ -1386,7 +1387,8 @@
 - **Scope:** Course list, detail, timeline view
 
 ### MOB-APP-005: Mobile Assignments
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-24
 - **Scope:** Detail view, text + camera + file submission, submission history
 
 ### MOB-APP-006: Mobile Grades
@@ -1402,11 +1404,13 @@
 - **Scope:** Agent selection, conversation, tool indicators
 
 ### MOB-APP-009: Mobile Push Notifications
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-24
 - **Scope:** FCM integration, device token registration, notification inbox, deep linking
 
 ### MOB-APP-010: Mobile Profile & Settings
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-24
 - **Scope:** Profile edit, notification preferences, theme
 
 ---

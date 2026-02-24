@@ -42,6 +42,7 @@ import { createGradingTools } from './tools/grading.tools';
 import { createAnalyticsTools } from './tools/analytics.tools';
 import { createPlannerTools } from './tools/planner.tools';
 import { createGraduationPlannerTools } from './tools/graduation-planner.tools';
+import { createCourseDiscoveryTools } from './tools/course-discovery.tools';
 
 // Agent definitions
 import { studyCoachAgent } from './agents/study-coach.agent';
@@ -142,6 +143,10 @@ export class AiModule implements OnModuleInit {
     private submissionRepo: Repository<Submission>,
     @InjectRepository(Enrollment)
     private enrollmentRepo: Repository<Enrollment>,
+    @InjectRepository(Course)
+    private courseRepo: Repository<Course>,
+    @InjectRepository(CourseSection)
+    private sectionRepo: Repository<CourseSection>,
   ) {}
 
   onModuleInit(): void {
@@ -186,6 +191,15 @@ export class AiModule implements OnModuleInit {
       createGraduationPlannerTools(
         this.plannerService,
         this.graduationPlannerService,
+      ),
+    );
+
+    // Course discovery tool — natural language catalog search (ENROLL-007)
+    this.toolRegistry.registerAll(
+      createCourseDiscoveryTools(
+        this.courseRepo,
+        this.sectionRepo,
+        this.plannerService,
       ),
     );
   }

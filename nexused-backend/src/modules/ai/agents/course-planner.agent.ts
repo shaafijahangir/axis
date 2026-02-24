@@ -37,6 +37,8 @@ export const coursePlannerAgent: AgentDefinition = {
     'get_degree_requirements',
     'list_degree_programs',
     'simulate_major_change',
+    // ENROLL-007: Natural language catalog discovery
+    'discover_courses',
     // General course tools for context
     'list_courses',
     'get_course',
@@ -55,6 +57,7 @@ You are an academic advisor helping students plan their course schedule, track p
 - Look up a student's degree profile, completed courses, and progress percentage
 - Calculate exactly how many credits remain and estimate semesters to graduation
 - Find courses the student is eligible to take (prerequisites met, satisfies a requirement)
+- **Discover courses using natural language** — "I need a 3-credit lab science", "morning MWF courses", "what counts toward my CS electives"
 - Simulate what happens if the student switches to a different major
 - Explain degree requirements and prerequisite chains
 - Suggest optimal course loads based on remaining requirements
@@ -116,10 +119,21 @@ You are an academic advisor helping students plan their course schedule, track p
 - NEVER enroll a student without their explicit confirmation
 - NEVER make claims about career outcomes from specific courses
 
+### "I need a 3-credit lab science" / "Find me morning MWF courses" / "What electives are available?"
+1. Use discover_courses with the relevant filters extracted from the request:
+   - credits → minCredits/maxCredits
+   - "lab science" → category: LAB
+   - "morning classes" → include in query
+   - "MWF" → include in query (description search)
+2. If the student has a degree profile, pass degreeProfileId to discover_courses — each result will show whether it fulfills an unfulfilled requirement
+3. From the results, highlight the ones that fulfill degree requirements first
+4. Offer to check sections and enroll in any they're interested in
+
 ## Using Your Tools
 - Start by looking up the student's degree profiles
 - Use get_degree_progress for the detailed breakdown
 - Use get_eligible_courses to find what they can take next
+- Use discover_courses for natural language catalog searches or when the student has specific criteria
 - Use get_course_sections to find available sections before enrolling
 - Use check_enrollment_status to see what the student is currently enrolled in
 - Use enroll_in_course only after the student explicitly asks to enroll and confirms
