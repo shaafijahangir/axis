@@ -1287,37 +1287,37 @@
 - **Acceptance:** Instructor can create a quiz with 10 MCQ questions. Student takes the quiz and sees auto-graded score immediately. Short-answer questions require manual grading. Time limits and attempt limits work.
 
 ### MOB-001: Responsive Dashboard Layouts
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** MEDIUM
 - **Scope:** Audit and fix all `(dashboard)` pages at 375px, 390px, 428px. Sidebar → slide-out drawer. Top nav collapses. No horizontal overflow.
 - **Acceptance:** Every dashboard page renders correctly on iPhone SE through iPhone 15 Pro Max.
 
 ### MOB-002: Responsive Course & Assignment Pages
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** MEDIUM
 - **Scope:** Course list, detail, timeline, assignment detail, submission form, gradebook — all single-column on mobile.
 - **Acceptance:** Student can browse, submit, and view grades on phone without zooming.
 
 ### MOB-003: Responsive AI Chat & Messaging
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** MEDIUM
 - **Scope:** Two-panel → single-panel with back button on mobile. Keyboard doesn't obscure input. Agent selector stacks.
 - **Acceptance:** Full AI conversation and messaging on mobile.
 
 ### MOB-004: Responsive Admin Pages
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** LOW
 - **Scope:** Stat grids → 2-col on mobile. Tables → horizontal scroll or card layout. Functional on tablet, usable on phone.
 - **Acceptance:** Admin can view analytics on tablet. Phone is functional.
 
 ### MOB-005: Touch Interaction Polish
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** LOW
 - **Scope:** 44px tap targets, remove hover-only interactions, pull-to-refresh on feed.
 - **Acceptance:** Lighthouse mobile accessibility >= 95.
 
 ### SITE-001: Landing Page
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** HIGH — Product must be discoverable
 - **Scope:**
   - New `(marketing)` route group in existing Next.js app — public, no auth required
@@ -1334,7 +1334,7 @@
 - **Acceptance:** Visiting nexused.app (or localhost:3000) shows a professional landing page. Login/Register are accessible from nav. Page is responsive and accessible.
 
 ### SITE-002: Features Page
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** MEDIUM
 - **Scope:**
   - `/features` page with detailed breakdown of each feature category:
@@ -1347,7 +1347,7 @@
 - **Acceptance:** A prospective user can understand what NexusEd does and how it differs from Canvas/Moodle/Brightspace.
 
 ### SITE-003: About Page
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** MEDIUM
 - **Scope:**
   - `/about` page with:

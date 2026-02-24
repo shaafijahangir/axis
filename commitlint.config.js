@@ -4,7 +4,7 @@ module.exports = {
     'scope-enum': [
       2,
       'always',
-      ['backend', 'frontend', 'ci', 'docs', 'root'],
+      ['backend', 'frontend', 'mobile', 'ci', 'docs', 'root'],
     ],
     'scope-empty': [2, 'never'],
   },
