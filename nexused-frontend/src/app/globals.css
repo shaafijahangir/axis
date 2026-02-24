@@ -126,6 +126,15 @@ body {
   outline-offset: 2px;
 }
 
+/* WCAG 2.5.5: Eliminate 300ms tap delay and prevent double-tap zoom on
+   interactive elements. This is safe since modern mobile browsers already
+   disable the delay when a viewport meta tag sets width=device-width. */
+button,
+a,
+[role='button'] {
+  touch-action: manipulation;
+}
+
 /* ============================================================
    WCAG 2.1 AA: Reduced Motion (Success Criterion 2.3.3)
    Users who set "Reduce motion" in their OS preferences

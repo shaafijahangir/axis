@@ -121,6 +121,8 @@ export function SectionGradebook({
                   ) : grade.submittedAt ? (
                     <span
                       className="text-muted-foreground"
+                      role="img"
+                      aria-label="Submitted, not yet graded"
                       title="Submitted, not yet graded"
                     >
                       —

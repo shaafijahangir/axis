@@ -36,6 +36,7 @@ export function StudentHomeFeed() {
   const { trackClick, trackImpression } = useFeedEngagement();
   const { data, loading } = useQuery<{ studentFeed: FeedItemData[] }>(
     STUDENT_FEED_QUERY,
+    { fetchPolicy: 'cache-and-network' },
   );
 
   // Filter feed items based on widget preferences

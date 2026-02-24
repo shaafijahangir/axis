@@ -136,7 +136,7 @@ export function InstructorHomeFeed() {
   const { trackClick, trackImpression } = useFeedEngagement();
   const { data, loading } = useQuery<{
     instructorFeed: InstructorFeedItemData[];
-  }>(INSTRUCTOR_FEED_QUERY);
+  }>(INSTRUCTOR_FEED_QUERY, { fetchPolicy: 'cache-and-network' });
 
   // Filter feed items based on widget preferences
   const filteredFeed = useMemo(() => {

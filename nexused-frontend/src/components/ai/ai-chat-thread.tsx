@@ -183,7 +183,7 @@ export function AiChatThread({
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="md:hidden"
+            className="md:hidden h-11 w-11"
             aria-label="Back to conversation list"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />

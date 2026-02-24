@@ -245,7 +245,7 @@ export function MessageThread({
         <button
           onClick={onBack}
           aria-label="Back to conversation list"
-          className="rounded-md p-1 transition-colors hover:bg-accent md:hidden"
+          className="rounded-md p-3 transition-colors hover:bg-accent md:hidden"
         >
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </button>
