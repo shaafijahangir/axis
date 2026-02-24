@@ -216,7 +216,7 @@ function formatAgentName(agentType: string): string {
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
           <Card key={i}>
             <CardHeader className="pb-2">
@@ -311,7 +311,7 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Users"
           value={tenantStats.totalUsers}
@@ -381,7 +381,7 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* AI Usage */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="AI Conversations"
           value={aiUsageSummary.totalConversations}

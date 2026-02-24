@@ -106,65 +106,110 @@ function StudentCoursesView() {
           ))}
         </div>
       ) : sorted.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Course</TableHead>
-                <TableHead>Instructor</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Enrolled</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sorted.map((enrollment: any) => {
-                const { section } = enrollment;
-                const courseUrl = `/courses/${section.course.id}/section/${section.id}`;
-                return (
-                  <TableRow key={enrollment.id}>
-                    <TableCell>
-                      <Link href={courseUrl} className="hover:underline">
-                        <Badge variant="secondary" className="mr-2">
-                          {section.course.code}
-                        </Badge>
-                        <span className="font-medium">
+        <>
+          {/* Mobile: card list */}
+          <div className="md:hidden space-y-3">
+            {sorted.map((enrollment: any) => {
+              const { section } = enrollment;
+              const courseUrl = `/courses/${section.course.id}/section/${section.id}`;
+              const canOpen =
+                enrollment.status === 'active' ||
+                enrollment.status === 'pending';
+              return (
+                <Link key={enrollment.id} href={courseUrl} className="block">
+                  <div className="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="secondary">
+                            {section.course.code}
+                          </Badge>
+                          <EnrollmentStatusBadge
+                            status={enrollment.status as EnrollmentStatus}
+                          />
+                        </div>
+                        <p className="font-medium mt-1.5 truncate">
                           {section.course.title}
-                        </span>
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {section.instructor.firstName}{' '}
-                      {section.instructor.lastName}
-                    </TableCell>
-                    <TableCell>
-                      <EnrollmentStatusBadge
-                        status={enrollment.status as EnrollmentStatus}
-                      />
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {new Date(enrollment.enrolledAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {(enrollment.status === 'active' ||
-                        enrollment.status === 'pending') && (
-                        <Button asChild size="sm" variant="ghost">
-                          <Link href={courseUrl}>
-                            <BookOpen
-                              className="mr-1 h-4 w-4"
-                              aria-hidden="true"
-                            />
-                            Open
-                          </Link>
-                        </Button>
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {section.instructor.firstName}{' '}
+                          {section.instructor.lastName}
+                        </p>
+                      </div>
+                      {canOpen && (
+                        <BookOpen
+                          className="h-4 w-4 shrink-0 text-muted-foreground mt-1"
+                          aria-hidden="true"
+                        />
                       )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Instructor</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Enrolled</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sorted.map((enrollment: any) => {
+                  const { section } = enrollment;
+                  const courseUrl = `/courses/${section.course.id}/section/${section.id}`;
+                  return (
+                    <TableRow key={enrollment.id}>
+                      <TableCell>
+                        <Link href={courseUrl} className="hover:underline">
+                          <Badge variant="secondary" className="mr-2">
+                            {section.course.code}
+                          </Badge>
+                          <span className="font-medium">
+                            {section.course.title}
+                          </span>
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {section.instructor.firstName}{' '}
+                        {section.instructor.lastName}
+                      </TableCell>
+                      <TableCell>
+                        <EnrollmentStatusBadge
+                          status={enrollment.status as EnrollmentStatus}
+                        />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        {(enrollment.status === 'active' ||
+                          enrollment.status === 'pending') && (
+                          <Button asChild size="sm" variant="ghost">
+                            <Link href={courseUrl}>
+                              <BookOpen
+                                className="mr-1 h-4 w-4"
+                                aria-hidden="true"
+                              />
+                              Open
+                            </Link>
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <h3 className="text-lg font-medium">No courses yet</h3>
@@ -217,7 +262,7 @@ function InstructorCoursesView() {
           ))}
         </div>
       ) : (data?.courses?.length ?? 0) > 0 ? (
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

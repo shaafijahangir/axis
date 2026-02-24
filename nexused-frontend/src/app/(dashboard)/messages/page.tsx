@@ -62,7 +62,7 @@ export default function MessagesPage() {
   }, []);
 
   return (
-    <div className="flex h-[calc(100vh-4rem-1px)] overflow-hidden rounded-lg border md:h-[calc(100vh-4rem-1px)]">
+    <div className="flex h-[calc(100vh-10.5rem)] md:h-[calc(100vh-7rem)] overflow-hidden rounded-lg border">
       {/* Left panel — conversation list */}
       <div
         className={cn(

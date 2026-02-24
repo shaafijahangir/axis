@@ -97,6 +97,60 @@ export function getNavForRole(roles: UserRole[]): NavItem[] {
 }
 
 /**
+ * Mobile nav — max 5 items per role so they fit at 375px without overflow.
+ * Long labels are shortened and low-priority items are dropped.
+ * Dropped items remain accessible via desktop sidebar or deep links.
+ */
+const studentMobileNav: NavItem[] = [
+  { label: 'Home', href: '/home', icon: Home },
+  { label: 'Courses', href: '/courses', icon: BookOpen },
+  { label: 'AI', href: '/ai', icon: Sparkles },
+  {
+    label: 'Messages',
+    href: '/messages',
+    icon: MessageSquare,
+    badgeKey: 'messages',
+  },
+  { label: 'Grades', href: '/grades', icon: GraduationCap },
+];
+
+const instructorMobileNav: NavItem[] = [
+  { label: 'Home', href: '/home', icon: Home },
+  { label: 'Courses', href: '/courses', icon: BookOpen },
+  { label: 'AI', href: '/ai', icon: Sparkles },
+  { label: 'Agents', href: '/ai/agents', icon: Bot },
+  {
+    label: 'Messages',
+    href: '/messages',
+    icon: MessageSquare,
+    badgeKey: 'messages',
+  },
+];
+
+// Admin has 7 items; cap at 5 most actionable on mobile.
+// Financial Aid config and Integrations are setup-only and better on desktop.
+const adminMobileNav: NavItem[] = [
+  { label: 'Home', href: '/home', icon: Home },
+  { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+  { label: 'Catalog', href: '/admin/catalog', icon: Library },
+  { label: 'People', href: '/people', icon: Users },
+  { label: 'Governance', href: '/admin/ai-governance', icon: Shield },
+];
+
+const mobileNavByRole: Record<string, NavItem[]> = {
+  [UserRole.STUDENT]: studentMobileNav,
+  [UserRole.INSTRUCTOR]: instructorMobileNav,
+  [UserRole.ADMIN]: adminMobileNav,
+  [UserRole.PARENT]: parentNav,
+  [UserRole.TA]: studentMobileNav,
+};
+
+export function getMobileNavForRole(roles: UserRole[]): NavItem[] {
+  const primary = roles[0];
+  return mobileNavByRole[primary] ?? studentMobileNav;
+}
+
+/**
  * Admin uses a settings gear in the trailing position instead of profile avatar.
  */
 export function getTrailingAction(roles: UserRole[]): 'profile' | 'settings' {

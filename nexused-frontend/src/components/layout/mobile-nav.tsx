@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
-import { getNavForRole } from '@/lib/navigation';
+import { getMobileNavForRole } from '@/lib/navigation';
 import { useUnreadCount } from '@/hooks/use-unread-count';
 
 /**
@@ -19,7 +19,7 @@ export function MobileNav() {
 
   if (!user) return null;
 
-  const items = getNavForRole(user.roles);
+  const items = getMobileNavForRole(user.roles);
 
   return (
     <nav
