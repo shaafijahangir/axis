@@ -1267,7 +1267,8 @@
 - **Acceptance:** Students can create discussions in a course section. Replies are threaded. Instructors can pin/lock/mark answered. Discussions show in timeline. @mentions trigger notifications.
 
 ### FEAT-017: Quiz Engine
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-23
 - **Priority:** MEDIUM — Core LMS table stakes
 - **Scope:**
   - Backend:

@@ -66,4 +66,40 @@ export class Submission extends TenantScopedEntity {
   @Field({ nullable: true })
   @Column({ type: 'text', nullable: true })
   feedback: string;
+
+  // ── Quiz-specific fields ──
+
+  /**
+   * WHY JSONB: answers schema is [{ questionId, selectedOption?, textAnswer? }].
+   * Storing alongside the submission avoids a separate answers table and keeps
+   * the submission self-contained for grading and audit purposes.
+   */
+  @Field(() => String, { name: 'answers', nullable: true })
+  get answersJson(): string | null {
+    return this.answers ? JSON.stringify(this.answers) : null;
+  }
+
+  @Column({ type: 'jsonb', nullable: true })
+  answers: Array<{
+    questionId: string;
+    selectedOption?: number; // index into options array (MCQ/TF)
+    textAnswer?: string; // short_answer
+  }> | null;
+
+  /**
+   * Auto-calculated sum of points for correct MCQ/TF answers.
+   * null until the quiz is submitted. short_answer questions excluded —
+   * instructor must grade those manually and override the score field.
+   */
+  @Field(() => Float, { nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  autoScore: number | null;
+
+  /**
+   * Set when the student starts the quiz (startQuiz mutation).
+   * Used to enforce timeLimitMinutes on submitQuiz.
+   */
+  @Field({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
+  startedAt: Date | null;
 }

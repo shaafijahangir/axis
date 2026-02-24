@@ -1,5 +1,11 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { ObjectType, Field, Float, registerEnumType } from '@nestjs/graphql';
+import {
+  ObjectType,
+  Field,
+  Float,
+  Int,
+  registerEnumType,
+} from '@nestjs/graphql';
 import { TenantScopedEntity } from './base.entity';
 import { CourseSection } from './course-section.entity';
 
@@ -74,4 +80,26 @@ export class Assignment extends TenantScopedEntity {
   @Field(() => String, { nullable: true })
   @Column({ type: 'jsonb', nullable: true })
   settings: Record<string, any>;
+
+  // ── Quiz-specific fields ──
+
+  /**
+   * WHY nullable: only quiz/exam types use these. Standard assignments ignore them.
+   * null maxAttempts = unlimited attempts. null timeLimitMinutes = no time limit.
+   */
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'int', nullable: true })
+  maxAttempts: number | null;
+
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'int', nullable: true })
+  timeLimitMinutes: number | null;
+
+  /**
+   * all_at_once: all questions visible simultaneously (default for short quizzes).
+   * one_at_a_time: one question per screen with Next/Prev (better for long exams).
+   */
+  @Field({ nullable: true })
+  @Column({ nullable: true, default: 'all_at_once' })
+  displayMode: string | null;
 }

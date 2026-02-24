@@ -82,6 +82,9 @@ import { DeviceToken } from '../../modules/notifications/entities/device-token.e
 import { Discussion } from '../../modules/discussions/entities/discussion.entity';
 import { DiscussionReply } from '../../modules/discussions/entities/discussion-reply.entity';
 
+// Quiz entities
+import { QuizQuestion } from '../../modules/quiz/entities/quiz-question.entity';
+
 // Array of entity classes for TypeORM
 export const entities = [
   Tenant,
@@ -116,4 +119,5 @@ export const entities = [
   DeviceToken,
   Discussion,
   DiscussionReply,
+  QuizQuestion,
 ];

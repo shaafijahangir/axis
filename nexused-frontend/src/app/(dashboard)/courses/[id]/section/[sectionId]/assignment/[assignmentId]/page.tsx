@@ -14,6 +14,8 @@ import { AssignmentDetail } from '@/components/assignments/assignment-detail';
 import { SubmissionForm } from '@/components/assignments/submission-form';
 import { SubmissionHistory } from '@/components/assignments/submission-history';
 import { SubmissionGradingList } from '@/components/assignments/submission-grading-list';
+import { QuizBuilder } from '@/components/quiz/quiz-builder';
+import { QuizDelivery } from '@/components/quiz/quiz-delivery';
 import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
 
@@ -27,6 +29,9 @@ interface AssignmentData {
   dueAt?: string;
   unlockAt?: string;
   lockAt?: string;
+  maxAttempts?: number | null;
+  timeLimitMinutes?: number | null;
+  displayMode?: string | null;
 }
 
 interface SubmissionData {
@@ -47,10 +52,9 @@ export default function AssignmentPage() {
   const { user } = useAuthStore();
 
   /**
-   * WHY: Instructors, TAs, and admins see the grading view.
-   * Students see the submission form and their own history.
-   * Same URL — the page adapts. Forty years of building UIs and this
-   * pattern has never failed me: one resource, role-based rendering.
+   * WHY: Instructors, TAs, and admins see the grading view + quiz builder.
+   * Students see the submission form (or quiz delivery) and their history.
+   * Same URL — the page adapts based on role and assignment type.
    */
   const isGrader = user?.roles.some((r) =>
     [UserRole.INSTRUCTOR, UserRole.TA, UserRole.ADMIN].includes(r),
@@ -60,7 +64,11 @@ export default function AssignmentPage() {
     assignment: AssignmentData;
   }>(ASSIGNMENT_QUERY, { variables: { id: assignmentId } });
 
-  const { data: submissionsData, loading: submissionsLoading } = useQuery<{
+  const {
+    data: submissionsData,
+    loading: submissionsLoading,
+    refetch: refetchSubmissions,
+  } = useQuery<{
     mySubmissions: SubmissionData[];
   }>(MY_SUBMISSIONS_QUERY, {
     variables: { assignmentId },
@@ -68,6 +76,8 @@ export default function AssignmentPage() {
   });
 
   const assignment = assignmentData?.assignment;
+  const isQuizType = assignment?.type === 'quiz' || assignment?.type === 'exam';
+  const existingAttempts = submissionsData?.mySubmissions?.length ?? 0;
 
   if (assignmentLoading) {
     return (
@@ -115,10 +125,41 @@ export default function AssignmentPage() {
       />
 
       {isGrader ? (
-        <SubmissionGradingList
-          assignmentId={assignmentId}
-          pointsPossible={assignment.pointsPossible}
-        />
+        <>
+          <SubmissionGradingList
+            assignmentId={assignmentId}
+            pointsPossible={assignment.pointsPossible}
+          />
+          {/* Quiz builder for instructors on quiz/exam type assignments */}
+          {isQuizType && (
+            <QuizBuilder
+              assignmentId={assignmentId}
+              maxAttempts={assignment.maxAttempts}
+              timeLimitMinutes={assignment.timeLimitMinutes}
+              displayMode={assignment.displayMode}
+            />
+          )}
+        </>
+      ) : isQuizType ? (
+        <>
+          <QuizDelivery
+            assignmentId={assignmentId}
+            pointsPossible={assignment.pointsPossible}
+            maxAttempts={assignment.maxAttempts}
+            timeLimitMinutes={assignment.timeLimitMinutes}
+            displayMode={assignment.displayMode}
+            existingAttempts={existingAttempts}
+            onSubmitted={() => refetchSubmissions()}
+          />
+          {submissionsLoading ? (
+            <Skeleton className="h-32 w-full rounded-lg" />
+          ) : (
+            <SubmissionHistory
+              submissions={submissionsData?.mySubmissions ?? []}
+              pointsPossible={assignment.pointsPossible}
+            />
+          )}
+        </>
       ) : (
         <>
           <SubmissionForm assignmentId={assignmentId} />

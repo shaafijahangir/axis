@@ -39,6 +39,7 @@ import { CatalogExtractModule } from './modules/catalog-extract/catalog-extract.
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { DiscussionsModule } from './modules/discussions/discussions.module';
+import { QuizModule } from './modules/quiz/quiz.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -113,6 +114,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     UploadsModule,
     NotificationsModule,
     DiscussionsModule,
+    QuizModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController, HealthController],

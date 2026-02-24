@@ -13,6 +13,9 @@ export const ASSIGNMENT_QUERY = gql`
       unlockAt
       lockAt
       createdAt
+      maxAttempts
+      timeLimitMinutes
+      displayMode
     }
   }
 `;
