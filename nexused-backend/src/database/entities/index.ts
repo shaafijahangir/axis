@@ -74,6 +74,10 @@ import { FeedEngagement } from '../../modules/feed/entities/feed-engagement.enti
 // Uploads entity
 import { FileUpload } from '../../modules/uploads/entities/file-upload.entity';
 
+// Notification entities
+import { Notification } from '../../modules/notifications/entities/notification.entity';
+import { DeviceToken } from '../../modules/notifications/entities/device-token.entity';
+
 // Array of entity classes for TypeORM
 export const entities = [
   Tenant,
@@ -104,4 +108,6 @@ export const entities = [
   GraduationPlan,
   FeedEngagement,
   FileUpload,
+  Notification,
+  DeviceToken,
 ];

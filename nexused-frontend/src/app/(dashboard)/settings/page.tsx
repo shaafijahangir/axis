@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { MY_NOTIFICATION_PREFERENCES_QUERY } from '@/lib/graphql/queries/notifications';
 import { UPDATE_NOTIFICATION_PREFERENCES_MUTATION } from '@/lib/graphql/mutations/notifications';
+import { PushSubscriptionToggle } from '@/components/notifications/push-subscription-toggle';
 
 interface NotificationPreferences {
   emailOnGrade: boolean;
@@ -146,6 +147,25 @@ export default function SettingsPage() {
               </div>
             ))
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Bell
+              className="h-5 w-5 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <CardTitle>Push Notifications</CardTitle>
+          </div>
+          <CardDescription>
+            Receive instant alerts in this browser even when the tab is in the
+            background. You can disable this at any time.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PushSubscriptionToggle />
         </CardContent>
       </Card>
     </div>

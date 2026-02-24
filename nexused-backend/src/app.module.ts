@@ -20,6 +20,7 @@ import aiConfig from './config/ai.config';
 import ltiConfig from './config/lti.config';
 import storageConfig from './config/storage.config';
 import emailConfig from './config/email.config';
+import notificationsConfig from './config/notifications.config';
 import { entities } from './database/entities';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -51,6 +52,7 @@ import { ScheduleModule } from '@nestjs/schedule';
         ltiConfig,
         storageConfig,
         emailConfig,
+        notificationsConfig,
       ],
     }),
     TypeOrmModule.forRootAsync({

@@ -2,6 +2,7 @@
 
 import { GraduationCap } from 'lucide-react';
 import { UserMenu } from './user-menu';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 
 export function TopNav() {
   return (
@@ -14,7 +15,10 @@ export function TopNav() {
         <span className="text-lg font-bold">NexusEd</span>
       </div>
       <div className="hidden md:block" />
-      <UserMenu />
+      <div className="flex items-center gap-1">
+        <NotificationBell />
+        <UserMenu />
+      </div>
     </header>
   );
 }

@@ -11,6 +11,9 @@ import type {
 } from '../ai/events/ai-events';
 import { EmailService } from './email.service';
 import { EmailTemplatesService } from './email-templates.service';
+import { InAppNotificationService } from './in-app-notification.service';
+import { WebPushService } from './web-push.service';
+import { NotificationType } from './entities/notification.entity';
 import { User } from '../../database/entities/user.entity';
 import { Submission } from '../../database/entities/submission.entity';
 import { Assignment } from '../../database/entities/assignment.entity';
@@ -57,6 +60,8 @@ export class NotificationEventListener {
   constructor(
     private emailService: EmailService,
     private templates: EmailTemplatesService,
+    private inAppService: InAppNotificationService,
+    private webPushService: WebPushService,
     private configService: ConfigService,
     @InjectRepository(User)
     private userRepo: Repository<User>,
@@ -89,7 +94,28 @@ export class NotificationEventListener {
       ]);
       if (!student || !assignment) return;
 
-      // Check preference — default true
+      const coursePath = `/courses/${assignment.section?.courseId}/section/${assignment.sectionId}/assignment/${assignment.id}`;
+      const scoreText = `${submission.score ?? 0}/${assignment.pointsPossible}`;
+
+      // In-app — always created regardless of email preference
+      await this.inAppService.create({
+        userId: student.id,
+        tenantId: student.tenantId,
+        type: NotificationType.SUBMISSION_GRADED,
+        title: `Graded: ${assignment.title}`,
+        body: `You scored ${scoreText} on ${assignment.section?.course?.code ?? ''} ${assignment.title}`,
+        data: { path: coursePath, assignmentId: assignment.id },
+      });
+
+      // Web push — fire and forget
+      void this.webPushService.sendToUser(student.id, student.tenantId, {
+        title: `Graded: ${assignment.title}`,
+        body: `Score: ${scoreText}`,
+        url: appUrl(this.configService, coursePath),
+        type: NotificationType.SUBMISSION_GRADED,
+      });
+
+      // Email — check preference (default true)
       if (prefs(student).emailOnGrade === false) return;
 
       const { subject, html } = this.templates.submissionGraded({
@@ -99,10 +125,7 @@ export class NotificationEventListener {
         score: submission.score ?? 0,
         pointsPossible: assignment.pointsPossible,
         feedback: submission.feedback ?? undefined,
-        appUrl: appUrl(
-          this.configService,
-          `/courses/${assignment.section?.courseId}/section/${assignment.sectionId}/assignment/${assignment.id}`,
-        ),
+        appUrl: appUrl(this.configService, coursePath),
       });
 
       await this.emailService.sendEmail({ to: student.email, subject, html });
@@ -128,18 +151,46 @@ export class NotificationEventListener {
 
       const studentIds = enrollments.map((en) => en.userId);
       const students = await this.userRepo.findBy({ id: In(studentIds) });
+      if (students.length === 0) return;
 
-      // Filter by preference and collect emails
+      const coursePath = `/courses/${assignment.section?.courseId}/section/${assignment.sectionId}/assignment/${assignment.id}`;
+      const dueText = assignment.dueAt
+        ? new Date(assignment.dueAt).toLocaleDateString()
+        : 'No due date';
+
+      // In-app — create for every enrolled student
+      await Promise.all(
+        students.map((s) =>
+          this.inAppService.create({
+            userId: s.id,
+            tenantId: s.tenantId,
+            type: NotificationType.ASSIGNMENT_CREATED,
+            title: `New assignment: ${assignment.title}`,
+            body: `${assignment.section?.course?.code ?? ''} — Due ${dueText}`,
+            data: { path: coursePath, assignmentId: assignment.id },
+          }),
+        ),
+      );
+
+      // Web push — fire and forget for all students
+      void Promise.all(
+        students.map((s) =>
+          this.webPushService.sendToUser(s.id, s.tenantId, {
+            title: `New assignment: ${assignment.title}`,
+            body: `${assignment.section?.course?.code ?? ''} — Due ${dueText}`,
+            url: appUrl(this.configService, coursePath),
+            type: NotificationType.ASSIGNMENT_CREATED,
+          }),
+        ),
+      );
+
+      // Email — filter by preference then batch (Resend limit: 50 per call)
       const recipients = students
         .filter((s) => prefs(s).emailOnAssignment !== false)
         .map((s) => s.email);
 
       if (recipients.length === 0) return;
 
-      // Send individually so each student gets their own "Hi {name}" — but
-      // for large sections, batch into a single multi-recipient send to reduce
-      // Resend API calls. The template currently doesn't personalise by name
-      // for assignment notifications, so batching is safe.
       const { subject, html } = this.templates.assignmentCreated({
         studentName: '', // batch send — no individual name
         assignmentTitle: assignment.title,
@@ -147,13 +198,9 @@ export class NotificationEventListener {
         courseTitle: assignment.section?.course?.title ?? '',
         dueAt: assignment.dueAt,
         pointsPossible: assignment.pointsPossible,
-        appUrl: appUrl(
-          this.configService,
-          `/courses/${assignment.section?.courseId}/section/${assignment.sectionId}/assignment/${assignment.id}`,
-        ),
+        appUrl: appUrl(this.configService, coursePath),
       });
 
-      // Resend supports up to 50 recipients per call. Chunk for large sections.
       const BATCH_SIZE = 50;
       for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
         const batch = recipients.slice(i, i + BATCH_SIZE);
@@ -177,6 +224,27 @@ export class NotificationEventListener {
       ]);
       if (!student || !section) return;
 
+      const sectionPath = `/courses/${section.courseId}/section/${section.id}`;
+
+      // In-app — always created
+      await this.inAppService.create({
+        userId: student.id,
+        tenantId: student.tenantId,
+        type: NotificationType.ENROLLMENT_CONFIRMED,
+        title: `Enrolled: ${section.course?.code ?? ''}`,
+        body: `Welcome to ${section.course?.title ?? ''}`,
+        data: { path: sectionPath },
+      });
+
+      // Web push — fire and forget
+      void this.webPushService.sendToUser(student.id, student.tenantId, {
+        title: `Enrolled: ${section.course?.code ?? ''}`,
+        body: `You're now enrolled in ${section.course?.title ?? ''}`,
+        url: appUrl(this.configService, sectionPath),
+        type: NotificationType.ENROLLMENT_CONFIRMED,
+      });
+
+      // Email — check preference (default true)
       if (prefs(student).emailOnEnrollment === false) return;
 
       const instructorName = section.instructor
@@ -188,10 +256,7 @@ export class NotificationEventListener {
         courseCode: section.course?.code ?? '',
         courseTitle: section.course?.title ?? '',
         instructorName,
-        appUrl: appUrl(
-          this.configService,
-          `/courses/${section.courseId}/section/${section.id}`,
-        ),
+        appUrl: appUrl(this.configService, sectionPath),
       });
 
       await this.emailService.sendEmail({ to: student.email, subject, html });

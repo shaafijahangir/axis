@@ -149,23 +149,28 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Handle push notifications (future use)
+// Handle push notifications
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
-  const data = event.data.json();
-  const options = {
-    body: data.body,
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: data.url || '/',
-    },
-  };
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { title: 'NexusEd', body: event.data.text() };
+  }
+
+  const { title = 'NexusEd', body = '', url = '/', type } = payload;
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'NexusEd', options)
+    self.registration.showNotification(title, {
+      body,
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-72x72.png',
+      tag: type || 'nexused-notification',
+      renotify: true,
+      data: { url },
+    })
   );
 });
 
@@ -177,13 +182,14 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Focus existing window if found
+      // Navigate existing window if open
       for (const client of clientList) {
-        if (client.url === url && 'focus' in client) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url);
           return client.focus();
         }
       }
-      // Open new window
+      // Open new tab
       if (clients.openWindow) {
         return clients.openWindow(url);
       }
