@@ -234,7 +234,7 @@ function InstructorCoursesView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Courses</h1>
           <p className="text-muted-foreground">Browse and manage courses.</p>
@@ -262,44 +262,77 @@ function InstructorCoursesView() {
           ))}
         </div>
       ) : (data?.courses?.length ?? 0) > 0 ? (
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Credits</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data!.courses.map((course: any) => (
-                <TableRow key={course.id}>
-                  <TableCell>
-                    <Link
-                      href={`/courses/${course.id}`}
-                      className="font-medium text-primary hover:underline"
-                    >
+        <>
+          {/* Mobile: card list */}
+          <div className="md:hidden space-y-3">
+            {data!.courses.map((course: any) => (
+              <Link
+                key={course.id}
+                href={`/courses/${course.id}`}
+                className="block"
+              >
+                <div className="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
                       <Badge variant="secondary">{course.code}</Badge>
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Link
-                      href={`/courses/${course.id}`}
-                      className="hover:underline"
-                    >
-                      {course.title}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{course.credits ?? '-'}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(course.createdAt).toLocaleDateString()}
-                  </TableCell>
+                      <p className="font-medium mt-1.5 truncate">
+                        {course.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {course.credits ? `${course.credits} credits · ` : ''}
+                        {new Date(course.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <BookOpen
+                      className="h-4 w-4 shrink-0 text-muted-foreground mt-1"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Credits</TableHead>
+                  <TableHead>Created</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {data!.courses.map((course: any) => (
+                  <TableRow key={course.id}>
+                    <TableCell>
+                      <Link
+                        href={`/courses/${course.id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        <Badge variant="secondary">{course.code}</Badge>
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/courses/${course.id}`}
+                        className="hover:underline"
+                      >
+                        {course.title}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{course.credits ?? '-'}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(course.createdAt).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <h3 className="text-lg font-medium">No courses yet</h3>

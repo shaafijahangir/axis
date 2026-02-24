@@ -130,9 +130,9 @@ export default function GradebookPage() {
   const gradebook = gradebookData?.sectionGradebook;
 
   return (
-    <div className="-m-6">
+    <div className="-m-4 md:-m-6">
       {sectionLoading ? (
-        <div className="border-b p-6">
+        <div className="border-b px-4 py-4 md:p-6">
           <Skeleton className="h-6 w-32" />
           <Skeleton className="mt-2 h-8 w-64" />
         </div>
@@ -146,8 +146,8 @@ export default function GradebookPage() {
         />
       ) : null}
 
-      <div className="space-y-4 p-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 px-4 py-4 md:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Button asChild size="sm" variant="ghost">
               <Link href={`/courses/${courseId}/section/${sectionId}`}>
@@ -158,7 +158,7 @@ export default function GradebookPage() {
             <h2 className="text-xl font-semibold">Gradebook</h2>
           </div>
           {gradebook && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <p className="text-sm text-muted-foreground">
                 {gradebook.students.length} student
                 {gradebook.students.length !== 1 ? 's' : ''} &middot;{' '}

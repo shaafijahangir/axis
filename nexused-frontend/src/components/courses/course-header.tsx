@@ -21,7 +21,7 @@ export function CourseHeader({
   location,
 }: CourseHeaderProps) {
   return (
-    <div className="sticky top-0 z-10 border-b bg-background/95 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="sticky top-0 z-10 border-b bg-background/95 px-4 py-4 md:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center gap-4">
         <Link href={`/courses/${courseId}`}>
           <Button variant="ghost" size="icon">

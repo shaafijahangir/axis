@@ -8,7 +8,7 @@ export function TopNav() {
   return (
     <header
       aria-label="Top navigation bar"
-      className="flex h-16 items-center justify-between border-b bg-card px-6"
+      className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6"
     >
       <div className="flex items-center gap-2 md:hidden">
         <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />

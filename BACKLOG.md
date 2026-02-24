@@ -1101,7 +1101,8 @@
 > **Goal:** Students can use NexusEd on their phones via a responsive web app. No native app needed yet.
 
 ### MOB-001: Responsive audit and fixes for all dashboard layouts
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-24
 - **Priority:** HIGH
 - **Scope:** Sidebar navigation, top nav, all dashboard pages
 - **Problem:** Dashboard layouts (sidebar, data tables, stat cards, course grids) haven't been tested or optimized for 375px-428px screens. Sidebar likely overlaps or is unusable on mobile.
@@ -1113,7 +1114,8 @@
 - **Acceptance:** Every dashboard page renders correctly on iPhone SE (375px) through iPhone 15 Pro Max (430px). No horizontal scroll. No overlapping elements. All interactive elements have minimum 44px touch targets.
 
 ### MOB-002: Responsive audit for course and assignment pages
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-24
 - **Priority:** HIGH
 - **Scope:** Course list, course detail, timeline, assignment detail, submission form, grade view
 - **Problem:** Course pages likely use fixed-width layouts or multi-column grids that break on small screens.
@@ -1125,7 +1127,8 @@
 - **Acceptance:** Student can browse courses, view timeline, submit assignments, and see grades — all on a phone without zooming or horizontal scrolling.
 
 ### MOB-003: Responsive audit for AI chat and messaging
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-24
 - **Priority:** HIGH
 - **Scope:** AI chat (conversation list + thread), messaging (conversation list + thread)
 - **Problem:** Two-panel chat layouts (list + thread side by side) don't work on small screens.
@@ -1137,7 +1140,8 @@
 - **Acceptance:** Student can have a full AI conversation or send messages entirely on mobile. Keyboard doesn't obscure the input. Navigation between list and thread is intuitive.
 
 ### MOB-004: Responsive audit for admin pages
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-24
 - **Priority:** MEDIUM
 - **Scope:** Analytics dashboard, AI governance, integrations, agent builder
 - **Problem:** Admin pages use data-dense layouts (tables, charts, stat grids) that are hardest to make responsive.

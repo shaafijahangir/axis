@@ -17,12 +17,14 @@ export default function AcademicsPage() {
       </div>
 
       <Tabs defaultValue="terms">
-        <TabsList>
-          <TabsTrigger value="terms">Terms</TabsTrigger>
-          <TabsTrigger value="courses">Courses</TabsTrigger>
-          <TabsTrigger value="sections">Sections</TabsTrigger>
-          <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-px">
+          <TabsList className="w-max">
+            <TabsTrigger value="terms">Terms</TabsTrigger>
+            <TabsTrigger value="courses">Courses</TabsTrigger>
+            <TabsTrigger value="sections">Sections</TabsTrigger>
+            <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="terms" className="mt-4">
           <TermsTable />

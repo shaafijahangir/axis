@@ -911,14 +911,16 @@ export default function AiGovernancePage() {
         </Card>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — horizontally scrollable on mobile */}
       <Tabs defaultValue="tools">
-        <TabsList>
-          <TabsTrigger value="tools">Tool Permissions</TabsTrigger>
-          <TabsTrigger value="limits">Rate Limits & Budget</TabsTrigger>
-          <TabsTrigger value="usage">Usage Trend</TabsTrigger>
-          <TabsTrigger value="logs">Audit Log</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-px">
+          <TabsList className="w-max">
+            <TabsTrigger value="tools">Tool Permissions</TabsTrigger>
+            <TabsTrigger value="limits">Rate Limits & Budget</TabsTrigger>
+            <TabsTrigger value="usage">Usage Trend</TabsTrigger>
+            <TabsTrigger value="logs">Audit Log</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="tools" className="mt-4">
           <ToolPermissionsSection

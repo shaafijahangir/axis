@@ -118,9 +118,9 @@ export default function SectionTimelinePage() {
     .map((e) => ({ id: e.id, title: e.title, dueAt: e.dueAt }));
 
   return (
-    <div className="-m-6">
+    <div className="-m-4 md:-m-6">
       {sectionLoading ? (
-        <div className="border-b p-6">
+        <div className="border-b px-4 py-4 md:p-6">
           <Skeleton className="h-6 w-32" />
           <Skeleton className="mt-2 h-8 w-64" />
         </div>
@@ -134,7 +134,7 @@ export default function SectionTimelinePage() {
         />
       ) : null}
 
-      <div className="space-y-3 p-6">
+      <div className="space-y-3 px-4 py-4 md:p-6">
         <div className="flex flex-wrap justify-end gap-2">
           <Button asChild size="sm" variant="outline">
             <Link
