@@ -5,6 +5,168 @@
 
 ---
 
+## Session 32 — Phase B: React Native Mobile App Foundation
+
+**Date:** 2026-02-24
+**Goal:** MOB-APP-001–008 — Expo project scaffold + auth + all 5 tab screens
+**Status:** COMPLETE
+
+### Work Done
+
+**MOB-APP-001: Expo project setup — DONE**
+- `nexused-mobile/` created in monorepo root
+- Added to pnpm-workspace.yaml and turbo.json (`dev:mobile` script)
+- Expo SDK 54 + Expo Router 4 (file-based routing, matches Next.js App Router pattern)
+- Apollo Client v4 (React hooks in `@apollo/client/react`, links in `@apollo/client/link/`)
+- Bearer token auth — backend JWT strategy already accepts Authorization header as fallback to cookie
+- `commitlint.config.js`: added 'mobile' to valid scopes
+
+**MOB-APP-002: Auth flow — DONE**
+- `src/lib/auth.ts`: SecureStore helpers (storeToken, getToken, removeToken, storeUser, getStoredUser, clearAuth)
+- `src/hooks/useAuth.ts`: login, register, logout, biometricUnlock, session restore on mount
+- `app/(auth)/login.tsx`: email + password form, KeyboardAvoidingView, biometric shortcut (shows if token + hardware enrolled)
+- `app/(auth)/register.tsx`: first/last/email/password/tenantId form
+- `app/index.tsx`: auth gate — reads token from SecureStore, redirects to /(tabs) or /(auth)/login
+- `app/_layout.tsx`: root layout with ApolloProvider wrapping all routes
+
+**MOB-APP-003: Mobile Feed / Home — DONE**
+- `app/(tabs)/index.tsx`: FlatList with pull-to-refresh, FeedCard with priority badges
+- Priority color: urgent (≥80) red, important (≥50) amber, FYI grey
+- formatDue: "Overdue", "Due in < 1 hour", "Due in Nh", "Due in Nd"
+- Tap handler: marks item read (mutation) + navigates to course/assignment
+
+**MOB-APP-004: Mobile Courses — DONE**
+- `app/(tabs)/courses.tsx`: enrolled course cards (active only), status badge, instructor, description
+
+**MOB-APP-006: Mobile Grades — DONE**
+- `app/(tabs)/grades.tsx`: SectionList, per-course average, per-assignment score/percentage with color coding
+
+**MOB-APP-007: Mobile Messages — DONE**
+- `app/(tabs)/messages.tsx`: conversation list, unread count badge, initials avatar, last message preview, 10s poll
+
+**MOB-APP-008: Mobile AI Chat — DONE**
+- `app/(tabs)/ai.tsx`: Study Coach + Feedback Copilot agent cards, prior conversations list
+
+**GraphQL queries — DONE**
+- `src/graphql/queries.ts`: FEED_QUERY, MY_COURSES_QUERY, COURSE_TIMELINE_QUERY, ASSIGNMENT_QUERY,
+  MY_GRADES_QUERY, MY_CONVERSATIONS_QUERY, CONVERSATION_MESSAGES_QUERY, SEND_MESSAGE_MUTATION,
+  MY_AI_CONVERSATIONS_QUERY, AI_CONVERSATION_QUERY, START_AI_CONVERSATION_MUTATION, SEND_AI_MESSAGE_MUTATION
+
+### Key Architectural Decisions
+- **WHY Bearer token not cookie**: httpOnly cookies are browser-only. Mobile fetch doesn't send cookies
+  automatically. SecureStore (iOS Keychain / Android Keystore) is the correct secure storage for mobile tokens.
+- **WHY Apollo Client v4 subpath imports**: v4 moved React hooks to `@apollo/client/react` and links to
+  `@apollo/client/link/*`. Direct `@apollo/client` exports only include non-React core.
+- **WHY 5 tabs**: Matches the 20/80 rule — feed, courses, grades, messages, AI covers 95% of student actions.
+  More tabs would compete for attention on a 375px screen.
+- **WHY Expo Router not React Navigation directly**: File-based routing matches the team's Next.js familiarity.
+  Deep links and native navigation stack are handled automatically.
+
+### Next Session Priorities
+1. **MOB-APP-005**: Mobile Assignment detail + text submission
+2. **MOB-APP-009**: FCM push notifications + device token registration
+3. **MOB-APP-010**: Profile & settings screen with logout
+4. **Detail screens**: course timeline, conversation thread, AI chat thread
+
+---
+
+## Session 31 — Phase A: Mobile Responsive Audit + Public Marketing Site
+
+**Date:** 2026-02-24
+**Goal:** MOB-001–005 (mobile responsive audit) + SITE-001–003 (landing, features, about pages)
+**Status:** COMPLETE
+
+### Work Done
+
+**MOB-001: Role-specific mobile nav — DONE**
+- Added `getMobileNavForRole()` to `navigation.ts` — caps each role to 5 items with shortened labels (e.g. "Agent Builder" → "Agents", admin 7 items → 5)
+- `mobile-nav.tsx` now calls `getMobileNavForRole()` instead of `getNavForRole()`
+
+**MOB-002: Courses page table overflow — DONE**
+- Student view: dual layout — mobile card list (`md:hidden`) + desktop table (`hidden md:block`)
+- Instructor view: `overflow-x-auto` wrapper on table
+
+**MOB-003: Messages + AI page height fix — DONE**
+- Both pages already had two-panel mobile switching; fixed height calc from `h-[calc(100vh-4rem-1px)]` to `h-[calc(100vh-10.5rem)] md:h-[calc(100vh-7rem)]` to account for TopNav + padding + mobile nav
+
+**MOB-004: Analytics stat grids — DONE**
+- Changed `md:grid-cols-2 lg:grid-cols-4` → `grid-cols-2 lg:grid-cols-4` (was 1-col on mobile)
+- Applied to overview stats, AI usage section, and loading skeleton
+
+**MOB-005: Touch interaction polish — DONE**
+- Added `touch-action: manipulation` to all interactive elements in `globals.css` — removes 300ms tap delay
+
+**SITE-001: Landing page — DONE**
+- Replaced `redirect('/login')` at `src/app/page.tsx` with full marketing page
+- Sections: MarketingNav, Hero (with product mockup), Problems (4-card grid), Features (8-item grid), Differentiators (AI Catalog Import + AI Enrollment), SocialProof, CTA, Footer
+- Pure server component; no 'use client'
+
+**SITE-002: Features page — DONE**
+- `/features` — hero, For Students (6 features with bullet points), For Instructors (4 features), For Admins (6 features in 3-col grid), comparison table vs Canvas/Brightspace, CTA
+- All statically prerendered
+
+**SITE-003: About page — DONE**
+- `/about` — full founder story from MISSION.md, 3 value cards, long-term vision, contact section with hello@nexused.app
+- Human and authentic; institutional contact CTA
+
+**Shared marketing components extracted:**
+- `components/marketing/marketing-nav.tsx` — shared sticky nav across /, /features, /about
+- `components/marketing/marketing-footer.tsx` — shared footer
+
+### Key Architectural Decisions
+- **WHY mobile nav cap at 5**: At 375px with 7 items, labels overflow or get truncated to illegibility. Role-specific configs give each role a curated 5 that covers 95% of use cases on mobile.
+- **WHY dual layout for courses table**: `overflow-x-auto` alone degrades UX (horizontal scrolling on phone). Card layout designed for touch is the right mobile pattern.
+- **WHY height calc change**: `h-[calc(100vh-4rem-1px)]` only subtracted the top nav (64px). Mobile nav is fixed at bottom (80px) + top padding (24px) = 168px total. Without the fix, the message input was hidden behind the mobile nav.
+- **WHY shared marketing components**: 3 pages use the same nav/footer — 120 lines of JSX. Extracting prevents drift where one page's nav diverges.
+
+### Next Session Priorities
+1. **Phase B: React Native mobile app** (MOB-APP-001–010) — student-focused native app
+2. **Phase C: BIZ-001–004** — billing, multi-tenant provisioning, Stripe integration
+3. **GRAD-005–006** — Course Availability Modeling, Career-to-Curriculum Mapping
+
+---
+
+## Session 30 — Phase A: FEAT-017 Quiz Engine
+
+**Date:** 2026-02-23
+**Goal:** Build A6 — Quiz Engine (FEAT-017)
+**Status:** COMPLETE
+
+### Work Done
+
+**FEAT-017: Quiz Engine — DONE**
+- Backend: `QuizQuestion` entity (extends TenantScopedEntity) — assignmentId, questionText, questionType (MCQ/TF/short_answer enum), options (JSONB: [{text, isCorrect}]), points, order; indexes on tenantId + assignmentId + order
+- Backend: Extended `Assignment` entity — added `maxAttempts` (int nullable), `timeLimitMinutes` (int nullable), `displayMode` (varchar nullable, default 'all_at_once')
+- Backend: Extended `Submission` entity — added `answers` (JSONB), `autoScore` (decimal nullable), `startedAt` (timestamp nullable)
+- Backend: `QuizService`:
+  - `addQuestion`, `updateQuestion`, `deleteQuestion`, `reorderQuestions` — full CRUD with tenant isolation
+  - `updateQuizSettings` — instructor configures maxAttempts/timeLimitMinutes/displayMode
+  - `getQuestionsForInstructor` — full questions with isCorrect
+  - `getQuestionsForStudent` — questions with isCorrect stripped server-side (anti-cheat)
+  - `startQuiz` — creates in-progress submission with startedAt; resumes existing in-progress attempt; enforces maxAttempts
+  - `submitQuiz` — validates 30s-grace time limit; auto-grades MCQ/TF; marks short_answer for manual; emits SUBMISSION_CREATED event
+- Backend: `QuizResolver` — all queries + mutations; instructor-only mutations gated with RolesGuard
+- Registered QuizQuestion entity in global entities array; QuizModule in AppModule
+- Frontend: `QUIZ_QUESTIONS_QUERY`, `STUDENT_QUIZ_QUESTIONS_QUERY`
+- Frontend: Full mutations (addQuestion, updateQuestion, deleteQuestion, reorderQuestions, updateSettings, startQuiz, submitQuiz)
+- Frontend: Updated `ASSIGNMENT_QUERY` to include maxAttempts, timeLimitMinutes, displayMode
+- Frontend: `QuizBuilder` component — add/edit MCQ/TF/short_answer questions, correct answer selection, points per question, quiz settings panel (maxAttempts, timeLimit, displayMode)
+- Frontend: `QuizDelivery` component — intro screen with attempt counter, countdown timer (auto-submits on expire), all_at_once + one_at_a_time modes, MCQ option selection, short_answer textarea, submit with unanswered warning
+- Frontend: Assignment detail page updated — quiz/exam type shows QuizBuilder (instructor) or QuizDelivery (student); standard assignments unchanged
+
+### Key Architectural Decisions
+- **WHY strip isCorrect server-side**: Sending correct answers to the client allows trivial cheating via devtools/network inspector. Two separate query paths (instructor vs student) with identical schemas but different data.
+- **WHY two-step start/submit**: Server-controlled startedAt prevents students from pausing timers client-side. Resume semantics (return existing in-progress attempt) mean page refreshes don't consume attempts.
+- **WHY JSONB for answers**: Answer schema varies (selectedOption for MCQ/TF, textAnswer for short_answer). Avoids a separate answers table with nullable columns.
+- **WHY autoScore separate from score**: autoScore is the machine-calculated sum; score is what the instructor overrides after reviewing short_answer. They're the same for MCQ/TF-only quizzes, different when short_answer is involved.
+
+### Next Session Priorities
+1. **MOB-001–005: Mobile Responsive Audit** — All dashboard pages at 375–430px
+2. **SITE-001: Landing Page** — Marketing presence at `/`
+3. **SITE-002: Features Page** — Detailed feature breakdowns
+
+---
+
 ## Session 29 — Phase A: FEAT-016 Discussion Threads
 
 **Date:** 2026-02-23

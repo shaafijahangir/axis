@@ -1368,21 +1368,21 @@
 > See [ROADMAP.md](./ROADMAP.md) Phase B for the full breakdown of MOB-APP-001 through MOB-APP-010.
 
 ### MOB-APP-001: Expo Project Setup
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Priority:** HIGH — Foundation for all mobile work
 - **Scope:** Expo + Expo Router in `nexused-mobile/`, Apollo Client, shared types, expo-secure-store, biometric auth
 - **Acceptance:** App scaffolded, builds for iOS simulator, can reach backend GraphQL endpoint.
 
 ### MOB-APP-002: Mobile Auth Flow
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Scope:** Login, register, biometric unlock, persistent session
 
 ### MOB-APP-003: Mobile Feed / Home
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Scope:** AI-prioritized feed, pull-to-refresh, navigation to items
 
 ### MOB-APP-004: Mobile Courses
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Scope:** Course list, detail, timeline view
 
 ### MOB-APP-005: Mobile Assignments
@@ -1390,15 +1390,15 @@
 - **Scope:** Detail view, text + camera + file submission, submission history
 
 ### MOB-APP-006: Mobile Grades
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Scope:** Grade summary, per-course breakdown
 
 ### MOB-APP-007: Mobile Messages
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Scope:** Conversation list, thread with Socket.IO, compose
 
 ### MOB-APP-008: Mobile AI Chat
-- **Status:** `TODO`
+- **Status:** `DONE`
 - **Scope:** Agent selection, conversation, tool indicators
 
 ### MOB-APP-009: Mobile Push Notifications
