@@ -5,7 +5,6 @@ import {
   MessageSquare,
   BarChart3,
   Shield,
-  Clock,
   Users,
   Brain,
   Map,
@@ -13,170 +12,258 @@ import {
   CheckCircle,
   ArrowRight,
   GraduationCap,
+  Clock,
+  Bot,
+  Bell,
+  Zap,
 } from 'lucide-react';
 import { MarketingNav } from '@/components/marketing/marketing-nav';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
+
+// ─── Shared helpers ────────────────────────────────────────────────────────────
+
+function Check({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 text-sm text-slate-600">
+      <CheckCircle
+        className="h-4 w-4 shrink-0 text-emerald-500"
+        aria-hidden="true"
+      />
+      {children}
+    </div>
+  );
+}
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden border-b bg-gradient-to-b from-background to-muted/30 py-20 md:py-32">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-16">
-          {/* Text */}
-          <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground">
-              <Sparkles
-                className="h-3.5 w-3.5 text-primary"
-                aria-hidden="true"
-              />
-              AI-Native Learning Management System
-            </div>
+    <section className="relative overflow-hidden bg-white py-20 md:py-28 lg:py-32">
+      {/* Gradient blobs */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+      >
+        <div className="absolute -top-32 -left-32 h-[600px] w-[600px] rounded-full bg-indigo-100/70 blur-3xl" />
+        <div className="absolute -top-16 -right-32 h-[500px] w-[500px] rounded-full bg-violet-100/50 blur-3xl" />
+      </div>
 
-            <div className="space-y-4">
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-                The LMS that{' '}
-                <span className="text-primary">actually serves students.</span>
-              </h1>
-              <p className="text-lg text-muted-foreground max-w-prose">
-                NexusEd replaces filing-cabinet LMSes with an AI-first platform
-                that answers the question every student is really asking:{' '}
-                <em className="text-foreground">What do I need to do next?</em>
-              </p>
-            </div>
+      <div className="mx-auto max-w-6xl px-6">
+        {/* Badge */}
+        <div className="flex justify-center mb-8">
+          <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            AI-Native Learning Management System
+          </span>
+        </div>
 
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
-              >
-                Start for free
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-              <Link
-                href="/about"
-                className="inline-flex items-center gap-2 rounded-md border bg-card px-6 py-3 text-sm font-semibold hover:bg-accent transition-colors"
-              >
-                Read the story
-              </Link>
-            </div>
+        {/* Headline */}
+        <h1 className="mx-auto max-w-4xl text-center text-5xl font-bold tracking-tight text-slate-900 sm:text-6xl lg:text-7xl">
+          The LMS that{' '}
+          <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            actually puts students first.
+          </span>
+        </h1>
 
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle
-                  className="h-4 w-4 text-emerald-500"
-                  aria-hidden="true"
-                />
-                No credit card required
+        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-relaxed text-slate-600">
+          NexusEd replaces filing-cabinet LMSes with an AI-first platform that
+          answers the question every student actually has:{' '}
+          <strong className="font-semibold text-slate-800">
+            what do I need to do next?
+          </strong>
+        </p>
+
+        {/* CTAs */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 transition-colors"
+          >
+            Start for free
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+          <Link
+            href="/about"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-8 py-3.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+          >
+            Read the story
+          </Link>
+        </div>
+
+        {/* Trust items */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
+          <Check>No credit card required</Check>
+          <Check>Multi-tenant from day one</Check>
+          <Check>FERPA-aware architecture</Check>
+        </div>
+
+        {/* Product mockup */}
+        <div className="relative mt-16 mx-auto max-w-4xl">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-900/5">
+            {/* Browser chrome */}
+            <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
+              <div className="flex gap-1.5 shrink-0">
+                <span className="h-3 w-3 rounded-full bg-red-400" />
+                <span className="h-3 w-3 rounded-full bg-amber-400" />
+                <span className="h-3 w-3 rounded-full bg-emerald-400" />
               </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle
-                  className="h-4 w-4 text-emerald-500"
-                  aria-hidden="true"
-                />
-                Multi-tenant from day one
+              <div className="flex-1 mx-3 h-6 rounded-md border border-slate-200 bg-white px-3 flex items-center">
+                <span className="text-[11px] text-slate-400">
+                  nexused.app/dashboard
+                </span>
               </div>
             </div>
-          </div>
 
-          {/* Visual — platform preview mockup */}
-          <div className="relative">
-            <div className="rounded-2xl border bg-card p-4 shadow-2xl">
-              {/* Fake top bar */}
-              <div className="flex items-center gap-2 mb-4 border-b pb-3">
-                <div className="flex gap-1.5">
-                  <span className="h-3 w-3 rounded-full bg-red-400" />
-                  <span className="h-3 w-3 rounded-full bg-amber-400" />
-                  <span className="h-3 w-3 rounded-full bg-green-400" />
+            {/* App layout: sidebar + main */}
+            <div className="flex min-h-[280px] sm:min-h-[340px]">
+              {/* Sidebar */}
+              <div className="w-12 shrink-0 border-r border-slate-100 bg-slate-50 p-2 sm:w-44 sm:p-3 space-y-1">
+                <div className="mb-4 flex items-center gap-2 px-1">
+                  <div className="h-6 w-6 rounded-md bg-indigo-600 shrink-0" />
+                  <span className="hidden sm:block text-xs font-bold text-slate-800">
+                    NexusEd
+                  </span>
                 </div>
-                <div className="flex-1 mx-3 h-5 rounded-md bg-muted" />
+                {[
+                  { icon: Sparkles, label: 'Feed', active: true },
+                  { icon: BookOpen, label: 'Courses', active: false },
+                  { icon: Map, label: 'Planner', active: false },
+                  { icon: Brain, label: 'AI Chat', active: false },
+                  { icon: MessageSquare, label: 'Messages', active: false },
+                ].map(({ icon: Icon, label, active }) => (
+                  <div
+                    key={label}
+                    className={`flex items-center gap-2 rounded-lg px-2 py-2 ${
+                      active
+                        ? 'bg-indigo-100 text-indigo-700'
+                        : 'text-slate-500 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className="hidden sm:block text-xs font-medium">
+                      {label}
+                    </span>
+                  </div>
+                ))}
               </div>
 
-              {/* Fake AI feed */}
-              <div className="space-y-2.5">
+              {/* Main feed */}
+              <div className="flex-1 p-4 space-y-3 bg-white">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100">
                     <Sparkles
-                      className="h-3.5 w-3.5 text-primary"
+                      className="h-3.5 w-3.5 text-indigo-600"
                       aria-hidden="true"
                     />
                   </div>
-                  <div className="text-xs font-semibold">
-                    NexusEd — What matters right now
-                  </div>
+                  <span className="text-sm font-semibold text-slate-800">
+                    What matters right now
+                  </span>
                 </div>
 
                 {[
                   {
-                    color:
-                      'bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-800',
+                    bg: 'bg-red-50 border-red-200',
+                    dot: 'bg-red-500',
                     label: 'Due in 3 hours',
                     title: 'CPSC 320 — Algorithm Analysis Assignment 4',
                     icon: '📋',
                   },
                   {
-                    color:
-                      'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800',
+                    bg: 'bg-emerald-50 border-emerald-200',
+                    dot: 'bg-emerald-500',
                     label: 'Grade received',
-                    title: 'MATH 201 — Quiz 3: 87/100',
-                    icon: '✅',
+                    title: 'MATH 201 — Quiz 3: 87/100 ✓',
+                    icon: '🎯',
                   },
                   {
-                    color:
-                      'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
+                    bg: 'bg-blue-50 border-blue-200',
+                    dot: 'bg-blue-500',
                     label: 'New announcement',
                     title: 'ENGL 135 — Office hours moved to Thursday',
                     icon: '📣',
                   },
                 ].map((card, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-start gap-3 rounded-lg border p-3 text-xs ${card.color}`}
-                  >
-                    <span className="text-base" role="img" aria-hidden="true">
-                      {card.icon}
-                    </span>
-                    <div>
-                      <p
-                        className="font-semibold text-muted-foreground"
-                        style={{ fontSize: '10px' }}
+                  <div key={i} className={`rounded-lg border p-3 ${card.bg}`}>
+                    <div className="flex items-start gap-3">
+                      <span
+                        className="text-base leading-none"
+                        role="img"
+                        aria-hidden="true"
                       >
-                        {card.label}
-                      </p>
-                      <p className="font-medium mt-0.5">{card.title}</p>
+                        {card.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <div
+                            className={`h-1.5 w-1.5 rounded-full shrink-0 ${card.dot}`}
+                          />
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                            {card.label}
+                          </span>
+                        </div>
+                        <p className="text-xs font-medium text-slate-800 truncate">
+                          {card.title}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))}
 
-                <div className="rounded-lg border bg-primary/5 border-primary/20 p-3 mt-3">
+                <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Brain
-                      className="h-3.5 w-3.5 text-primary"
+                      className="h-3.5 w-3.5 text-indigo-600"
                       aria-hidden="true"
                     />
-                    <span className="text-[10px] font-semibold text-primary">
+                    <span className="text-[10px] font-bold text-indigo-700">
                       Study Coach
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    You have CPSC 320 due in 3 hours. Based on your grade
-                    history, breaking the problem into smaller steps first will
-                    help. Want me to walk you through it?
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    CPSC 320 is due in 3 hours. Based on your submissions,
+                    breaking it into sub-problems first helps you most. Want me
+                    to walk you through it?
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* Decorative glow */}
-            <div
-              className="absolute -bottom-8 -right-8 h-48 w-48 rounded-full bg-primary/10 blur-3xl"
-              aria-hidden="true"
-            />
           </div>
+
+          {/* Ambient glow below mockup */}
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-8 left-1/2 h-24 w-2/3 -translate-x-1/2 rounded-full bg-indigo-300/20 blur-2xl"
+          />
         </div>
       </div>
     </section>
+  );
+}
+
+// ─── Stats bar ────────────────────────────────────────────────────────────────
+
+function StatsBar() {
+  const items = [
+    { value: '16+', label: 'Built-in AI tools' },
+    { value: '3-tier', label: 'AI governance' },
+    { value: '20+', label: 'Entity types' },
+    { value: '100%', label: 'Tenant isolated' },
+  ];
+
+  return (
+    <div className="border-y border-slate-100 bg-slate-50">
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+          {items.map((s) => (
+            <div key={s.label} className="text-center">
+              <p className="text-2xl font-bold text-indigo-600">{s.value}</p>
+              <p className="mt-1 text-xs text-slate-500">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -184,39 +271,39 @@ function Hero() {
 
 const PROBLEMS = [
   {
-    number: '01',
-    title: 'Built for administration, not learning',
-    body: 'Canvas, Brightspace, Moodle — digital filing cabinets with a gradebook attached. Their navigation reflects an administrator\'s mental model. A student never thinks "I need to navigate to Modules." They think: what do I need to do next?',
+    n: '01',
+    title: 'Built for administrators, not learners',
+    body: 'Canvas, Brightspace, Moodle — digital filing cabinets with a gradebook bolted on. Their navigation reflects an admin\'s mental model. Students don\'t think "I need to go to Modules." They think: what do I need to do right now?',
   },
   {
-    number: '02',
-    title: 'Fragmented learning experience',
-    body: 'Content lives in one place. Assignments in another. Discussions in a third. Grades in a fourth. Students must mentally reconstruct the relationship between all disconnected pieces, every single time.',
+    n: '02',
+    title: 'Fragmented across four different tabs',
+    body: 'Content, assignments, discussions, and grades all live in separate places. Students must mentally reconstruct the relationship between disconnected pieces — every single session.',
   },
   {
-    number: '03',
+    n: '03',
     title: 'Every student treated identically',
-    body: 'A struggling student and a thriving student see the exact same linear list of modules. Zero adaptation. No concept of "this person needs help" versus "this person is ready to move faster."',
+    body: 'A student struggling with the last assignment and one who just aced it see the exact same page. Zero adaptation. No concept of "this person needs help" or "this person is ready to accelerate."',
   },
   {
-    number: '04',
-    title: 'Support systems that are broken',
-    body: "Academic advisors who don't reply. Appointments booked three weeks out. Drop-in sessions that feel rushed. Students left to navigate degree requirements alone — wondering if they're even on the right track.",
+    n: '04',
+    title: "Support systems that don't work",
+    body: "Academic advisors who don't reply. Appointments booked three weeks out. Drop-in sessions that feel rushed. Students left alone wondering if they're even on the right track to graduate.",
   },
 ];
 
 function Problems() {
   return (
-    <section className="py-20 md:py-28 border-b">
+    <section className="border-b border-slate-100 bg-white py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="mb-12 max-w-2xl">
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
+        <div className="mb-14">
+          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
             The Problem
           </p>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             Modern LMSes have four fundamental flaws.
           </h2>
-          <p className="mt-4 text-muted-foreground">
+          <p className="mt-4 max-w-xl text-slate-600 leading-relaxed">
             These aren&apos;t minor UX issues. They&apos;re structural failures
             that leave students behind every semester.
           </p>
@@ -225,16 +312,16 @@ function Problems() {
         <div className="grid gap-6 sm:grid-cols-2">
           {PROBLEMS.map((p) => (
             <div
-              key={p.number}
-              className="rounded-xl border bg-card p-6 space-y-3 hover:shadow-md transition-shadow"
+              key={p.n}
+              className="group rounded-2xl border border-slate-200 bg-white p-7 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all"
             >
-              <div className="text-3xl font-bold text-primary/20 font-mono">
-                {p.number}
+              <div className="mb-4 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-sm font-bold text-indigo-600 font-mono">
+                {p.n}
               </div>
-              <h3 className="text-lg font-semibold">{p.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {p.body}
-              </p>
+              <h3 className="mb-2 text-base font-semibold text-slate-900">
+                {p.title}
+              </h3>
+              <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
             </div>
           ))}
         </div>
@@ -249,81 +336,174 @@ const FEATURES = [
   {
     icon: Sparkles,
     title: 'AI-Prioritized Feed',
-    body: "Students don't see a folder. They see what matters right now — deadlines, unread feedback, upcoming lessons — ranked by the AI that understands their situation.",
-    color: 'text-purple-500',
+    body: 'Students see what matters right now — deadlines, unread feedback, upcoming content — ranked by AI that understands their academic position.',
+    iconBg: 'bg-violet-100',
+    iconColor: 'text-violet-600',
   },
   {
     icon: Map,
     title: 'Graduation Roadmap',
-    body: "Semester-by-semester graduation plan that respects prerequisites, course availability, and financial aid thresholds. Replaces the advisor who doesn't reply.",
-    color: 'text-blue-500',
+    body: "Semester-by-semester plan respecting prerequisites, course availability, and financial aid thresholds. Replaces the advisor who doesn't reply.",
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-600',
   },
   {
     icon: Brain,
-    title: 'Study Coach & Feedback AI',
-    body: 'Socratic study coach that guides students to answers. Feedback Copilot that drafts rubric-aligned feedback for instructors — in seconds.',
-    color: 'text-emerald-500',
+    title: 'Study Coach',
+    body: 'Socratic AI tutor with full course context. Guides students toward understanding — never just gives the answer.',
+    iconBg: 'bg-emerald-100',
+    iconColor: 'text-emerald-600',
   },
   {
     icon: BookOpen,
     title: 'Course Timeline',
-    body: 'Content, assignments, and discussions in a single chronological stream. Not three separate tabs. The relationship between content and work is self-evident.',
-    color: 'text-amber-500',
+    body: 'Content, assignments, and discussions in one chronological stream. The relationship between reading and work is finally self-evident.',
+    iconBg: 'bg-amber-100',
+    iconColor: 'text-amber-600',
   },
   {
     icon: Upload,
     title: 'AI Catalog Import',
-    body: 'Upload a PDF course catalog. AI extracts 200+ courses with prerequisites and degree requirements in minutes. Institutions onboard in hours, not weeks.',
-    color: 'text-rose-500',
+    body: 'Upload a PDF academic catalog. AI extracts courses, prerequisites, and degree programs — in minutes, not weeks.',
+    iconBg: 'bg-rose-100',
+    iconColor: 'text-rose-600',
   },
   {
     icon: MessageSquare,
     title: 'Discussion Threads',
-    body: 'Threaded discussions with @mentions, instructor-answer badges, and real-time notifications. Integrated into the course timeline, not a separate tab.',
-    color: 'text-cyan-500',
+    body: 'Threaded discussions with @mentions, instructor-answer badges, and real-time notifications — inside the course timeline.',
+    iconBg: 'bg-cyan-100',
+    iconColor: 'text-cyan-600',
   },
   {
     icon: Shield,
     title: 'AI Governance Console',
-    body: 'Per-action governance rules (auto/suggest/blocked), daily token budgets, and full audit logs. Institutions stay in control of every AI interaction.',
-    color: 'text-indigo-500',
+    body: 'Per-action governance (auto / suggest / blocked), daily token budgets, monthly cost caps, and a full audit log.',
+    iconBg: 'bg-indigo-100',
+    iconColor: 'text-indigo-600',
   },
   {
     icon: BarChart3,
     title: 'Analytics Dashboard',
-    body: 'Grade distributions, submission rates, AI usage costs, and at-risk student alerts — all tenant-scoped, all real-time.',
-    color: 'text-orange-500',
+    body: 'Grade distributions, submission rates, AI costs, and at-risk student alerts — all tenant-scoped and real-time.',
+    iconBg: 'bg-orange-100',
+    iconColor: 'text-orange-600',
+  },
+  {
+    icon: Bot,
+    title: 'Agent Builder',
+    body: 'Instructors build custom AI agents for their courses — system prompts, tool access, and governance rules — no code required.',
+    iconBg: 'bg-purple-100',
+    iconColor: 'text-purple-600',
   },
 ];
 
 function Features() {
   return (
-    <section className="py-20 md:py-28 bg-muted/30 border-b">
+    <section className="border-b border-slate-100 bg-slate-50 py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="mb-12 max-w-2xl">
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
+        <div className="mb-14">
+          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
             Features
           </p>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Everything a modern institution needs. Nothing it doesn&apos;t.
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Everything an institution needs. Nothing it doesn&apos;t.
           </h2>
+          <p className="mt-4 text-slate-600 leading-relaxed">
+            Built AI-native from day one — not a traditional LMS with a chatbot
+            bolted on.
+          </p>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-xl border bg-card p-5 space-y-3 hover:shadow-md transition-shadow"
+              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all"
             >
               <div
-                className={`inline-flex rounded-lg p-2.5 bg-muted ${f.color}`}
+                className={`mb-4 inline-flex rounded-xl p-2.5 ${f.iconBg} ${f.iconColor}`}
               >
                 <f.icon className="h-5 w-5" aria-hidden="true" />
               </div>
-              <h3 className="font-semibold">{f.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {f.body}
-              </p>
+              <h3 className="mb-2 font-semibold text-slate-900">{f.title}</h3>
+              <p className="text-sm leading-relaxed text-slate-600">{f.body}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            href="/features"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:underline"
+          >
+            See the full feature breakdown
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── How it works ─────────────────────────────────────────────────────────────
+
+function HowItWorks() {
+  const steps = [
+    {
+      icon: Upload,
+      step: '01',
+      title: 'Import your catalog',
+      body: 'Upload a PDF or CSV. AI extracts courses, prerequisites, and degree programs. Admin reviews and confirms in minutes.',
+    },
+    {
+      icon: Users,
+      step: '02',
+      title: 'Onboard your students',
+      body: 'Students register, select their degree program, and get a personalized AI-prioritized feed from day one.',
+    },
+    {
+      icon: Brain,
+      step: '03',
+      title: 'AI works in the background',
+      body: 'Study Coach answers academic questions. Feedback Copilot drafts rubric-aligned feedback. Graduation planner tracks progress.',
+    },
+    {
+      icon: Zap,
+      step: '04',
+      title: 'Students succeed',
+      body: 'Fewer missed deadlines. Better grades. Students who know exactly where they stand — without needing to ask anyone.',
+    },
+  ];
+
+  return (
+    <section className="border-b border-slate-100 bg-white py-20 md:py-28">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="mb-14">
+          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
+            How it works
+          </p>
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            From zero to running in a single day.
+          </h2>
+        </div>
+
+        <div className="grid gap-px bg-slate-200 overflow-hidden rounded-2xl sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map((s) => (
+            <div key={s.step} className="bg-white p-7 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50">
+                  <s.icon
+                    className="h-5 w-5 text-indigo-600"
+                    aria-hidden="true"
+                  />
+                </div>
+                <span className="font-mono text-2xl font-bold text-slate-100">
+                  {s.step}
+                </span>
+              </div>
+              <h3 className="font-semibold text-slate-900">{s.title}</h3>
+              <p className="text-sm leading-relaxed text-slate-600">{s.body}</p>
             </div>
           ))}
         </div>
@@ -334,197 +514,318 @@ function Features() {
 
 // ─── Differentiators ──────────────────────────────────────────────────────────
 
+function DiffRow({
+  badge,
+  badgeIcon: BadgeIcon,
+  title,
+  description,
+  bullets,
+  mockup,
+  reverse = false,
+}: {
+  badge: string;
+  badgeIcon: React.ElementType;
+  title: React.ReactNode;
+  description: string;
+  bullets: string[];
+  mockup: React.ReactNode;
+  reverse?: boolean;
+}) {
+  return (
+    <div
+      className={`flex flex-col gap-12 lg:flex-row lg:items-center ${
+        reverse ? 'lg:flex-row-reverse' : ''
+      }`}
+    >
+      {/* Text */}
+      <div className="flex-1 space-y-6 min-w-0">
+        <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+          <BadgeIcon className="h-3.5 w-3.5" aria-hidden="true" />
+          {badge}
+        </div>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          {title}
+        </h2>
+        <p className="text-slate-600 leading-relaxed">{description}</p>
+        <ul className="space-y-2.5">
+          {bullets.map((b) => (
+            <li
+              key={b}
+              className="flex items-start gap-2.5 text-sm text-slate-600"
+            >
+              <CheckCircle
+                className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
+                aria-hidden="true"
+              />
+              {b}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Mockup */}
+      <div className="flex-1 min-w-0">{mockup}</div>
+    </div>
+  );
+}
+
+function CatalogMockup() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
+          <Brain className="h-5 w-5 text-indigo-600" aria-hidden="true" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-slate-900">AI Extraction</p>
+          <p className="text-xs text-slate-500">CS_Catalog_2026.pdf</p>
+        </div>
+      </div>
+      <div className="space-y-2.5">
+        {[
+          { ok: true, text: 'Extracting courses… 247 found' },
+          { ok: true, text: 'Parsing prerequisites and corequisites…' },
+          { ok: true, text: 'Mapping degree programs… 12 programs' },
+          { ok: false, text: '3 items flagged for admin review' },
+        ].map((item, i) => (
+          <div
+            key={i}
+            className={`flex items-center gap-2.5 rounded-xl px-4 py-3 text-xs font-medium ${
+              item.ok
+                ? 'bg-emerald-50 text-emerald-700'
+                : 'bg-amber-50 text-amber-700'
+            }`}
+          >
+            {item.ok ? (
+              <CheckCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <Shield className="h-4 w-4 shrink-0" aria-hidden="true" />
+            )}
+            {item.text}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+        Ready to import — 244 courses · 12 programs · 3 need review
+      </div>
+    </div>
+  );
+}
+
+function EnrollmentMockup() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg space-y-3">
+      {/* Student message */}
+      <div className="flex items-start gap-3 rounded-xl bg-slate-100 p-4">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-300 text-xs font-bold text-slate-600">
+          S
+        </div>
+        <p className="text-sm text-slate-700">
+          I need a 3-credit elective that doesn&apos;t conflict with MATH 221 on
+          MWF.
+        </p>
+      </div>
+      {/* AI response */}
+      <div className="flex items-start gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100">
+          <Sparkles
+            className="h-3.5 w-3.5 text-indigo-600"
+            aria-hidden="true"
+          />
+        </div>
+        <div className="space-y-2.5 text-sm">
+          <p className="text-slate-700">
+            Found 3 options that fit your schedule and count toward your CS
+            electives:
+          </p>
+          <ul className="space-y-1.5">
+            {[
+              'PHIL 220 — Logic & Computation (Tu/Th, 3 cr)',
+              'STAT 260 — Applied Statistics (M/W/F 2–3 pm, 3 cr)',
+              'LING 180 — Language & Mind (M/W, 3 cr)',
+            ].map((c) => (
+              <li
+                key={c}
+                className="flex items-center gap-2 text-xs text-slate-600"
+              >
+                <CheckCircle
+                  className="h-3 w-3 shrink-0 text-emerald-500"
+                  aria-hidden="true"
+                />
+                {c}
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs font-semibold text-indigo-600">
+            Want me to enroll you in STAT 260?
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Differentiators() {
   return (
-    <section className="py-20 md:py-28 border-b">
+    <section className="border-b border-slate-100 bg-slate-50 py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6 space-y-20">
-        {/* Differentiator 1 */}
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-              AI Catalog Import
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Upload your PDF catalog. AI sets up your institution.
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              DegreeWorks charges $100k+/year and requires weeks of manual
-              setup. NexusEd&apos;s AI extraction pipeline processes a 50-page
-              academic calendar, finds 200+ courses with prerequisites and
-              degree requirements, and puts them in front of an admin for review
-              — in minutes.
-            </p>
-            <div className="space-y-2">
-              {[
-                'Natural language prerequisite parsing ("minimum C+ or permission of instructor")',
-                'Degree requirement group extraction',
-                'Low-confidence flagging for human review',
-                'All-or-nothing transaction — no partial imports',
-              ].map((item) => (
-                <div key={item} className="flex items-start gap-2 text-sm">
-                  <CheckCircle
-                    className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0"
-                    aria-hidden="true"
-                  />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+        <DiffRow
+          badge="AI Catalog Import"
+          badgeIcon={Upload}
+          title={
+            <>
+              Upload your PDF catalog.
+              <br />
+              AI sets up your institution.
+            </>
+          }
+          description="DegreeWorks charges $100k+/year and requires weeks of manual setup. NexusEd's AI extraction pipeline processes a 50-page academic calendar and puts structured course data in front of an admin for review — in minutes."
+          bullets={[
+            'Natural language prerequisite parsing ("minimum C+ or permission of instructor")',
+            'Degree requirement group extraction and mapping',
+            'Low-confidence items flagged for human review',
+            'All-or-nothing transaction — no partial imports',
+          ]}
+          mockup={<CatalogMockup />}
+        />
 
-          <div className="rounded-2xl border bg-card p-6 space-y-3">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Brain className="h-4 w-4 text-primary" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold">
-                  AI Extraction — Processing
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  CS_Catalog_2026.pdf
-                </p>
-              </div>
-            </div>
-            {[
-              { status: 'done', text: 'Extracting courses... 247 found' },
-              { status: 'done', text: 'Parsing prerequisites...' },
-              {
-                status: 'done',
-                text: 'Mapping degree programs... 12 programs',
-              },
-              { status: 'flag', text: '3 items flagged for review' },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-2 text-xs rounded-md px-3 py-2 ${
-                  item.status === 'done'
-                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                    : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
-                }`}
-              >
-                {item.status === 'done' ? (
-                  <CheckCircle
-                    className="h-3.5 w-3.5 shrink-0"
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <Shield className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                )}
-                {item.text}
-              </div>
-            ))}
-            <div className="border-t pt-3 text-xs text-muted-foreground">
-              Ready to import — 244 courses, 12 programs, 3 require admin review
-            </div>
-          </div>
-        </div>
-
-        {/* Differentiator 2 */}
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-          <div className="order-2 lg:order-1 rounded-2xl border bg-card p-6 space-y-3">
-            <div className="flex items-start gap-3 rounded-lg bg-muted/60 p-3">
-              <div className="h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                <Users
-                  className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
-                  aria-hidden="true"
-                />
-              </div>
-              <p className="text-sm">
-                I need a 3-credit elective that doesn&apos;t conflict with MATH
-                221 on MWF.
-              </p>
-            </div>
-            <div className="flex items-start gap-3 rounded-lg bg-primary/5 border border-primary/10 p-3">
-              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Sparkles
-                  className="h-3.5 w-3.5 text-primary"
-                  aria-hidden="true"
-                />
-              </div>
-              <div className="text-sm space-y-2">
-                <p>
-                  Found 4 options that fit your schedule and count toward your
-                  CS electives:
-                </p>
-                <div className="space-y-1">
-                  {[
-                    'PHIL 220 — Logic & Computation (Tu/Th, 3 cr)',
-                    'STAT 260 — Applied Statistics (M/W/F, 3 cr)',
-                    'LING 180 — Language & Mind (M/W, 3 cr)',
-                  ].map((c) => (
-                    <div
-                      key={c}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground"
-                    >
-                      <CheckCircle
-                        className="h-3 w-3 text-emerald-500"
-                        aria-hidden="true"
-                      />
-                      {c}
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-primary font-medium">
-                  Want me to enroll you in STAT 260?
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="order-1 lg:order-2 space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              <Brain className="h-3.5 w-3.5" aria-hidden="true" />
-              AI Enrollment
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              &ldquo;I need a 3-credit elective.&rdquo; AI finds and enrolls
-              you.
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Every other LMS treats enrollment as admin plumbing — CSV imports
-              and manual assignment. NexusEd makes it a student-facing,
-              conversational experience. Describe what you need in plain
-              language. The AI finds matching courses, checks your
-              prerequisites, and enrolls you — all without leaving the chat.
-            </p>
-          </div>
-        </div>
+        <DiffRow
+          reverse
+          badge="AI Enrollment"
+          badgeIcon={Brain}
+          title={
+            <>
+              &ldquo;I need a 3-credit elective.&rdquo;
+              <br />
+              AI finds and enrolls you.
+            </>
+          }
+          description="Every other LMS treats enrollment as admin plumbing — CSV imports and manual assignment. NexusEd makes it a student-facing, conversational experience. Describe what you need in plain language and the AI does the rest."
+          bullets={[
+            'Natural language course search across the full catalog',
+            'Schedule conflict detection before suggesting options',
+            'Prerequisite validation before enrollment',
+            'Conversational — all in the AI chat interface',
+          ]}
+          mockup={<EnrollmentMockup />}
+        />
       </div>
     </section>
   );
 }
 
-// ─── Social Proof ─────────────────────────────────────────────────────────────
+// ─── For roles ────────────────────────────────────────────────────────────────
 
-function SocialProof() {
+const ROLES = [
+  {
+    role: 'Students',
+    icon: GraduationCap,
+    color: 'indigo',
+    perks: [
+      'AI-prioritized home feed (deadlines first)',
+      'Study Coach with full course context',
+      'Graduation roadmap with prerequisite checks',
+      'Financial aid-aware semester planning',
+      'Conversational course enrollment',
+      'Real-time discussion threads',
+    ],
+  },
+  {
+    role: 'Instructors',
+    icon: BookOpen,
+    color: 'violet',
+    perks: [
+      'Feedback Copilot drafts rubric-aligned feedback',
+      'AI agent builder for custom course tutors',
+      'Course timeline (content + assignments + discussions)',
+      'Quiz engine with auto-grading',
+      'Gradebook with submission management',
+      'AI catalog import and course structure generation',
+    ],
+  },
+  {
+    role: 'Administrators',
+    icon: Shield,
+    color: 'slate',
+    perks: [
+      'Per-tenant AI governance (auto / suggest / blocked)',
+      'Daily token budgets and monthly cost caps',
+      'Full AI audit log',
+      'Analytics: grades, submissions, at-risk students',
+      'LTI 1.3 integration',
+      'Multi-tenant data isolation',
+    ],
+  },
+];
+
+const roleColorMap: Record<
+  string,
+  { badge: string; icon: string; bullet: string }
+> = {
+  indigo: {
+    badge: 'bg-indigo-50 text-indigo-700',
+    icon: 'bg-indigo-50 text-indigo-600',
+    bullet: 'text-indigo-500',
+  },
+  violet: {
+    badge: 'bg-violet-50 text-violet-700',
+    icon: 'bg-violet-50 text-violet-600',
+    bullet: 'text-violet-500',
+  },
+  slate: {
+    badge: 'bg-slate-100 text-slate-700',
+    icon: 'bg-slate-100 text-slate-600',
+    bullet: 'text-slate-400',
+  },
+};
+
+function ForRoles() {
   return (
-    <section className="py-16 bg-muted/30 border-b">
-      <div className="mx-auto max-w-7xl px-6 text-center space-y-6">
-        <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest">
-          Built for the institutions that put students first
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-8">
-          {[
-            'Research Universities',
-            'Community Colleges',
-            'Polytechnic Institutes',
-            'Online-First Programs',
-          ].map((label) => (
-            <div
-              key={label}
-              className="flex items-center gap-2 rounded-full border bg-card px-5 py-2.5 text-sm font-medium text-muted-foreground"
-            >
-              <GraduationCap className="h-4 w-4" aria-hidden="true" />
-              {label}
-            </div>
-          ))}
+    <section className="border-b border-slate-100 bg-white py-20 md:py-28">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="mb-14">
+          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
+            For everyone
+          </p>
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Built around what each role actually needs.
+          </h2>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Testimonials and case studies coming soon. We&apos;re currently in
-          early access.
-        </p>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {ROLES.map((r) => {
+            const colors = roleColorMap[r.color];
+            return (
+              <div
+                key={r.role}
+                className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm"
+              >
+                <div className="mb-5 flex items-center gap-3">
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${colors.icon}`}
+                  >
+                    <r.icon className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <h3 className="font-semibold text-slate-900">{r.role}</h3>
+                </div>
+                <ul className="space-y-2.5">
+                  {r.perks.map((p) => (
+                    <li
+                      key={p}
+                      className="flex items-start gap-2.5 text-sm text-slate-600"
+                    >
+                      <CheckCircle
+                        className={`mt-0.5 h-4 w-4 shrink-0 ${colors.bullet}`}
+                        aria-hidden="true"
+                      />
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
@@ -534,37 +835,54 @@ function SocialProof() {
 
 function CTA() {
   return (
-    <section className="py-20 md:py-28 border-b bg-primary text-primary-foreground">
-      <div className="mx-auto max-w-3xl px-6 text-center space-y-8">
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Your students deserve better than a filing cabinet.
-          </h2>
-          <p className="text-primary-foreground/80 text-lg">
-            Get NexusEd running in hours, not months. No vendor lock-in. No
-            six-figure implementation fees.
-          </p>
-        </div>
+    <section className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-700 py-20 md:py-28">
+      {/* Decorative blobs */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+      >
+        <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
+      </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-4">
+      <div className="mx-auto max-w-3xl px-6 text-center">
+        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          Your students deserve better than a filing cabinet.
+        </h2>
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-indigo-100">
+          Get NexusEd running in hours, not months. No vendor lock-in. No
+          six-figure implementation fees.
+        </p>
+
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 rounded-md bg-primary-foreground px-8 py-3.5 text-sm font-semibold text-primary hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-semibold text-indigo-600 shadow-lg hover:opacity-95 transition-opacity"
           >
             Start for free
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
           <Link
             href="/about"
-            className="inline-flex items-center gap-2 rounded-md border border-primary-foreground/30 px-8 py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/10 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
           >
             Read the story
           </Link>
         </div>
 
-        <p className="text-xs text-primary-foreground/60">
-          Multi-tenant SaaS. FERPA-aware architecture. Self-hosting available.
-        </p>
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-indigo-200">
+          {['Multi-tenant SaaS', 'FERPA-aware', 'Self-hosting available'].map(
+            (t) => (
+              <div key={t} className="flex items-center gap-2">
+                <CheckCircle
+                  className="h-4 w-4 shrink-0 text-indigo-300"
+                  aria-hidden="true"
+                />
+                {t}
+              </div>
+            ),
+          )}
+        </div>
       </div>
     </section>
   );
@@ -574,14 +892,16 @@ function CTA() {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-white text-slate-900">
       <MarketingNav />
       <main>
         <Hero />
+        <StatsBar />
         <Problems />
         <Features />
+        <HowItWorks />
         <Differentiators />
-        <SocialProof />
+        <ForRoles />
         <CTA />
       </main>
       <MarketingFooter />
