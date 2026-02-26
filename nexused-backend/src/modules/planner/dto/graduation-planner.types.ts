@@ -201,6 +201,17 @@ export class PlannedCourse {
   /** Name of the degree requirement group this course satisfies */
   @Field()
   fulfillsRequirement: string;
+
+  /**
+   * GRAD-005: Availability warning for this course.
+   * 'only_offered_fall' | 'only_offered_spring' | 'only_offered_summer'
+   *   — course is constrained to one term type (student cannot reschedule it)
+   * 'fills_quickly'
+   *   — this course has historically filled to >80% capacity; enroll early
+   * Null when no notable availability concern.
+   */
+  @Field({ nullable: true })
+  availabilityWarning?: string | null;
 }
 
 @ObjectType()

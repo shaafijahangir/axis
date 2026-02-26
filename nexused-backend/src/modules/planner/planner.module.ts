@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DegreeProgram } from '../../database/entities/degree-program.entity';
 import { StudentDegreeProfile } from '../../database/entities/student-degree-profile.entity';
 import { Course } from '../../database/entities/course.entity';
+import { CourseSection } from '../../database/entities/course-section.entity';
+import { Enrollment } from '../../database/entities/enrollment.entity';
 import { Tenant } from '../../database/entities/tenant.entity';
 import { PlannerService } from './planner.service';
 import { PlannerResolver } from './planner.resolver';
@@ -29,6 +31,8 @@ import { FinancialProjectionResolver } from './financial-projection.resolver';
       DegreeProgram,
       StudentDegreeProfile,
       Course,
+      CourseSection,
+      Enrollment,
       GraduationPlan,
       Tenant,
     ]),

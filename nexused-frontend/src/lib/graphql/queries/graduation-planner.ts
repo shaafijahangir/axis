@@ -42,6 +42,7 @@ const GRADUATION_PLAN_FIELDS = gql`
         title
         credits
         fulfillsRequirement
+        availabilityWarning
       }
     }
   }

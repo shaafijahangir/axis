@@ -29,6 +29,11 @@ export interface PlannedCourseData {
   title: string;
   credits: number;
   fulfillsRequirement: string;
+  /**
+   * GRAD-005: Optional availability warning surfaced at plan-generation time.
+   * Values: 'only_offered_fall' | 'only_offered_spring' | 'only_offered_summer' | 'fills_quickly'
+   */
+  availabilityWarning?: string;
 }
 
 /** A semester slot in the graduation plan (raw JSONB shape). */

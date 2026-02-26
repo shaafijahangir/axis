@@ -45,6 +45,8 @@ import {
   Settings,
   AlertTriangle,
   ShieldAlert,
+  Info,
+  Flame,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -87,6 +89,7 @@ interface PlannedCourse {
   title: string;
   credits: number;
   fulfillsRequirement: string;
+  availabilityWarning?: string | null;
 }
 
 interface SemesterAidStatus {
@@ -370,6 +373,53 @@ function PlanDiffPanel({
   );
 }
 
+// ─── Availability Warning Badge (GRAD-005) ────────────────────────────────────
+
+const AVAILABILITY_WARNING_META: Record<
+  string,
+  { label: string; icon: typeof Info; className: string; title: string }
+> = {
+  only_offered_fall: {
+    label: 'Fall only',
+    icon: Info,
+    className: 'bg-sky-100 text-sky-700 border-sky-200',
+    title: 'This course is only offered in Fall semesters',
+  },
+  only_offered_spring: {
+    label: 'Spring only',
+    icon: Info,
+    className: 'bg-sky-100 text-sky-700 border-sky-200',
+    title: 'This course is only offered in Spring semesters',
+  },
+  only_offered_summer: {
+    label: 'Summer only',
+    icon: Info,
+    className: 'bg-sky-100 text-sky-700 border-sky-200',
+    title: 'This course is only offered in Summer semesters',
+  },
+  fills_quickly: {
+    label: 'Fills fast',
+    icon: Flame,
+    className: 'bg-amber-100 text-amber-700 border-amber-200',
+    title: 'This course historically fills to capacity quickly — enroll early',
+  },
+};
+
+function AvailabilityBadge({ warning }: { warning: string }) {
+  const meta = AVAILABILITY_WARNING_META[warning];
+  if (!meta) return null;
+  const Icon = meta.icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] font-medium leading-none ${meta.className}`}
+      title={meta.title}
+    >
+      <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+      {meta.label}
+    </span>
+  );
+}
+
 // ─── Semester Card ────────────────────────────────────────────────────────────
 
 function SemesterCard({
@@ -543,6 +593,9 @@ function SemesterCard({
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-3">
+                {course.availabilityWarning && (
+                  <AvailabilityBadge warning={course.availabilityWarning} />
+                )}
                 <Badge
                   variant="secondary"
                   className={`text-[10px] hidden md:inline-flex ${reqColor(course.fulfillsRequirement)}`}

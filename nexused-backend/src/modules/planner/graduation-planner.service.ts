@@ -10,6 +10,11 @@ import {
 import { StudentDegreeProfile } from '../../database/entities/student-degree-profile.entity';
 import { DegreeProgram } from '../../database/entities/degree-program.entity';
 import { Course } from '../../database/entities/course.entity';
+import { CourseSection } from '../../database/entities/course-section.entity';
+import {
+  Enrollment,
+  EnrollmentStatus,
+} from '../../database/entities/enrollment.entity';
 import { RequirementGroup } from '../../database/entities/degree-program.entity';
 import {
   GenerateGraduationPlanInput,
@@ -66,6 +71,10 @@ export class GraduationPlannerService {
     private programRepo: Repository<DegreeProgram>,
     @InjectRepository(Course)
     private courseRepo: Repository<Course>,
+    @InjectRepository(CourseSection)
+    private sectionRepo: Repository<CourseSection>,
+    @InjectRepository(Enrollment)
+    private enrollmentRepo: Repository<Enrollment>,
     @InjectRepository(Tenant)
     private tenantRepo: Repository<Tenant>,
     private financialProjectionService: FinancialProjectionService,
@@ -147,6 +156,9 @@ export class GraduationPlannerService {
       const c = courseMap.get(id);
       return sum + (c ? Number(c.credits) || 0 : 0);
     }, 0);
+
+    // ── 4b. Compute fill rates for availability warnings (GRAD-005) ──────
+    const fillRates = await this.computeFillRates(remainingIds);
 
     // ── 5. Build constraint inputs ───────────────────────────────────────
     const maxCredits = input.maxCreditsPerSemester ?? this.DEFAULT_MAX_CREDITS;
@@ -366,6 +378,10 @@ export class GraduationPlannerService {
             credits,
             fulfillsRequirement:
               courseToRequirement.get(id) ?? 'General Elective',
+            availabilityWarning: this.getAvailabilityWarning(
+              course,
+              fillRates.get(id) ?? 0,
+            ),
           });
 
           // ── Place corequisites in the same semester ───────────────
@@ -381,6 +397,10 @@ export class GraduationPlannerService {
               credits: coreqCr,
               fulfillsRequirement:
                 courseToRequirement.get(coreqCourse.id) ?? 'General Elective',
+              availabilityWarning: this.getAvailabilityWarning(
+                coreqCourse,
+                fillRates.get(coreqCourse.id) ?? 0,
+              ),
             });
           }
         }
@@ -509,6 +529,7 @@ export class GraduationPlannerService {
               title: c.title,
               credits: Number(c.credits),
               fulfillsRequirement: c.fulfillsRequirement,
+              availabilityWarning: c.availabilityWarning ?? null,
             }),
           ),
         }),
@@ -772,6 +793,88 @@ export class GraduationPlannerService {
       semestersRemoved,
       graduationDateChange,
     };
+  }
+
+  // ─── GRAD-005: Availability Warnings ──────────────────────────────────
+
+  /**
+   * Compute historical fill rates for a set of courses.
+   *
+   * WHY: Students need to know if a course reliably fills to capacity so
+   * they can enroll early. A fill rate > 80% across any section's history
+   * is the threshold we use (not just the latest semester — a course that
+   * consistently fills up is more informative than a one-off).
+   *
+   * PATTERN: Two queries:
+   *   1. Bulk-load sections by courseId (avoids N+1).
+   *   2. Aggregate enrollment counts per section with GROUP BY.
+   * Returns Map<courseId, maxFillRateAcrossAllSections> in range [0, 1].
+   */
+  private async computeFillRates(
+    courseIds: string[],
+  ): Promise<Map<string, number>> {
+    if (courseIds.length === 0) return new Map();
+
+    const sections = await this.sectionRepo.find({
+      where: { courseId: In(courseIds) },
+    });
+
+    if (sections.length === 0) return new Map();
+
+    const sectionsWithCapacity = sections.filter(
+      (s) => s.capacity && s.capacity > 0,
+    );
+    if (sectionsWithCapacity.length === 0) return new Map();
+
+    const sectionIds = sectionsWithCapacity.map((s) => s.id);
+
+    const rawCounts = await this.enrollmentRepo
+      .createQueryBuilder('e')
+      .select('e.sectionId', 'sectionId')
+      .addSelect('COUNT(e.id)', 'cnt')
+      .where('e.sectionId IN (:...sectionIds)', { sectionIds })
+      .andWhere('e.status IN (:...statuses)', {
+        statuses: [EnrollmentStatus.ACTIVE, EnrollmentStatus.COMPLETED],
+      })
+      .groupBy('e.sectionId')
+      .getRawMany<{ sectionId: string; cnt: string }>();
+
+    const countMap = new Map(
+      rawCounts.map((r) => [r.sectionId, parseInt(r.cnt, 10)]),
+    );
+
+    // Per-course fill rate = highest fill rate across all known sections
+    const fillRates = new Map<string, number>();
+    for (const section of sectionsWithCapacity) {
+      const enrolled = countMap.get(section.id) ?? 0;
+      const rate = enrolled / section.capacity;
+      const existing = fillRates.get(section.courseId) ?? 0;
+      if (rate > existing) fillRates.set(section.courseId, rate);
+    }
+
+    return fillRates;
+  }
+
+  /**
+   * Derive an availability warning for a single course.
+   *
+   * Priority: term-constraint warnings take precedence over fills_quickly
+   * because they directly affect which semester the planner can schedule
+   * the course in. Fills-quickly is informational only.
+   */
+  private getAvailabilityWarning(
+    course: Course,
+    fillRate: number,
+  ): string | undefined {
+    const offered = course.offeredSemesters;
+    if (offered && offered.length === 1) {
+      const term = offered[0].toLowerCase();
+      if (term === 'fall') return 'only_offered_fall';
+      if (term === 'spring') return 'only_offered_spring';
+      if (term === 'summer') return 'only_offered_summer';
+    }
+    if (fillRate > 0.8) return 'fills_quickly';
+    return undefined;
   }
 
   private capitalize(s: string): string {
