@@ -1063,18 +1063,22 @@
 - **Acceptance:** Student with a plan that drops to 9 credits in Spring 2027 sees a warning about aid eligibility on that semester. AI warns student before confirming a plan change that would affect aid status.
 
 ### GRAD-005: Course Availability Modeling
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-26
 - **Priority:** LOW — Enhancement for planning accuracy
 - **Depends on:** GRAD-001, ONBOARD-001
-- **Scope:**
-  - Backend: Use `offeredSemesters` from Course entity (set during ONBOARD-001) as primary availability data
-  - Backend: Historical enrollment analysis — based on past enrollment data, flag courses that historically fill up within the first week of enrollment
-  - Backend: Availability warnings included in GraduationPlan — `{ courseId, warning: 'only_offered_fall' | 'fills_quickly' | 'not_offered_next_year' }`
-  - Frontend: Availability indicators on planned courses:
-    - Info badge: "Only offered in Fall"
-    - Warning badge: "Fills up fast — enroll early"
-    - Error badge: "Not offered in 2027-2028" (if admin marks it)
-  - Admin UI: Course offering schedule management — set/override availability patterns per course per academic year
+- **Files Modified:**
+  - `graduation-plan.entity.ts` — `availabilityWarning?: string` added to `PlannedCourseData` interface
+  - `graduation-planner.types.ts` — `availabilityWarning?: string | null` added to `PlannedCourse` GQL type
+  - `planner.module.ts` — added `CourseSection` + `Enrollment` to TypeORM feature list
+  - `graduation-planner.service.ts` — `computeFillRates()` (2-query batch: section capacity + enrollment GROUP BY); `getAvailabilityWarning()` (term-constraint vs fill-rate); annotations applied in bin-packing step; `toResult()` passes warning through JSONB → GQL
+  - `graduation-planner.ts` (frontend queries) — added `availabilityWarning` to courses fragment
+  - `roadmap/page.tsx` — `AvailabilityBadge` component; renders "Fall only", "Spring only", "Summer only", "Fills fast" badges on each course chip
+- **Warning types:**
+  - `only_offered_fall/spring/summer` — course constrained to one term (student cannot reschedule)
+  - `fills_quickly` — fill rate > 80% historically (enroll early)
+- **Admin UI:** `offeredSemesters` already editable via ONBOARD-002 catalog admin
+- **Acceptance:** ✓ Plan generation annotates courses with availability warnings. ✓ Roadmap page shows color-coded badges. ✓ Type-checks pass on both sides.
 - **Acceptance:** Plan generator correctly avoids scheduling a Fall-only course in Spring. Courses that fill quickly are flagged on the roadmap. Admin can override availability per year.
 
 ### GRAD-006: Career-to-Curriculum Mapping

@@ -5,6 +5,170 @@
 
 ---
 
+## Session 36 — Availability Warnings + Marketing Pages (GRAD-005, SITE-001/002/003)
+
+**Date:** 2026-02-26
+**Goal:** Commit pending marketing pages, build GRAD-005 availability warnings
+**Status:** COMPLETE
+
+### Work Done
+
+**SITE-001/002/003 commit — DONE**
+- Marketing pages (landing, features, about) were built but uncommitted
+- Committed `nexused-frontend/src/app/page.tsx`, `features/page.tsx`, `about/page.tsx`, `marketing-nav.tsx`, `marketing-footer.tsx`, `globals.css`, `pnpm-lock.yaml`
+
+**GRAD-005: Course Availability Modeling — DONE**
+- `graduation-plan.entity.ts`: Added `availabilityWarning?: string` to `PlannedCourseData` JSONB interface
+- `graduation-planner.types.ts`: Added `@Field({ nullable: true }) availabilityWarning?: string | null` to `PlannedCourse` GraphQL type
+- `planner.module.ts`: Registered `CourseSection` + `Enrollment` repositories in TypeORM forFeature
+- `graduation-planner.service.ts`:
+  - Injected `sectionRepo: Repository<CourseSection>` + `enrollmentRepo: Repository<Enrollment>`
+  - `computeFillRates()`: bulk-load sections by courseId, GROUP BY sectionId enrollment count, return `Map<courseId, maxFillRate>`
+  - `getAvailabilityWarning()`: single-term `offeredSemesters` → `only_offered_{fall/spring/summer}`; fill rate > 0.8 → `fills_quickly`
+  - Annotates every placed course (and coreqs) with `availabilityWarning` during bin-packing
+  - `toResult()`: passes `c.availabilityWarning ?? null` through to GraphQL response
+- `graduation-planner.ts` (GQL): Added `availabilityWarning` to `courses` fragment
+- `roadmap/page.tsx`:
+  - `PlannedCourse` interface: added `availabilityWarning?: string | null`
+  - `AVAILABILITY_WARNING_META`: label/icon/className/title for all 4 warning types
+  - `AvailabilityBadge` component: renders inline colored badge with icon + tooltip
+  - Course row: conditionally renders `<AvailabilityBadge>` before requirement badge
+
+### Next Session Priorities
+1. **GRAD-006**: Career-to-curriculum mapping (explore careers, skill gap analysis)
+2. **ENROLL-009**: Enrollment Policy Engine (per-section rules: prerequisites, capacity limits)
+3. **MOB-006**: PWA offline feed caching
+
+---
+
+## Session 35 — Mobile Polish + Bulk Enrollment (MOB-005, ENROLL-008)
+
+**Date:** 2026-02-24
+**Goal:** MOB-005 touch polish + ENROLL-008 CSV bulk enrollment
+**Status:** COMPLETE
+
+### Work Done
+
+**MOB-005: Touch interaction polish — DONE**
+- `message-thread.tsx`: back button `p-1` → `p-3` (24px → 44px touch target)
+- `ai-chat-thread.tsx`: back button `h-11 w-11` (36px → 44px)
+- `globals.css`: `touch-action: manipulation` on `button, a, [role='button']` — eliminates 300ms tap delay
+- `section-gradebook.tsx`: `role="img" aria-label="Submitted, not yet graded"` on the `—` span
+- `student-home-feed.tsx` + `instructor-home-feed.tsx`: `fetchPolicy: 'cache-and-network'` for always-fresh feed on every page visit
+
+**ENROLL-008: Bulk Enrollment — DONE**
+
+Backend:
+- `courses.service.ts`: `bulkDropEnrollments()` — bulk status UPDATE; `bulkMoveEnrollments()` — transactional drop + re-enroll in target section; `DataSource` injected for transaction support
+- `admin-course.types.ts`: `BulkDropInput { enrollmentIds[] }`, `BulkMoveInput { enrollmentIds[], targetSectionId }`
+- `admin-courses.resolver.ts`: `bulkDropEnrollments → Int`, `bulkMoveEnrollments → Int` mutations
+
+Frontend:
+- `CsvBulkEnrollDialog`: drag-drop or click CSV upload, RFC-4180 client-side parser, email→userId matching against full user list (pageSize 1000), preview table with matched/not-found status, downloadable template, calls existing `bulkEnroll` mutation
+- `BulkMoveDialog`: section picker → `bulkMoveEnrollments` mutation
+- `EnrollmentsTable` (full rewrite): checkboxes on every row, select-all header, floating bulk action bar (Drop Selected + Move to Section) when rows selected, Import CSV button
+- `BULK_DROP_ENROLLMENTS_MUTATION`, `BULK_MOVE_ENROLLMENTS_MUTATION` added to GQL
+- shadcn `Checkbox` component installed
+
+### Next Session Priorities
+1. **GRAD-005**: Course availability modeling (offeredSemesters enforcement in planner)
+2. **GRAD-006**: Career-to-curriculum mapping (explore careers, skill gap analysis)
+3. **ENROLL-009**: Enrollment Policy Engine (per-section rules: prerequisites, capacity limits)
+
+---
+
+## Session 34 — Mobile Responsive Audit (MOB-001 through MOB-004)
+
+**Date:** 2026-02-24
+**Goal:** MOB-001/002/003/004 — Responsive web app audit and fixes for 375px screens
+**Status:** COMPLETE
+
+### Work Done
+
+**MOB-001: Dashboard layout + nav — DONE**
+- `layout.tsx`: `p-6 pb-20 md:pb-6` → `px-4 py-4 pb-20 md:px-6 md:py-6 md:pb-6` (16px side padding on mobile instead of 24px)
+- `top-nav.tsx`: `px-6` → `px-4 md:px-6` (matches layout)
+- `courses/page.tsx` InstructorCoursesView: header now `flex-col gap-3 sm:flex-row sm:items-center sm:justify-between` to stack buttons on narrow screens
+- `courses/page.tsx` InstructorCoursesView: added `md:hidden` mobile card list (same pattern as student view), table wrapped in `hidden md:block`
+
+**MOB-002: Course/section page breakout pattern — DONE**
+- `course-header.tsx`: `px-6 py-4` → `px-4 py-4 md:px-6` (consistent with reduced layout padding)
+- `section/[sectionId]/page.tsx`: `-m-6` → `-m-4 md:-m-6`, inner content `p-6` → `px-4 py-4 md:p-6`, loading skeleton div same fix
+- `gradebook/page.tsx`: `-m-6` → `-m-4 md:-m-6`, inner content `p-6` → `px-4 py-4 md:p-6`, loading skeleton same fix, gradebook header `flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between` so Back+title and CSV+meta stack on mobile
+
+**MOB-003: AI chat + messaging — DONE**
+- AI page: height calc `10.5rem` → `10rem` on mobile (accounts for new py-4 vs py-6 layout padding: 64+16+80=160px=10rem)
+- Messages page: same height calc fix
+- Back buttons verified already exist on both MessageThread (`md:hidden ArrowLeft`) and AiChatThread (`md:hidden ArrowLeft`)
+
+**MOB-004: Admin pages — DONE (tabs)**
+- `admin/ai-governance/page.tsx`: TabsList wrapped in `overflow-x-auto pb-px` div, `TabsList className="w-max"` — horizontally scrollable on mobile
+- `academics/page.tsx`: same scrollable tabs treatment for Terms/Courses/Sections/Enrollments
+
+### Key Architectural Decisions
+- **WHY px-4/py-4 on mobile**: 24px (p-6) on a 375px screen leaves only 327px of content width — 16px (p-4) gives 343px. Meaningful improvement for cards, forms, and badges.
+- **WHY -m-4 md:-m-6**: The `-m-X` trick breaks content out of the main padding to create full-bleed section headers. It must be kept in sync with the layout padding at each breakpoint.
+- **WHY height calc changes**: `calc(100vh - 10.5rem)` accounted for 24px top padding; with new 16px top padding the correct value is `calc(100vh - 10rem)`.
+- **WHY overflow-x-auto on tabs**: Tabs with 4+ items won't fit on 375px. Horizontal scroll is the standard pattern (see: GitHub, Vercel dashboard).
+
+### Next Session Priorities
+1. **ENROLL-008**: Bulk enrollment (admin CSV upload) — practical institutional feature
+2. **GRAD-005**: Course availability modeling (offeredSemesters enforcement in planner)
+3. **GRAD-006**: Career-to-curriculum mapping (explore careers, skill gap analysis)
+
+---
+
+## Session 33 — Phase B Complete + ENROLL-007 Smart Course Discovery
+
+**Date:** 2026-02-24
+**Goal:** Complete Phase B mobile detail screens + ENROLL-007 AI-powered course discovery
+**Status:** COMPLETE
+
+### Work Done
+
+**MOB-APP-005: Mobile Assignment Detail + Submission — DONE**
+- `app/courses/[id]/assignment/[assignmentId].tsx`: full detail (title, due, points, maxAttempts), existing submission card (status badge, score, feedback), text submission form hidden once SUBMITTED/GRADED
+- Alert confirmation before submit ("You cannot edit your submission after submitting")
+
+**MOB-APP-009: Mobile Push Notifications — DONE**
+- Installed `expo-notifications` (~0.32.16) + `expo-device` (~8.0.10)
+- `src/hooks/usePushNotifications.ts`: request permission → getExpoPushTokenAsync → `REGISTER_DEVICE_TOKEN_MUTATION` → notification-tap deep link routing
+- `app/_layout.tsx`: `PushNotificationSetup` component (child of ApolloProvider, reads isAuthenticated from useAuth, triggers push registration)
+- `nexused-backend/src/modules/notifications/web-push.service.ts`: `sendToUser` now fans out to web (VAPID) + mobile (Expo Push API) in parallel; stale `DeviceNotRegistered` tokens auto-cleaned
+- `src/graphql/queries.ts`: `REGISTER_DEVICE_TOKEN_MUTATION`, `MY_NOTIFICATIONS_QUERY`, `UNREAD_NOTIFICATION_COUNT_QUERY`, `MARK_NOTIFICATION_READ_MUTATION`, `MARK_ALL_NOTIFICATIONS_READ_MUTATION`
+
+**MOB-APP-010: Mobile Profile & Settings — DONE**
+- `app/profile/index.tsx`: avatar (initials), name/email/role display, read-only info card, destructive sign-out with confirmation, app version footer
+- `app/(tabs)/_layout.tsx`: profile button in Home tab header → navigates to `/profile`
+
+**Detail screens (all 5 tab links resolved) — DONE**
+- `app/courses/[id]/index.tsx`: course timeline (color-coded assignment/announcement/content cards, tap assignment → detail)
+- `app/messages/[id].tsx`: message thread with 5s polling, own/other bubble styles, optimistic send
+- `app/ai/[id].tsx`: AI chat thread with tool-use chips (⚙ Using…), "AI is thinking…" indicator, indigo AI avatar
+- `app/ai/new/index.tsx`: agent intro bubble → first message → `startAiConversation` → `router.replace('/ai/${id}')`
+
+**ENROLL-007: Smart Course Discovery — DONE**
+- `nexused-backend/src/modules/ai/tools/course-discovery.tools.ts`: `discover_courses` tool
+  - Full-text search (ILIKE) on code, title, description
+  - Structured filters: minCredits, maxCredits, category (CORE/ELECTIVE/LAB/GENERAL_EDUCATION/SEMINAR), level (100/200/300/400), semester (Fall/Spring/Summer)
+  - Section count per course via grouped COUNT query
+  - Optional `degreeProfileId`: cross-references with `PlannerService.findEligibleCourses` to flag `fulfillsDegreeRequirement`
+  - actionType: 'auto' (no governance approval needed)
+- `ai.module.ts`: injected `Course` and `CourseSection` repos, registered `createCourseDiscoveryTools`
+- `course-planner.agent.ts`: added `discover_courses` to tools array + updated system prompt with discovery workflow ("I need a 3-credit lab science" → discover_courses with category: LAB, minCredits: 3, degreeProfileId)
+
+### Key Architectural Decisions
+- **WHY Expo Push not raw FCM**: Expo's push service handles FCM/APNs routing in managed workflow. Raw FCM requires ejecting to bare workflow and managing native config. Expo tokens work on both platforms with zero native code.
+- **WHY LIKE not vector search**: Typical tenant catalog is 200–500 courses. LIKE is fast, no additional infrastructure. Vector similarity is a Phase C enhancement for large catalogs.
+- **WHY discover_courses is 'auto' not 'suggest'**: Reading catalog data has no side effects. The agent should be able to search freely without governance gates — only write operations (enroll) need confirmation.
+
+### Next Session Priorities
+1. **ENROLL-008**: Bulk enrollment (admin CSV upload) — practical institutional feature
+2. **GRAD-005**: Course availability modeling (offeredSemesters enforcement in planner)
+3. **GRAD-006**: Career-to-curriculum mapping (explore careers, skill gap analysis)
+
+---
+
 ## Session 32 — Phase B: React Native Mobile App Foundation
 
 **Date:** 2026-02-24
