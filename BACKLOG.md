@@ -923,7 +923,8 @@
 - **Acceptance:** Admin can upload CSV to bulk-enroll students. Admin can bulk-move/drop students across sections. All operations are transactional with error reporting.
 
 ### ENROLL-009: Enrollment Policy Engine
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-26
 - **Priority:** LOW — Enterprise tier
 - **Depends on:** ENROLL-003
 - **Scope:**
