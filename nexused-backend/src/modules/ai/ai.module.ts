@@ -43,6 +43,7 @@ import { createAnalyticsTools } from './tools/analytics.tools';
 import { createPlannerTools } from './tools/planner.tools';
 import { createGraduationPlannerTools } from './tools/graduation-planner.tools';
 import { createCourseDiscoveryTools } from './tools/course-discovery.tools';
+import { createCareerTools } from './tools/career.tools';
 
 // Agent definitions
 import { studyCoachAgent } from './agents/study-coach.agent';
@@ -66,6 +67,7 @@ import { CoursesService } from '../courses/courses.service';
 import { PlannerModule } from '../planner/planner.module';
 import { PlannerService } from '../planner/planner.service';
 import { GraduationPlannerService } from '../planner/graduation-planner.service';
+import { CareerService } from '../planner/career.service';
 
 /**
  * The AI module — core of the AI-native architecture.
@@ -137,6 +139,7 @@ export class AiModule implements OnModuleInit {
     private coursesService: CoursesService,
     private plannerService: PlannerService,
     private graduationPlannerService: GraduationPlannerService,
+    private careerService: CareerService,
     @InjectRepository(Assignment)
     private assignmentRepo: Repository<Assignment>,
     @InjectRepository(Submission)
@@ -202,6 +205,9 @@ export class AiModule implements OnModuleInit {
         this.plannerService,
       ),
     );
+
+    // Career exploration + skill gap tools (GRAD-006)
+    this.toolRegistry.registerAll(createCareerTools(this.careerService));
   }
 
   private registerAgents(): void {

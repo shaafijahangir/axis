@@ -48,6 +48,7 @@ import {
   Sparkles,
   CircleDot,
   TrendingUp,
+  Briefcase,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -479,6 +480,12 @@ export default function PlannerPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/planner/careers">
+            <Button variant="outline" className="gap-2">
+              <Briefcase className="h-4 w-4" aria-hidden="true" />
+              Career Explorer
+            </Button>
+          </Link>
           <Link href="/planner/roadmap">
             <Button variant="outline" className="gap-2">
               <Map className="h-4 w-4" aria-hidden="true" />

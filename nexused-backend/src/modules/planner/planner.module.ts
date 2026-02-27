@@ -5,6 +5,7 @@ import { StudentDegreeProfile } from '../../database/entities/student-degree-pro
 import { Course } from '../../database/entities/course.entity';
 import { CourseSection } from '../../database/entities/course-section.entity';
 import { Enrollment } from '../../database/entities/enrollment.entity';
+import { CareerProfile } from '../../database/entities/career-profile.entity';
 import { Tenant } from '../../database/entities/tenant.entity';
 import { PlannerService } from './planner.service';
 import { PlannerResolver } from './planner.resolver';
@@ -13,6 +14,8 @@ import { GraduationPlannerService } from './graduation-planner.service';
 import { GraduationPlannerResolver } from './graduation-planner.resolver';
 import { FinancialProjectionService } from './financial-projection.service';
 import { FinancialProjectionResolver } from './financial-projection.resolver';
+import { CareerService } from './career.service';
+import { CareerResolver } from './career.resolver';
 
 /**
  * Planner module — degree planning, progress tracking, and graduation planning.
@@ -33,6 +36,7 @@ import { FinancialProjectionResolver } from './financial-projection.resolver';
       Course,
       CourseSection,
       Enrollment,
+      CareerProfile,
       GraduationPlan,
       Tenant,
     ]),
@@ -44,11 +48,14 @@ import { FinancialProjectionResolver } from './financial-projection.resolver';
     GraduationPlannerResolver,
     FinancialProjectionService,
     FinancialProjectionResolver,
+    CareerService,
+    CareerResolver,
   ],
   exports: [
     PlannerService,
     GraduationPlannerService,
     FinancialProjectionService,
+    CareerService,
   ],
 })
 export class PlannerModule {}
