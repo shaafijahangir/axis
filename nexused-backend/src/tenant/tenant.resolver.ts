@@ -18,6 +18,12 @@ import { UserRole } from '../database/entities/user.entity';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
+import { CurrentUser } from '../decorators/current-user.decorator';
+import { User } from '../database/entities/user.entity';
+import {
+  EnrollmentPolicy,
+  UpdateEnrollmentPolicyInput,
+} from './enrollment-policy.types';
 
 @InputType()
 export class CreateTenantInput {
@@ -84,5 +90,24 @@ export class TenantResolver {
   @UseGuards(JwtAuthGuard)
   async tenantCount(): Promise<number> {
     return await this.tenantService.count();
+  }
+
+  // ─── Enrollment Policy ────────────────────────────────────────────────
+
+  @Query(() => EnrollmentPolicy)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async enrollmentPolicy(@CurrentUser() user: User): Promise<EnrollmentPolicy> {
+    return this.tenantService.getEnrollmentPolicy(user.tenantId);
+  }
+
+  @Mutation(() => EnrollmentPolicy)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async updateEnrollmentPolicy(
+    @CurrentUser() user: User,
+    @Args('input') input: UpdateEnrollmentPolicyInput,
+  ): Promise<EnrollmentPolicy> {
+    return this.tenantService.updateEnrollmentPolicy(user.tenantId, input);
   }
 }

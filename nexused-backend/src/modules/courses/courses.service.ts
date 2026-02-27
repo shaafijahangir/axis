@@ -43,6 +43,7 @@ import {
   AdminCreateSectionInput,
 } from './dto/admin-course.types';
 import { NexusEvents } from '../ai/events/ai-events';
+import { EnrollmentPolicyService } from './enrollment-policy.service';
 
 @Injectable()
 export class CoursesService {
@@ -55,6 +56,7 @@ export class CoursesService {
     private enrollmentsRepository: Repository<Enrollment>,
     private eventEmitter: EventEmitter2,
     private dataSource: DataSource,
+    private enrollmentPolicyService: EnrollmentPolicyService,
   ) {}
 
   async findAllForTenant(tenantId: string): Promise<Course[]> {
@@ -306,7 +308,10 @@ export class CoursesService {
       }
     }
 
-    // 5. Create enrollment — active if autoApprove, pending if manual approval required
+    // 5. Tenant enrollment policy checks (window, credit limit, prerequisites)
+    await this.enrollmentPolicyService.check(tenantId, userId, section as any);
+
+    // 6. Create enrollment — active if autoApprove, pending if manual approval required
     const status = section.autoApprove
       ? EnrollmentStatus.ACTIVE
       : EnrollmentStatus.PENDING;

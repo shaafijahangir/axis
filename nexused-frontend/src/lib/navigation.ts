@@ -13,6 +13,7 @@ import {
   Map,
   Library,
   AlertTriangle,
+  ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
@@ -71,6 +72,11 @@ const adminNav: NavItem[] = [
   },
   { label: 'People', href: '/people', icon: Users },
   { label: 'Integrations', href: '/admin/integrations', icon: Link },
+  {
+    label: 'Enrollment Policy',
+    href: '/admin/enrollment-policy',
+    icon: ClipboardList,
+  },
 ];
 
 const parentNav: NavItem[] = [
