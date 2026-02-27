@@ -1082,7 +1082,8 @@
 - **Acceptance:** Plan generator correctly avoids scheduling a Fall-only course in Spring. Courses that fill quickly are flagged on the roadmap. Admin can override availability per year.
 
 ### GRAD-006: Career-to-Curriculum Mapping
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-26
 - **Priority:** LOW — Future differentiator ("what do I want to be when I grow up?")
 - **Depends on:** GRAD-001
 - **Scope:**
