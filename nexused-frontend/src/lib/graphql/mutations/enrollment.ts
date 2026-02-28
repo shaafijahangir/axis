@@ -7,6 +7,8 @@ export const ENROLL_IN_SECTION_MUTATION = gql`
       status
       enrolledAt
       sectionId
+      waitlistPosition
+      waitlistConfirmBy
     }
   }
 `;
@@ -97,6 +99,29 @@ export const ADMIN_FORCE_ENROLLMENT_STATUS_MUTATION = gql`
         lastName
         email
       }
+    }
+  }
+`;
+
+// ─── ENROLL-010: Waitlist mutations ──────────────────────────────────────
+
+export const CONFIRM_WAITLIST_PROMOTION_MUTATION = gql`
+  mutation ConfirmWaitlistPromotion($enrollmentId: String!) {
+    confirmWaitlistPromotion(enrollmentId: $enrollmentId) {
+      id
+      status
+      waitlistPosition
+      waitlistConfirmBy
+    }
+  }
+`;
+
+export const CANCEL_WAITLIST_ENTRY_MUTATION = gql`
+  mutation CancelWaitlistEntry($enrollmentId: String!) {
+    cancelWaitlistEntry(enrollmentId: $enrollmentId) {
+      id
+      status
+      waitlistPosition
     }
   }
 `;

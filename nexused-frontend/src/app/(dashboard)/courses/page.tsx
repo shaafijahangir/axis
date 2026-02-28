@@ -48,7 +48,10 @@ const STATUS_BADGE: Record<
   },
   dropped: { label: 'Dropped', className: '' },
   withdrawn: { label: 'Withdrawn', className: '' },
-  waitlisted: { label: 'Waitlisted', className: '' },
+  waitlisted: {
+    label: 'Waitlisted',
+    className: 'bg-blue-50 text-blue-700 border-blue-200',
+  },
   rejected: { label: 'Not approved', className: 'text-destructive' },
 };
 
@@ -114,7 +117,8 @@ function StudentCoursesView() {
               const courseUrl = `/courses/${section.course.id}/section/${section.id}`;
               const canOpen =
                 enrollment.status === 'active' ||
-                enrollment.status === 'pending';
+                enrollment.status === 'pending' ||
+                enrollment.status === 'waitlisted';
               return (
                 <Link key={enrollment.id} href={courseUrl} className="block">
                   <div className="rounded-lg border p-4 hover:bg-muted/50 transition-colors">

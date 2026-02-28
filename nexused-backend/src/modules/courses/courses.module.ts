@@ -9,6 +9,7 @@ import { AdminCoursesResolver } from './admin-courses.resolver';
 import { StudentCatalogResolver } from './student-catalog.resolver';
 import { CsvImportService } from './csv-import.service';
 import { EnrollmentPolicyService } from './enrollment-policy.service';
+import { WaitlistService } from './waitlist.service';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { EnrollmentPolicyService } from './enrollment-policy.service';
     StudentCatalogResolver,
     CsvImportService,
     EnrollmentPolicyService,
+    WaitlistService,
   ],
-  exports: [CoursesService],
+  exports: [CoursesService, WaitlistService],
 })
 export class CoursesModule {}

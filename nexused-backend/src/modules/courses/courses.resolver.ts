@@ -7,6 +7,7 @@ import {
   User,
 } from '../../database/entities';
 import { CoursesService } from './courses.service';
+import { WaitlistService } from './waitlist.service';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
@@ -19,7 +20,10 @@ import { CreateCourseInput, CreateSectionInput } from './dto/course.types';
 @Resolver()
 @UseGuards(JwtAuthGuard)
 export class CoursesResolver {
-  constructor(private readonly coursesService: CoursesService) {}
+  constructor(
+    private readonly coursesService: CoursesService,
+    private readonly waitlistService: WaitlistService,
+  ) {}
 
   @Query(() => [Course])
   async courses(@CurrentUser() user: User): Promise<Course[]> {
@@ -255,5 +259,45 @@ export class CoursesResolver {
       user.tenantId,
       status,
     );
+  }
+
+  // ─── ENROLL-010: Waitlist operations ────────────────────────────────────────
+
+  /**
+   * Confirm a waitlist promotion — student accepts the offered seat.
+   */
+  @Mutation(() => Enrollment)
+  async confirmWaitlistPromotion(
+    @CurrentUser() user: User,
+    @Args('enrollmentId') enrollmentId: string,
+  ): Promise<Enrollment> {
+    return this.waitlistService.confirmWaitlistPromotion(
+      enrollmentId,
+      user.id,
+      user.tenantId,
+    );
+  }
+
+  /**
+   * Cancel a waitlist entry — student voluntarily leaves the waitlist.
+   */
+  @Mutation(() => Enrollment)
+  async cancelWaitlistEntry(
+    @CurrentUser() user: User,
+    @Args('enrollmentId') enrollmentId: string,
+  ): Promise<Enrollment> {
+    return this.waitlistService.cancelWaitlistEntry(
+      enrollmentId,
+      user.id,
+      user.tenantId,
+    );
+  }
+
+  /**
+   * Get the waitlist count for a section. Useful for catalog display.
+   */
+  @Query(() => Int)
+  async waitlistCount(@Args('sectionId') sectionId: string): Promise<number> {
+    return this.waitlistService.getWaitlistCount(sectionId);
   }
 }

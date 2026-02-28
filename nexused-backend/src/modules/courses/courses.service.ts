@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Not, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import {
   CatalogCourse,
   CatalogSection,
@@ -44,6 +44,7 @@ import {
 } from './dto/admin-course.types';
 import { NexusEvents } from '../ai/events/ai-events';
 import { EnrollmentPolicyService } from './enrollment-policy.service';
+import { WaitlistService } from './waitlist.service';
 
 @Injectable()
 export class CoursesService {
@@ -57,6 +58,7 @@ export class CoursesService {
     private eventEmitter: EventEmitter2,
     private dataSource: DataSource,
     private enrollmentPolicyService: EnrollmentPolicyService,
+    private waitlistService: WaitlistService,
   ) {}
 
   async findAllForTenant(tenantId: string): Promise<Course[]> {
@@ -289,19 +291,30 @@ export class CoursesService {
       );
     }
 
-    // 4. Seat availability check
+    // 4. Seat availability check — waitlist if full and enabled
     if (section.capacity != null) {
-      const occupiedCount = await this.enrollmentsRepository.count({
+      const seatOccupied = await this.enrollmentsRepository.count({
         where: {
           sectionId,
-          status: In([
-            EnrollmentStatus.ACTIVE,
-            EnrollmentStatus.PENDING,
-            EnrollmentStatus.WAITLISTED,
-          ]),
+          status: In([EnrollmentStatus.ACTIVE, EnrollmentStatus.PENDING]),
         },
       });
-      if (occupiedCount >= section.capacity) {
+      if (seatOccupied >= section.capacity) {
+        // Section is full — try waitlist
+        const policy = await this.enrollmentPolicyService.getPolicy(tenantId);
+        if (policy.waitlistEnabled) {
+          // Run policy checks before waitlisting (window, credits, prereqs)
+          await this.enrollmentPolicyService.check(
+            tenantId,
+            userId,
+            section as any,
+          );
+          return this.waitlistService.placeOnWaitlist(
+            tenantId,
+            userId,
+            sectionId,
+          );
+        }
         throw new ForbiddenException(
           'This section is full — no seats available',
         );
@@ -536,6 +549,12 @@ export class CoursesService {
       tenantId,
     });
 
+    // ENROLL-010: A seat freed up — try to promote the next waitlisted student
+    await this.waitlistService.promoteFromWaitlist(
+      enrollment.sectionId,
+      tenantId,
+    );
+
     return this.enrollmentsRepository.findOneOrFail({
       where: { id: enrollmentId },
     });
@@ -593,6 +612,12 @@ export class CoursesService {
       tenantId,
     });
 
+    // ENROLL-010: A seat freed up — try to promote the next waitlisted student
+    await this.waitlistService.promoteFromWaitlist(
+      enrollment.sectionId,
+      tenantId,
+    );
+
     return this.enrollmentsRepository.findOneOrFail({
       where: { id: enrollmentId },
     });
@@ -629,6 +654,11 @@ export class CoursesService {
         sectionId: enrollment.sectionId,
         tenantId,
       });
+      // ENROLL-010: seat freed — promote next waitlisted student
+      await this.waitlistService.promoteFromWaitlist(
+        enrollment.sectionId,
+        tenantId,
+      );
     } else if (status === EnrollmentStatus.WITHDRAWN) {
       this.eventEmitter.emit(NexusEvents.ENROLLMENT_WITHDRAWN, {
         enrollmentId,
@@ -636,6 +666,11 @@ export class CoursesService {
         sectionId: enrollment.sectionId,
         tenantId,
       });
+      // ENROLL-010: seat freed — promote next waitlisted student
+      await this.waitlistService.promoteFromWaitlist(
+        enrollment.sectionId,
+        tenantId,
+      );
     }
 
     return this.enrollmentsRepository.findOneOrFail({

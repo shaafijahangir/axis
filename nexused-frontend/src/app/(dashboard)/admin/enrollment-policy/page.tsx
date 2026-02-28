@@ -11,6 +11,7 @@ import {
   Calendar,
   BookOpen,
   Clock,
+  ListOrdered,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { ENROLLMENT_POLICY_QUERY } from '@/lib/graphql/queries/enrollment-policy';
 import { UPDATE_ENROLLMENT_POLICY_MUTATION } from '@/lib/graphql/mutations/enrollment-policy';
 
@@ -40,13 +42,21 @@ interface EnrollmentPolicy {
   creditHourLimitPerTerm: number | null;
   enrollmentWindowStart: string | null;
   enrollmentWindowEnd: string | null;
+  waitlistEnabled: boolean;
+  waitlistMaxSize: number | null;
+  waitlistAutoPromote: boolean;
+  waitlistConfirmationHours: number;
 }
 
 interface PolicyForm {
   prerequisiteEnforcement: 'strict' | 'warn' | 'off';
-  creditHourLimitPerTerm: string; // string for input binding
+  creditHourLimitPerTerm: string;
   enrollmentWindowStart: string;
   enrollmentWindowEnd: string;
+  waitlistEnabled: boolean;
+  waitlistMaxSize: string;
+  waitlistAutoPromote: boolean;
+  waitlistConfirmationHours: string;
 }
 
 const EMPTY_FORM: PolicyForm = {
@@ -54,6 +64,10 @@ const EMPTY_FORM: PolicyForm = {
   creditHourLimitPerTerm: '18',
   enrollmentWindowStart: '',
   enrollmentWindowEnd: '',
+  waitlistEnabled: true,
+  waitlistMaxSize: '',
+  waitlistAutoPromote: true,
+  waitlistConfirmationHours: '24',
 };
 
 function policyToForm(policy: EnrollmentPolicy): PolicyForm {
@@ -64,11 +78,16 @@ function policyToForm(policy: EnrollmentPolicy): PolicyForm {
         ? String(policy.creditHourLimitPerTerm)
         : '',
     enrollmentWindowStart: policy.enrollmentWindowStart
-      ? policy.enrollmentWindowStart.slice(0, 16) // trim to datetime-local format
+      ? policy.enrollmentWindowStart.slice(0, 16)
       : '',
     enrollmentWindowEnd: policy.enrollmentWindowEnd
       ? policy.enrollmentWindowEnd.slice(0, 16)
       : '',
+    waitlistEnabled: policy.waitlistEnabled,
+    waitlistMaxSize:
+      policy.waitlistMaxSize != null ? String(policy.waitlistMaxSize) : '',
+    waitlistAutoPromote: policy.waitlistAutoPromote,
+    waitlistConfirmationHours: String(policy.waitlistConfirmationHours),
   };
 }
 
@@ -128,6 +147,12 @@ export default function EnrollmentPolicyPage() {
     const creditLimit = form.creditHourLimitPerTerm
       ? parseInt(form.creditHourLimitPerTerm, 10)
       : null;
+    const waitlistMax = form.waitlistMaxSize
+      ? parseInt(form.waitlistMaxSize, 10)
+      : null;
+    const confirmHours = form.waitlistConfirmationHours
+      ? parseInt(form.waitlistConfirmationHours, 10)
+      : 24;
 
     try {
       await updatePolicy({
@@ -137,6 +162,10 @@ export default function EnrollmentPolicyPage() {
             creditHourLimitPerTerm: creditLimit,
             enrollmentWindowStart: form.enrollmentWindowStart || null,
             enrollmentWindowEnd: form.enrollmentWindowEnd || null,
+            waitlistEnabled: form.waitlistEnabled,
+            waitlistMaxSize: waitlistMax,
+            waitlistAutoPromote: form.waitlistAutoPromote,
+            waitlistConfirmationHours: confirmHours,
           },
         },
       });
@@ -331,6 +360,126 @@ export default function EnrollmentPolicyPage() {
                   Clear window (open enrollment)
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          <Separator />
+
+          {/* ENROLL-010: Waitlist Settings */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ListOrdered className="h-4 w-4" aria-hidden="true" />
+                Waitlist Settings
+              </CardTitle>
+              <CardDescription>
+                When a section is full, students can join a waitlist instead of
+                being rejected. They are automatically promoted when a seat
+                opens.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Enable/Disable */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Enable Waitlisting</Label>
+                  <p className="text-xs text-muted-foreground">
+                    When disabled, students are rejected if a section is full.
+                  </p>
+                </div>
+                <Switch
+                  checked={form.waitlistEnabled}
+                  onCheckedChange={(checked) =>
+                    setForm((f) => ({ ...f, waitlistEnabled: checked }))
+                  }
+                />
+              </div>
+
+              {form.waitlistEnabled && (
+                <>
+                  {/* Max Size */}
+                  <div className="space-y-2">
+                    <Label htmlFor="waitlist-max">
+                      Max Waitlist Size Per Section
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="waitlist-max"
+                        type="number"
+                        min={1}
+                        max={500}
+                        placeholder="Unlimited"
+                        className="w-32"
+                        value={form.waitlistMaxSize}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            waitlistMaxSize: e.target.value,
+                          }))
+                        }
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        students
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Leave blank for no limit. Large waitlists may give
+                      students false hope.
+                    </p>
+                  </div>
+
+                  {/* Auto-Promote */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Auto-Promote</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically enroll the top waitlisted student when a
+                        seat opens, or require them to confirm first.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.waitlistAutoPromote}
+                      onCheckedChange={(checked) =>
+                        setForm((f) => ({
+                          ...f,
+                          waitlistAutoPromote: checked,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  {/* Confirmation Hours — only relevant when auto-promote is off */}
+                  {!form.waitlistAutoPromote && (
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-hours">Confirmation Window</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="confirm-hours"
+                          type="number"
+                          min={1}
+                          max={168}
+                          className="w-24"
+                          value={form.waitlistConfirmationHours}
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              waitlistConfirmationHours: e.target.value,
+                            }))
+                          }
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          hours
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        If the student doesn&apos;t confirm within this window,
+                        the seat goes to the next person on the waitlist.
+                        Default is 24 hours.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 

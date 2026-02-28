@@ -7,6 +7,8 @@ export const MY_ENROLLMENTS_QUERY = gql`
       role
       status
       enrolledAt
+      waitlistPosition
+      waitlistConfirmBy
       section {
         id
         location
@@ -129,6 +131,8 @@ export const MY_ENROLLMENT_FOR_SECTION_QUERY = gql`
       id
       status
       enrolledAt
+      waitlistPosition
+      waitlistConfirmBy
     }
   }
 `;

@@ -93,6 +93,8 @@ export default function SectionTimelinePage() {
       id: string;
       status: EnrollmentStatus;
       enrolledAt: string;
+      waitlistPosition: number | null;
+      waitlistConfirmBy: string | null;
     } | null;
   }>(MY_ENROLLMENT_FOR_SECTION_QUERY, {
     variables: { sectionId },
@@ -201,6 +203,12 @@ export default function SectionTimelinePage() {
               dropDeadline={section?.term?.dropDeadline}
               withdrawDeadline={section?.term?.withdrawDeadline}
               courseId={courseId}
+              waitlistPosition={
+                enrollmentData.myEnrollmentForSection.waitlistPosition
+              }
+              waitlistConfirmBy={
+                enrollmentData.myEnrollmentForSection.waitlistConfirmBy
+              }
               onStatusChange={setEnrollmentStatus}
             />
           )}

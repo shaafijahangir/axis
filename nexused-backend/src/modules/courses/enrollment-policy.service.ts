@@ -42,6 +42,14 @@ export class EnrollmentPolicyService {
   ) {}
 
   /**
+   * Get the enrollment policy for a tenant (for callers that need the
+   * policy object itself, e.g. to check waitlistEnabled).
+   */
+  async getPolicy(tenantId: string) {
+    return this.tenantService.getEnrollmentPolicy(tenantId);
+  }
+
+  /**
    * Run all policy checks for a pending enrollment.
    *
    * @param tenantId  The tenant the enrollment belongs to

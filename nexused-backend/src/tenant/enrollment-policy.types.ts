@@ -41,6 +41,22 @@ export class EnrollmentPolicy {
 
   @Field({ nullable: true })
   enrollmentWindowEnd: string | null;
+
+  /** ENROLL-010: Whether sections with capacity use waitlisting instead of hard rejection. */
+  @Field()
+  waitlistEnabled: boolean;
+
+  /** Max waitlist size per section. null = unlimited. */
+  @Field(() => Int, { nullable: true })
+  waitlistMaxSize: number | null;
+
+  /** Auto-promote to active when a seat opens, or require confirmation first. */
+  @Field()
+  waitlistAutoPromote: boolean;
+
+  /** Hours a promoted student has to confirm before the spot goes to the next in line. */
+  @Field(() => Int)
+  waitlistConfirmationHours: number;
 }
 
 @InputType()
@@ -66,6 +82,28 @@ export class UpdateEnrollmentPolicyInput {
   @IsOptional()
   @IsString()
   enrollmentWindowEnd?: string | null;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  waitlistEnabled?: boolean;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  waitlistMaxSize?: number | null;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  waitlistAutoPromote?: boolean;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(168) // max 1 week
+  waitlistConfirmationHours?: number;
 }
 
 export const DEFAULT_ENROLLMENT_POLICY: EnrollmentPolicy = {
@@ -73,4 +111,8 @@ export const DEFAULT_ENROLLMENT_POLICY: EnrollmentPolicy = {
   creditHourLimitPerTerm: 18,
   enrollmentWindowStart: null,
   enrollmentWindowEnd: null,
+  waitlistEnabled: true,
+  waitlistMaxSize: null,
+  waitlistAutoPromote: true,
+  waitlistConfirmationHours: 24,
 };

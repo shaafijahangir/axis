@@ -109,6 +109,22 @@ export class TenantService {
         input.enrollmentWindowEnd !== undefined
           ? input.enrollmentWindowEnd
           : current.enrollmentWindowEnd,
+      waitlistEnabled:
+        input.waitlistEnabled !== undefined
+          ? input.waitlistEnabled
+          : current.waitlistEnabled,
+      waitlistMaxSize:
+        input.waitlistMaxSize !== undefined
+          ? input.waitlistMaxSize
+          : current.waitlistMaxSize,
+      waitlistAutoPromote:
+        input.waitlistAutoPromote !== undefined
+          ? input.waitlistAutoPromote
+          : current.waitlistAutoPromote,
+      waitlistConfirmationHours:
+        input.waitlistConfirmationHours !== undefined
+          ? input.waitlistConfirmationHours
+          : current.waitlistConfirmationHours,
     };
 
     tenant.settings = {

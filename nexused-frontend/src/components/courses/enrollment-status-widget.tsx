@@ -24,6 +24,7 @@ import {
   BookOpen,
   CheckCircle2,
   Clock,
+  ListOrdered,
   XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -43,6 +44,8 @@ import {
 import {
   DROP_ENROLLMENT_MUTATION,
   WITHDRAW_FROM_COURSE_MUTATION,
+  CONFIRM_WAITLIST_PROMOTION_MUTATION,
+  CANCEL_WAITLIST_ENTRY_MUTATION,
 } from '@/lib/graphql/mutations/enrollment';
 
 type EnrollmentStatus =
@@ -60,6 +63,10 @@ interface EnrollmentStatusWidgetProps {
   dropDeadline?: string | null;
   withdrawDeadline?: string | null;
   courseId: string;
+  /** ENROLL-010: waitlist position (1-based). null if not waitlisted. */
+  waitlistPosition?: number | null;
+  /** ENROLL-010: confirmation deadline ISO string. null if not in confirm window. */
+  waitlistConfirmBy?: string | null;
   /** Called after a successful drop/withdraw so the parent can refresh. */
   onStatusChange: (newStatus: EnrollmentStatus) => void;
 }
@@ -109,8 +116,11 @@ function StatusBadge({ status }: { status: EnrollmentStatus }) {
       return <Badge variant="destructive">Enrollment not approved</Badge>;
     case 'waitlisted':
       return (
-        <Badge variant="secondary">
-          <Clock className="mr-1 h-3 w-3" aria-hidden="true" />
+        <Badge
+          variant="secondary"
+          className="text-blue-700 bg-blue-50 border-blue-200"
+        >
+          <ListOrdered className="mr-1 h-3 w-3" aria-hidden="true" />
           Waitlisted
         </Badge>
       );
@@ -131,6 +141,8 @@ export function EnrollmentStatusWidget({
   dropDeadline,
   withdrawDeadline,
   courseId,
+  waitlistPosition,
+  waitlistConfirmBy,
   onStatusChange,
 }: EnrollmentStatusWidgetProps) {
   const [currentStatus, setCurrentStatus] =
@@ -155,6 +167,30 @@ export function EnrollmentStatusWidget({
       onCompleted: () => {
         setCurrentStatus('withdrawn');
         onStatusChange('withdrawn');
+        setError('');
+      },
+      onError: (err) => setError(err.message),
+    },
+  );
+
+  const [confirmWaitlistMutation, { loading: confirming }] = useMutation(
+    CONFIRM_WAITLIST_PROMOTION_MUTATION,
+    {
+      onCompleted: () => {
+        setCurrentStatus('active');
+        onStatusChange('active');
+        setError('');
+      },
+      onError: (err) => setError(err.message),
+    },
+  );
+
+  const [cancelWaitlistMutation, { loading: cancelling }] = useMutation(
+    CANCEL_WAITLIST_ENTRY_MUTATION,
+    {
+      onCompleted: () => {
+        setCurrentStatus('dropped');
+        onStatusChange('dropped');
         setError('');
       },
       onError: (err) => setError(err.message),
@@ -278,6 +314,56 @@ export function EnrollmentStatusWidget({
           </p>
         )}
 
+        {/* ENROLL-010: Waitlist actions */}
+        {currentStatus === 'waitlisted' && (
+          <div className="flex items-center gap-2">
+            {waitlistConfirmBy && (
+              <Button
+                size="sm"
+                onClick={() =>
+                  confirmWaitlistMutation({ variables: { enrollmentId } })
+                }
+                disabled={confirming}
+              >
+                {confirming ? 'Confirming...' : 'Confirm Seat'}
+              </Button>
+            )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                  disabled={cancelling}
+                >
+                  {cancelling ? 'Cancelling...' : 'Leave Waitlist'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Leave the waitlist?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You will lose your position on the waitlist. You can re-join
+                    from the course catalog, but you&apos;ll be placed at the
+                    end.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep My Spot</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() =>
+                      cancelWaitlistMutation({ variables: { enrollmentId } })
+                    }
+                  >
+                    Leave Waitlist
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+
         {/* Re-enroll link for dropped/rejected */}
         {(currentStatus === 'dropped' || currentStatus === 'rejected') && (
           <Button asChild size="sm" variant="outline">
@@ -288,6 +374,34 @@ export function EnrollmentStatusWidget({
           </Button>
         )}
       </div>
+
+      {/* ENROLL-010: Waitlist position and confirmation info */}
+      {currentStatus === 'waitlisted' && (
+        <div className="mt-2 space-y-1">
+          {waitlistPosition != null && (
+            <p className="text-sm text-muted-foreground">
+              You are{' '}
+              <span className="font-semibold text-foreground">
+                #{waitlistPosition}
+              </span>{' '}
+              on the waitlist. You&apos;ll be notified when a seat becomes
+              available.
+            </p>
+          )}
+          {waitlistConfirmBy && (
+            <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" aria-hidden="true" />A seat is
+              available! Confirm by{' '}
+              {new Date(waitlistConfirmBy).toLocaleString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Deadline info for active enrollments */}
       {currentStatus === 'active' && (dropDate || withdrawDate) && (

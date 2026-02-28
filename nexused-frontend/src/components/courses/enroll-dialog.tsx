@@ -17,7 +17,13 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client/react';
-import { CheckCircle2, Clock, Lock, AlertTriangle } from 'lucide-react';
+import {
+  CheckCircle2,
+  Clock,
+  Lock,
+  AlertTriangle,
+  ListOrdered,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -197,9 +203,10 @@ export function EnrollDialog({
 }: EnrollDialogProps) {
   const [inviteCode, setInviteCode] = useState('');
   const [state, setState] = useState<EnrollState>('idle');
-  const [enrolledStatus, setEnrolledStatus] = useState<'active' | 'pending'>(
-    'active',
-  );
+  const [enrolledStatus, setEnrolledStatus] = useState<
+    'active' | 'pending' | 'waitlisted'
+  >('active');
+  const [waitlistPos, setWaitlistPos] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [prereqAcknowledged, setPrereqAcknowledged] = useState(false);
 
@@ -238,9 +245,23 @@ export function EnrollDialog({
             section.enrollmentMode === 'invite_only' ? inviteCode : undefined,
         },
       });
-      const status = (data as { enrollInSection: { status: string } } | null)
-        ?.enrollInSection?.status;
-      setEnrolledStatus(status === 'pending' ? 'pending' : 'active');
+      const result = (
+        data as {
+          enrollInSection: {
+            status: string;
+            waitlistPosition: number | null;
+          };
+        } | null
+      )?.enrollInSection;
+      const status = result?.status;
+      if (status === 'pending') {
+        setEnrolledStatus('pending');
+      } else if (status === 'waitlisted') {
+        setEnrolledStatus('waitlisted');
+        setWaitlistPos(result?.waitlistPosition ?? null);
+      } else {
+        setEnrolledStatus('active');
+      }
       setState('success');
     } catch (err) {
       const msg =
@@ -284,6 +305,19 @@ export function EnrollDialog({
                 <p className="text-lg font-semibold">You&apos;re enrolled!</p>
                 <p className="text-sm text-muted-foreground">
                   The course will appear in your courses list.
+                </p>
+              </>
+            ) : enrolledStatus === 'waitlisted' ? (
+              <>
+                <ListOrdered
+                  className="h-12 w-12 text-blue-500"
+                  aria-hidden="true"
+                />
+                <p className="text-lg font-semibold">Added to waitlist</p>
+                <p className="text-sm text-muted-foreground">
+                  This section is full. You&apos;re{' '}
+                  <span className="font-semibold">#{waitlistPos}</span> on the
+                  waitlist. You&apos;ll be notified when a seat opens up.
                 </p>
               </>
             ) : (

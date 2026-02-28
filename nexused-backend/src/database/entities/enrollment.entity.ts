@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
+import { ObjectType, Field, Int, registerEnumType } from '@nestjs/graphql';
 import { TenantScopedEntity } from './base.entity';
 import { User } from './user.entity';
 import { CourseSection } from './course-section.entity';
@@ -80,4 +80,20 @@ export class Enrollment extends TenantScopedEntity {
   @Field({ nullable: true })
   @Column({ type: 'varchar', length: 2, nullable: true })
   finalGrade: string;
+
+  /**
+   * ENROLL-010: Position in the section waitlist.
+   * null when not waitlisted. 1-based (1 = first in line).
+   */
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'int', nullable: true })
+  waitlistPosition: number | null;
+
+  /**
+   * ENROLL-010: Deadline by which a promoted student must confirm enrollment.
+   * null when not in confirmation window. Set when promoted from waitlist.
+   */
+  @Field({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
+  waitlistConfirmBy: Date | null;
 }

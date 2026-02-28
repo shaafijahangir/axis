@@ -7,6 +7,10 @@ export const UPDATE_ENROLLMENT_POLICY_MUTATION = gql`
       creditHourLimitPerTerm
       enrollmentWindowStart
       enrollmentWindowEnd
+      waitlistEnabled
+      waitlistMaxSize
+      waitlistAutoPromote
+      waitlistConfirmationHours
     }
   }
 `;
