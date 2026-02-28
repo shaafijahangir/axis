@@ -940,7 +940,8 @@
 - **Acceptance:** Tenant admin can configure enrollment policies. All enrollment paths (UI, AI, bulk) respect the configured policies.
 
 ### ENROLL-010: Waitlist Intelligence
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-02-27
 - **Priority:** LOW — Nice-to-have for large institutions
 - **Depends on:** ENROLL-009
 - **Scope:**
