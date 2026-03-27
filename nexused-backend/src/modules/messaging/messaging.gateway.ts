@@ -19,6 +19,17 @@ import type {
   ConversationCreatedEvent,
 } from './messaging.service';
 
+interface JwtPayload {
+  sub: string;
+  tenantId: string;
+  [key: string]: unknown;
+}
+
+interface SocketData {
+  userId: string;
+  tenantId: string;
+}
+
 /**
  * WebSocket Gateway for real-time messaging.
  *
@@ -63,9 +74,9 @@ export class MessagingGateway
    * Handle new WebSocket connection.
    * Authenticates user via JWT from cookie or auth token.
    */
-  async handleConnection(client: Socket): Promise<void> {
+  handleConnection(client: Socket): void {
     try {
-      const user = await this.authenticateClient(client);
+      const user = this.authenticateClient(client);
 
       if (!user) {
         this.logger.warn(`Connection rejected: Invalid auth`);
@@ -74,8 +85,9 @@ export class MessagingGateway
       }
 
       // Store user data on socket
-      client.data.userId = user.id;
-      client.data.tenantId = user.tenantId;
+      const socketData = client.data as SocketData;
+      socketData.userId = user.id;
+      socketData.tenantId = user.tenantId;
 
       // Track connected user
       if (!this.connectedUsers.has(user.id)) {
@@ -84,14 +96,15 @@ export class MessagingGateway
       this.connectedUsers.get(user.id)!.add(client.id);
 
       // Join user-specific room for direct notifications
-      client.join(`user:${user.id}`);
-      client.join(`tenant:${user.tenantId}`);
+      void client.join(`user:${user.id}`);
+      void client.join(`tenant:${user.tenantId}`);
 
       this.logger.log(
         `Client connected: ${client.id} (user: ${user.id}, tenant: ${user.tenantId})`,
       );
     } catch (error) {
-      this.logger.error(`Connection error: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Connection error: ${message}`);
       client.disconnect(true);
     }
   }
@@ -100,7 +113,8 @@ export class MessagingGateway
    * Handle WebSocket disconnection.
    */
   handleDisconnect(client: Socket): void {
-    const userId = client.data.userId;
+    const socketData = client.data as SocketData;
+    const userId = socketData.userId;
 
     if (userId) {
       const userSockets = this.connectedUsers.get(userId);
@@ -118,10 +132,10 @@ export class MessagingGateway
   /**
    * Extract and validate JWT from client connection.
    */
-  private async authenticateClient(client: Socket): Promise<{
+  private authenticateClient(client: Socket): {
     id: string;
     tenantId: string;
-  } | null> {
+  } | null {
     try {
       // Try multiple auth methods:
       // 1. Auth token in handshake (client sends explicitly)
@@ -131,8 +145,9 @@ export class MessagingGateway
       let token: string | null = null;
 
       // Method 1: Auth object
-      if (client.handshake.auth?.token) {
-        token = client.handshake.auth.token;
+      const authData = client.handshake.auth as Record<string, unknown>;
+      if (typeof authData?.token === 'string') {
+        token = authData.token;
       }
 
       // Method 2: Query param
@@ -143,7 +158,7 @@ export class MessagingGateway
       // Method 3: Cookie (parse from headers)
       if (!token && client.handshake.headers.cookie) {
         const cookies = this.parseCookies(client.handshake.headers.cookie);
-        token = cookies['access_token'];
+        token = cookies['access_token'] ?? null;
       }
 
       if (!token) {
@@ -151,7 +166,7 @@ export class MessagingGateway
       }
 
       // Verify JWT
-      const payload = this.jwtService.verify(token, {
+      const payload = this.jwtService.verify<JwtPayload>(token, {
         secret: this.configService.get<string>('auth.jwtSecret'),
       });
 
@@ -168,7 +183,8 @@ export class MessagingGateway
         tenantId: payload.tenantId,
       };
     } catch (error) {
-      this.logger.warn(`Auth failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(`Auth failed: ${message}`);
       return null;
     }
   }
@@ -180,7 +196,7 @@ export class MessagingGateway
     return cookieHeader.split(';').reduce(
       (cookies, cookie) => {
         const [name, ...rest] = cookie.trim().split('=');
-        cookies[name] = rest.join('=');
+        if (name) cookies[name] = rest.join('=');
         return cookies;
       },
       {} as Record<string, string>,
@@ -195,7 +211,8 @@ export class MessagingGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string },
   ): Promise<{ success: boolean; error?: string }> {
-    const { userId, tenantId } = client.data;
+    const socketData = client.data as SocketData;
+    const { userId, tenantId } = socketData;
 
     try {
       // Verify user is participant in this conversation
@@ -207,7 +224,7 @@ export class MessagingGateway
 
       // Join conversation room
       const room = `conversation:${data.conversationId}`;
-      client.join(room);
+      void client.join(room);
 
       this.logger.debug(
         `User ${userId} joined conversation ${data.conversationId}`,
@@ -215,8 +232,9 @@ export class MessagingGateway
 
       return { success: true };
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.warn(
-        `Join conversation failed: ${error.message} (user: ${userId})`,
+        `Join conversation failed: ${message} (user: ${userId})`,
       );
       return { success: false, error: 'Access denied' };
     }
@@ -231,10 +249,11 @@ export class MessagingGateway
     @MessageBody() data: { conversationId: string },
   ): { success: boolean } {
     const room = `conversation:${data.conversationId}`;
-    client.leave(room);
+    void client.leave(room);
 
+    const socketData = client.data as SocketData;
     this.logger.debug(
-      `User ${client.data.userId} left conversation ${data.conversationId}`,
+      `User ${socketData.userId} left conversation ${data.conversationId}`,
     );
 
     return { success: true };
@@ -248,7 +267,8 @@ export class MessagingGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string; isTyping: boolean },
   ): void {
-    const { userId } = client.data;
+    const socketData = client.data as SocketData;
+    const { userId } = socketData;
     const room = `conversation:${data.conversationId}`;
 
     // Broadcast to other users in conversation (exclude sender)
@@ -267,7 +287,8 @@ export class MessagingGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string },
   ): Promise<{ success: boolean }> {
-    const { userId, tenantId } = client.data;
+    const socketData = client.data as SocketData;
+    const { userId, tenantId } = socketData;
 
     try {
       await this.messagingService.markAsRead(
@@ -277,7 +298,8 @@ export class MessagingGateway
       );
       return { success: true };
     } catch (error) {
-      this.logger.warn(`Mark read failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(`Mark read failed: ${message}`);
       return { success: false };
     }
   }

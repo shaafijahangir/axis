@@ -112,13 +112,10 @@ describe('GovernanceService', () => {
   });
 
   // Helper to mock query builder for daily token / monthly cost checks
-  function mockBudgetChecks(
-    dailyTokens: string = '0',
-    monthlyCost: string = '0',
-  ) {
+  function mockBudgetChecks(dailyTokens: string = '0') {
     const qb = createMockQueryBuilder<AiUsageLog>();
     qb.getRawOne!.mockResolvedValue({ total: dailyTokens });
-    usageLogRepo.createQueryBuilder!.mockReturnValue(qb as any);
+    usageLogRepo.createQueryBuilder!.mockReturnValue(qb as unknown);
   }
 
   describe('checkToolPermission', () => {
@@ -306,8 +303,10 @@ describe('GovernanceService', () => {
 
       await service.checkRateLimit('tenant-1', 'user-1');
 
-      const callArgs = usageLogRepo.count!.mock.calls[0][0];
-      expect(callArgs.where.createdAt).toBeDefined();
+      const callArgs = usageLogRepo.count!.mock.calls[0] as [
+        { where: Record<string, unknown> },
+      ];
+      expect(callArgs[0].where['createdAt']).toBeDefined();
       // The createdAt should be a MoreThan condition with a date ~1 minute ago
     });
   });
@@ -315,7 +314,7 @@ describe('GovernanceService', () => {
   describe('checkDailyTokenBudget', () => {
     it('should return true when under daily budget', async () => {
       const queryBuilder = createMockQueryBuilder<AiUsageLog>();
-      usageLogRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      usageLogRepo.createQueryBuilder!.mockReturnValue(queryBuilder as unknown);
       queryBuilder.getRawOne!.mockResolvedValue({ total: '50000' });
 
       const result = await service.checkDailyTokenBudget('tenant-1');
@@ -325,7 +324,7 @@ describe('GovernanceService', () => {
 
     it('should return false when at daily budget', async () => {
       const queryBuilder = createMockQueryBuilder<AiUsageLog>();
-      usageLogRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      usageLogRepo.createQueryBuilder!.mockReturnValue(queryBuilder as unknown);
       queryBuilder.getRawOne!.mockResolvedValue({ total: '100000' });
 
       const result = await service.checkDailyTokenBudget('tenant-1');
@@ -335,7 +334,7 @@ describe('GovernanceService', () => {
 
     it('should return false when over daily budget', async () => {
       const queryBuilder = createMockQueryBuilder<AiUsageLog>();
-      usageLogRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      usageLogRepo.createQueryBuilder!.mockReturnValue(queryBuilder as unknown);
       queryBuilder.getRawOne!.mockResolvedValue({ total: '150000' });
 
       const result = await service.checkDailyTokenBudget('tenant-1');
@@ -345,7 +344,7 @@ describe('GovernanceService', () => {
 
     it('should return true when no usage exists (null total)', async () => {
       const queryBuilder = createMockQueryBuilder<AiUsageLog>();
-      usageLogRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      usageLogRepo.createQueryBuilder!.mockReturnValue(queryBuilder as unknown);
       queryBuilder.getRawOne!.mockResolvedValue({ total: null });
 
       const result = await service.checkDailyTokenBudget('tenant-1');
@@ -355,7 +354,7 @@ describe('GovernanceService', () => {
 
     it('should return true when result is undefined', async () => {
       const queryBuilder = createMockQueryBuilder<AiUsageLog>();
-      usageLogRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      usageLogRepo.createQueryBuilder!.mockReturnValue(queryBuilder as unknown);
       queryBuilder.getRawOne!.mockResolvedValue(undefined);
 
       const result = await service.checkDailyTokenBudget('tenant-1');

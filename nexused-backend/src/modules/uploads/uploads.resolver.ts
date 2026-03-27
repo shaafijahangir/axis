@@ -1,11 +1,4 @@
-import {
-  Resolver,
-  Mutation,
-  Query,
-  Args,
-  Field,
-  ObjectType,
-} from '@nestjs/graphql';
+import { Resolver, Mutation, Query, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';

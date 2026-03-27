@@ -14,7 +14,7 @@ import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { User } from '../../database/entities/user.entity';
 import { Notification } from './entities/notification.entity';
-import { DeviceToken, DevicePlatform } from './entities/device-token.entity';
+import { DevicePlatform } from './entities/device-token.entity';
 import {
   UpdateNotificationPreferencesInput,
   NotificationPreferences,
@@ -41,9 +41,9 @@ export class NotificationsResolver {
   // ─── Notification preferences ─────────────────────────────────────────
 
   @Query(() => NotificationPreferences)
-  async myNotificationPreferences(
+  myNotificationPreferences(
     @CurrentUser() user: User,
-  ): Promise<NotificationPreferences> {
+  ): NotificationPreferences {
     const prefs =
       (user.preferences as { notifications?: NotificationPreferences })
         ?.notifications ?? {};

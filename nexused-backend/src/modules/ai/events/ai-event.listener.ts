@@ -94,9 +94,11 @@ export class AiEventListener {
       );
     } catch (error) {
       // Log but don't throw — enrollment should succeed even if AI fails
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      const stack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `[AI Reaction] Failed to start welcome conversation: ${error.message}`,
-        error.stack,
+        `[AI Reaction] Failed to start welcome conversation: ${message}`,
+        stack,
       );
     }
   }
@@ -150,9 +152,11 @@ export class AiEventListener {
         `[AI Reaction] FeedbackCopilot draft started for instructor=${instructor.id} submission=${e.submissionId}`,
       );
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      const stack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `[AI Reaction] Failed to start feedback draft: ${error.message}`,
-        error.stack,
+        `[AI Reaction] Failed to start feedback draft: ${message}`,
+        stack,
       );
     }
   }
@@ -213,9 +217,11 @@ export class AiEventListener {
         `[AI Reaction] StudyCoach support started for user=${submission.user.id} score=${(scorePercentage * 100).toFixed(1)}%`,
       );
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      const stack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `[AI Reaction] Failed to start support conversation: ${error.message}`,
-        error.stack,
+        `[AI Reaction] Failed to start support conversation: ${message}`,
+        stack,
       );
     }
   }

@@ -1,10 +1,4 @@
-import {
-  ObjectType,
-  Field,
-  Int,
-  Float,
-  registerEnumType,
-} from '@nestjs/graphql';
+import { ObjectType, Field, Int, Float } from '@nestjs/graphql';
 
 /**
  * Analytics DTO types for admin dashboard.

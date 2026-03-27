@@ -2,7 +2,7 @@ import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
-import { User } from '../../database/entities/user.entity';
+import { User, UserRole } from '../../database/entities/user.entity';
 import { Enrollment } from '../../database/entities/enrollment.entity';
 import { AgentExecutorService } from './agent-executor.service';
 import { AgentRegistry } from './agents/agent-registry.service';
@@ -81,7 +81,9 @@ export class AiResolver {
     const builtInAgents = this.agentRegistry
       .getAll()
       .filter((agent) =>
-        agent.allowedRoles.some((role) => user.roles.includes(role as any)),
+        agent.allowedRoles.some((role) =>
+          user.roles.includes(role as UserRole),
+        ),
       )
       .map((agent) => ({
         type: agent.type,

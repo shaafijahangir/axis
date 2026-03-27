@@ -1,6 +1,8 @@
 import { ToolDefinition } from './tool.interface';
 import { CoursesService } from '../../courses/courses.service';
 import { PlannerService } from '../../planner/planner.service';
+import { EnrollmentStatus } from '../../../database/entities/enrollment.entity';
+import { PrerequisiteStatusType } from '../../planner/dto/planner.types';
 
 /**
  * Enrollment tools — wraps enrollment-related CoursesService methods.
@@ -204,10 +206,10 @@ export function createEnrollmentTools(
 
           if (!prereqResult.allMet && !input.overridePrerequisites) {
             const missing = prereqResult.prerequisites
-              .filter((p) => p.status === 'missing')
+              .filter((p) => p.status === PrerequisiteStatusType.MISSING)
               .map((p) => `${p.courseCode} — ${p.courseTitle}`);
             const inProgress = prereqResult.prerequisites
-              .filter((p) => p.status === 'in_progress')
+              .filter((p) => p.status === PrerequisiteStatusType.IN_PROGRESS)
               .map((p) => `${p.courseCode} — ${p.courseTitle}`);
             return {
               success: false,
@@ -226,7 +228,7 @@ export function createEnrollmentTools(
             input.inviteCode as string | undefined,
           );
 
-          const isActive = enrollment.status === 'active';
+          const isActive = enrollment.status === EnrollmentStatus.ACTIVE;
           return {
             success: true,
             enrollmentId: enrollment.id,

@@ -61,7 +61,7 @@ export class CatalogExtractService {
       try {
         const pdfData = await pdfParse(buffer);
         documentText = pdfData.text;
-      } catch (err) {
+      } catch {
         throw new BadRequestException(
           'Could not extract text from PDF. Try converting to plain text first.',
         );
@@ -183,19 +183,22 @@ export class CatalogExtractService {
   ): ExtractionResult {
     const flags: ExtractionFlag[] = ((raw.flags as unknown[]) ?? []).map(
       (f: unknown) => {
-        const flag = f as Record<string, unknown>;
+        const flag = f as Record<string, string | undefined>;
         return {
-          entityType: String(flag.entityType ?? 'unknown'),
-          entityCode: String(flag.entityCode ?? '-'),
-          field: String(flag.field ?? 'unknown'),
-          message: String(flag.message ?? ''),
+          entityType: flag.entityType ?? 'unknown',
+          entityCode: flag.entityCode ?? '-',
+          field: flag.field ?? 'unknown',
+          message: flag.message ?? '',
         };
       },
     );
 
     const courses: ExtractedCourse[] = ((raw.courses as unknown[]) ?? []).map(
       (c: unknown) => {
-        const course = c as Record<string, unknown>;
+        const course = c as Record<
+          string,
+          string | number | boolean | string[] | null | undefined
+        >;
         const confidence = Math.min(
           1,
           Math.max(0, Number(course.confidence ?? 0.5)),
@@ -229,7 +232,7 @@ export class CatalogExtractService {
     const programs: ExtractedProgram[] = (
       (raw.programs as unknown[]) ?? []
     ).map((p: unknown) => {
-      const prog = p as Record<string, unknown>;
+      const prog = p as Record<string, string | number | null | undefined>;
       const confidence = Math.min(
         1,
         Math.max(0, Number(prog.confidence ?? 0.5)),

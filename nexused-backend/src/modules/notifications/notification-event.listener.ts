@@ -248,7 +248,7 @@ export class NotificationEventListener {
       if (prefs(student).emailOnEnrollment === false) return;
 
       const instructorName = section.instructor
-        ? `${(section.instructor as User).firstName} ${(section.instructor as User).lastName}`
+        ? `${section.instructor.firstName} ${section.instructor.lastName}`
         : 'Your instructor';
 
       const { subject, html } = this.templates.enrollmentConfirmed({

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan, Between } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { ActionType, AgentContext } from './tools/tool.interface';
 import { ToolRegistry } from './tools/tool-registry';
@@ -191,9 +191,9 @@ export class GovernanceService {
       .select('COALESCE(SUM(log.inputTokens + log.outputTokens), 0)', 'total')
       .where('log.tenantId = :tenantId', { tenantId })
       .andWhere('log.createdAt >= :startOfDay', { startOfDay })
-      .getRawOne();
+      .getRawOne<{ total: string }>();
 
-    const totalTokens = parseInt(result?.total || '0', 10);
+    const totalTokens = parseInt(result?.total ?? '0', 10);
     return totalTokens < maxTokensPerDay;
   }
 
@@ -446,13 +446,18 @@ export class GovernanceService {
       .andWhere('log.createdAt >= :startDate', { startDate })
       .groupBy("TO_CHAR(log.createdAt, 'YYYY-MM-DD')")
       .orderBy('date', 'ASC')
-      .getRawMany();
+      .getRawMany<{
+        date: string;
+        requests: string;
+        tokens: string;
+        costUsd: string;
+      }>();
 
     const dailyUsage: DailyUsagePoint[] = results.map((r) => ({
       date: r.date,
-      requests: parseInt(r.requests || '0', 10),
-      tokens: parseInt(r.tokens || '0', 10),
-      costUsd: parseFloat(r.costUsd || '0'),
+      requests: parseInt(r.requests ?? '0', 10),
+      tokens: parseInt(r.tokens ?? '0', 10),
+      costUsd: parseFloat(r.costUsd ?? '0'),
     }));
 
     const totalRequests = dailyUsage.reduce((sum, d) => sum + d.requests, 0);
@@ -489,9 +494,9 @@ export class GovernanceService {
       .select('COALESCE(SUM(log.estimatedCostUsd), 0)', 'total')
       .where('log.tenantId = :tenantId', { tenantId })
       .andWhere('log.createdAt >= :startOfMonth', { startOfMonth })
-      .getRawOne();
+      .getRawOne<{ total: string }>();
 
-    return parseFloat(result?.total || '0');
+    return parseFloat(result?.total ?? '0');
   }
 
   /**
@@ -506,8 +511,8 @@ export class GovernanceService {
       .select('COALESCE(SUM(log.inputTokens + log.outputTokens), 0)', 'total')
       .where('log.tenantId = :tenantId', { tenantId })
       .andWhere('log.createdAt >= :startOfDay', { startOfDay })
-      .getRawOne();
+      .getRawOne<{ total: string }>();
 
-    return parseInt(result?.total || '0', 10);
+    return parseInt(result?.total ?? '0', 10);
   }
 }

@@ -7,11 +7,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { QuizQuestion } from './entities/quiz-question.entity';
+import { QuizQuestion, QuestionType } from './entities/quiz-question.entity';
 import {
   AddQuizQuestionInput,
   UpdateQuizQuestionInput,
-  QuizAnswerInput,
   SubmitQuizInput,
   UpdateQuizSettingsInput,
   ReorderQuestionsInput,
@@ -219,7 +218,7 @@ export class QuizService {
       startedAt: new Date(),
     });
 
-    return this.submissionRepo.save(submission) as Promise<Submission>;
+    return this.submissionRepo.save(submission);
   }
 
   /**
@@ -282,7 +281,7 @@ export class QuizService {
         if (selectedOpt?.isCorrect) {
           autoScore += Number(question.points);
         }
-      } else if (question.questionType === 'short_answer') {
+      } else if (question.questionType === QuestionType.SHORT_ANSWER) {
         hasShortAnswer = true;
       }
 

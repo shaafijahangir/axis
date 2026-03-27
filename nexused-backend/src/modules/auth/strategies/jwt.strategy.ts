@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { UsersService } from '../../users/users.service';
@@ -13,8 +13,9 @@ import { JwtPayload } from '../interfaces/jwt-payload.interface';
  */
 function extractJwtFromCookieOrHeader(req: Request): string | null {
   // Try cookie first (more secure)
-  if (req.cookies?.access_token) {
-    return req.cookies.access_token;
+  const cookies = req.cookies as Record<string, string> | undefined;
+  if (cookies?.access_token) {
+    return cookies.access_token;
   }
   // Fall back to Authorization header for backward compatibility
   const authHeader = req.headers.authorization;
@@ -37,7 +38,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload) {
+  async validate(
+    payload: JwtPayload,
+  ): Promise<{ id: string; email: string; tenantId: string; roles: string[] }> {
     // Verify user exists AND belongs to the tenant claimed in the JWT
     // This prevents token reuse if a user is moved between tenants
     const user = await this.usersService.findById(
@@ -53,7 +56,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       id: user.id,
       email: user.email,
       tenantId: user.tenantId,
-      roles: user.roles,
+      roles: user.roles as string[],
     };
   }
 }

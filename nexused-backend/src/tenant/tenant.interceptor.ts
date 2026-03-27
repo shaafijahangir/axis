@@ -53,10 +53,14 @@ export class TenantInterceptor implements NestInterceptor {
     context: ExecutionContext,
   ): { user?: { tenantId: string; id: string } } | undefined {
     if (context.getType() === 'http') {
-      return context.switchToHttp().getRequest();
+      return context
+        .switchToHttp()
+        .getRequest<{ user?: { tenantId: string; id: string } }>();
     }
     // GraphQL context
     const ctx = GqlExecutionContext.create(context);
-    return ctx.getContext().req;
+    return ctx.getContext<{
+      req: { user?: { tenantId: string; id: string } };
+    }>().req;
   }
 }

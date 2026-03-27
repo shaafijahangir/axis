@@ -74,8 +74,12 @@ export class AssignmentsService {
       dueAt: input.dueAt ? new Date(input.dueAt) : undefined,
       unlockAt: input.unlockAt ? new Date(input.unlockAt) : undefined,
       lockAt: input.lockAt ? new Date(input.lockAt) : undefined,
-      rubric: input.rubric ? JSON.parse(input.rubric) : undefined,
-      settings: input.settings ? JSON.parse(input.settings) : undefined,
+      rubric: input.rubric
+        ? (JSON.parse(input.rubric) as Record<string, unknown>)
+        : undefined,
+      settings: input.settings
+        ? (JSON.parse(input.settings) as Record<string, unknown>)
+        : undefined,
     });
     const saved = await this.assignmentRepo.save(assignment);
 
@@ -188,8 +192,8 @@ export class AssignmentsService {
     tenantId: string,
     input: CreateSubmissionInput,
   ): Promise<Submission> {
-    // Verify assignment belongs to this tenant
-    const assignment = await this.findById(input.assignmentId, tenantId);
+    // Verify assignment belongs to this tenant (throws NotFoundException if missing)
+    await this.findById(input.assignmentId, tenantId);
 
     // Determine attempt number
     const existingCount = await this.submissionRepo.count({
@@ -201,7 +205,9 @@ export class AssignmentsService {
       assignmentId: input.assignmentId,
       userId,
       attempt: existingCount + 1,
-      content: input.content ? JSON.parse(input.content) : undefined,
+      content: input.content
+        ? (JSON.parse(input.content) as Record<string, unknown>)
+        : undefined,
       submittedAt: new Date(),
     });
     const saved = await this.submissionRepo.save(submission);

@@ -1,6 +1,7 @@
 import { ToolDefinition } from './tool.interface';
 import { PlannerService } from '../../planner/planner.service';
 import { GraduationPlannerService } from '../../planner/graduation-planner.service';
+import { GraduationPlanStatus } from '../../planner/entities/graduation-plan.entity';
 
 /**
  * Graduation planner AI tools — expose plan generation to the Course Planner agent.
@@ -38,10 +39,12 @@ export function createGraduationPlannerTools(
       handler: async (input, ctx) => {
         const plans = await graduationPlannerService.findPlansForProfile(
           input.profileId as string,
-          ctx.userId!,
+          ctx.userId,
           ctx.tenantId,
         );
-        const active = plans.find((p) => p.status === 'active');
+        const active = plans.find(
+          (p) => p.status === GraduationPlanStatus.ACTIVE,
+        );
         if (!active) {
           return {
             hasPlan: false,
@@ -114,7 +117,7 @@ export function createGraduationPlannerTools(
       handler: async (input, ctx) => {
         const [{ plan, diff }, { tuitionConfig, aidConfig }] =
           await Promise.all([
-            graduationPlannerService.generatePlan(ctx.userId!, ctx.tenantId, {
+            graduationPlannerService.generatePlan(ctx.userId, ctx.tenantId, {
               profileId: input.profileId as string,
               maxCreditsPerSemester: input.maxCreditsPerSemester as
                 | number
@@ -225,10 +228,12 @@ export function createGraduationPlannerTools(
         // Load the active plan's constraints as baseline, then override with input
         const plans = await graduationPlannerService.findPlansForProfile(
           input.profileId as string,
-          ctx.userId!,
+          ctx.userId,
           ctx.tenantId,
         );
-        const active = plans.find((p) => p.status === 'active');
+        const active = plans.find(
+          (p) => p.status === GraduationPlanStatus.ACTIVE,
+        );
         const baseConstraints = active?.constraints ?? {
           startTerm: 'fall',
           startYear: new Date().getFullYear(),
@@ -244,7 +249,7 @@ export function createGraduationPlannerTools(
         // which is acceptable — students can just regenerate the original.
         const [{ plan, diff }, { tuitionConfig, aidConfig }] =
           await Promise.all([
-            graduationPlannerService.generatePlan(ctx.userId!, ctx.tenantId, {
+            graduationPlannerService.generatePlan(ctx.userId, ctx.tenantId, {
               profileId: input.profileId as string,
               maxCreditsPerSemester:
                 (input.maxCreditsPerSemester as number | undefined) ??

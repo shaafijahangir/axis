@@ -63,13 +63,15 @@ export class EmailService implements OnModuleInit {
       });
 
       if (error) {
-        this.logger.error(
-          `Resend error sending to ${options.to}: ${error.message}`,
-        );
+        const toStr = Array.isArray(options.to)
+          ? options.to.join(', ')
+          : options.to;
+        this.logger.error(`Resend error sending to ${toStr}: ${error.message}`);
       } else {
-        this.logger.debug(
-          `Email sent to ${Array.isArray(options.to) ? options.to.length + ' recipients' : options.to}: ${options.subject}`,
-        );
+        const toDisplay = Array.isArray(options.to)
+          ? `${options.to.length} recipients`
+          : options.to;
+        this.logger.debug(`Email sent to ${toDisplay}: ${options.subject}`);
       }
     } catch (err) {
       // Log but never throw — email failure must not break the caller's flow

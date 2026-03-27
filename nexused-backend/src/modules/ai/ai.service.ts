@@ -65,8 +65,11 @@ export class AiService {
       description: t.description,
       inputSchema: {
         type: 'object' as const,
-        properties: (t.input_schema as any).properties || {},
-        required: (t.input_schema as any).required,
+        properties: (t.input_schema.properties ?? {}) as Record<
+          string,
+          unknown
+        >,
+        required: t.input_schema.required as string[] | undefined,
       },
     }));
 

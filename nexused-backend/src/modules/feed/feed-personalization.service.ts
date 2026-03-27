@@ -315,11 +315,11 @@ export class FeedPersonalizationService {
 
     for (const stat of stats) {
       const count = Number(stat.count);
-      if (stat.eventType === EngagementEventType.CLICK) totalClicks = count;
-      if (stat.eventType === EngagementEventType.IMPRESSION)
+      const eventType = stat.eventType as EngagementEventType;
+      if (eventType === EngagementEventType.CLICK) totalClicks = count;
+      if (eventType === EngagementEventType.IMPRESSION)
         totalImpressions = count;
-      if (stat.eventType === EngagementEventType.DISMISS)
-        totalDismissals = count;
+      if (eventType === EngagementEventType.DISMISS) totalDismissals = count;
     }
 
     const topClickedTypes = await this.engagementRepo

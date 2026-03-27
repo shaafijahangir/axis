@@ -15,7 +15,6 @@ import {
   Enrollment,
   EnrollmentStatus,
 } from '../../database/entities/enrollment.entity';
-import { RequirementGroup } from '../../database/entities/degree-program.entity';
 import {
   GenerateGraduationPlanInput,
   GraduationPlanResult,
@@ -122,7 +121,7 @@ export class GraduationPlannerService {
     //   - courseToRequirement: first requirement group that lists this course
     const allRequiredIds = new Set<string>();
     const courseToRequirement = new Map<string, string>();
-    for (const req of program.requirements as RequirementGroup[]) {
+    for (const req of program.requirements) {
       for (const id of req.courseIds) {
         allRequiredIds.add(id);
         if (!courseToRequirement.has(id)) {
@@ -265,9 +264,7 @@ export class GraduationPlannerService {
     //            unlocking power (# of direct dependents),
     //            course level (lower = earlier).
     const reqTypeWeight = (groupName: string): number => {
-      const req = (program.requirements as RequirementGroup[]).find(
-        (r) => r.name === groupName,
-      );
+      const req = program.requirements.find((r) => r.name === groupName);
       switch (req?.type) {
         case 'core':
           return 200;

@@ -63,7 +63,9 @@ export class TenantResolver {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   async createTenant(@Args('input') input: CreateTenantInput): Promise<Tenant> {
-    const settings = input.settings ? JSON.parse(input.settings) : {};
+    const settings = input.settings
+      ? (JSON.parse(input.settings) as Record<string, unknown>)
+      : {};
     return await this.tenantService.create({
       name: input.name,
       domain: input.domain,

@@ -199,10 +199,13 @@ export class CoursesService {
     instructorId: string,
     input: CreateSectionInput,
   ): Promise<CourseSection> {
+    const parsedSchedule = input.schedule
+      ? (JSON.parse(input.schedule) as Record<string, unknown>)
+      : null;
     const section = this.sectionsRepository.create({
       ...input,
       instructorId,
-      schedule: input.schedule ? JSON.parse(input.schedule) : null,
+      schedule: parsedSchedule as Record<string, unknown>,
     });
     const saved = await this.sectionsRepository.save(section);
 
@@ -307,7 +310,7 @@ export class CoursesService {
           await this.enrollmentPolicyService.check(
             tenantId,
             userId,
-            section as any,
+            section as CourseSection & { course: Course },
           );
           return this.waitlistService.placeOnWaitlist(
             tenantId,
@@ -322,7 +325,11 @@ export class CoursesService {
     }
 
     // 5. Tenant enrollment policy checks (window, credit limit, prerequisites)
-    await this.enrollmentPolicyService.check(tenantId, userId, section as any);
+    await this.enrollmentPolicyService.check(
+      tenantId,
+      userId,
+      section as CourseSection & { course: Course },
+    );
 
     // 6. Create enrollment — active if autoApprove, pending if manual approval required
     const status = section.autoApprove
@@ -777,7 +784,7 @@ export class CoursesService {
       .where('course.tenantId = :tenantId', { tenantId })
       .andWhere('course.departmentId IS NOT NULL')
       .orderBy('course.departmentId', 'ASC')
-      .getRawMany();
+      .getRawMany<{ departmentId: string }>();
     return rows.map((r) => r.departmentId);
   }
 
@@ -854,7 +861,9 @@ export class CoursesService {
       instructorId: input.instructorId,
       location: input.location,
       capacity: input.capacity,
-      schedule: input.schedule ? JSON.parse(input.schedule) : null,
+      schedule: input.schedule
+        ? (JSON.parse(input.schedule) as Record<string, unknown>)
+        : undefined,
     });
     return this.sectionsRepository.save(section);
   }
@@ -880,7 +889,9 @@ export class CoursesService {
     if (input.instructorId !== undefined)
       updateData.instructorId = input.instructorId;
     if (input.schedule !== undefined)
-      updateData.schedule = input.schedule ? JSON.parse(input.schedule) : null;
+      updateData.schedule = input.schedule
+        ? (JSON.parse(input.schedule) as Record<string, unknown>)
+        : undefined;
 
     await this.sectionsRepository.update(id, updateData);
     return this.sectionsRepository.findOneOrFail({

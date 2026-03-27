@@ -1,10 +1,4 @@
-import {
-  InputType,
-  Field,
-  ObjectType,
-  Int,
-  registerEnumType,
-} from '@nestjs/graphql';
+import { InputType, Field, ObjectType, Int } from '@nestjs/graphql';
 import {
   IsEnum,
   IsNotEmpty,

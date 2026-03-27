@@ -11,10 +11,10 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as express from 'express';
-import * as crypto from 'crypto';
 import * as jose from 'jose';
 import { LtiService } from './lti.service';
 import { AuthService } from '../auth/auth.service';
+import { User } from '../../database/entities/user.entity';
 
 /**
  * LTI Controller
@@ -41,7 +41,7 @@ export class LtiController {
   ) {
     this.keyId =
       this.configService.get<string>('lti.keyId') || 'nexused-lti-key-1';
-    this.initializeKeys();
+    void this.initializeKeys();
   }
 
   /**
@@ -157,7 +157,8 @@ export class LtiController {
         throw new Error('User not found after LTI launch');
       }
 
-      const authResult = await this.authService.login(user);
+      // Cast: getUserById is a workaround until UsersService is injected properly
+      const authResult = this.authService.login(user as unknown as User);
       const isProduction =
         this.configService.get('app.nodeEnv') === 'production';
 
@@ -241,14 +242,22 @@ export class LtiController {
   private async getUserById(userId: string): Promise<{ id: string } | null> {
     // This is a workaround since we don't have direct access to UserRepository
     // In production, inject UsersService properly
+    interface PgClient {
+      connect(): Promise<void>;
+      query(sql: string, params: string[]): Promise<{ rows: { id: string }[] }>;
+      end(): Promise<void>;
+    }
+    interface PgModule {
+      Client: new (config: Record<string, unknown>) => PgClient;
+    }
     try {
-      const { default: pg } = await import('pg');
-      const dbConfig = {
-        host: this.configService.get('database.host'),
-        port: this.configService.get('database.port'),
-        user: this.configService.get('database.username'),
-        password: this.configService.get('database.password'),
-        database: this.configService.get('database.database'),
+      const { default: pg } = (await import('pg')) as { default: PgModule };
+      const dbConfig: Record<string, unknown> = {
+        host: this.configService.get<string>('database.host'),
+        port: this.configService.get<number>('database.port'),
+        user: this.configService.get<string>('database.username'),
+        password: this.configService.get<string>('database.password'),
+        database: this.configService.get<string>('database.database'),
       };
       const client = new pg.Client(dbConfig);
       await client.connect();
@@ -256,7 +265,7 @@ export class LtiController {
         userId,
       ]);
       await client.end();
-      return result.rows[0] || null;
+      return result.rows[0] ?? null;
     } catch {
       return { id: userId };
     }

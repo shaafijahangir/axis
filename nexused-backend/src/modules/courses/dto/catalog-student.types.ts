@@ -1,11 +1,4 @@
-import {
-  InputType,
-  Field,
-  Float,
-  Int,
-  ObjectType,
-  registerEnumType,
-} from '@nestjs/graphql';
+import { InputType, Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { CourseCategory } from '../../../database/entities/course.entity';
 import { EnrollmentMode } from '../../../database/entities/course-section.entity';
 

@@ -67,7 +67,8 @@ export class TenantService {
     });
     if (!tenant) throw new NotFoundException('Tenant not found');
 
-    const stored = tenant.settings?.enrollmentPolicy ?? {};
+    const stored = (tenant.settings?.enrollmentPolicy ??
+      {}) as Partial<EnrollmentPolicy>;
     return {
       ...DEFAULT_ENROLLMENT_POLICY,
       ...stored,
@@ -91,7 +92,8 @@ export class TenantService {
 
     const current: EnrollmentPolicy = {
       ...DEFAULT_ENROLLMENT_POLICY,
-      ...(tenant.settings?.enrollmentPolicy ?? {}),
+      ...((tenant.settings?.enrollmentPolicy ??
+        {}) as Partial<EnrollmentPolicy>),
     };
 
     const updated: EnrollmentPolicy = {

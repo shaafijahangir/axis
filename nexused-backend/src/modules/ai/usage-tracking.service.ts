@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
 import { AiUsageLog } from './entities/ai-usage-log.entity';
 import { AiService } from './ai.service';
 
@@ -82,13 +82,18 @@ export class UsageTrackingService {
         startDate,
         endDate,
       })
-      .getRawOne();
+      .getRawOne<{
+        totalInputTokens: string;
+        totalOutputTokens: string;
+        totalCostUsd: string;
+        requestCount: string;
+      }>();
 
     return {
-      totalInputTokens: parseInt(result?.totalInputTokens || '0', 10),
-      totalOutputTokens: parseInt(result?.totalOutputTokens || '0', 10),
-      totalCostUsd: parseFloat(result?.totalCostUsd || '0'),
-      requestCount: parseInt(result?.requestCount || '0', 10),
+      totalInputTokens: parseInt(result?.totalInputTokens ?? '0', 10),
+      totalOutputTokens: parseInt(result?.totalOutputTokens ?? '0', 10),
+      totalCostUsd: parseFloat(result?.totalCostUsd ?? '0'),
+      requestCount: parseInt(result?.requestCount ?? '0', 10),
     };
   }
 
@@ -120,13 +125,18 @@ export class UsageTrackingService {
       })
       .groupBy('log.agentType')
       .orderBy('"totalTokens"', 'DESC')
-      .getRawMany();
+      .getRawMany<{
+        agentType: string;
+        totalTokens: string;
+        totalCostUsd: string;
+        requestCount: string;
+      }>();
 
     return results.map((r) => ({
       agentType: r.agentType,
-      totalTokens: parseInt(r.totalTokens || '0', 10),
-      totalCostUsd: parseFloat(r.totalCostUsd || '0'),
-      requestCount: parseInt(r.requestCount || '0', 10),
+      totalTokens: parseInt(r.totalTokens ?? '0', 10),
+      totalCostUsd: parseFloat(r.totalCostUsd ?? '0'),
+      requestCount: parseInt(r.requestCount ?? '0', 10),
     }));
   }
 }

@@ -20,8 +20,6 @@ import {
   createEnrollment,
   resetIdCounter,
   AssignmentType,
-  AssignmentStatus,
-  SubmissionStatus,
   EnrollmentStatus,
 } from '../../test/factories';
 
@@ -69,7 +67,9 @@ describe('AssignmentsService', () => {
       const assignment2 = createAssignment({ sectionId, title: 'HW2' });
 
       const queryBuilder = createMockQueryBuilder<Assignment>();
-      assignmentRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      assignmentRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getMany!.mockResolvedValue([assignment1, assignment2]);
 
       const result = await service.findBySectionId(sectionId, tenantId);
@@ -95,7 +95,9 @@ describe('AssignmentsService', () => {
 
     it('should return empty array when no assignments exist', async () => {
       const queryBuilder = createMockQueryBuilder<Assignment>();
-      assignmentRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      assignmentRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getMany!.mockResolvedValue([]);
 
       const result = await service.findBySectionId(sectionId, tenantId);
@@ -109,7 +111,9 @@ describe('AssignmentsService', () => {
       const assignment = createAssignment({ id: 'assign-1', sectionId });
 
       const queryBuilder = createMockQueryBuilder<Assignment>();
-      assignmentRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      assignmentRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getOne!.mockResolvedValue(assignment);
 
       const result = await service.findById('assign-1', tenantId);
@@ -123,7 +127,9 @@ describe('AssignmentsService', () => {
 
     it('should throw NotFoundException when assignment not found', async () => {
       const queryBuilder = createMockQueryBuilder<Assignment>();
-      assignmentRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      assignmentRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getOne!.mockResolvedValue(null);
 
       await expect(service.findById('nonexistent', tenantId)).rejects.toThrow(
@@ -133,7 +139,9 @@ describe('AssignmentsService', () => {
 
     it('should throw NotFoundException when assignment exists but wrong tenant', async () => {
       const queryBuilder = createMockQueryBuilder<Assignment>();
-      assignmentRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      assignmentRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getOne!.mockResolvedValue(null); // Tenant filter excludes it
 
       await expect(
@@ -243,7 +251,7 @@ describe('AssignmentsService', () => {
       });
 
       assignmentRepo.findOne!.mockResolvedValue(existingAssignment);
-      assignmentRepo.save!.mockImplementation((a) => Promise.resolve(a as any));
+      assignmentRepo.save!.mockImplementation((a) => Promise.resolve(a));
 
       const result = await service.updateAssignment({
         id: 'assign-1',
@@ -289,7 +297,7 @@ describe('AssignmentsService', () => {
       });
 
       assignmentRepo.findOne!.mockResolvedValue(existingAssignment);
-      assignmentRepo.save!.mockImplementation((a) => Promise.resolve(a as any));
+      assignmentRepo.save!.mockImplementation((a) => Promise.resolve(a));
 
       const newDue = '2026-04-01T23:59:59Z';
       await service.updateAssignment({
@@ -308,9 +316,7 @@ describe('AssignmentsService', () => {
       const a2 = createAssignment({ id: 'a2', sectionId });
 
       assignmentRepo.find!.mockResolvedValue([a1, a2]);
-      assignmentRepo.save!.mockImplementation((arr) =>
-        Promise.resolve(arr as any),
-      );
+      assignmentRepo.save!.mockImplementation((arr) => Promise.resolve(arr));
 
       const newDueAt = '2026-05-01T23:59:59Z';
       const result = await service.extendDeadlines({
@@ -345,7 +351,9 @@ describe('AssignmentsService', () => {
       const sub2 = createSubmission({ assignmentId: 'assign-1' });
 
       const queryBuilder = createMockQueryBuilder<Submission>();
-      submissionRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      submissionRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getMany!.mockResolvedValue([sub1, sub2]);
 
       const result = await service.findSubmissionsByAssignment(
@@ -366,7 +374,9 @@ describe('AssignmentsService', () => {
       const sub = createSubmission({ assignmentId: 'assign-1', userId });
 
       const queryBuilder = createMockQueryBuilder<Submission>();
-      submissionRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      submissionRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getMany!.mockResolvedValue([sub]);
 
       const result = await service.findSubmissionsByUser(
@@ -388,7 +398,9 @@ describe('AssignmentsService', () => {
       const submission = createSubmission({ id: 'sub-1' });
 
       const queryBuilder = createMockQueryBuilder<Submission>();
-      submissionRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      submissionRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getOne!.mockResolvedValue(submission);
 
       const result = await service.findSubmissionById('sub-1', tenantId);
@@ -398,7 +410,9 @@ describe('AssignmentsService', () => {
 
     it('should throw NotFoundException when submission not found', async () => {
       const queryBuilder = createMockQueryBuilder<Submission>();
-      submissionRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      submissionRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getOne!.mockResolvedValue(null);
 
       await expect(
@@ -414,7 +428,7 @@ describe('AssignmentsService', () => {
       // Mock findById (called internally)
       const assignmentQueryBuilder = createMockQueryBuilder<Assignment>();
       assignmentRepo.createQueryBuilder!.mockReturnValue(
-        assignmentQueryBuilder as any,
+        assignmentQueryBuilder as unknown,
       );
       assignmentQueryBuilder.getOne!.mockResolvedValue(assignment);
 
@@ -456,7 +470,9 @@ describe('AssignmentsService', () => {
 
     it('should throw NotFoundException if assignment not found for tenant', async () => {
       const queryBuilder = createMockQueryBuilder<Assignment>();
-      assignmentRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      assignmentRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getOne!.mockResolvedValue(null);
 
       await expect(
@@ -476,9 +492,11 @@ describe('AssignmentsService', () => {
       });
 
       const queryBuilder = createMockQueryBuilder<Submission>();
-      submissionRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      submissionRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getOne!.mockResolvedValue(submission);
-      submissionRepo.save!.mockImplementation((s) => Promise.resolve(s as any));
+      submissionRepo.save!.mockImplementation((s) => Promise.resolve(s));
 
       const graderId = 'instructor-1';
       const result = await service.gradeSubmission(graderId, tenantId, {
@@ -520,9 +538,11 @@ describe('AssignmentsService', () => {
       });
 
       const queryBuilder = createMockQueryBuilder<Submission>();
-      submissionRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
+      submissionRepo.createQueryBuilder!.mockReturnValue(
+        queryBuilder as unknown,
+      );
       queryBuilder.getOne!.mockResolvedValue(submission);
-      submissionRepo.save!.mockImplementation((s) => Promise.resolve(s as any));
+      submissionRepo.save!.mockImplementation((s) => Promise.resolve(s));
 
       await service.gradeSubmission('instructor-1', tenantId, {
         submissionId: 'sub-1',
@@ -543,13 +563,13 @@ describe('AssignmentsService', () => {
     it('should return empty gradebook when no enrollments', async () => {
       const enrollmentQueryBuilder = createMockQueryBuilder<Enrollment>();
       enrollmentRepo.createQueryBuilder!.mockReturnValue(
-        enrollmentQueryBuilder as any,
+        enrollmentQueryBuilder as unknown,
       );
       enrollmentQueryBuilder.getMany!.mockResolvedValue([]);
 
       const assignmentQueryBuilder = createMockQueryBuilder<Assignment>();
       assignmentRepo.createQueryBuilder!.mockReturnValue(
-        assignmentQueryBuilder as any,
+        assignmentQueryBuilder as unknown,
       );
       assignmentQueryBuilder.getMany!.mockResolvedValue([]);
 
@@ -574,13 +594,13 @@ describe('AssignmentsService', () => {
 
       const enrollmentQueryBuilder = createMockQueryBuilder<Enrollment>();
       enrollmentRepo.createQueryBuilder!.mockReturnValue(
-        enrollmentQueryBuilder as any,
+        enrollmentQueryBuilder as unknown,
       );
       enrollmentQueryBuilder.getMany!.mockResolvedValue([enrollment]);
 
       const assignmentQueryBuilder = createMockQueryBuilder<Assignment>();
       assignmentRepo.createQueryBuilder!.mockReturnValue(
-        assignmentQueryBuilder as any,
+        assignmentQueryBuilder as unknown,
       );
       assignmentQueryBuilder.getMany!.mockResolvedValue([]);
 
@@ -614,7 +634,7 @@ describe('AssignmentsService', () => {
         title: 'Homework 1',
       });
       // Manually set pointsPossible since factory may use maxPoints
-      (assignment as any).pointsPossible = 100;
+      (assignment as unknown as Record<string, unknown>).pointsPossible = 100;
 
       const submission = createSubmission({
         id: 'sub-1',
@@ -628,14 +648,14 @@ describe('AssignmentsService', () => {
       // Mock enrollments query
       const enrollmentQueryBuilder = createMockQueryBuilder<Enrollment>();
       enrollmentRepo.createQueryBuilder!.mockReturnValue(
-        enrollmentQueryBuilder as any,
+        enrollmentQueryBuilder as unknown,
       );
       enrollmentQueryBuilder.getMany!.mockResolvedValue([enrollment]);
 
       // Mock assignments query
       const assignmentQueryBuilder = createMockQueryBuilder<Assignment>();
       assignmentRepo.createQueryBuilder!.mockReturnValue(
-        assignmentQueryBuilder as any,
+        assignmentQueryBuilder as unknown,
       );
       assignmentQueryBuilder.getMany!.mockResolvedValue([assignment]);
 
@@ -665,7 +685,7 @@ describe('AssignmentsService', () => {
         id: 'assign-1',
         sectionId,
       });
-      (assignment as any).pointsPossible = 100;
+      (assignment as unknown as Record<string, unknown>).pointsPossible = 100;
 
       // Two submissions: one ungraded (attempt 2), one graded (attempt 1)
       const ungradedSub = createSubmission({
@@ -675,7 +695,7 @@ describe('AssignmentsService', () => {
         score: undefined,
         gradedAt: undefined,
       });
-      (ungradedSub as any).attempt = 2;
+      (ungradedSub as unknown as Record<string, unknown>).attempt = 2;
 
       const gradedSub = createSubmission({
         id: 'sub-1',
@@ -684,17 +704,17 @@ describe('AssignmentsService', () => {
         score: 75,
         gradedAt: new Date(),
       });
-      (gradedSub as any).attempt = 1;
+      (gradedSub as unknown as Record<string, unknown>).attempt = 1;
 
       const enrollmentQueryBuilder = createMockQueryBuilder<Enrollment>();
       enrollmentRepo.createQueryBuilder!.mockReturnValue(
-        enrollmentQueryBuilder as any,
+        enrollmentQueryBuilder as unknown,
       );
       enrollmentQueryBuilder.getMany!.mockResolvedValue([enrollment]);
 
       const assignmentQueryBuilder = createMockQueryBuilder<Assignment>();
       assignmentRepo.createQueryBuilder!.mockReturnValue(
-        assignmentQueryBuilder as any,
+        assignmentQueryBuilder as unknown,
       );
       assignmentQueryBuilder.getMany!.mockResolvedValue([assignment]);
 
@@ -733,13 +753,13 @@ describe('AssignmentsService', () => {
 
       const enrollmentQueryBuilder = createMockQueryBuilder<Enrollment>();
       enrollmentRepo.createQueryBuilder!.mockReturnValue(
-        enrollmentQueryBuilder as any,
+        enrollmentQueryBuilder as unknown,
       );
       enrollmentQueryBuilder.getMany!.mockResolvedValue(enrollments);
 
       const assignmentQueryBuilder = createMockQueryBuilder<Assignment>();
       assignmentRepo.createQueryBuilder!.mockReturnValue(
-        assignmentQueryBuilder as any,
+        assignmentQueryBuilder as unknown,
       );
       assignmentQueryBuilder.getMany!.mockResolvedValue([]);
 

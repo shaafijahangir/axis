@@ -666,7 +666,7 @@ export class LtiService {
     if (!response.ok) {
       throw new Error(`Failed to fetch JWKS from ${jwksEndpoint}`);
     }
-    const jwks = await response.json();
+    const jwks = (await response.json()) as jose.JSONWebKeySet;
     return jose.createLocalJWKSet(jwks);
   }
 

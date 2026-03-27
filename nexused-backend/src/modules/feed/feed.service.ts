@@ -50,7 +50,7 @@ export class FeedService {
 
   // ─── Student Feed ─────────────────────────────────────────────────────
 
-  async getStudentFeed(userId: string, tenantId: string): Promise<FeedItem[]> {
+  async getStudentFeed(userId: string, _tenantId: string): Promise<FeedItem[]> {
     // 1. Get active enrollments → sectionIds
     const enrollments = await this.enrollmentRepo.find({
       where: { userId, status: EnrollmentStatus.ACTIVE },
@@ -222,7 +222,7 @@ export class FeedService {
 
   async getInstructorFeed(
     userId: string,
-    tenantId: string,
+    _tenantId: string,
   ): Promise<InstructorFeedItem[]> {
     // 1. Get teaching sections
     const sections = await this.sectionRepo.find({
@@ -487,7 +487,7 @@ export class FeedService {
    */
   async getStudentGrades(
     userId: string,
-    tenantId: string,
+    _tenantId: string,
   ): Promise<CourseSectionGrades[]> {
     // 1. Active enrollments with section → course + instructor
     const enrollments = await this.enrollmentRepo.find({

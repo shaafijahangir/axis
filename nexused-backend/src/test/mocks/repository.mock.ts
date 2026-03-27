@@ -50,7 +50,10 @@ export function createMockQueryBuilder<T extends ObjectLiteral>(): Partial<
 } {
   const chainable = jest.fn();
 
-  const builder: any = {
+  type MockQueryBuilder = Partial<
+    Record<keyof SelectQueryBuilder<T>, jest.Mock>
+  > & { _chainable: jest.Mock };
+  const builder: MockQueryBuilder = {
     select: chainable,
     addSelect: chainable,
     where: chainable,

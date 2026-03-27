@@ -76,7 +76,7 @@ export interface AiSendOptions {
  */
 export interface AiProviderResponse {
   content: AiContentBlock[];
-  stopReason: 'end_turn' | 'tool_use' | 'max_tokens' | string;
+  stopReason: string;
   usage: {
     inputTokens: number;
     outputTokens: number;

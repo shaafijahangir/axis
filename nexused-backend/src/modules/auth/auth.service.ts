@@ -1,12 +1,18 @@
-import {
-  Injectable,
-  ConflictException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
-import { RegisterDto, LoginDto, AuthResponseDto } from './dto/auth.dto';
+import { RegisterDto, AuthResponseDto } from './dto/auth.dto';
 import { UserRole } from '../../database/entities';
+import { User } from '../../database/entities/user.entity';
+
+interface AuthUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  tenantId: string;
+  roles: UserRole[];
+}
 
 @Injectable()
 export class AuthService {
@@ -45,7 +51,10 @@ export class AuthService {
     };
   }
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<AuthUser | null> {
     const user = await this.usersService.findByEmail(email);
 
     if (!user) {
@@ -61,11 +70,17 @@ export class AuthService {
       return null;
     }
 
-    const { passwordHash, ...result } = user;
-    return result;
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      tenantId: user.tenantId,
+      roles: user.roles,
+    };
   }
 
-  async login(user: any): Promise<AuthResponseDto> {
+  login(user: AuthUser | User): AuthResponseDto {
     const accessToken = this.generateToken(user);
 
     return {
@@ -80,7 +95,7 @@ export class AuthService {
     };
   }
 
-  private generateToken(user: any): string {
+  private generateToken(user: AuthUser | User): string {
     const payload = {
       sub: user.id,
       email: user.email,

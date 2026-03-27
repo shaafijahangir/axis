@@ -29,9 +29,12 @@ export class UsersResolver {
     if (input.firstName !== undefined) updateData.firstName = input.firstName;
     if (input.lastName !== undefined) updateData.lastName = input.lastName;
     if (input.profile !== undefined)
-      updateData.profile = JSON.parse(input.profile);
+      updateData.profile = JSON.parse(input.profile) as Record<string, unknown>;
     if (input.preferences !== undefined)
-      updateData.preferences = JSON.parse(input.preferences);
+      updateData.preferences = JSON.parse(input.preferences) as Record<
+        string,
+        unknown
+      >;
 
     const updated = await this.usersService.update(
       user.id,

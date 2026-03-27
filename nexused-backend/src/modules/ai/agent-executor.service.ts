@@ -18,6 +18,7 @@ import { ToolRegistry } from './tools/tool-registry';
 import { AgentRegistry } from './agents/agent-registry.service';
 import { CustomAgentService } from './custom-agent.service';
 import { AgentContext } from './tools/tool.interface';
+import { ContextPayload } from './agents/agent.interface';
 import {
   ContextBuilderParams,
   AgentDefinition,
@@ -226,7 +227,7 @@ export class AgentExecutorService {
 
     // Rebuild context and system prompt
     const contextText = this.contextService.formatContextForPrompt(
-      conversation.contextSnapshot as any,
+      conversation.contextSnapshot as ContextPayload,
     );
     const systemPrompt = this.buildSystemPrompt(agent, contextText);
 
@@ -463,8 +464,8 @@ export class AgentExecutorService {
       role,
       content,
       tokenCount,
-      toolCalls: toolCalls as any,
-      toolResults: toolResults as any,
+      toolCalls: toolCalls as Record<string, unknown>[],
+      toolResults: toolResults as Record<string, unknown>[],
     });
     return this.messageRepository.save(message);
   }

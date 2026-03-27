@@ -27,7 +27,6 @@ import {
   createCourseSection,
   createAssignment,
   createSubmission,
-  createUser,
   createInstructor,
 } from '../../test/factories';
 
@@ -295,14 +294,16 @@ describe('FeedService', () => {
         { assignmentId: ungradedAssignment.id, count: '3' },
       ]);
 
-      assignmentRepo.find!.mockImplementation((options: any) => {
-        // First call for ungraded assignments
-        if (options?.where?.id) {
-          return Promise.resolve([ungradedAssignment]);
-        }
-        // Second call for upcoming assignments
-        return Promise.resolve([upcomingAssignment]);
-      });
+      assignmentRepo.find!.mockImplementation(
+        (options: Record<string, Record<string, unknown> | undefined>) => {
+          // First call for ungraded assignments
+          if (options?.where?.id) {
+            return Promise.resolve([ungradedAssignment]);
+          }
+          // Second call for upcoming assignments
+          return Promise.resolve([upcomingAssignment]);
+        },
+      );
 
       const result = await service.getInstructorFeed(instructorId, tenantId);
 

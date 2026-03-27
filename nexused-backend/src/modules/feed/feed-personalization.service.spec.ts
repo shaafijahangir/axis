@@ -100,7 +100,7 @@ describe('FeedPersonalizationService', () => {
         },
       ];
 
-      engagementRepo.create!.mockImplementation((data: any) => data);
+      engagementRepo.create!.mockImplementation((data: unknown) => data);
       engagementRepo.save!.mockResolvedValue([] as any);
 
       await service.recordEngagementBatch(userId, tenantId, events);
@@ -382,8 +382,8 @@ describe('FeedPersonalizationService', () => {
       engagementRepo.createQueryBuilder!.mockImplementation(() => {
         callCount++;
         return callCount === 1
-          ? (statsQueryBuilder as any)
-          : (topClickedQueryBuilder as any);
+          ? (statsQueryBuilder as unknown)
+          : (topClickedQueryBuilder as unknown);
       });
 
       statsQueryBuilder.getRawMany!.mockResolvedValue([
@@ -419,7 +419,7 @@ describe('FeedPersonalizationService', () => {
       let callCount = 0;
       engagementRepo.createQueryBuilder!.mockImplementation(() => {
         callCount++;
-        return callCount === 1 ? (statsQB as any) : (topQB as any);
+        return callCount === 1 ? (statsQB as unknown) : (topQB as unknown);
       });
 
       statsQB.getRawMany!.mockResolvedValue([]);

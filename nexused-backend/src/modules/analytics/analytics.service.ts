@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import {
   User,
-  UserRole,
   UserStatus,
   Course,
   CourseSection,
@@ -128,7 +127,7 @@ export class AnalyticsService {
       .where('user.tenantId = :tenantId', { tenantId })
       .groupBy('role')
       .orderBy('count', 'DESC')
-      .getRawMany();
+      .getRawMany<{ role: string; count: string }>();
 
     const roleDistribution: UserRoleCount[] = roleResults.map((r) => ({
       role: r.role,
@@ -155,11 +154,11 @@ export class AnalyticsService {
       .addSelect('COALESCE(AVG(submission.score), 0)', 'avgScore')
       .where('submission.tenantId = :tenantId', { tenantId })
       .andWhere('submission.score IS NOT NULL')
-      .getRawOne();
+      .getRawOne<{ total: string; graded: string; avgScore: string }>();
 
-    const totalSubmissions = parseInt(stats?.total || '0', 10);
-    const gradedSubmissions = parseInt(stats?.graded || '0', 10);
-    const averageScore = parseFloat(stats?.avgScore || '0');
+    const totalSubmissions = parseInt(stats?.total ?? '0', 10);
+    const gradedSubmissions = parseInt(stats?.graded ?? '0', 10);
+    const averageScore = parseFloat(stats?.avgScore ?? '0');
 
     // Get all scores for median calculation
     const allScores = await this.submissionRepo
@@ -168,7 +167,7 @@ export class AnalyticsService {
       .where('submission.tenantId = :tenantId', { tenantId })
       .andWhere('submission.score IS NOT NULL')
       .orderBy('submission.score', 'ASC')
-      .getRawMany();
+      .getRawMany<{ score: string }>();
 
     let medianScore: number | null = null;
     if (allScores.length > 0) {
@@ -202,7 +201,7 @@ export class AnalyticsService {
       .andWhere('submission.score IS NOT NULL')
       .andWhere('assignment.pointsPossible > 0')
       .groupBy('grade')
-      .getRawMany();
+      .getRawMany<{ grade: string; count: string }>();
 
     const gradeOrder = ['A', 'B', 'C', 'D', 'F'];
     const gradeMap = new Map(
@@ -251,7 +250,7 @@ export class AnalyticsService {
           )
           .where('submission.tenantId = :tenantId', { tenantId })
           .andWhere('submission.gradedAt IS NOT NULL')
-          .getRawOne(),
+          .getRawOne<{ avgHours: string | null }>(),
       ]);
 
     const avgGradingTurnaroundHours = avgTurnaround?.avgHours
@@ -266,9 +265,9 @@ export class AnalyticsService {
       .from(Enrollment, 'e')
       .where('e.tenantId = :tenantId', { tenantId })
       .andWhere('e.status = :status', { status: EnrollmentStatus.ACTIVE })
-      .getRawOne();
+      .getRawOne<{ students: string }>();
 
-    const studentCount = parseInt(expectedSubmissions?.students || '1', 10);
+    const studentCount = parseInt(expectedSubmissions?.students ?? '1', 10);
     const submissionRate =
       totalAssignments > 0
         ? (totalSubmissions / (totalAssignments * studentCount)) * 100
@@ -319,7 +318,14 @@ export class AnalyticsService {
       )
       .orderBy('"avgScore"', 'ASC')
       .limit(limit)
-      .getRawMany();
+      .getRawMany<{
+        userId: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        avgScore: string;
+        missedAssignments: string;
+      }>();
 
     // Get enrollment counts for at-risk students
     const userIds = results.map((r) => r.userId);
@@ -333,7 +339,7 @@ export class AnalyticsService {
             status: EnrollmentStatus.ACTIVE,
           })
           .groupBy('enrollment.userId')
-          .getRawMany()
+          .getRawMany<{ userId: string; count: string }>()
       : [];
 
     const enrollmentMap = new Map(
@@ -369,7 +375,7 @@ export class AnalyticsService {
         .addSelect('COUNT(DISTINCT conv.userId)', 'uniqueUsers')
         .where('conv.tenantId = :tenantId', { tenantId })
         .andWhere('conv.createdAt BETWEEN :start AND :end', { start, end })
-        .getRawOne(),
+        .getRawOne<{ totalConversations: string; uniqueUsers: string }>(),
       this.aiUsageLogRepo
         .createQueryBuilder('log')
         .select(
@@ -380,17 +386,17 @@ export class AnalyticsService {
         .addSelect('COUNT(*)', 'messages')
         .where('log.tenantId = :tenantId', { tenantId })
         .andWhere('log.createdAt BETWEEN :start AND :end', { start, end })
-        .getRawOne(),
+        .getRawOne<{ tokens: string; cost: string; messages: string }>(),
     ]);
 
     return {
       totalConversations: parseInt(
-        conversationStats?.totalConversations || '0',
+        conversationStats?.totalConversations ?? '0',
         10,
       ),
-      totalMessages: parseInt(usageStats?.messages || '0', 10),
-      totalTokens: parseInt(usageStats?.tokens || '0', 10),
-      totalCostUsd: parseFloat(usageStats?.cost || '0'),
+      totalMessages: parseInt(usageStats?.messages ?? '0', 10),
+      totalTokens: parseInt(usageStats?.tokens ?? '0', 10),
+      totalCostUsd: parseFloat(usageStats?.cost ?? '0'),
       uniqueUsers: parseInt(conversationStats?.uniqueUsers || '0', 10),
     };
   }
@@ -417,14 +423,20 @@ export class AnalyticsService {
       .andWhere('log.createdAt BETWEEN :start AND :end', { start, end })
       .groupBy('log.agentType')
       .orderBy('"tokens"', 'DESC')
-      .getRawMany();
+      .getRawMany<{
+        agentType: string | null;
+        conversations: string;
+        messages: string;
+        tokens: string;
+        cost: string;
+      }>();
 
     return results.map((r) => ({
-      agentType: r.agentType || 'unknown',
-      conversations: parseInt(r.conversations || '0', 10),
-      messages: parseInt(r.messages || '0', 10),
-      totalTokens: parseInt(r.tokens || '0', 10),
-      costUsd: parseFloat(r.cost || '0'),
+      agentType: r.agentType ?? 'unknown',
+      conversations: parseInt(r.conversations ?? '0', 10),
+      messages: parseInt(r.messages ?? '0', 10),
+      totalTokens: parseInt(r.tokens ?? '0', 10),
+      costUsd: parseFloat(r.cost ?? '0'),
     }));
   }
 
@@ -453,14 +465,21 @@ export class AnalyticsService {
       .addGroupBy('course.title')
       .orderBy('"enrollments"', 'DESC')
       .limit(limit)
-      .getRawMany();
+      .getRawMany<{
+        courseId: string;
+        courseCode: string;
+        courseTitle: string;
+        sections: string;
+        enrollments: string;
+        avgGrade: string | null;
+      }>();
 
     return results.map((r) => ({
       courseId: r.courseId,
       courseCode: r.courseCode,
       courseTitle: r.courseTitle,
-      sections: parseInt(r.sections || '0', 10),
-      enrollments: parseInt(r.enrollments || '0', 10),
+      sections: parseInt(r.sections ?? '0', 10),
+      enrollments: parseInt(r.enrollments ?? '0', 10),
       averageGrade: r.avgGrade ? parseFloat(r.avgGrade) : null,
     }));
   }

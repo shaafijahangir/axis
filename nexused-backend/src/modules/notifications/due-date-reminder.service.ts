@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, Not, MoreThan, LessThan, In } from 'typeorm';
+import { Repository, MoreThan, LessThan, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from './email.service';
 import { EmailTemplatesService } from './email-templates.service';
@@ -135,7 +135,7 @@ export class DueDateReminderService {
         studentName: `${student.firstName} ${student.lastName}`,
         assignmentTitle: assignment.title,
         courseCode: assignment.section?.course?.code ?? '',
-        dueAt: assignment.dueAt!,
+        dueAt: assignment.dueAt,
         hoursUntilDue: hoursAhead,
         appUrl: appUrl(
           this.configService,

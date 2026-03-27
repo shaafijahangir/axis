@@ -135,24 +135,34 @@ export class AnthropicProvider implements AiProvider, OnModuleInit {
       }
 
       // Content is an array of blocks (tool_result, etc.)
-      const content = msg.content.map((block) => {
+      type MsgBlock = {
+        type: string;
+        text?: string;
+        id?: string;
+        name?: string;
+        input?: Record<string, unknown>;
+        toolUseId?: string;
+        content?: string;
+      };
+      const blocks = msg.content as MsgBlock[];
+      const content = blocks.map((block) => {
         if (block.type === 'text') {
-          return { type: 'text' as const, text: block.text };
+          return { type: 'text' as const, text: block.text ?? '' };
         }
         if (block.type === 'tool_use') {
           return {
             type: 'tool_use' as const,
-            id: block.id,
-            name: block.name,
-            input: block.input,
+            id: block.id ?? '',
+            name: block.name ?? '',
+            input: block.input ?? {},
           };
         }
         // Handle tool_result blocks (sent as user messages)
-        if ((block as any).type === 'tool_result') {
+        if (block.type === 'tool_result') {
           return {
             type: 'tool_result' as const,
-            tool_use_id: (block as any).toolUseId,
-            content: (block as any).content,
+            tool_use_id: block.toolUseId ?? '',
+            content: block.content ?? '',
           };
         }
         return { type: 'text' as const, text: '' };

@@ -27,7 +27,6 @@ import {
   createCourse,
   createCourseSection,
   createEnrollment,
-  createUser,
   resetIdCounter,
 } from '../../test/factories';
 
@@ -164,7 +163,7 @@ describe('CoursesService', () => {
         code: 'CS101',
         name: 'Intro to CS',
       });
-      (savedCourse as any).title = 'Intro to CS';
+      (savedCourse as unknown as Record<string, unknown>).title = 'Intro to CS';
 
       courseRepo.create!.mockReturnValue(savedCourse);
       courseRepo.save!.mockResolvedValue(savedCourse);
@@ -334,9 +333,11 @@ describe('CoursesService', () => {
 
   describe('enrollStudent', () => {
     it('should create enrollment and emit event', async () => {
-      const section = createCourseSection({ id: 'section-1', tenantId });
+      const section = createCourseSection({
+        id: 'section-1',
+      }) as unknown as Record<string, unknown>;
       section.autoApprove = true;
-      (section as unknown as Record<string, unknown>).course = { tenantId };
+      section.course = { tenantId };
       const savedEnrollment = createEnrollment({
         id: 'enrollment-1',
         userId,
@@ -670,7 +671,8 @@ describe('CoursesService', () => {
         sectionId: 'section-1',
         section,
       });
-      (enrollment.section as any).course = course;
+      (enrollment.section as unknown as Record<string, unknown>).course =
+        course;
 
       enrollmentRepo.findOne!.mockResolvedValue(enrollment);
       enrollmentRepo.update!.mockResolvedValue({} as any);
@@ -707,7 +709,8 @@ describe('CoursesService', () => {
       const wrongTenantCourse = createCourse({ tenantId: 'other-tenant' });
       const section = createCourseSection({ course: wrongTenantCourse });
       const enrollment = createEnrollment({ section });
-      (enrollment.section as any).course = wrongTenantCourse;
+      (enrollment.section as unknown as Record<string, unknown>).course =
+        wrongTenantCourse;
 
       enrollmentRepo.findOne!.mockResolvedValue(enrollment);
 
@@ -771,7 +774,7 @@ describe('CoursesService', () => {
       const saved = [
         createEnrollment({ userId: 'user-1', sectionId: 'section-1' }),
       ];
-      enrollmentRepo.create!.mockImplementation((data) => data as any);
+      enrollmentRepo.create!.mockImplementation((data: unknown) => data);
       enrollmentRepo.save!.mockResolvedValue(saved);
 
       await service.bulkEnroll(tenantId, {

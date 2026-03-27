@@ -7,7 +7,10 @@ import {
   Enrollment,
   EnrollmentStatus,
 } from '../../database/entities/enrollment.entity';
-import { StudentDegreeProfile } from '../../database/entities/student-degree-profile.entity';
+import {
+  StudentDegreeProfile,
+  DegreeProfileStatus,
+} from '../../database/entities/student-degree-profile.entity';
 import { TenantService } from '../../tenant/tenant.service';
 import { PrerequisiteEnforcement } from '../../tenant/enrollment-policy.types';
 
@@ -67,7 +70,7 @@ export class EnrollmentPolicyService {
     const policy = await this.tenantService.getEnrollmentPolicy(tenantId);
 
     // 1. Enrollment window check
-    await this.checkEnrollmentWindow(policy, section);
+    this.checkEnrollmentWindow(policy, section);
 
     // 2. Credit hour limit check
     await this.checkCreditHourLimit(policy, tenantId, userId, section);
@@ -83,7 +86,7 @@ export class EnrollmentPolicyService {
       enrollmentWindowStart: string | null;
       enrollmentWindowEnd: string | null;
     },
-    section: CourseSection,
+    _section: CourseSection,
   ): void {
     const now = new Date();
 
@@ -184,7 +187,7 @@ export class EnrollmentPolicyService {
 
     // Load active student degree profile for completion data
     const profile = await this.profileRepo.findOne({
-      where: { userId, tenantId, status: 'active' as any },
+      where: { userId, tenantId, status: DegreeProfileStatus.ACTIVE },
     });
 
     // No profile → can't verify. In warn mode, log and proceed. In strict, block.

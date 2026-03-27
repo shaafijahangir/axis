@@ -74,8 +74,11 @@ export class ToolRegistry {
       description: tool.description,
       inputSchema: {
         type: 'object',
-        properties: (tool.inputSchema as any).properties || {},
-        required: (tool.inputSchema as any).required,
+        properties: (tool.inputSchema.properties ?? {}) as Record<
+          string,
+          unknown
+        >,
+        required: tool.inputSchema.required as string[] | undefined,
       },
     }));
   }

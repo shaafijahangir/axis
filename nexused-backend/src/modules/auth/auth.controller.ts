@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { RegisterDto, AuthResponseDto } from './dto/auth.dto';
 import { LocalAuthGuard } from '../../guards/local-auth.guard';
+import { User } from '../../database/entities/user.entity';
 
 /**
  * PATTERN: Cookie configuration for secure JWT storage.
@@ -55,11 +56,11 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(
-    @Request() req,
+  login(
+    @Request() req: express.Request & { user: User },
     @Res({ passthrough: true }) res: express.Response,
-  ): Promise<AuthResponseDto> {
-    const result = await this.authService.login(req.user);
+  ): AuthResponseDto {
+    const result = this.authService.login(req.user);
     this.setCookie(res, result.accessToken);
     return result;
   }

@@ -94,7 +94,7 @@ import { ScheduleModule } from '@nestjs/schedule';
       sortSchema: true,
       playground: true,
       path: '/api/graphql',
-      context: ({ req }) => ({ req }),
+      context: ({ req }: { req: unknown }) => ({ req }),
     }),
     AuthModule,
     UsersModule,

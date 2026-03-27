@@ -1,7 +1,10 @@
 import { Repository } from 'typeorm';
 import { ToolDefinition } from './tool.interface';
 import { Submission } from '../../../database/entities/submission.entity';
-import { Enrollment } from '../../../database/entities/enrollment.entity';
+import {
+  Enrollment,
+  EnrollmentStatus,
+} from '../../../database/entities/enrollment.entity';
 import { Assignment } from '../../../database/entities/assignment.entity';
 
 /**
@@ -42,7 +45,13 @@ export function createAnalyticsTools(
           .where('s.assignmentId = :assignmentId', {
             assignmentId: input.assignmentId,
           })
-          .getRawOne();
+          .getRawOne<{
+            totalSubmissions: string;
+            gradedCount: string;
+            averageScore: string;
+            minScore: string;
+            maxScore: string;
+          }>();
 
         const assignment = await assignmentRepo.findOne({
           where: { id: input.assignmentId as string },
@@ -160,7 +169,7 @@ export function createAnalyticsTools(
         const count = await enrollmentRepo.count({
           where: {
             sectionId: input.sectionId as string,
-            status: 'active' as any,
+            status: EnrollmentStatus.ACTIVE,
           },
         });
         return { sectionId: input.sectionId, activeEnrollments: count };
