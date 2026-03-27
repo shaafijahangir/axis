@@ -49,6 +49,7 @@ lerna-debug.log*
 # OS
 Thumbs.db
 .DS_Store
+*.stackdump
 
 # TypeScript
 *.tsbuildinfo

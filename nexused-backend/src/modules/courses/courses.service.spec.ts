@@ -6,7 +6,10 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DataSource } from 'typeorm';
 import { CoursesService } from './courses.service';
+import { EnrollmentPolicyService } from './enrollment-policy.service';
+import { WaitlistService } from './waitlist.service';
 import {
   Course,
   CourseSection,
@@ -55,6 +58,35 @@ describe('CoursesService', () => {
         {
           provide: EventEmitter2,
           useValue: { emit: jest.fn() },
+        },
+        {
+          provide: DataSource,
+          useValue: {
+            createQueryRunner: jest.fn().mockReturnValue({
+              connect: jest.fn(),
+              startTransaction: jest.fn(),
+              commitTransaction: jest.fn(),
+              rollbackTransaction: jest.fn(),
+              release: jest.fn(),
+              manager: { save: jest.fn(), findOne: jest.fn() },
+            }),
+          },
+        },
+        {
+          provide: EnrollmentPolicyService,
+          useValue: {
+            checkAll: jest.fn().mockResolvedValue(undefined),
+            check: jest.fn().mockResolvedValue(undefined),
+            getPolicy: jest.fn().mockResolvedValue({ waitlistEnabled: false }),
+          },
+        },
+        {
+          provide: WaitlistService,
+          useValue: {
+            placeOnWaitlist: jest.fn(),
+            promoteFromWaitlist: jest.fn(),
+            getWaitlistCount: jest.fn().mockResolvedValue(0),
+          },
         },
       ],
     }).compile();
@@ -302,6 +334,9 @@ describe('CoursesService', () => {
 
   describe('enrollStudent', () => {
     it('should create enrollment and emit event', async () => {
+      const section = createCourseSection({ id: 'section-1', tenantId });
+      section.autoApprove = true;
+      (section as unknown as Record<string, unknown>).course = { tenantId };
       const savedEnrollment = createEnrollment({
         id: 'enrollment-1',
         userId,
@@ -309,6 +344,9 @@ describe('CoursesService', () => {
         tenantId,
       });
 
+      sectionRepo.findOne!.mockResolvedValue(section);
+      enrollmentRepo.findOne!.mockResolvedValue(null); // no duplicate
+      enrollmentRepo.count!.mockResolvedValue(0); // no seats occupied
       enrollmentRepo.create!.mockReturnValue(savedEnrollment);
       enrollmentRepo.save!.mockResolvedValue(savedEnrollment);
 

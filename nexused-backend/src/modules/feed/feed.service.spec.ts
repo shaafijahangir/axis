@@ -15,6 +15,7 @@ import { Submission } from '../../database/entities/submission.entity';
 import { CourseSection } from '../../database/entities/course-section.entity';
 import { AnnouncementsService } from '../announcements/announcements.service';
 import { ContentService } from '../content/content.service';
+import { DiscussionsService } from '../discussions/discussions.service';
 import {
   createMockRepository,
   createMockQueryBuilder,
@@ -68,6 +69,10 @@ describe('FeedService', () => {
         { provide: getRepositoryToken(CourseSection), useValue: sectionRepo },
         { provide: AnnouncementsService, useValue: announcementsService },
         { provide: ContentService, useValue: contentService },
+        {
+          provide: DiscussionsService,
+          useValue: { findBySectionId: jest.fn().mockResolvedValue([]) },
+        },
       ],
     }).compile();
 
