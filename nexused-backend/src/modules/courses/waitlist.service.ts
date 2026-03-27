@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, In, IsNull, LessThanOrEqual } from 'typeorm';
+import { Repository, In, IsNull, LessThanOrEqual } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   Enrollment,
@@ -37,7 +37,6 @@ export class WaitlistService {
     private readonly sectionRepo: Repository<CourseSection>,
     private readonly tenantService: TenantService,
     private readonly eventEmitter: EventEmitter2,
-    private readonly dataSource: DataSource,
   ) {}
 
   /**

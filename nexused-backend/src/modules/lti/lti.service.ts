@@ -65,8 +65,6 @@ export class LtiService {
     private ltiUserRepo: Repository<LtiUser>,
     @InjectRepository(LtiState)
     private stateRepo: Repository<LtiState>,
-    @InjectRepository(User)
-    private userRepo: Repository<User>,
     private dataSource: DataSource,
     private configService: ConfigService,
   ) {}

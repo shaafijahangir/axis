@@ -74,13 +74,6 @@ export class EmailTemplatesService {
     return `<span style="display:inline-block;background-color:${color};color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;">${text}</span>`;
   }
 
-  private statBox(label: string, value: string): string {
-    return `<div style="display:inline-block;background-color:${this.bgColor};border:1px solid ${this.borderColor};border-radius:6px;padding:12px 20px;margin-right:12px;text-align:center;">
-      <div style="font-size:22px;font-weight:700;color:${this.textPrimary};">${value}</div>
-      <div style="font-size:12px;color:${this.textMuted};margin-top:2px;">${value}</div>
-    </div>`;
-  }
-
   private cta(text: string, url: string): string {
     return `<a href="${url}" style="display:inline-block;background-color:${this.brandColor};color:#fff;font-size:14px;font-weight:600;padding:10px 24px;border-radius:6px;text-decoration:none;margin-top:8px;">${text}</a>`;
   }

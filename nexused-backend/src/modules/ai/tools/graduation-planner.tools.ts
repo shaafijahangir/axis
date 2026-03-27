@@ -17,7 +17,7 @@ import { GraduationPlanStatus } from '../../planner/entities/graduation-plan.ent
  * GRAD-002: Dynamic Replanning
  */
 export function createGraduationPlannerTools(
-  plannerService: PlannerService,
+  _plannerService: PlannerService,
   graduationPlannerService: GraduationPlannerService,
 ): ToolDefinition[] {
   return [

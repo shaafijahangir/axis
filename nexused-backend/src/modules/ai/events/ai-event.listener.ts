@@ -15,7 +15,6 @@ import { AgentExecutorService } from '../agent-executor.service';
 import { CourseSection } from '../../../database/entities/course-section.entity';
 import { Assignment } from '../../../database/entities/assignment.entity';
 import { Submission } from '../../../database/entities/submission.entity';
-import { Enrollment } from '../../../database/entities/enrollment.entity';
 
 /**
  * Listens for system events and triggers AI reactions.
@@ -46,8 +45,6 @@ export class AiEventListener {
     private assignmentRepo: Repository<Assignment>,
     @InjectRepository(Submission)
     private submissionRepo: Repository<Submission>,
-    @InjectRepository(Enrollment)
-    private enrollmentRepo: Repository<Enrollment>,
   ) {}
 
   /**

@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import {
@@ -35,8 +35,6 @@ import {
  */
 @Injectable()
 export class PlannerService {
-  private readonly logger = new Logger(PlannerService.name);
-
   /** Average credits per semester for estimation */
   private readonly AVG_CREDITS_PER_SEMESTER = 15;
 

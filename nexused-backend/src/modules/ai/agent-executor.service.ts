@@ -15,7 +15,6 @@ import { ContextService } from './context.service';
 import { GovernanceService } from './governance.service';
 import { UsageTrackingService } from './usage-tracking.service';
 import { ToolRegistry } from './tools/tool-registry';
-import { AgentRegistry } from './agents/agent-registry.service';
 import { CustomAgentService } from './custom-agent.service';
 import { AgentContext } from './tools/tool.interface';
 import { ContextPayload } from './agents/agent.interface';
@@ -84,7 +83,6 @@ export class AgentExecutorService {
     private governanceService: GovernanceService,
     private usageTracking: UsageTrackingService,
     private toolRegistry: ToolRegistry,
-    private agentRegistry: AgentRegistry,
     private customAgentService: CustomAgentService,
     private eventEmitter: EventEmitter2,
     @InjectRepository(AiConversation)

@@ -4,7 +4,6 @@ import { In, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Assignment } from '../../database/entities/assignment.entity';
 import { Submission } from '../../database/entities/submission.entity';
-import { CourseSection } from '../../database/entities/course-section.entity';
 import {
   Enrollment,
   EnrollmentRole,
@@ -27,8 +26,6 @@ export class AssignmentsService {
     private assignmentRepo: Repository<Assignment>,
     @InjectRepository(Submission)
     private submissionRepo: Repository<Submission>,
-    @InjectRepository(CourseSection)
-    private sectionRepo: Repository<CourseSection>,
     @InjectRepository(Enrollment)
     private enrollmentRepo: Repository<Enrollment>,
     private eventEmitter: EventEmitter2,

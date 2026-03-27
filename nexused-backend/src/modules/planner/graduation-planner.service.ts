@@ -8,7 +8,6 @@ import {
   PlannedSemesterData,
 } from './entities/graduation-plan.entity';
 import { StudentDegreeProfile } from '../../database/entities/student-degree-profile.entity';
-import { DegreeProgram } from '../../database/entities/degree-program.entity';
 import { Course } from '../../database/entities/course.entity';
 import { CourseSection } from '../../database/entities/course-section.entity';
 import {
@@ -66,8 +65,6 @@ export class GraduationPlannerService {
     private planRepo: Repository<GraduationPlan>,
     @InjectRepository(StudentDegreeProfile)
     private profileRepo: Repository<StudentDegreeProfile>,
-    @InjectRepository(DegreeProgram)
-    private programRepo: Repository<DegreeProgram>,
     @InjectRepository(Course)
     private courseRepo: Repository<Course>,
     @InjectRepository(CourseSection)

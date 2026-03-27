@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../database/entities/user.entity';
@@ -21,8 +21,6 @@ import { ContextPayload, ContextBuilderParams } from './agents/agent.interface';
  */
 @Injectable()
 export class ContextService {
-  private readonly logger = new Logger(ContextService.name);
-
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,

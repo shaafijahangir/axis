@@ -12,7 +12,6 @@ import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
-import { UsersService } from '../users/users.service';
 import { MessagingService, MESSAGING_EVENTS } from './messaging.service';
 import type {
   MessageSentEvent,
@@ -66,7 +65,6 @@ export class MessagingGateway
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly usersService: UsersService,
     private readonly messagingService: MessagingService,
   ) {}
 

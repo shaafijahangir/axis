@@ -202,12 +202,7 @@ export default function FinancialAidConfigPage() {
     setMaxPct(150);
   }
 
-  function numInput(
-    value: number,
-    setter: (n: number) => void,
-    min: number,
-    max: number,
-  ) {
+  function numInput(setter: (n: number) => void, min: number, max: number) {
     return (v: string) => {
       const n = parseInt(v);
       if (!isNaN(n) && n >= min && n <= max) setter(n);
@@ -262,9 +257,7 @@ export default function FinancialAidConfigPage() {
                   min={1}
                   max={25}
                   value={fullTime}
-                  onChange={(e) =>
-                    numInput(fullTime, setFullTime, 1, 25)(e.target.value)
-                  }
+                  onChange={(e) => numInput(setFullTime, 1, 25)(e.target.value)}
                   className="h-9"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -279,9 +272,7 @@ export default function FinancialAidConfigPage() {
                   min={1}
                   max={25}
                   value={halfTime}
-                  onChange={(e) =>
-                    numInput(halfTime, setHalfTime, 1, 25)(e.target.value)
-                  }
+                  onChange={(e) => numInput(setHalfTime, 1, 25)(e.target.value)}
                   className="h-9"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -314,9 +305,7 @@ export default function FinancialAidConfigPage() {
                 min={100}
                 max={300}
                 value={maxPct}
-                onChange={(e) =>
-                  numInput(maxPct, setMaxPct, 100, 300)(e.target.value)
-                }
+                onChange={(e) => numInput(setMaxPct, 100, 300)(e.target.value)}
                 className="h-9"
               />
               <p className="text-xs text-muted-foreground">

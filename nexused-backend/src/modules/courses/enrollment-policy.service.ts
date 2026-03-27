@@ -34,8 +34,6 @@ export class EnrollmentPolicyService {
 
   constructor(
     private readonly tenantService: TenantService,
-    @InjectRepository(CourseSection)
-    private readonly sectionRepo: Repository<CourseSection>,
     @InjectRepository(Course)
     private readonly courseRepo: Repository<Course>,
     @InjectRepository(Enrollment)
