@@ -23,7 +23,7 @@ import {
   useTypingIndicator,
   useMarkAsRead,
 } from '@/hooks/use-socket';
-import { NewMessageEvent, UserTypingEvent } from '@/lib/socket';
+import { UserTypingEvent } from '@/lib/socket';
 
 interface MessageSender {
   id: string;
@@ -120,19 +120,16 @@ export function MessageThread({
   );
 
   // Handle real-time new messages
-  const handleNewMessage = useCallback(
-    (event: NewMessageEvent) => {
-      // Refetch messages when new one arrives
-      refetch();
-      // Auto-scroll to bottom
-      setShouldAutoScroll(true);
-      // Mark as read (via socket for speed)
-      if (isConnected) {
-        markAsReadSocket(conversationId);
-      }
-    },
-    [refetch, isConnected, markAsReadSocket, conversationId],
-  );
+  const handleNewMessage = useCallback(() => {
+    // Refetch messages when new one arrives
+    refetch();
+    // Auto-scroll to bottom
+    setShouldAutoScroll(true);
+    // Mark as read (via socket for speed)
+    if (isConnected) {
+      markAsReadSocket(conversationId);
+    }
+  }, [refetch, isConnected, markAsReadSocket, conversationId]);
 
   // Handle typing indicators
   const handleTyping = useCallback((event: UserTypingEvent) => {

@@ -21,6 +21,27 @@ import {
 import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
 
+interface CourseItem {
+  id: string;
+  code: string;
+  title: string;
+  credits?: number;
+  createdAt: string;
+}
+
+interface SectionItem {
+  id: string;
+  course: CourseItem;
+  instructor: { firstName: string; lastName: string };
+}
+
+interface EnrollmentItem {
+  id: string;
+  status: string;
+  enrolledAt: string;
+  section: SectionItem;
+}
+
 type EnrollmentStatus =
   | 'pending'
   | 'active'
@@ -66,7 +87,7 @@ function EnrollmentStatusBadge({ status }: { status: EnrollmentStatus }) {
 
 /** Student view — their enrolled sections */
 function StudentCoursesView() {
-  const { data, loading } = useQuery<{ myEnrollments: any[] }>(
+  const { data, loading } = useQuery<{ myEnrollments: EnrollmentItem[] }>(
     MY_ENROLLMENTS_QUERY,
   );
 
@@ -112,7 +133,7 @@ function StudentCoursesView() {
         <>
           {/* Mobile: card list */}
           <div className="md:hidden space-y-3">
-            {sorted.map((enrollment: any) => {
+            {sorted.map((enrollment: EnrollmentItem) => {
               const { section } = enrollment;
               const courseUrl = `/courses/${section.course.id}/section/${section.id}`;
               const canOpen =
@@ -166,7 +187,7 @@ function StudentCoursesView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sorted.map((enrollment: any) => {
+                {sorted.map((enrollment: EnrollmentItem) => {
                   const { section } = enrollment;
                   const courseUrl = `/courses/${section.course.id}/section/${section.id}`;
                   return (
@@ -234,7 +255,7 @@ function StudentCoursesView() {
 
 /** Instructor / Admin view — all courses in the tenant */
 function InstructorCoursesView() {
-  const { data, loading } = useQuery<{ courses: any[] }>(COURSES_QUERY);
+  const { data, loading } = useQuery<{ courses: CourseItem[] }>(COURSES_QUERY);
 
   return (
     <div className="space-y-6">
@@ -269,7 +290,7 @@ function InstructorCoursesView() {
         <>
           {/* Mobile: card list */}
           <div className="md:hidden space-y-3">
-            {data!.courses.map((course: any) => (
+            {data!.courses.map((course: CourseItem) => (
               <Link
                 key={course.id}
                 href={`/courses/${course.id}`}
@@ -309,7 +330,7 @@ function InstructorCoursesView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data!.courses.map((course: any) => (
+                {data!.courses.map((course: CourseItem) => (
                   <TableRow key={course.id}>
                     <TableCell>
                       <Link

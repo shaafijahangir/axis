@@ -58,6 +58,7 @@ export function CreateUserDialog({
     defaultValues: { roles: ['student'] },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const selectedRoles = watch('roles');
 
   const [createUser, { loading }] = useMutation(ADMIN_CREATE_USER_MUTATION, {

@@ -42,7 +42,10 @@ export default function MessagesPage() {
     { pollInterval: 10_000, fetchPolicy: 'network-only' },
   );
 
-  const conversations = data?.myConversations ?? [];
+  const conversations = useMemo(
+    () => data?.myConversations ?? [],
+    [data?.myConversations],
+  );
 
   const activeConversation = useMemo(
     () => conversations.find((c) => c.id === conversationIdFromUrl) ?? null,

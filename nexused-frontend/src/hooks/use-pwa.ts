@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -26,21 +26,33 @@ interface UsePwaReturn {
 export function usePwa(): UsePwaReturn {
   const [installPrompt, setInstallPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
+  // Lazy initializers read synchronous browser APIs at mount time,
+  // avoiding setState calls inside effects (react-hooks/set-state-in-effect).
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(display-mode: standalone)').matches;
+  });
+  const [isOnline, setIsOnline] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return navigator.onLine;
+  });
   const [swStatus, setSwStatus] = useState<
     'loading' | 'ready' | 'error' | 'unsupported'
-  >('loading');
+  >(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator))
+      return 'unsupported';
+    return 'loading';
+  });
+
+  const swCheckedRef = useRef(false);
+  const installCheckedRef = useRef(false);
 
   // Register service worker
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    // Check if service workers are supported
-    if (!('serviceWorker' in navigator)) {
-      setSwStatus('unsupported');
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator))
       return;
-    }
+    if (swCheckedRef.current) return;
+    swCheckedRef.current = true;
 
     // Register the service worker
     navigator.serviceWorker
@@ -66,6 +78,8 @@ export function usePwa(): UsePwaReturn {
   // Handle install prompt
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (installCheckedRef.current) return;
+    installCheckedRef.current = true;
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
@@ -80,11 +94,6 @@ export function usePwa(): UsePwaReturn {
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Check if already installed (standalone mode)
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-    }
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
@@ -94,8 +103,6 @@ export function usePwa(): UsePwaReturn {
   // Handle online/offline status
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
-    setIsOnline(navigator.onLine);
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);

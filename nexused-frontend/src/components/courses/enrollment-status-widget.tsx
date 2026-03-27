@@ -140,7 +140,6 @@ export function EnrollmentStatusWidget({
   status: initialStatus,
   dropDeadline,
   withdrawDeadline,
-  courseId,
   waitlistPosition,
   waitlistConfirmBy,
   onStatusChange,

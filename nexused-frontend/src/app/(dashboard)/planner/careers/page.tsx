@@ -8,13 +8,7 @@ import {
   CAREER_SKILL_GAP_QUERY,
 } from '@/lib/graphql/queries/careers';
 import { MY_DEGREE_PROFILES_QUERY } from '@/lib/graphql/queries/planner';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -129,13 +123,7 @@ function ReadinessRing({
 
 // ─── Skill Gap Panel ─────────────────────────────────────────────────────
 
-function SkillGapPanel({
-  gap,
-  onClose,
-}: {
-  gap: CareerSkillGap;
-  onClose: () => void;
-}) {
+function SkillGapPanel({ gap }: { gap: CareerSkillGap; onClose: () => void }) {
   const statusMeta: Record<
     SkillGapCourse['status'],
     { icon: React.ReactNode; label: string; className: string }

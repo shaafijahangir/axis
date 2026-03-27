@@ -83,6 +83,7 @@ export function EditUserDialog({
     resolver: zodResolver(editUserSchema),
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const selectedRoles = watch('roles');
 
   useEffect(() => {

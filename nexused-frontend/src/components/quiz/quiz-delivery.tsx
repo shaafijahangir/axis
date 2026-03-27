@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   Clock,
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
+
 import { STUDENT_QUIZ_QUESTIONS_QUERY } from '@/lib/graphql/queries/quiz';
 import {
   START_QUIZ_MUTATION,
@@ -65,7 +65,7 @@ export function QuizDelivery({
 }: QuizDeliveryProps) {
   const [quizState, setQuizState] = useState<QuizState>('intro');
   const [submissionId, setSubmissionId] = useState<string | null>(null);
-  const [startedAt, setStartedAt] = useState<Date | null>(null);
+  const [, setStartedAt] = useState<Date | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number | undefined>>(
     {},
@@ -88,7 +88,10 @@ export function QuizDelivery({
     skip: quizState === 'intro',
   });
 
-  const questions = questionsData?.studentQuizQuestions ?? [];
+  const questions = useMemo(
+    () => questionsData?.studentQuizQuestions ?? [],
+    [questionsData?.studentQuizQuestions],
+  );
 
   const [startQuiz, { loading: startLoading }] = useMutation<{
     startQuiz: { id: string; startedAt: string; attempt: number };

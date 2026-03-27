@@ -3,7 +3,7 @@
 import { useLazyQuery, useMutation, useQuery } from '@apollo/client/react';
 import {
   FileText,
-  Image,
+  Image as ImageIcon,
   Film,
   Music,
   File,
@@ -29,7 +29,7 @@ interface FileAttachmentListProps {
 
 function getFileIcon(mimeType: string) {
   if (mimeType.startsWith('image/'))
-    return <Image className="h-4 w-4" aria-hidden="true" />;
+    return <ImageIcon className="h-4 w-4" aria-hidden="true" />;
   if (mimeType.startsWith('video/'))
     return <Film className="h-4 w-4" aria-hidden="true" />;
   if (mimeType.startsWith('audio/'))

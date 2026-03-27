@@ -288,8 +288,14 @@ export function CsvBulkEnrollDialog({
               </button>
             </div>
             <div
+              role="button"
+              tabIndex={0}
               className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-sm text-muted-foreground hover:border-primary/50 hover:bg-muted/30 transition-colors"
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ')
+                  fileInputRef.current?.click();
+              }}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();

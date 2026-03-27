@@ -12,10 +12,12 @@ export default function OfflinePage() {
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold">You're offline</h1>
+          <h1 className="text-2xl font-bold">{"You're"} offline</h1>
           <p className="text-muted-foreground">
-            It looks like you've lost your internet connection. Some features
-            may not be available until you're back online.
+            {
+              "It looks like you've lost your internet connection. Some features"
+            }
+            {" may not be available until you're back online."}
           </p>
         </div>
 
@@ -30,8 +32,10 @@ export default function OfflinePage() {
           </Button>
 
           <p className="text-sm text-muted-foreground">
-            Cached content is still available. Check your assignments and course
-            materials that you've viewed recently.
+            {
+              'Cached content is still available. Check your assignments and course'
+            }
+            {" materials that you've viewed recently."}
           </p>
         </div>
       </div>

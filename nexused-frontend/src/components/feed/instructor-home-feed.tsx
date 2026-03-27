@@ -88,7 +88,15 @@ function InstructorFeedCard({
   const visibilityRef = useFeedCardVisibility(handleVisible);
 
   return (
-    <div ref={visibilityRef} onClick={handleClick}>
+    <div
+      ref={visibilityRef}
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') handleClick();
+      }}
+    >
       <Card
         className={`border-l-4 ${config.borderColor}`}
         role="article"
@@ -146,7 +154,7 @@ export function InstructorHomeFeed() {
       if (!widgetType) return true; // Show unknown types by default
       return isWidgetEnabled(widgetType);
     });
-  }, [data?.instructorFeed, isWidgetEnabled]);
+  }, [data, isWidgetEnabled]);
 
   return (
     <div className="space-y-6">
@@ -156,7 +164,7 @@ export function InstructorHomeFeed() {
             Welcome back, {user?.firstName}
           </h1>
           <p className="text-muted-foreground">
-            Here's your teaching overview.
+            {"Here's"} your teaching overview.
           </p>
         </div>
         <WidgetSettings userRole="instructor" />

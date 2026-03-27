@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+
 import {
   Select,
   SelectContent,
@@ -27,7 +27,6 @@ import { QUIZ_QUESTIONS_QUERY } from '@/lib/graphql/queries/quiz';
 import {
   ADD_QUIZ_QUESTION_MUTATION,
   DELETE_QUIZ_QUESTION_MUTATION,
-  REORDER_QUIZ_QUESTIONS_MUTATION,
   UPDATE_QUIZ_SETTINGS_MUTATION,
 } from '@/lib/graphql/mutations/quiz';
 
@@ -416,8 +415,6 @@ function QuestionCard({ question, index, onDelete }: QuestionCardProps) {
     true_false: 'T/F',
     short_answer: 'Short Answer',
   };
-
-  const correctOption = question.options?.find((o) => o.isCorrect);
 
   return (
     <Card>

@@ -97,9 +97,9 @@ export function SubmissionHistory({
   );
 }
 
-function tryParseJson(str: string): Record<string, any> | null {
+function tryParseJson(str: string): { text?: string } | null {
   try {
-    return JSON.parse(str);
+    return JSON.parse(str) as { text?: string };
   } catch {
     return null;
   }

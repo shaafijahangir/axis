@@ -495,7 +495,8 @@ export default function LtiIntegrationsPage() {
               values.
             </li>
             <li>
-              <strong>Register the platform here</strong>: Click "Add Platform"
+              <strong>Register the platform here</strong>: Click{' '}
+              {'"Add Platform"'}
               and enter the credentials from your LMS.
             </li>
             <li>

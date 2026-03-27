@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { toast } from 'sonner';
 import { Plus, Users, FileUp, ArrowRightLeft, Trash2 } from 'lucide-react';
@@ -76,7 +76,10 @@ export function EnrollmentsTable() {
     onError: (err) => toast.error(err.message),
   });
 
-  const enrollments = data?.adminEnrollments ?? [];
+  const enrollments = useMemo(
+    () => data?.adminEnrollments ?? [],
+    [data?.adminEnrollments],
+  );
 
   const allSelected =
     enrollments.length > 0 && selectedIds.size === enrollments.length;

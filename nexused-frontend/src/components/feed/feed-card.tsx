@@ -80,7 +80,6 @@ export function FeedCard({
   subtitle,
   body,
   courseCode,
-  courseTitle,
   sectionId,
   assignmentId,
   dueAt,
@@ -172,13 +171,29 @@ export function FeedCard({
 
   if (href) {
     return (
-      <div ref={visibilityRef} onClick={handleClick}>
+      <div
+        ref={visibilityRef}
+        role="button"
+        tabIndex={0}
+        onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') handleClick();
+        }}
+      >
         <Link href={href}>{content}</Link>
       </div>
     );
   }
   return (
-    <div ref={visibilityRef} onClick={handleClick}>
+    <div
+      ref={visibilityRef}
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') handleClick();
+      }}
+    >
       {content}
     </div>
   );

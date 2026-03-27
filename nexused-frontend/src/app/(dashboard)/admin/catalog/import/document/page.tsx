@@ -159,6 +159,9 @@ function ConfidenceBadge({ value }: { value: number }) {
 
 // ─── Upload step ──────────────────────────────────────────────────────────────
 
+const ALLOWED_TYPES = ['application/pdf', 'text/plain'];
+const MAX_MB = 20;
+
 function UploadStep({
   onAnalyze,
 }: {
@@ -169,12 +172,9 @@ function UploadStep({
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const ALLOWED = ['application/pdf', 'text/plain'];
-  const MAX_MB = 20;
-
   const handleFile = useCallback((file: File) => {
     setError('');
-    if (!ALLOWED.includes(file.type)) {
+    if (!ALLOWED_TYPES.includes(file.type)) {
       setError('Only PDF and plain text (.txt) files are supported.');
       return;
     }
@@ -223,8 +223,8 @@ function UploadStep({
 
       {/* Drop zone */}
       <div
-        role="region"
-        aria-label="File upload area"
+        role="button"
+        aria-label="File upload area — click or drag and drop a file here"
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
@@ -894,14 +894,22 @@ export default function DocumentImportPage() {
             onToggleCourse={(code) =>
               setSelectedCourses((prev) => {
                 const next = new Set(prev);
-                next.has(code) ? next.delete(code) : next.add(code);
+                if (next.has(code)) {
+                  next.delete(code);
+                } else {
+                  next.add(code);
+                }
                 return next;
               })
             }
             onToggleProgram={(code) =>
               setSelectedPrograms((prev) => {
                 const next = new Set(prev);
-                next.has(code) ? next.delete(code) : next.add(code);
+                if (next.has(code)) {
+                  next.delete(code);
+                } else {
+                  next.add(code);
+                }
                 return next;
               })
             }

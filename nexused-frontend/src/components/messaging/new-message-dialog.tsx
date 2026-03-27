@@ -56,7 +56,7 @@ export function NewMessageDialog({
     },
   });
 
-  const contacts = data?.myContacts ?? [];
+  const contacts = useMemo(() => data?.myContacts ?? [], [data?.myContacts]);
   const filtered = useMemo(() => {
     if (!search.trim()) return contacts;
     const q = search.toLowerCase();

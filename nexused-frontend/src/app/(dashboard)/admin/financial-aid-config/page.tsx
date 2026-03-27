@@ -12,7 +12,7 @@
  * Config is stored in Tenant.settings.financialAidConfig (JSONB).
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import Link from 'next/link';
 import {
@@ -140,7 +140,7 @@ export default function FinancialAidConfigPage() {
   const [halfTime, setHalfTime] = useState(6);
   const [maxPct, setMaxPct] = useState(150);
   const [saved, setSaved] = useState(false);
-  const [formPopulated, setFormPopulated] = useState(false);
+  const initializedRef = useRef(false);
 
   const { data, loading } = useQuery<{
     getFinancialAidConfig: FinancialAidConfig | null;
@@ -148,16 +148,18 @@ export default function FinancialAidConfigPage() {
 
   // Populate form from existing config (useEffect to avoid onCompleted issue)
   useEffect(() => {
-    if (data && !formPopulated) {
-      setFormPopulated(true);
+    if (data && !initializedRef.current) {
+      initializedRef.current = true;
       const cfg = data.getFinancialAidConfig;
       if (cfg) {
+        /* eslint-disable react-hooks/set-state-in-effect */
         if (cfg.fullTimeThreshold != null) setFullTime(cfg.fullTimeThreshold);
         if (cfg.halfTimeThreshold != null) setHalfTime(cfg.halfTimeThreshold);
         if (cfg.maxTimeframePercent != null) setMaxPct(cfg.maxTimeframePercent);
+        /* eslint-enable react-hooks/set-state-in-effect */
       }
     }
-  }, [data, formPopulated]);
+  }, [data]);
 
   const [updateConfig, { loading: saving }] = useMutation(
     UPDATE_FINANCIAL_AID_CONFIG_MUTATION,
@@ -198,7 +200,6 @@ export default function FinancialAidConfigPage() {
     setFullTime(12);
     setHalfTime(6);
     setMaxPct(150);
-    setFormPopulated(false);
   }
 
   function numInput(

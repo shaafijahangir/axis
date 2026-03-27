@@ -18,11 +18,27 @@ export default function CourseDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
+  interface CourseDetail {
+    id: string;
+    code: string;
+    title: string;
+    description?: string;
+    credits?: number;
+  }
+
+  interface SectionItem {
+    id: string;
+    location?: string;
+    capacity?: number;
+    status: string;
+    instructor?: { id: string; firstName: string; lastName: string };
+  }
+
   const { data: courseData, loading: courseLoading } = useQuery<{
-    course: any;
+    course: CourseDetail;
   }>(COURSE_QUERY, { variables: { id } });
   const { data: sectionsData, loading: sectionsLoading } = useQuery<{
-    courseSections: any[];
+    courseSections: SectionItem[];
   }>(COURSE_SECTIONS_QUERY, { variables: { courseId: id } });
 
   if (courseLoading) {

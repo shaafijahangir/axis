@@ -19,7 +19,7 @@ export function OfflineIndicator() {
     <div className="fixed top-0 left-0 right-0 z-50 bg-orange-500 text-white px-4 py-2">
       <div className="container flex items-center justify-center gap-2 text-sm">
         <WifiOff className="w-4 h-4" />
-        <span>You're offline. Some features may be unavailable.</span>
+        <span>{"You're offline. Some features may be unavailable."}</span>
       </div>
     </div>
   );

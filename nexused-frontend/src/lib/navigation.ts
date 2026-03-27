@@ -4,7 +4,6 @@ import {
   MessageSquare,
   Users,
   GraduationCap,
-  Settings,
   Sparkles,
   BarChart3,
   Link,

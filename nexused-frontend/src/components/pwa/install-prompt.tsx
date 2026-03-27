@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, Download, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePwa } from '@/hooks/use-pwa';
@@ -16,16 +16,11 @@ import { usePwa } from '@/hooks/use-pwa';
  */
 export function InstallPrompt() {
   const { isInstallable, installApp } = usePwa();
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem('pwa-install-dismissed') !== null;
+  });
   const [isInstalling, setIsInstalling] = useState(false);
-
-  // Don't show if already dismissed in this session
-  useEffect(() => {
-    const dismissed = sessionStorage.getItem('pwa-install-dismissed');
-    if (dismissed) {
-      setIsDismissed(true);
-    }
-  }, []);
 
   if (!isInstallable || isDismissed) {
     return null;

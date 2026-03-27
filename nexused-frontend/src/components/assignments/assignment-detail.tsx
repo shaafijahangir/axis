@@ -22,8 +22,6 @@ export function AssignmentDetail({
   type,
   pointsPossible,
   dueAt,
-  unlockAt,
-  lockAt,
 }: AssignmentDetailProps) {
   const now = new Date();
   const due = dueAt ? new Date(dueAt) : null;

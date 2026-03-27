@@ -12,9 +12,7 @@ import {
   CheckCircle,
   ArrowRight,
   GraduationCap,
-  Clock,
   Bot,
-  Bell,
   Zap,
 } from 'lucide-react';
 import { MarketingNav } from '@/components/marketing/marketing-nav';

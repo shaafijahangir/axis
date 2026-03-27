@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -68,6 +68,14 @@ export function AiNewConversation({
   const [selectedAgent, setSelectedAgent] = useState<string | null>(
     preselectedAgent ?? null,
   );
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Focus textarea when agent is selected (replaces autoFocus)
+  useEffect(() => {
+    if (selectedAgent && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [selectedAgent]);
 
   const { data, loading: agentsLoading } = useQuery<{
     availableAgents: Agent[];
@@ -206,7 +214,16 @@ export function AiNewConversation({
           <div className="flex gap-2">
             <div className="flex-1">
               <Textarea
-                {...register('message')}
+                {...(() => {
+                  const { ref, ...rest } = register('message');
+                  return {
+                    ...rest,
+                    ref: (el: HTMLTextAreaElement | null) => {
+                      ref(el);
+                      textareaRef.current = el;
+                    },
+                  };
+                })()}
                 placeholder="Type your first message..."
                 className={cn(
                   'min-h-[44px] max-h-32 resize-none',
@@ -215,7 +232,6 @@ export function AiNewConversation({
                 disabled={starting}
                 onKeyDown={handleKeyDown}
                 rows={1}
-                autoFocus
               />
             </div>
             <Button

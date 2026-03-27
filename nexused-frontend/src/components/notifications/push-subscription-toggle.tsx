@@ -16,9 +16,21 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export function PushSubscriptionToggle() {
+  // Lazy initializer handles synchronous browser API checks, avoiding
+  // setState calls inside effects (react-hooks/set-state-in-effect).
   const [status, setStatus] = useState<
     'idle' | 'loading' | 'subscribed' | 'denied' | 'unsupported'
-  >('idle');
+  >(() => {
+    if (
+      typeof window === 'undefined' ||
+      !('serviceWorker' in navigator) ||
+      !('PushManager' in window)
+    ) {
+      return 'unsupported';
+    }
+    if (Notification.permission === 'denied') return 'denied';
+    return 'idle';
+  });
 
   const { data: vapidData } = useQuery<{
     vapidPublicKey: { publicKey: string | null };
@@ -26,20 +38,16 @@ export function PushSubscriptionToggle() {
 
   const [registerToken] = useMutation(REGISTER_DEVICE_TOKEN_MUTATION);
 
+  // Check if already subscribed (async — must stay in effect)
   useEffect(() => {
     if (
       typeof window === 'undefined' ||
       !('serviceWorker' in navigator) ||
       !('PushManager' in window)
-    ) {
-      setStatus('unsupported');
+    )
       return;
-    }
-    if (Notification.permission === 'denied') {
-      setStatus('denied');
-      return;
-    }
-    // Check if already subscribed
+    if (Notification.permission === 'denied') return;
+
     navigator.serviceWorker.ready
       .then((reg) => reg.pushManager.getSubscription())
       .then((sub) => {

@@ -135,32 +135,45 @@ export function AiChatThread({
     setIsAtBottom(atBottom);
   }, []);
 
-  const onSubmit = async (formData: MessageFormData) => {
-    try {
-      await sendMessage({
-        variables: {
-          input: {
-            conversationId,
-            message: formData.message,
+  const onSubmit = useCallback(
+    async (formData: MessageFormData) => {
+      try {
+        await sendMessage({
+          variables: {
+            input: {
+              conversationId,
+              message: formData.message,
+            },
           },
-        },
-      });
-      reset();
-      await refetch();
-      setIsAtBottom(true);
-      setTimeout(scrollToBottom, 100);
-    } catch (error) {
-      console.error('Failed to send message:', error);
-    }
-  };
+        });
+        reset();
+        await refetch();
+        setIsAtBottom(true);
+        setTimeout(scrollToBottom, 100);
+      } catch (error) {
+        console.error('Failed to send message:', error);
+      }
+    },
+    [sendMessage, conversationId, reset, refetch, scrollToBottom],
+  );
+
+  const handleFormSubmit = useCallback(
+    (e?: React.BaseSyntheticEvent) => {
+      void handleSubmit(onSubmit)(e);
+    },
+    [handleSubmit, onSubmit],
+  );
 
   // Handle Enter key (without shift) to submit
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(onSubmit)();
-    }
-  };
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleFormSubmit();
+      }
+    },
+    [handleFormSubmit],
+  );
 
   // Get agent display name
   const agentLabel =
@@ -274,7 +287,7 @@ export function AiChatThread({
 
       {/* Input area */}
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleFormSubmit}
         className="border-t p-4"
         aria-label={`Send message to ${agentLabel}`}
       >

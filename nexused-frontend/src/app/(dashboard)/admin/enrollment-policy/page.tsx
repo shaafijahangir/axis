@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import Link from 'next/link';
 import {
@@ -122,6 +122,7 @@ const ENFORCEMENT_META: Record<
 export default function EnrollmentPolicyPage() {
   const [form, setForm] = useState<PolicyForm>(EMPTY_FORM);
   const [saved, setSaved] = useState(false);
+  const initializedRef = useRef(false);
 
   const { data, loading } = useQuery<{ enrollmentPolicy: EnrollmentPolicy }>(
     ENROLLMENT_POLICY_QUERY,
@@ -129,7 +130,9 @@ export default function EnrollmentPolicyPage() {
   );
 
   useEffect(() => {
-    if (data?.enrollmentPolicy) {
+    if (data?.enrollmentPolicy && !initializedRef.current) {
+      initializedRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(policyToForm(data.enrollmentPolicy));
     }
   }, [data]);

@@ -93,7 +93,10 @@ export function ConversationList({
     fetchPolicy: 'network-only',
   });
 
-  const conversations = data?.myConversations ?? [];
+  const conversations = useMemo(
+    () => data?.myConversations ?? [],
+    [data?.myConversations],
+  );
 
   // Refetch callback for socket events
   const handleRefetch = useCallback(() => {

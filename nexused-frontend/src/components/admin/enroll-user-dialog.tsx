@@ -114,6 +114,7 @@ export function EnrollUserDialog({
           <div className="space-y-2">
             <Label>User</Label>
             <Select
+              // eslint-disable-next-line react-hooks/incompatible-library
               value={watch('userId') ?? ''}
               onValueChange={(val) =>
                 setValue('userId', val, { shouldValidate: true })

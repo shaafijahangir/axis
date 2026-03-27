@@ -5,7 +5,6 @@ import { useAuthStore } from '@/stores/auth.store';
 import {
   getSocket,
   disconnectSocket,
-  isSocketConnected,
   joinConversation,
   leaveConversation,
   sendTypingIndicator,
@@ -30,8 +29,9 @@ export function useSocketConnection() {
   useEffect(() => {
     if (!isAuthenticated || !user) {
       disconnectSocket();
-      setIsConnected(false);
-      return;
+      return () => {
+        setIsConnected(false);
+      };
     }
 
     const socket = getSocket();
@@ -42,12 +42,14 @@ export function useSocketConnection() {
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
 
-    // Check initial state
-    setIsConnected(socket.connected);
+    // Check initial state after subscribing to events
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (socket.connected) setIsConnected(true);
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
+      setIsConnected(false);
     };
   }, [isAuthenticated, user]);
 
@@ -79,8 +81,9 @@ export function useConversationSocket({
 
   useEffect(() => {
     if (!isAuthenticated || !conversationId) {
-      setIsJoined(false);
-      return;
+      return () => {
+        setIsJoined(false);
+      };
     }
 
     const socket = getSocket();

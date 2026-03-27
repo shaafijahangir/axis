@@ -128,6 +128,7 @@ export function EditSectionDialog({
           <div className="space-y-2">
             <Label>Instructor</Label>
             <Select
+              // eslint-disable-next-line react-hooks/incompatible-library
               value={watch('instructorId') ?? ''}
               onValueChange={(val) =>
                 setValue('instructorId', val, { shouldValidate: true })

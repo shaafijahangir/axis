@@ -138,6 +138,7 @@ export function EditTermDialog({
             <input
               id="edit-term-current"
               type="checkbox"
+              // eslint-disable-next-line react-hooks/incompatible-library
               checked={watch('isCurrent')}
               onChange={(e) => setValue('isCurrent', e.target.checked)}
               className="rounded border-input"

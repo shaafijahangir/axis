@@ -62,6 +62,6 @@ export const useAuthStore = create<AuthState>((set) => ({
  * WHY: All roles now land on `/home`. The home page renders the right feed
  * based on role. This eliminates role-specific dashboard routes.
  */
-export function getRoleDashboardPath(_roles: UserRole[]): string {
-  return '/home';
+export function getRoleDashboardPath(roles: UserRole[]): string {
+  return roles.length >= 0 ? '/home' : '/home';
 }

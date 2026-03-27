@@ -47,7 +47,7 @@ export function StudentHomeFeed() {
       if (!widgetType) return true; // Show unknown types by default
       return isWidgetEnabled(widgetType);
     });
-  }, [data?.studentFeed, isWidgetEnabled]);
+  }, [data, isWidgetEnabled]);
 
   return (
     <div className="space-y-6">
@@ -57,7 +57,7 @@ export function StudentHomeFeed() {
             Welcome back, {user?.firstName}
           </h1>
           <p className="text-muted-foreground">
-            Here's what needs your attention.
+            {"Here's"} what needs your attention.
           </p>
         </div>
         <WidgetSettings userRole="student" />
@@ -80,7 +80,14 @@ export function StudentHomeFeed() {
             <FeedCard
               key={item.id}
               id={item.id}
-              type={item.type as any}
+              type={
+                item.type as
+                  | 'deadline'
+                  | 'grade_posted'
+                  | 'announcement'
+                  | 'course_update'
+                  | 'enrollment_update'
+              }
               title={item.title}
               subtitle={item.subtitle}
               body={item.body}

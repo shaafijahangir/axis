@@ -13,7 +13,7 @@
  * Changes apply immediately to all future graduation plan views.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import Link from 'next/link';
 import {
@@ -79,12 +79,13 @@ export default function TuitionConfigPage() {
   }>(GET_TUITION_CONFIG_QUERY, { fetchPolicy: 'cache-and-network' });
 
   // Populate form once config data arrives
-  const [formPopulated, setFormPopulated] = useState(false);
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (configData && !formPopulated) {
-      setFormPopulated(true);
+    if (configData && !initializedRef.current) {
+      initializedRef.current = true;
       const cfg = configData.getTuitionConfig;
       if (cfg) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setForm({
           perCreditCost: cfg.perCreditCost?.toString() ?? '',
           flatRateMin: cfg.flatRateMin?.toString() ?? '',
@@ -95,7 +96,7 @@ export default function TuitionConfigPage() {
         });
       }
     }
-  }, [configData, formPopulated]);
+  }, [configData]);
 
   // ── Mutations ─────────────────────────────────────────────────────
   const [updateConfig, { loading: saving }] = useMutation(

@@ -30,7 +30,6 @@ export function AiMessageBubble({
   content,
   toolCalls,
   createdAt,
-  isLatest,
 }: AiMessageBubbleProps) {
   // Don't render tool_call or tool_result messages directly - they're shown via indicators
   if (role === 'tool_call' || role === 'tool_result' || role === 'system') {

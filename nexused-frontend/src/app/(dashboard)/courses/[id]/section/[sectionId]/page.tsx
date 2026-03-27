@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
@@ -80,8 +80,9 @@ export default function SectionTimelinePage() {
   );
   const isStudent = !canCreate;
 
-  // Track enrollment status locally so the widget can update without a refetch
-  const [enrollmentStatus, setEnrollmentStatus] =
+  // Track enrollment status locally so the widget can update without a refetch.
+  // Initialized from query data; the widget may override for optimistic updates.
+  const [optimisticStatus, setOptimisticStatus] =
     useState<EnrollmentStatus | null>(null);
 
   const { data: sectionData, loading: sectionLoading } = useQuery<{
@@ -101,12 +102,14 @@ export default function SectionTimelinePage() {
     skip: canCreate, // instructors don't need their own enrollment status
   });
 
-  // Initialize enrollment status from query data (separate from local optimistic state)
-  useEffect(() => {
-    if (enrollmentData?.myEnrollmentForSection) {
-      setEnrollmentStatus(enrollmentData.myEnrollmentForSection.status);
-    }
-  }, [enrollmentData]);
+  // Derive enrollment status from query data; allow optimistic override from widget.
+  const enrollmentStatus = useMemo(
+    () =>
+      optimisticStatus ??
+      enrollmentData?.myEnrollmentForSection?.status ??
+      null,
+    [optimisticStatus, enrollmentData],
+  );
 
   const { data: timelineData, loading: timelineLoading } = useQuery<{
     sectionTimeline: TimelineEntryData[];
@@ -209,7 +212,7 @@ export default function SectionTimelinePage() {
               waitlistConfirmBy={
                 enrollmentData.myEnrollmentForSection.waitlistConfirmBy
               }
-              onStatusChange={setEnrollmentStatus}
+              onStatusChange={setOptimisticStatus}
             />
           )}
 

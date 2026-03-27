@@ -536,7 +536,7 @@ function AuditLogsSection() {
   const [page, setPage] = useState(1);
   const [agentFilter, setAgentFilter] = useState<string>('all');
 
-  const { data, loading, refetch } = useQuery<{
+  const { data, loading } = useQuery<{
     aiAuditLogs: AuditLogPage;
   }>(AI_AUDIT_LOGS_QUERY, {
     variables: {

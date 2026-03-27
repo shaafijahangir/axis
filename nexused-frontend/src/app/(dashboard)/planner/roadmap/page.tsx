@@ -26,7 +26,7 @@
  *  - Right panel: semester card timeline with per-semester cost + aid badges
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useLayoutEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import Link from 'next/link';
 import {
@@ -866,10 +866,13 @@ export default function RoadmapPage() {
   const controlsRef = useRef<PlanControls>(controls);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep refs current on every render
-  activePlanRef.current = activePlan ?? null;
-  activeProfileRef.current = activeProfile ?? null;
-  controlsRef.current = controls;
+  // Keep refs current after every render (useLayoutEffect runs synchronously
+  // after DOM mutations, so the debounce callback always sees fresh values).
+  useLayoutEffect(() => {
+    activePlanRef.current = activePlan ?? null;
+    activeProfileRef.current = activeProfile ?? null;
+    controlsRef.current = controls;
+  });
 
   // ── Sync controls from active plan on first load ───────────────────
   const [synced, setSynced] = useState(false);

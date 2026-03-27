@@ -8,7 +8,7 @@
  * Shown only when: enrollment status === 'active' AND not yet dismissed.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, BookOpen, ListChecks, Bot } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -47,16 +47,10 @@ export function EnrollmentOnboardingChecklist({
 }: EnrollmentOnboardingChecklistProps) {
   const storageKey = `nexused_onboarding_dismissed_${sectionId}`;
 
-  // Start hidden to avoid flash-of-dismissed-content on first render.
-  // useEffect reveals it if the user hasn't dismissed yet.
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const alreadyDismissed = localStorage.getItem(storageKey) === 'true';
-    if (!alreadyDismissed) {
-      setVisible(true);
-    }
-  }, [storageKey]);
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(storageKey) !== 'true';
+  });
 
   const handleDismiss = () => {
     localStorage.setItem(storageKey, 'true');
