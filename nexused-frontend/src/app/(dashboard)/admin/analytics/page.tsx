@@ -145,7 +145,7 @@ function GradeDistributionBar({
           />
         ))}
       </div>
-      <div className="flex justify-between text-xs text-muted-foreground">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
         {distribution.map(({ grade, percentage }) => (
           <span key={grade} className="flex items-center gap-1">
             <span
@@ -259,7 +259,7 @@ export default function AdminAnalyticsPage() {
 
   if (loading && !data) {
     return (
-      <div className="container py-6 space-y-6">
+      <div className="py-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
           <p className="text-muted-foreground">
@@ -273,7 +273,7 @@ export default function AdminAnalyticsPage() {
 
   if (error) {
     return (
-      <div className="container py-6">
+      <div className="py-6">
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="text-destructive">Error</CardTitle>
@@ -301,7 +301,7 @@ export default function AdminAnalyticsPage() {
   } = dashboard;
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="py-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
@@ -471,9 +471,9 @@ export default function AdminAnalyticsPage() {
                     key={course.courseId}
                     className="flex items-center justify-between"
                   >
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium">{course.courseCode}</p>
-                      <p className="text-sm text-muted-foreground truncate max-w-[200px]">
+                      <p className="text-sm text-muted-foreground truncate">
                         {course.courseTitle}
                       </p>
                     </div>

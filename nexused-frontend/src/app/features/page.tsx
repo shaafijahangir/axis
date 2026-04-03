@@ -26,7 +26,7 @@ import { MarketingFooter } from '@/components/marketing/marketing-footer';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
+    <p className="mb-3 text-sm font-bold uppercase tracking-widest text-primary">
       {children}
     </p>
   );
@@ -34,7 +34,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
-    <li className="flex items-start gap-2.5 text-sm text-slate-600">
+    <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
       <CheckCircle
         className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
         aria-hidden="true"
@@ -48,29 +48,29 @@ function Bullet({ children }: { children: React.ReactNode }) {
 
 function FeaturesHero() {
   return (
-    <section className="relative overflow-hidden border-b border-slate-100 bg-white py-20 md:py-28">
+    <section className="relative overflow-hidden border-b border-border bg-background py-20 md:py-28">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10"
       >
-        <div className="absolute -top-32 -left-32 h-[500px] w-[500px] rounded-full bg-indigo-100/60 blur-3xl" />
+        <div className="absolute -top-32 -left-32 h-[500px] w-[500px] rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute -top-16 -right-32 h-[400px] w-[400px] rounded-full bg-violet-100/40 blur-3xl" />
       </div>
 
       <div className="mx-auto max-w-5xl px-6 text-center space-y-6">
-        <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700">
+        <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
           <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
           Every feature designed around one question
         </span>
 
-        <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
           Does this{' '}
           <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
             serve students?
           </span>
         </h1>
 
-        <p className="mx-auto max-w-2xl text-lg text-slate-600 leading-relaxed">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground leading-relaxed">
           NexusEd isn&apos;t a better filing cabinet. It&apos;s a platform built
           from first principles — starting with what students actually need,
           then working backward to what admins and instructors need to deliver
@@ -80,14 +80,14 @@ function FeaturesHero() {
         <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 transition-colors"
           >
             Get started
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
           <Link
             href="/about"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-7 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-7 py-3.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
           >
             Why we built this
           </Link>
@@ -115,7 +115,7 @@ function FeatureCard({
   bullets: string[];
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all space-y-5">
+    <div className="rounded-2xl border border-border bg-background p-6 shadow-sm hover:border-primary/30 hover:shadow-md transition-all space-y-5">
       <div className="flex items-start gap-4">
         <div
           className={`inline-flex shrink-0 rounded-xl p-2.5 ${iconBg} ${iconColor}`}
@@ -123,8 +123,10 @@ function FeatureCard({
           <Icon className="h-5 w-5" aria-hidden="true" />
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900">{title}</h3>
-          <p className="mt-1 text-sm text-slate-600 leading-relaxed">{body}</p>
+          <h3 className="font-semibold text-foreground">{title}</h3>
+          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+            {body}
+          </p>
         </div>
       </div>
       <ul className="space-y-2 pl-14">
@@ -221,14 +223,14 @@ const STUDENT_FEATURES = [
 
 function ForStudents() {
   return (
-    <section className="border-b border-slate-100 bg-white py-20 md:py-28">
+    <section className="border-b border-border bg-background py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6 space-y-12">
         <div>
           <SectionLabel>For Students</SectionLabel>
-          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             A platform that knows what you need before you ask.
           </h2>
-          <p className="mt-4 max-w-xl text-slate-600 leading-relaxed">
+          <p className="mt-4 max-w-xl text-muted-foreground leading-relaxed">
             Canvas shows you folders. NexusEd answers the question every student
             actually has: what do I need to do right now, and am I on track to
             graduate?
@@ -264,8 +266,8 @@ const INSTRUCTOR_FEATURES = [
   },
   {
     icon: FileText,
-    iconBg: 'bg-indigo-100',
-    iconColor: 'text-indigo-600',
+    iconBg: 'bg-primary/10',
+    iconColor: 'text-primary',
     title: 'AI-Assisted Course Creation',
     body: 'Upload a syllabus and NexusEd generates a course structure — weeks, content items, assignment suggestions — ready for instructor review and adjustment.',
     bullets: [
@@ -305,14 +307,14 @@ const INSTRUCTOR_FEATURES = [
 
 function ForInstructors() {
   return (
-    <section className="border-b border-slate-100 bg-slate-50 py-20 md:py-28">
+    <section className="border-b border-border bg-muted py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6 space-y-12">
         <div>
           <SectionLabel>For Instructors</SectionLabel>
-          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Spend your time teaching, not wrestling with the platform.
           </h2>
-          <p className="mt-4 max-w-xl text-slate-600 leading-relaxed">
+          <p className="mt-4 max-w-xl text-muted-foreground leading-relaxed">
             AI handles the setup work — content structure, catalog import,
             first-draft feedback. Instructors focus on what they&apos;re
             actually good at.
@@ -347,8 +349,8 @@ const ADMIN_FEATURES = [
   },
   {
     icon: Shield,
-    iconBg: 'bg-indigo-100',
-    iconColor: 'text-indigo-600',
+    iconBg: 'bg-primary/10',
+    iconColor: 'text-primary',
     title: 'AI Governance Console',
     body: 'Every AI action runs through a three-tier governance check before execution. Admins define which tools auto-execute, which require approval, and which are blocked.',
     bullets: [
@@ -414,14 +416,14 @@ const ADMIN_FEATURES = [
 
 function ForAdmins() {
   return (
-    <section className="border-b border-slate-100 bg-white py-20 md:py-28">
+    <section className="border-b border-border bg-background py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6 space-y-12">
         <div>
           <SectionLabel>For Administrators</SectionLabel>
-          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Institutional oversight without micromanagement tools.
           </h2>
-          <p className="mt-4 max-w-xl text-slate-600 leading-relaxed">
+          <p className="mt-4 max-w-xl text-muted-foreground leading-relaxed">
             Visibility and control — AI governance, analytics, people
             management, and configuration — without burying you in config
             screens.
@@ -432,7 +434,7 @@ function ForAdmins() {
           {ADMIN_FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all space-y-4"
+              className="rounded-2xl border border-border bg-background p-6 shadow-sm hover:border-primary/30 hover:shadow-md transition-all space-y-4"
             >
               <div
                 className={`inline-flex rounded-xl p-2.5 ${f.iconBg} ${f.iconColor}`}
@@ -440,8 +442,8 @@ function ForAdmins() {
                 <f.icon className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">{f.title}</h3>
-                <p className="mt-1 text-sm text-slate-600 leading-relaxed">
+                <h3 className="font-semibold text-foreground">{f.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
                   {f.body}
                 </p>
               </div>
@@ -533,7 +535,10 @@ function Yes() {
 }
 function No() {
   return (
-    <span className="text-slate-300 text-lg leading-none" aria-label="No">
+    <span
+      className="text-muted-foreground/40 text-lg leading-none"
+      aria-label="No"
+    >
       —
     </span>
   );
@@ -541,44 +546,44 @@ function No() {
 
 function ComparisonTable() {
   return (
-    <section className="border-b border-slate-100 bg-slate-50 py-20 md:py-28">
+    <section className="border-b border-border bg-muted py-20 md:py-28">
       <div className="mx-auto max-w-5xl px-6 space-y-10">
         <div>
           <SectionLabel>Comparison</SectionLabel>
-          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             What NexusEd does that Canvas and Brightspace don&apos;t.
           </h2>
-          <p className="mt-4 text-slate-600 leading-relaxed">
+          <p className="mt-4 text-muted-foreground leading-relaxed">
             The comparison isn&apos;t about parity — it&apos;s about what
             category of problem each platform is solving.
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
+        <div className="overflow-x-auto rounded-2xl border border-border shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="px-5 py-4 text-left font-semibold text-slate-700">
+              <tr className="border-b border-border bg-muted">
+                <th className="px-5 py-4 text-left font-semibold text-foreground">
                   Capability
                 </th>
-                <th className="px-5 py-4 text-center font-semibold text-indigo-600">
+                <th className="px-5 py-4 text-center font-semibold text-primary">
                   NexusEd
                 </th>
-                <th className="px-5 py-4 text-center font-semibold text-slate-500">
+                <th className="px-5 py-4 text-center font-semibold text-muted-foreground">
                   Canvas
                 </th>
-                <th className="px-5 py-4 text-center font-semibold text-slate-500">
+                <th className="px-5 py-4 text-center font-semibold text-muted-foreground">
                   Brightspace
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {COMPARISON.map((row) => (
                 <tr
                   key={row.capability}
-                  className="bg-white hover:bg-slate-50 transition-colors"
+                  className="bg-background hover:bg-muted transition-colors"
                 >
-                  <td className="px-5 py-3.5 text-slate-600">
+                  <td className="px-5 py-3.5 text-muted-foreground">
                     {row.capability}
                   </td>
                   <td className="px-5 py-3.5 text-center">
@@ -604,7 +609,7 @@ function ComparisonTable() {
 
 function FeaturesCTA() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-700 py-20 md:py-28">
+    <section className="relative overflow-hidden bg-primary py-20 md:py-28">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10"
@@ -614,24 +619,24 @@ function FeaturesCTA() {
       </div>
 
       <div className="mx-auto max-w-3xl px-6 text-center space-y-8">
-        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        <h2 className="text-3xl font-bold tracking-tight text-primary-foreground sm:text-4xl">
           Ready to see it in action?
         </h2>
-        <p className="text-lg text-indigo-100 leading-relaxed">
+        <p className="text-lg text-primary-foreground/80 leading-relaxed">
           Get NexusEd running in hours. No vendor lock-in. No six-figure
           implementation fees.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-semibold text-indigo-600 shadow-lg hover:opacity-95 transition-opacity"
+            className="inline-flex items-center gap-2 rounded-xl bg-background px-8 py-3.5 text-sm font-semibold text-primary shadow-lg hover:opacity-95 transition-opacity"
           >
             Start for free
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
           <Link
             href="/about"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl border border-primary-foreground/30 px-8 py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/10 transition-colors"
           >
             Read the story
           </Link>
@@ -645,7 +650,7 @@ function FeaturesCTA() {
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-background text-foreground">
       <MarketingNav />
       <main>
         <FeaturesHero />

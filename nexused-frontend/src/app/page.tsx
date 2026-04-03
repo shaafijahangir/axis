@@ -22,7 +22,7 @@ import { MarketingFooter } from '@/components/marketing/marketing-footer';
 
 function Check({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2 text-sm text-slate-600">
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <CheckCircle
         className="h-4 w-4 shrink-0 text-emerald-500"
         aria-hidden="true"
@@ -36,37 +36,37 @@ function Check({ children }: { children: React.ReactNode }) {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-white py-20 md:py-28 lg:py-32">
+    <section className="relative overflow-hidden bg-background py-20 md:py-28 lg:py-32">
       {/* Gradient blobs */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10"
       >
-        <div className="absolute -top-32 -left-32 h-[600px] w-[600px] rounded-full bg-indigo-100/70 blur-3xl" />
+        <div className="absolute -top-32 -left-32 h-[600px] w-[600px] rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute -top-16 -right-32 h-[500px] w-[500px] rounded-full bg-violet-100/50 blur-3xl" />
       </div>
 
       <div className="mx-auto max-w-6xl px-6">
         {/* Badge */}
         <div className="flex justify-center mb-8">
-          <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
             AI-Native Learning Management System
           </span>
         </div>
 
         {/* Headline */}
-        <h1 className="mx-auto max-w-4xl text-center text-5xl font-bold tracking-tight text-slate-900 sm:text-6xl lg:text-7xl">
+        <h1 className="mx-auto max-w-4xl text-center text-5xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
           The LMS that{' '}
           <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
             actually puts students first.
           </span>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-relaxed text-slate-600">
+        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-relaxed text-muted-foreground">
           NexusEd replaces filing-cabinet LMSes with an AI-first platform that
           answers the question every student actually has:{' '}
-          <strong className="font-semibold text-slate-800">
+          <strong className="font-semibold text-foreground">
             what do I need to do next?
           </strong>
         </p>
@@ -75,14 +75,14 @@ function Hero() {
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors"
           >
             Start for free
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
           <Link
             href="/about"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-8 py-3.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-8 py-3.5 text-sm font-semibold text-foreground shadow-sm hover:bg-muted transition-colors"
           >
             Read the story
           </Link>
@@ -97,16 +97,16 @@ function Hero() {
 
         {/* Product mockup */}
         <div className="relative mt-16 mx-auto max-w-4xl">
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-900/5">
+          <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-2xl ring-1 ring-foreground/5">
             {/* Browser chrome */}
-            <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
+            <div className="flex items-center gap-2 border-b border-border bg-muted px-4 py-3">
               <div className="flex gap-1.5 shrink-0">
                 <span className="h-3 w-3 rounded-full bg-red-400" />
                 <span className="h-3 w-3 rounded-full bg-amber-400" />
                 <span className="h-3 w-3 rounded-full bg-emerald-400" />
               </div>
-              <div className="flex-1 mx-3 h-6 rounded-md border border-slate-200 bg-white px-3 flex items-center">
-                <span className="text-[11px] text-slate-400">
+              <div className="flex-1 mx-3 h-6 rounded-md border border-border bg-background px-3 flex items-center">
+                <span className="text-[11px] text-muted-foreground">
                   nexused.app/dashboard
                 </span>
               </div>
@@ -115,10 +115,10 @@ function Hero() {
             {/* App layout: sidebar + main */}
             <div className="flex min-h-[280px] sm:min-h-[340px]">
               {/* Sidebar */}
-              <div className="w-12 shrink-0 border-r border-slate-100 bg-slate-50 p-2 sm:w-44 sm:p-3 space-y-1">
+              <div className="w-12 shrink-0 border-r border-border bg-muted p-2 sm:w-44 sm:p-3 space-y-1">
                 <div className="mb-4 flex items-center gap-2 px-1">
-                  <div className="h-6 w-6 rounded-md bg-indigo-600 shrink-0" />
-                  <span className="hidden sm:block text-xs font-bold text-slate-800">
+                  <div className="h-6 w-6 rounded-md bg-primary shrink-0" />
+                  <span className="hidden sm:block text-xs font-bold text-foreground">
                     NexusEd
                   </span>
                 </div>
@@ -133,8 +133,8 @@ function Hero() {
                     key={label}
                     className={`flex items-center gap-2 rounded-lg px-2 py-2 ${
                       active
-                        ? 'bg-indigo-100 text-indigo-700'
-                        : 'text-slate-500 hover:bg-slate-100'
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-accent'
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -146,15 +146,15 @@ function Hero() {
               </div>
 
               {/* Main feed */}
-              <div className="flex-1 p-4 space-y-3 bg-white">
+              <div className="flex-1 p-4 space-y-3 bg-background">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
                     <Sparkles
-                      className="h-3.5 w-3.5 text-indigo-600"
+                      className="h-3.5 w-3.5 text-primary"
                       aria-hidden="true"
                     />
                   </div>
-                  <span className="text-sm font-semibold text-slate-800">
+                  <span className="text-sm font-semibold text-foreground">
                     What matters right now
                   </span>
                 </div>
@@ -196,11 +196,11 @@ function Hero() {
                           <div
                             className={`h-1.5 w-1.5 rounded-full shrink-0 ${card.dot}`}
                           />
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                             {card.label}
                           </span>
                         </div>
-                        <p className="text-xs font-medium text-slate-800 truncate">
+                        <p className="text-xs font-medium text-foreground truncate">
                           {card.title}
                         </p>
                       </div>
@@ -208,17 +208,17 @@ function Hero() {
                   </div>
                 ))}
 
-                <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Brain
-                      className="h-3.5 w-3.5 text-indigo-600"
+                      className="h-3.5 w-3.5 text-primary"
                       aria-hidden="true"
                     />
-                    <span className="text-[10px] font-bold text-indigo-700">
+                    <span className="text-[10px] font-bold text-primary">
                       Study Coach
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     CPSC 320 is due in 3 hours. Based on your submissions,
                     breaking it into sub-problems first helps you most. Want me
                     to walk you through it?
@@ -231,7 +231,7 @@ function Hero() {
           {/* Ambient glow below mockup */}
           <div
             aria-hidden="true"
-            className="absolute -bottom-8 left-1/2 h-24 w-2/3 -translate-x-1/2 rounded-full bg-indigo-300/20 blur-2xl"
+            className="absolute -bottom-8 left-1/2 h-24 w-2/3 -translate-x-1/2 rounded-full bg-primary/20 blur-2xl"
           />
         </div>
       </div>
@@ -250,13 +250,13 @@ function StatsBar() {
   ];
 
   return (
-    <div className="border-y border-slate-100 bg-slate-50">
+    <div className="border-y border-border bg-muted">
       <div className="mx-auto max-w-7xl px-6 py-8">
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           {items.map((s) => (
             <div key={s.label} className="text-center">
-              <p className="text-2xl font-bold text-indigo-600">{s.value}</p>
-              <p className="mt-1 text-xs text-slate-500">{s.label}</p>
+              <p className="text-2xl font-bold text-primary">{s.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{s.label}</p>
             </div>
           ))}
         </div>
@@ -292,16 +292,16 @@ const PROBLEMS = [
 
 function Problems() {
   return (
-    <section className="border-b border-slate-100 bg-white py-20 md:py-28">
+    <section className="border-b border-border bg-background py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-14">
-          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
+          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-primary">
             The Problem
           </p>
-          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Modern LMSes have four fundamental flaws.
           </h2>
-          <p className="mt-4 max-w-xl text-slate-600 leading-relaxed">
+          <p className="mt-4 max-w-xl text-muted-foreground leading-relaxed">
             These aren&apos;t minor UX issues. They&apos;re structural failures
             that leave students behind every semester.
           </p>
@@ -311,15 +311,17 @@ function Problems() {
           {PROBLEMS.map((p) => (
             <div
               key={p.n}
-              className="group rounded-2xl border border-slate-200 bg-white p-7 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all"
+              className="group rounded-2xl border border-border bg-background p-7 shadow-sm hover:border-primary/30 hover:shadow-md transition-all"
             >
-              <div className="mb-4 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-sm font-bold text-indigo-600 font-mono">
+              <div className="mb-4 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/5 text-sm font-bold text-primary font-mono">
                 {p.n}
               </div>
-              <h3 className="mb-2 text-base font-semibold text-slate-900">
+              <h3 className="mb-2 text-base font-semibold text-foreground">
                 {p.title}
               </h3>
-              <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {p.body}
+              </p>
             </div>
           ))}
         </div>
@@ -377,8 +379,8 @@ const FEATURES = [
     icon: Shield,
     title: 'AI Governance Console',
     body: 'Per-action governance (auto / suggest / blocked), daily token budgets, monthly cost caps, and a full audit log.',
-    iconBg: 'bg-indigo-100',
-    iconColor: 'text-indigo-600',
+    iconBg: 'bg-primary/10',
+    iconColor: 'text-primary',
   },
   {
     icon: BarChart3,
@@ -398,16 +400,16 @@ const FEATURES = [
 
 function Features() {
   return (
-    <section className="border-b border-slate-100 bg-slate-50 py-20 md:py-28">
+    <section className="border-b border-border bg-muted py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-14">
-          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
+          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-primary">
             Features
           </p>
-          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Everything an institution needs. Nothing it doesn&apos;t.
           </h2>
-          <p className="mt-4 text-slate-600 leading-relaxed">
+          <p className="mt-4 text-muted-foreground leading-relaxed">
             Built AI-native from day one — not a traditional LMS with a chatbot
             bolted on.
           </p>
@@ -417,15 +419,17 @@ function Features() {
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all"
+              className="rounded-2xl border border-border bg-background p-6 shadow-sm hover:border-primary/30 hover:shadow-md transition-all"
             >
               <div
                 className={`mb-4 inline-flex rounded-xl p-2.5 ${f.iconBg} ${f.iconColor}`}
               >
                 <f.icon className="h-5 w-5" aria-hidden="true" />
               </div>
-              <h3 className="mb-2 font-semibold text-slate-900">{f.title}</h3>
-              <p className="text-sm leading-relaxed text-slate-600">{f.body}</p>
+              <h3 className="mb-2 font-semibold text-foreground">{f.title}</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {f.body}
+              </p>
             </div>
           ))}
         </div>
@@ -433,7 +437,7 @@ function Features() {
         <div className="mt-10 text-center">
           <Link
             href="/features"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
           >
             See the full feature breakdown
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -475,33 +479,32 @@ function HowItWorks() {
   ];
 
   return (
-    <section className="border-b border-slate-100 bg-white py-20 md:py-28">
+    <section className="border-b border-border bg-background py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-14">
-          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
+          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-primary">
             How it works
           </p>
-          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             From zero to running in a single day.
           </h2>
         </div>
 
-        <div className="grid gap-px bg-slate-200 overflow-hidden rounded-2xl sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-px bg-border overflow-hidden rounded-2xl sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s) => (
-            <div key={s.step} className="bg-white p-7 space-y-4">
+            <div key={s.step} className="bg-background p-7 space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50">
-                  <s.icon
-                    className="h-5 w-5 text-indigo-600"
-                    aria-hidden="true"
-                  />
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/5">
+                  <s.icon className="h-5 w-5 text-primary" aria-hidden="true" />
                 </div>
-                <span className="font-mono text-2xl font-bold text-slate-100">
+                <span className="font-mono text-2xl font-bold text-foreground/10">
                   {s.step}
                 </span>
               </div>
-              <h3 className="font-semibold text-slate-900">{s.title}</h3>
-              <p className="text-sm leading-relaxed text-slate-600">{s.body}</p>
+              <h3 className="font-semibold text-foreground">{s.title}</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {s.body}
+              </p>
             </div>
           ))}
         </div>
@@ -537,19 +540,19 @@ function DiffRow({
     >
       {/* Text */}
       <div className="flex-1 space-y-6 min-w-0">
-        <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+        <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
           <BadgeIcon className="h-3.5 w-3.5" aria-hidden="true" />
           {badge}
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {title}
         </h2>
-        <p className="text-slate-600 leading-relaxed">{description}</p>
+        <p className="text-muted-foreground leading-relaxed">{description}</p>
         <ul className="space-y-2.5">
           {bullets.map((b) => (
             <li
               key={b}
-              className="flex items-start gap-2.5 text-sm text-slate-600"
+              className="flex items-start gap-2.5 text-sm text-muted-foreground"
             >
               <CheckCircle
                 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
@@ -569,14 +572,14 @@ function DiffRow({
 
 function CatalogMockup() {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+    <div className="rounded-2xl border border-border bg-background p-6 shadow-lg">
       <div className="flex items-center gap-3 mb-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
-          <Brain className="h-5 w-5 text-indigo-600" aria-hidden="true" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5">
+          <Brain className="h-5 w-5 text-primary" aria-hidden="true" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-900">AI Extraction</p>
-          <p className="text-xs text-slate-500">CS_Catalog_2026.pdf</p>
+          <p className="text-sm font-semibold text-foreground">AI Extraction</p>
+          <p className="text-xs text-muted-foreground">CS_Catalog_2026.pdf</p>
         </div>
       </div>
       <div className="space-y-2.5">
@@ -603,7 +606,7 @@ function CatalogMockup() {
           </div>
         ))}
       </div>
-      <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+      <div className="mt-4 rounded-xl border border-border bg-muted px-4 py-3 text-xs text-muted-foreground">
         Ready to import — 244 courses · 12 programs · 3 need review
       </div>
     </div>
@@ -612,27 +615,24 @@ function CatalogMockup() {
 
 function EnrollmentMockup() {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg space-y-3">
+    <div className="rounded-2xl border border-border bg-background p-6 shadow-lg space-y-3">
       {/* Student message */}
-      <div className="flex items-start gap-3 rounded-xl bg-slate-100 p-4">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-300 text-xs font-bold text-slate-600">
+      <div className="flex items-start gap-3 rounded-xl bg-muted p-4">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted-foreground/30 text-xs font-bold text-muted-foreground">
           S
         </div>
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-foreground">
           I need a 3-credit elective that doesn&apos;t conflict with MATH 221 on
           MWF.
         </p>
       </div>
       {/* AI response */}
-      <div className="flex items-start gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100">
-          <Sparkles
-            className="h-3.5 w-3.5 text-indigo-600"
-            aria-hidden="true"
-          />
+      <div className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
         </div>
         <div className="space-y-2.5 text-sm">
-          <p className="text-slate-700">
+          <p className="text-foreground">
             Found 3 options that fit your schedule and count toward your CS
             electives:
           </p>
@@ -644,7 +644,7 @@ function EnrollmentMockup() {
             ].map((c) => (
               <li
                 key={c}
-                className="flex items-center gap-2 text-xs text-slate-600"
+                className="flex items-center gap-2 text-xs text-muted-foreground"
               >
                 <CheckCircle
                   className="h-3 w-3 shrink-0 text-emerald-500"
@@ -654,7 +654,7 @@ function EnrollmentMockup() {
               </li>
             ))}
           </ul>
-          <p className="text-xs font-semibold text-indigo-600">
+          <p className="text-xs font-semibold text-primary">
             Want me to enroll you in STAT 260?
           </p>
         </div>
@@ -665,7 +665,7 @@ function EnrollmentMockup() {
 
 function Differentiators() {
   return (
-    <section className="border-b border-slate-100 bg-slate-50 py-20 md:py-28">
+    <section className="border-b border-border bg-muted py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6 space-y-20">
         <DiffRow
           badge="AI Catalog Import"
@@ -761,9 +761,9 @@ const roleColorMap: Record<
   { badge: string; icon: string; bullet: string }
 > = {
   indigo: {
-    badge: 'bg-indigo-50 text-indigo-700',
-    icon: 'bg-indigo-50 text-indigo-600',
-    bullet: 'text-indigo-500',
+    badge: 'bg-primary/5 text-primary',
+    icon: 'bg-primary/5 text-primary',
+    bullet: 'text-primary',
   },
   violet: {
     badge: 'bg-violet-50 text-violet-700',
@@ -779,13 +779,13 @@ const roleColorMap: Record<
 
 function ForRoles() {
   return (
-    <section className="border-b border-slate-100 bg-white py-20 md:py-28">
+    <section className="border-b border-border bg-background py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-14">
-          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
+          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-primary">
             For everyone
           </p>
-          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Built around what each role actually needs.
           </h2>
         </div>
@@ -796,7 +796,7 @@ function ForRoles() {
             return (
               <div
                 key={r.role}
-                className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm"
+                className="rounded-2xl border border-border bg-background p-7 shadow-sm"
               >
                 <div className="mb-5 flex items-center gap-3">
                   <div
@@ -804,13 +804,13 @@ function ForRoles() {
                   >
                     <r.icon className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <h3 className="font-semibold text-slate-900">{r.role}</h3>
+                  <h3 className="font-semibold text-foreground">{r.role}</h3>
                 </div>
                 <ul className="space-y-2.5">
                   {r.perks.map((p) => (
                     <li
                       key={p}
-                      className="flex items-start gap-2.5 text-sm text-slate-600"
+                      className="flex items-start gap-2.5 text-sm text-muted-foreground"
                     >
                       <CheckCircle
                         className={`mt-0.5 h-4 w-4 shrink-0 ${colors.bullet}`}
@@ -833,7 +833,7 @@ function ForRoles() {
 
 function CTA() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-700 py-20 md:py-28">
+    <section className="relative overflow-hidden bg-primary py-20 md:py-28">
       {/* Decorative blobs */}
       <div
         aria-hidden="true"
@@ -844,10 +844,10 @@ function CTA() {
       </div>
 
       <div className="mx-auto max-w-3xl px-6 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        <h2 className="text-3xl font-bold tracking-tight text-primary-foreground sm:text-4xl">
           Your students deserve better than a filing cabinet.
         </h2>
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-indigo-100">
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-primary-foreground/80">
           Get NexusEd running in hours, not months. No vendor lock-in. No
           six-figure implementation fees.
         </p>
@@ -855,25 +855,25 @@ function CTA() {
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-semibold text-indigo-600 shadow-lg hover:opacity-95 transition-opacity"
+            className="inline-flex items-center gap-2 rounded-xl bg-background px-8 py-3.5 text-sm font-semibold text-primary shadow-lg hover:opacity-95 transition-opacity"
           >
             Start for free
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
           <Link
             href="/about"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl border border-primary-foreground/30 px-8 py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/10 transition-colors"
           >
             Read the story
           </Link>
         </div>
 
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-indigo-200">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-primary-foreground/70">
           {['Multi-tenant SaaS', 'FERPA-aware', 'Self-hosting available'].map(
             (t) => (
               <div key={t} className="flex items-center gap-2">
                 <CheckCircle
-                  className="h-4 w-4 shrink-0 text-indigo-300"
+                  className="h-4 w-4 shrink-0 text-primary-foreground/60"
                   aria-hidden="true"
                 />
                 {t}
@@ -890,7 +890,7 @@ function CTA() {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-background text-foreground">
       <MarketingNav />
       <main>
         <Hero />

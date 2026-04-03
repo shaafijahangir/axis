@@ -15,33 +15,35 @@ import { MarketingFooter } from '@/components/marketing/marketing-footer';
 
 function Story() {
   return (
-    <section className="border-b border-slate-100 bg-white py-16 md:py-24">
+    <section className="border-b border-border bg-background py-16 md:py-24">
       <div className="mx-auto max-w-3xl px-6">
         {/* Byline */}
         <div className="mb-12 flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/5">
             <GraduationCap
-              className="h-6 w-6 text-indigo-600"
+              className="h-6 w-6 text-primary"
               aria-hidden="true"
             />
           </div>
           <div>
-            <p className="font-semibold text-slate-900">
+            <p className="font-semibold text-foreground">
               The story behind NexusEd
             </p>
-            <p className="text-sm text-slate-500">Written by the founder</p>
+            <p className="text-sm text-muted-foreground">
+              Written by the founder
+            </p>
           </div>
         </div>
 
-        <h1 className="mb-6 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+        <h1 className="mb-6 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           Built by someone who{' '}
           <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
             lived the problem.
           </span>
         </h1>
 
-        <div className="space-y-5 text-slate-600 leading-relaxed">
-          <p className="text-lg text-slate-700">
+        <div className="space-y-5 text-muted-foreground leading-relaxed">
+          <p className="text-lg text-foreground/90">
             NexusEd was born out of frustration — the real kind, not the startup
             pitch kind.
           </p>
@@ -64,12 +66,12 @@ function Story() {
             track to graduate.
           </p>
 
-          <blockquote className="my-10 border-l-4 border-indigo-400 bg-indigo-50 pl-6 pr-4 py-5 rounded-r-2xl">
+          <blockquote className="my-10 border-l-4 border-primary bg-primary/5 pl-6 pr-4 py-5 rounded-r-2xl">
             <Quote
-              className="mb-3 h-6 w-6 text-indigo-300"
+              className="mb-3 h-6 w-6 text-primary/40"
               aria-hidden="true"
             />
-            <p className="text-lg font-medium text-slate-800 leading-relaxed">
+            <p className="text-lg font-medium text-foreground leading-relaxed">
               The frustration isn&apos;t just about software. Software can be
               replaced. The deeper problem is a support system that exists on
               paper but fails in practice.
@@ -95,7 +97,7 @@ function Story() {
             them clarity.
           </p>
 
-          <h2 className="mt-12 mb-4 text-xl font-bold text-slate-900">
+          <h2 className="mt-12 mb-4 text-xl font-bold text-foreground">
             The institutional wall
           </h2>
 
@@ -117,12 +119,12 @@ function Story() {
             share.
           </p>
 
-          <blockquote className="my-10 border-l-4 border-indigo-400 bg-indigo-50 pl-6 pr-4 py-5 rounded-r-2xl">
+          <blockquote className="my-10 border-l-4 border-primary bg-primary/5 pl-6 pr-4 py-5 rounded-r-2xl">
             <Quote
-              className="mb-3 h-6 w-6 text-indigo-300"
+              className="mb-3 h-6 w-6 text-primary/40"
               aria-hidden="true"
             />
-            <p className="text-lg font-medium text-slate-800 leading-relaxed">
+            <p className="text-lg font-medium text-foreground leading-relaxed">
               Waiting for institutions to change is not a viable strategy. They
               move on decade-long timescales. Students graduate in four years.
               The math doesn&apos;t work.
@@ -136,7 +138,7 @@ function Story() {
             no one answering.
           </p>
 
-          <p className="text-slate-700 font-medium">
+          <p className="text-foreground/90 font-medium">
             NexusEd is the answer to a question no institution bothered to ask:
             what would it look like if we actually built technology that served
             students first?
@@ -152,8 +154,8 @@ function Story() {
 const VALUES = [
   {
     icon: Target,
-    iconBg: 'bg-indigo-50',
-    iconColor: 'text-indigo-600',
+    iconBg: 'bg-primary/5',
+    iconColor: 'text-primary',
     title: 'Students first. Always.',
     body: 'Every feature decision starts with one question: does this serve students? Not does it make administration easier, not does it add to the feature list — does it make a student more likely to understand their path, complete their work, and graduate on time.',
   },
@@ -175,13 +177,13 @@ const VALUES = [
 
 function Values() {
   return (
-    <section className="border-b border-slate-100 bg-slate-50 py-20 md:py-28">
+    <section className="border-b border-border bg-muted py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6 space-y-12">
         <div>
-          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
+          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-primary">
             What we believe
           </p>
-          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             The principles that drive every decision.
           </h2>
         </div>
@@ -190,17 +192,19 @@ function Values() {
           {VALUES.map((v) => (
             <div
               key={v.title}
-              className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm space-y-4"
+              className="rounded-2xl border border-border bg-background p-7 shadow-sm space-y-4"
             >
               <div
                 className={`inline-flex rounded-xl p-3 ${v.iconBg} ${v.iconColor}`}
               >
                 <v.icon className="h-5 w-5" aria-hidden="true" />
               </div>
-              <h3 className="font-semibold text-slate-900 text-lg leading-snug">
+              <h3 className="font-semibold text-foreground text-lg leading-snug">
                 {v.title}
               </h3>
-              <p className="text-sm text-slate-600 leading-relaxed">{v.body}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {v.body}
+              </p>
             </div>
           ))}
         </div>
@@ -213,13 +217,13 @@ function Values() {
 
 function Vision() {
   return (
-    <section className="border-b border-slate-100 bg-white py-20 md:py-28">
+    <section className="border-b border-border bg-background py-20 md:py-28">
       <div className="mx-auto max-w-3xl px-6 space-y-8">
         <div>
-          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-indigo-600">
+          <p className="mb-3 text-sm font-bold uppercase tracking-widest text-primary">
             Long-term vision
           </p>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Not a better Brightspace.{' '}
             <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
               Something different.
@@ -227,7 +231,7 @@ function Vision() {
           </h2>
         </div>
 
-        <div className="space-y-5 text-slate-600 leading-relaxed">
+        <div className="space-y-5 text-muted-foreground leading-relaxed">
           <p>
             NexusEd is not trying to out-feature Canvas or compete on
             integrations with Brightspace. Those platforms had decades and
@@ -238,10 +242,10 @@ function Vision() {
             actually know what I need to do, I&apos;m not stressed about whether
             I&apos;m on track, and I feel supported.&rdquo;
           </p>
-          <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6">
-            <p className="text-slate-800 font-medium leading-relaxed">
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
+            <p className="text-foreground font-medium leading-relaxed">
               A revolutionary, agentic LMS that{' '}
-              <strong className="text-indigo-700">
+              <strong className="text-primary">
                 boosts growth and eliminates noise.
               </strong>{' '}
               Every feature decision, every design choice, every line of code
@@ -265,17 +269,17 @@ function Vision() {
 
 function Contact() {
   return (
-    <section className="border-b border-slate-100 bg-slate-50 py-20 md:py-28">
+    <section className="border-b border-border bg-muted py-20 md:py-28">
       <div className="mx-auto max-w-3xl px-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm md:p-12 space-y-8">
+        <div className="rounded-2xl border border-border bg-background p-8 shadow-sm md:p-12 space-y-8">
           <div className="space-y-4">
-            <div className="inline-flex rounded-xl bg-indigo-50 p-3">
-              <Mail className="h-5 w-5 text-indigo-600" aria-hidden="true" />
+            <div className="inline-flex rounded-xl bg-primary/5 p-3">
+              <Mail className="h-5 w-5 text-primary" aria-hidden="true" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">
               Interested in NexusEd for your institution?
             </h2>
-            <p className="text-slate-600 leading-relaxed">
+            <p className="text-muted-foreground leading-relaxed">
               We&apos;re in early access. If you represent a college,
               university, or online program and want to talk about what NexusEd
               could do for your students, reach out directly.
@@ -285,34 +289,34 @@ function Contact() {
           <div className="space-y-3">
             <a
               href="mailto:hello@nexused.app"
-              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 hover:border-indigo-200 hover:bg-indigo-50 transition-colors group"
+              className="flex items-center gap-3 rounded-xl border border-border bg-muted px-5 py-4 hover:border-primary/30 hover:bg-primary/5 transition-colors group"
             >
               <Mail
-                className="h-4 w-4 text-slate-400 group-hover:text-indigo-500 transition-colors shrink-0"
+                className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0"
                 aria-hidden="true"
               />
-              <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-700 transition-colors">
+              <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
                 hello@nexused.app
               </span>
             </a>
-            <p className="text-xs text-slate-500 px-1">
+            <p className="text-xs text-muted-foreground px-1">
               We respond to every institutional inquiry within 48 hours. No
               sales pipeline. No SDR. A real conversation with someone who built
               this.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-t border-slate-100 pt-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-t border-border pt-6">
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
             >
               Try it yourself
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
             <Link
               href="/features"
-              className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
               See all features →
             </Link>
@@ -327,7 +331,7 @@ function Contact() {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-background text-foreground">
       <MarketingNav />
       <main>
         <Story />
