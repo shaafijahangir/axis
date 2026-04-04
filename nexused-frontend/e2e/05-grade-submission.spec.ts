@@ -65,7 +65,7 @@ test.describe('Grade Submission Flow', () => {
       );
       const submissionsHeading = page.getByRole('heading', { name: /submissions|grade/i });
 
-      const hasSubmissionsUI =
+      const _hasSubmissionsUI =
         (await submissionsArea.isVisible().catch(() => false)) ||
         (await submissionsHeading.isVisible().catch(() => false));
 
@@ -256,7 +256,7 @@ test.describe('Grade Submission Flow', () => {
       );
       const scoreText = page.getByText(/\d+\s*(\/|out of|points)/i);
 
-      const hasGrade =
+      const _hasGrade =
         (await gradeDisplay.isVisible().catch(() => false)) ||
         (await scoreText.isVisible().catch(() => false));
 
@@ -281,7 +281,7 @@ test.describe('Grade Submission Flow', () => {
       }
 
       // Look for feedback section
-      const feedbackSection = page.locator(
+      const _feedbackSection = page.locator(
         '[data-testid="feedback"], .feedback, [data-testid="instructor-feedback"]'
       );
 

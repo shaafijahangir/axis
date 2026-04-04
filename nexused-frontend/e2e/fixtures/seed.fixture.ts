@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/rules-of-hooks */
+// Playwright fixture functions receive `use` as a parameter — this is not a React hook.
 import { test as base } from './auth.fixture';
 
 /**

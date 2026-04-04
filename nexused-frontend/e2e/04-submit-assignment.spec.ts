@@ -186,7 +186,7 @@ test.describe('Submit Assignment Flow', () => {
         '[data-testid="grading-list"], [data-testid="submissions-list"]'
       );
 
-      const hasInstructorView =
+      const _hasInstructorView =
         (await submissionsHeading.isVisible().catch(() => false)) ||
         (await gradingUI.isVisible().catch(() => false));
 

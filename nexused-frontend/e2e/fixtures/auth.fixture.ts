@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/rules-of-hooks */
+// Playwright fixture functions receive `use` as a parameter — this is not a React hook.
 import { test as base, expect } from '@playwright/test';
 
 /**
@@ -84,7 +86,7 @@ export const test = base.extend<AuthFixtures>({
     await use(loginAs);
   },
 
-  loginAsStudent: async ({ page, loginAs }, use) => {
+  loginAsStudent: async ({ page: _page, loginAs }, use) => {
     const login = async () => {
       await loginAs(TEST_USERS.student.email, TEST_USERS.student.password);
       return TEST_USERS.student;
@@ -92,7 +94,7 @@ export const test = base.extend<AuthFixtures>({
     await use(login);
   },
 
-  loginAsInstructor: async ({ page, loginAs }, use) => {
+  loginAsInstructor: async ({ page: _page, loginAs }, use) => {
     const login = async () => {
       await loginAs(TEST_USERS.instructor.email, TEST_USERS.instructor.password);
       return TEST_USERS.instructor;
@@ -100,7 +102,7 @@ export const test = base.extend<AuthFixtures>({
     await use(login);
   },
 
-  loginAsAdmin: async ({ page, loginAs }, use) => {
+  loginAsAdmin: async ({ page: _page, loginAs }, use) => {
     const login = async () => {
       await loginAs(TEST_USERS.admin.email, TEST_USERS.admin.password);
       return TEST_USERS.admin;

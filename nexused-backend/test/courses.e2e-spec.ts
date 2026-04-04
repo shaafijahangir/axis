@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+// supertest's response.body is typed as `any`; unsafe-member-access is unavoidable in integration tests.
 /**
  * Integration Tests: CoursesResolver
  *
@@ -22,7 +24,13 @@ import {
   closeTestApp,
   isDatabaseAvailable,
 } from './helpers/test-app';
-import { UserRole } from '../src/database/entities';
+import {
+  UserRole,
+  Tenant,
+  Course,
+  AcademicTerm,
+  CourseSection,
+} from '../src/database/entities';
 
 // Check database availability before running tests
 let dbAvailable = false;
@@ -173,13 +181,13 @@ describeIf(true)('CoursesResolver (e2e)', () => {
   // ==========================================================================
 
   describe('Authorization (Role-based)', () => {
-    let tenant: any;
+    let tenant: Tenant;
     let student: TestUser;
     let instructor: TestUser;
     let admin: TestUser;
-    let course: any;
-    let term: any;
-    let section: any;
+    let course: Course;
+    let term: AcademicTerm;
+    let section: CourseSection;
 
     beforeEach(async () => {
       if (!dbAvailable) return;
@@ -194,7 +202,9 @@ describeIf(true)('CoursesResolver (e2e)', () => {
       term = await ctx.createTestTerm(tenant);
 
       // Need to get actual user entity for section creation
-      const instructorUser = await ctx.userRepo.findOneBy({ id: instructor.id });
+      const instructorUser = await ctx.userRepo.findOneBy({
+        id: instructor.id,
+      });
       section = await ctx.createTestSection(course, instructorUser!, term);
     });
 
@@ -330,12 +340,12 @@ describeIf(true)('CoursesResolver (e2e)', () => {
   // ==========================================================================
 
   describe('Tenant Scoping', () => {
-    let tenantA: any;
-    let tenantB: any;
+    let tenantA: Tenant;
+    let tenantB: Tenant;
     let userA: TestUser;
     let userB: TestUser;
-    let courseA: any;
-    let courseB: any;
+    let courseA: Course;
+    let courseB: Course;
 
     beforeEach(async () => {
       if (!dbAvailable) return;
@@ -527,7 +537,9 @@ describeIf(true)('CoursesResolver (e2e)', () => {
       course = await ctx.createTestCourse(tenant);
       term = await ctx.createTestTerm(tenant);
 
-      const instructorUser = await ctx.userRepo.findOneBy({ id: instructor.id });
+      const instructorUser = await ctx.userRepo.findOneBy({
+        id: instructor.id,
+      });
       section = await ctx.createTestSection(course, instructorUser!, term);
     });
 

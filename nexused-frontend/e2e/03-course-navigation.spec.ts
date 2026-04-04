@@ -124,7 +124,7 @@ test.describe('Course Navigation Flow', () => {
 
         // Instructor should see actions like "Create Assignment" or "Create Content"
         // These might be buttons or links
-        const instructorActions = page.locator(
+        const _instructorActions = page.locator(
           'button:has-text("Create"), a:has-text("Create"), [data-testid="create-button"]'
         );
 

@@ -12,7 +12,14 @@
  * tests will be skipped if no database is available.
  */
 
-import { Client } from 'pg';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { Client } = require('pg') as {
+  Client: new (config: Record<string, unknown>) => {
+    connect(): Promise<void>;
+    end(): Promise<void>;
+  };
+};
+import type { Request } from 'express';
 
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -193,7 +200,7 @@ export async function createTestApp(): Promise<TestContext> {
         sortSchema: true,
         playground: false,
         path: '/api/graphql',
-        context: ({ req }) => ({ req }),
+        context: ({ req }: { req: Request }) => ({ req }),
       }),
       TypeOrmModule.forFeature(entities),
       AuthModule,
@@ -269,7 +276,7 @@ export async function createTestApp(): Promise<TestContext> {
       subscriptionPlan: SubscriptionPlan.BASIC,
       settings: {},
     });
-    return tenantRepo.save(tenant) as Promise<Tenant>;
+    return tenantRepo.save(tenant);
   };
 
   // Utility: Create a test user with JWT token
@@ -288,7 +295,7 @@ export async function createTestApp(): Promise<TestContext> {
       status: UserStatus.ACTIVE,
       passwordHash: 'hashed',
     });
-    const savedUser = (await userRepo.save(user)) as User;
+    const savedUser = await userRepo.save(user);
 
     const testUser: TestUser = {
       id: savedUser.id,
@@ -311,7 +318,7 @@ export async function createTestApp(): Promise<TestContext> {
       title: `Test Course ${id}`,
       description: 'A test course',
     });
-    return courseRepo.save(course) as Promise<Course>;
+    return courseRepo.save(course);
   };
 
   // Utility: Create a test term
@@ -340,7 +347,7 @@ export async function createTestApp(): Promise<TestContext> {
       status: SectionStatus.ACTIVE,
       capacity: 30,
     });
-    return sectionRepo.save(section) as Promise<CourseSection>;
+    return sectionRepo.save(section);
   };
 
   // Utility: Create a test enrollment
@@ -374,7 +381,7 @@ export async function createTestApp(): Promise<TestContext> {
       pointsPossible: 100,
       dueAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
-    return assignmentRepo.save(assignment) as Promise<Assignment>;
+    return assignmentRepo.save(assignment);
   };
 
   // Utility: Clean all data from database
