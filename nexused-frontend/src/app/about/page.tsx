@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   GraduationCap,
@@ -11,11 +12,17 @@ import {
 import { MarketingNav } from '@/components/marketing/marketing-nav';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
 
+export const metadata: Metadata = {
+  title: 'Our Story — NexusEd',
+  description:
+    'NexusEd was built by a student who lived the problem. This is the story of why filing-cabinet LMSes fail students — and what we built instead.',
+};
+
 // ─── Story ────────────────────────────────────────────────────────────────────
 
 function Story() {
   return (
-    <section className="border-b border-border bg-background py-16 md:py-24">
+    <section className="border-b border-border bg-background pt-16 pb-16 md:pt-20 md:pb-24 lg:pt-24">
       <div className="mx-auto max-w-3xl px-6">
         {/* Byline */}
         <div className="mb-12 flex items-center gap-4">

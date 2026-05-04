@@ -8,18 +8,18 @@ const PRODUCT_LINKS = [
   { href: '/register', label: 'Get started' },
 ];
 
-const INSTITUTION_ITEMS = [
-  'AI Catalog Import',
-  'Graduation Planning',
-  'LTI 1.3 Integration',
-  'Multi-tenant SaaS',
+const INSTITUTION_LINKS = [
+  { href: '/features', label: 'AI Catalog Import' },
+  { href: '/features', label: 'Graduation Planning' },
+  { href: '/features', label: 'LTI 1.3 Integration' },
+  { href: '/features', label: 'Multi-tenant SaaS' },
 ];
 
-const STUDENT_ITEMS = [
-  'AI Study Coach',
-  'Smart Enrollment',
-  'Graduation Roadmap',
-  'Feed-first Dashboard',
+const STUDENT_LINKS = [
+  { href: '/features', label: 'AI Study Coach' },
+  { href: '/features', label: 'Smart Enrollment' },
+  { href: '/features', label: 'Graduation Roadmap' },
+  { href: '/features', label: 'Feed-first Dashboard' },
 ];
 
 export function MarketingFooter() {
@@ -69,9 +69,14 @@ export function MarketingFooter() {
               For Institutions
             </h3>
             <ul className="space-y-2.5">
-              {INSTITUTION_ITEMS.map((item) => (
-                <li key={item} className="text-sm text-muted-foreground">
-                  {item}
+              {INSTITUTION_LINKS.map((l) => (
+                <li key={l.label}>
+                  <Link
+                    href={l.href}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    {l.label}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -83,9 +88,14 @@ export function MarketingFooter() {
               For Students
             </h3>
             <ul className="space-y-2.5">
-              {STUDENT_ITEMS.map((item) => (
-                <li key={item} className="text-sm text-muted-foreground">
-                  {item}
+              {STUDENT_LINKS.map((l) => (
+                <li key={l.label}>
+                  <Link
+                    href={l.href}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    {l.label}
+                  </Link>
                 </li>
               ))}
             </ul>

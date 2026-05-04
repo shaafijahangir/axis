@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -21,6 +22,12 @@ import {
 } from 'lucide-react';
 import { MarketingNav } from '@/components/marketing/marketing-nav';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
+
+export const metadata: Metadata = {
+  title: 'Features — NexusEd',
+  description:
+    'Every feature in NexusEd is built around one question: does this serve students? AI study coach, graduation roadmap, catalog import, and more.',
+};
 
 // ─── Shared ────────────────────────────────────────────────────────────────────
 
@@ -48,7 +55,7 @@ function Bullet({ children }: { children: React.ReactNode }) {
 
 function FeaturesHero() {
   return (
-    <section className="relative overflow-hidden border-b border-border bg-background py-20 md:py-28">
+    <section className="relative overflow-hidden border-b border-border bg-background pt-16 pb-20 md:pt-20 md:pb-28 lg:pt-24">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10"
