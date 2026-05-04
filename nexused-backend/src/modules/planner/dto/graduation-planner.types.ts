@@ -100,7 +100,7 @@ export class PlanDiff {
    * e.g. "+2 semesters (Fall 2028 → Spring 2029)"
    * Absent when the graduation date is unchanged.
    */
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   graduationDateChange?: string;
 }
 
@@ -137,7 +137,7 @@ export class GenerateGraduationPlanInput {
   maxCreditsPerSemester?: number;
 
   /** First term to start scheduling: 'fall' | 'spring' | 'summer'. Defaults to next upcoming term. */
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   startTerm?: string;
@@ -149,7 +149,7 @@ export class GenerateGraduationPlanInput {
   startYear?: number;
 
   /** Whether to schedule courses in summer terms. Default: false. */
-  @Field({ nullable: true })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   includeSummer?: boolean;
@@ -210,7 +210,7 @@ export class PlannedCourse {
    *   — this course has historically filled to >80% capacity; enroll early
    * Null when no notable availability concern.
    */
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   availabilityWarning?: string | null;
 }
 

@@ -38,6 +38,7 @@ export class EmailService implements OnModuleInit {
         'RESEND_API_KEY not set — email notifications disabled. Set it in .env to enable.',
       );
       this.enabled = false;
+      return;
     }
 
     this.resend = new Resend(apiKey);

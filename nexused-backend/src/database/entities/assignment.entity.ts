@@ -99,7 +99,7 @@ export class Assignment extends TenantScopedEntity {
    * all_at_once: all questions visible simultaneously (default for short quizzes).
    * one_at_a_time: one question per screen with Next/Prev (better for long exams).
    */
-  @Field({ nullable: true })
-  @Column({ nullable: true, default: 'all_at_once' })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', nullable: true, default: 'all_at_once' })
   displayMode: string | null;
 }

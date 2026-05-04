@@ -23,8 +23,8 @@ export class DiscussionReply extends TenantScopedEntity {
    * Top-level replies have null parentReplyId. Replies-to-replies reference
    * the immediate parent. We avoid deep recursive trees for simplicity.
    */
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   parentReplyId: string | null;
 
   @Field()

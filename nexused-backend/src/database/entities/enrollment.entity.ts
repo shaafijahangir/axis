@@ -93,7 +93,7 @@ export class Enrollment extends TenantScopedEntity {
    * ENROLL-010: Deadline by which a promoted student must confirm enrollment.
    * null when not in confirmation window. Set when promoted from waitlist.
    */
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   @Column({ type: 'timestamp', nullable: true })
   waitlistConfirmBy: Date | null;
 }

@@ -37,7 +37,7 @@ export class DeviceToken extends TenantScopedEntity {
   @Column({ type: 'text' })
   token: string;
 
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => Date, { nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   lastUsedAt: Date | null;
 }

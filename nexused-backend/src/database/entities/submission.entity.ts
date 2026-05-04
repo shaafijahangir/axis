@@ -99,7 +99,7 @@ export class Submission extends TenantScopedEntity {
    * Set when the student starts the quiz (startQuiz mutation).
    * Used to enforce timeLimitMinutes on submitQuiz.
    */
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   @Column({ type: 'timestamp', nullable: true })
   startedAt: Date | null;
 }

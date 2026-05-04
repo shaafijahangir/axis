@@ -52,8 +52,8 @@ export class FileUpload extends TenantScopedEntity {
    * ID of the entity this file belongs to (submissionId, contentId, etc).
    * Nullable because the file may be uploaded before the parent entity is saved.
    */
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   contextId: string | null;
 
   @Field()

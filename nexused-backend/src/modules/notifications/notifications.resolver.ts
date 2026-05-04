@@ -24,7 +24,7 @@ import { WebPushService } from './web-push.service';
 
 @ObjectType()
 class VapidPublicKey {
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   publicKey: string | null;
 }
 

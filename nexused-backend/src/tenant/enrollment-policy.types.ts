@@ -36,10 +36,10 @@ export class EnrollmentPolicy {
   creditHourLimitPerTerm: number | null;
 
   /** ISO 8601 date-time string. null = no window restriction. */
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   enrollmentWindowStart: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   enrollmentWindowEnd: string | null;
 
   /** ENROLL-010: Whether sections with capacity use waitlisting instead of hard rejection. */
@@ -73,12 +73,12 @@ export class UpdateEnrollmentPolicyInput {
   @Max(30)
   creditHourLimitPerTerm?: number | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   enrollmentWindowStart?: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   enrollmentWindowEnd?: string | null;
