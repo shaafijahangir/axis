@@ -21,7 +21,7 @@ export const AVAILABLE_AGENTS_QUERY = gql`
  */
 export const MY_AI_CONVERSATIONS_QUERY = gql`
   query MyAiConversations {
-    myConversations {
+    myAiConversations {
       id
       agentType
       courseId
@@ -38,7 +38,7 @@ export const MY_AI_CONVERSATIONS_QUERY = gql`
  */
 export const AI_CONVERSATION_MESSAGES_QUERY = gql`
   query AiConversationMessages($conversationId: String!) {
-    conversationMessages(conversationId: $conversationId) {
+    aiMessages(conversationId: $conversationId) {
       id
       conversationId
       role

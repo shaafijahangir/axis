@@ -122,7 +122,9 @@ export class AiResolver {
   }
 
   @Query(() => [AiConversation])
-  async myConversations(@CurrentUser() user: User): Promise<AiConversation[]> {
+  async myAiConversations(
+    @CurrentUser() user: User,
+  ): Promise<AiConversation[]> {
     return this.conversationRepo.find({
       where: { userId: user.id, tenantId: user.tenantId },
       order: { updatedAt: 'DESC' },
@@ -130,7 +132,7 @@ export class AiResolver {
   }
 
   @Query(() => [AiMessage])
-  async conversationMessages(
+  async aiMessages(
     @Args('conversationId') conversationId: string,
   ): Promise<AiMessage[]> {
     return this.messageRepo.find({

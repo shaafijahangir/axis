@@ -96,12 +96,12 @@ export function AiConversationList({
   onSelectConversation,
   onNewConversation,
 }: AiConversationListProps) {
-  const { data, loading } = useQuery<{ myConversations: Conversation[] }>(
+  const { data, loading } = useQuery<{ myAiConversations: Conversation[] }>(
     MY_AI_CONVERSATIONS_QUERY,
     { pollInterval: 10_000, fetchPolicy: 'network-only' },
   );
 
-  const conversations = data?.myConversations ?? [];
+  const conversations = data?.myAiConversations ?? [];
 
   return (
     <div className="flex h-full flex-col">

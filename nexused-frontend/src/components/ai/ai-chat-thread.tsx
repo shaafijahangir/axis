@@ -82,7 +82,7 @@ export function AiChatThread({
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   const { data, loading, refetch } = useQuery<{
-    conversationMessages: Message[];
+    aiMessages: Message[];
   }>(AI_CONVERSATION_MESSAGES_QUERY, {
     variables: { conversationId },
     pollInterval: 5000,
@@ -102,7 +102,7 @@ export function AiChatThread({
     resolver: zodResolver(messageSchema),
   });
 
-  const messages = data?.conversationMessages ?? [];
+  const messages = data?.aiMessages ?? [];
 
   // Group messages by date for separators
   const groupedMessages = messages.reduce<Record<string, Message[]>>(
