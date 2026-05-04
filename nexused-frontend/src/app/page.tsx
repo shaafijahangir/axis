@@ -36,7 +36,7 @@ function Check({ children }: { children: React.ReactNode }) {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-background py-20 md:py-28 lg:py-32">
+    <section className="relative overflow-hidden bg-background pt-16 pb-20 md:pt-20 md:pb-28 lg:pt-24 lg:pb-32">
       {/* Gradient blobs */}
       <div
         aria-hidden="true"
@@ -490,9 +490,12 @@ function HowItWorks() {
           </h2>
         </div>
 
-        <div className="grid gap-px bg-border overflow-hidden rounded-2xl sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s) => (
-            <div key={s.step} className="bg-background p-7 space-y-4">
+            <div
+              key={s.step}
+              className="rounded-2xl border border-border bg-background p-7 space-y-4"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/5">
                   <s.icon className="h-5 w-5 text-primary" aria-hidden="true" />
