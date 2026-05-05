@@ -444,21 +444,18 @@ export class AnalyticsService {
    * Get top courses by enrollment.
    */
   async getTopCourses(tenantId: string, limit = 10): Promise<CourseStats[]> {
-    const results = await this.courseRepo
+    // WHY explicit JOIN syntax: Course/CourseSection/Enrollment entities don't
+    // define bidirectional OneToMany relations (they're not needed elsewhere),
+    // so TypeORM relation-path joins fail. Use entity-class + ON-clause form.
+    const enrollmentStats = await this.courseRepo
       .createQueryBuilder('course')
-      .leftJoin('course.sections', 'section')
-      .leftJoin('section.enrollments', 'enrollment')
-      .leftJoin('enrollment.submissions', 'submission')
-      .leftJoin('submission.assignment', 'assignment')
+      .leftJoin(CourseSection, 'section', 'section."courseId" = course.id')
+      .leftJoin(Enrollment, 'enrollment', 'enrollment."sectionId" = section.id')
       .select('course.id', 'courseId')
       .addSelect('course.code', 'courseCode')
       .addSelect('course.title', 'courseTitle')
       .addSelect('COUNT(DISTINCT section.id)', 'sections')
       .addSelect('COUNT(DISTINCT enrollment.id)', 'enrollments')
-      .addSelect(
-        'AVG((submission.score / NULLIF(assignment.pointsPossible, 0)) * 100)',
-        'avgGrade',
-      )
       .where('course.tenantId = :tenantId', { tenantId })
       .groupBy('course.id')
       .addGroupBy('course.code')
@@ -471,16 +468,38 @@ export class AnalyticsService {
         courseTitle: string;
         sections: string;
         enrollments: string;
-        avgGrade: string | null;
       }>();
 
-    return results.map((r) => ({
+    if (enrollmentStats.length === 0) return [];
+
+    // Grade average via submission → assignment → section (all have defined relations)
+    const courseIds = enrollmentStats.map((r) => r.courseId);
+    const gradeStats = await this.submissionRepo
+      .createQueryBuilder('submission')
+      .leftJoin('submission.assignment', 'assignment')
+      .leftJoin('assignment.section', 'section')
+      .select('section.courseId', 'courseId')
+      .addSelect(
+        'AVG((submission.score / NULLIF(assignment.pointsPossible, 0)) * 100)',
+        'avgGrade',
+      )
+      .where('submission.tenantId = :tenantId', { tenantId })
+      .andWhere('submission.score IS NOT NULL')
+      .andWhere('section.courseId IN (:...courseIds)', { courseIds })
+      .groupBy('section.courseId')
+      .getRawMany<{ courseId: string; avgGrade: string | null }>();
+
+    const gradeMap = new Map(gradeStats.map((g) => [g.courseId, g.avgGrade]));
+
+    return enrollmentStats.map((r) => ({
       courseId: r.courseId,
       courseCode: r.courseCode,
       courseTitle: r.courseTitle,
       sections: parseInt(r.sections ?? '0', 10),
       enrollments: parseInt(r.enrollments ?? '0', 10),
-      averageGrade: r.avgGrade ? parseFloat(r.avgGrade) : null,
+      averageGrade: gradeMap.has(r.courseId)
+        ? parseFloat(gradeMap.get(r.courseId) ?? '0')
+        : null,
     }));
   }
 

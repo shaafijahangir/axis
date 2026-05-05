@@ -52,6 +52,7 @@ export class StudentDegreeProfile extends TenantScopedEntity {
   @Column()
   degreeProgramId: string;
 
+  @Field(() => DegreeProgram)
   @ManyToOne(() => DegreeProgram)
   @JoinColumn({ name: 'degreeProgramId' })
   degreeProgram: DegreeProgram;

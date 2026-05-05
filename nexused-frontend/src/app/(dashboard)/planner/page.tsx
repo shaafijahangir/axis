@@ -337,7 +337,7 @@ export default function PlannerPage() {
   }>(DEGREE_PROGRAMS_QUERY, { fetchPolicy: 'cache-first' });
 
   const activeProfile = profilesData?.myDegreeProfiles?.find(
-    (p) => p.status === 'active',
+    (p) => p.status === 'ACTIVE',
   );
 
   const { data: progressData, loading: progressLoading } = useQuery<{
