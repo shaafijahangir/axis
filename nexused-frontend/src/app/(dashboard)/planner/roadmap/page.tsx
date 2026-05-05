@@ -829,7 +829,7 @@ export default function RoadmapPage() {
   }>(MY_DEGREE_PROFILES_QUERY, { fetchPolicy: 'cache-and-network' });
 
   const activeProfile = profilesData?.myDegreeProfiles?.find(
-    (p) => p.status === 'active',
+    (p) => p.status === 'ACTIVE',
   );
 
   // ── Load existing plans ────────────────────────────────────────────
