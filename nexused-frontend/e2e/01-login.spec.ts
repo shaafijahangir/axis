@@ -13,7 +13,8 @@ import { test, expect } from './fixtures';
 
 test.describe('Login Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear any existing session
+    // Navigate first so localStorage is accessible (about:blank blocks it)
+    await page.goto('/');
     await page.context().clearCookies();
     await page.evaluate(() => localStorage.clear());
   });
@@ -21,8 +22,8 @@ test.describe('Login Flow', () => {
   test('should show login page with email and password fields', async ({ page }) => {
     await page.goto('/login');
 
-    // Verify page elements
-    await expect(page.getByRole('heading', { name: /sign in|log in|welcome/i })).toBeVisible();
+    // Verify page elements — heading is "NexusEd", sign-in text is in a <p>
+    await expect(page.getByRole('heading', { name: /nexused/i })).toBeVisible();
     await expect(page.getByLabel(/email/i)).toBeVisible();
     await expect(page.getByLabel(/password/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /sign in|log in/i })).toBeVisible();
@@ -64,9 +65,9 @@ test.describe('Login Flow', () => {
     // Should be on home page
     await expect(page).toHaveURL(/\/home/);
 
-    // Should show student feed elements
+    // Should show student home — heading says "Welcome back, <name>"
     await expect(
-      page.getByRole('heading', { name: /feed|dashboard|home/i })
+      page.getByRole('heading', { name: /welcome back/i })
     ).toBeVisible({ timeout: 10000 });
   });
 

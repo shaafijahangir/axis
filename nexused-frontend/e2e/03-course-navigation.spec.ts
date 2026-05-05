@@ -34,14 +34,17 @@ test.describe('Course Navigation Flow', () => {
     test('should display enrolled courses or empty state', async ({ page }) => {
       await page.goto('/courses');
 
-      // Either show course cards or empty state
-      const courseCards = page.locator('[data-testid="course-card"], .course-card, article');
-      const emptyState = page.getByText(/no courses|not enrolled|no enrollments/i);
+      // Wait for page to load past skeleton state
+      await page.waitForLoadState('networkidle').catch(() => {});
 
-      const hasCards = (await courseCards.count()) > 0;
+      // Course items use standard div/table rows with course links or "No courses yet"
+      const courseLinks = page.locator('a[href*="/courses/"]');
+      const emptyState = page.getByText(/no courses yet|not enrolled|no enrollments/i);
+
+      const hasLinks = (await courseLinks.count()) > 0;
       const isEmpty = await emptyState.isVisible().catch(() => false);
 
-      expect(hasCards || isEmpty).toBeTruthy();
+      expect(hasLinks || isEmpty).toBeTruthy();
     });
 
     test('should navigate to course detail when clicking a course', async ({ page }) => {

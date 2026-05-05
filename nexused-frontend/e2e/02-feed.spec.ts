@@ -26,11 +26,20 @@ test.describe('Feed Flow', () => {
     });
 
     test('should show feed items or empty state', async ({ page }) => {
-      // Either show feed items or an empty state message
-      const hasFeedItems = await page.locator('[data-testid="feed-item"], .feed-card').count();
-      const hasEmptyState = await page.getByText(/no items|nothing to show|up to date/i).isVisible().catch(() => false);
+      // FeedCard uses <Card role="article"> (div with role, not html article tag)
+      // Empty state renders "You're all caught up!" heading
+      const feedItems = page.locator('[role="article"]');
+      const emptyState = page.getByText(/caught up|no items|nothing to show|up to date/i);
 
-      expect(hasFeedItems > 0 || hasEmptyState).toBeTruthy();
+      // Wait for either feed items or empty state (data is async)
+      await Promise.race([
+        feedItems.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => null),
+        emptyState.waitFor({ state: 'visible', timeout: 10000 }).catch(() => null),
+      ]);
+
+      const hasFeedItems = (await feedItems.count()) > 0;
+      const hasEmptyState = await emptyState.isVisible().catch(() => false);
+      expect(hasFeedItems || hasEmptyState).toBeTruthy();
     });
 
     test('should have navigation to courses', async ({ page }) => {

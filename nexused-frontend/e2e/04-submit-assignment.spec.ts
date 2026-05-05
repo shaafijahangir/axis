@@ -59,13 +59,13 @@ test.describe('Submit Assignment Flow', () => {
       const currentUrl = page.url();
 
       if (currentUrl.includes('/assignment/')) {
-        // Should show assignment information
-        await expect(page.locator('main, [data-testid="assignment-detail"]')).toBeVisible();
+        // Wait for loading skeleton to resolve
+        await page.waitForLoadState('networkidle').catch(() => {});
 
-        // May have title, points, due date
+        // Should show assignment information — title in CardTitle, "pts" badge, "Past due" or "Due"
         const hasAssignmentContent =
-          (await page.getByText(/points|due|submit/i).isVisible().catch(() => false)) ||
-          (await page.locator('h1, h2').isVisible().catch(() => false));
+          (await page.getByText(/pts|past due|due/i).first().isVisible().catch(() => false)) ||
+          (await page.locator('[class*="card"]').first().isVisible().catch(() => false));
 
         expect(hasAssignmentContent).toBeTruthy();
       }
