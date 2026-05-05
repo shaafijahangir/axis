@@ -748,7 +748,20 @@ export default function AiGovernancePage() {
     );
   }
 
-  const config = configData?.aiGovernanceConfig;
+  // GraphQL returns enum key names (uppercase: "AUTO", "SUGGEST", "BLOCKED").
+  // Normalize to lowercase so SelectItem values and ActionTypeBadge keys match.
+  const rawConfig = configData?.aiGovernanceConfig;
+  const config = rawConfig
+    ? {
+        ...rawConfig,
+        toolPermissions: rawConfig.toolPermissions.map((t) => ({
+          ...t,
+          defaultActionType: t.defaultActionType.toLowerCase() as ActionType,
+          effectiveActionType:
+            t.effectiveActionType.toLowerCase() as ActionType,
+        })),
+      }
+    : null;
   if (!config) return null;
 
   const trend = trendData?.aiUsageTrend;
@@ -768,8 +781,11 @@ export default function AiGovernancePage() {
     actionType: ActionType,
   ) => {
     try {
+      // GraphQL mutation enum values must be key names (uppercase).
       await updateToolPermission({
-        variables: { input: { toolName, actionType } },
+        variables: {
+          input: { toolName, actionType: actionType.toUpperCase() },
+        },
       });
     } catch (err) {
       const message =

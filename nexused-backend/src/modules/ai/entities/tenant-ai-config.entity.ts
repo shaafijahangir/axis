@@ -55,9 +55,6 @@ export class TenantAiConfig {
    *
    * Example: { "enroll_student": "blocked", "draft_feedback": "auto" }
    */
-  @Field(() => String, {
-    description: 'JSON map of tool name to action type override',
-  })
   @Column({ type: 'jsonb', default: {} })
   toolOverrides: Record<string, ActionType>;
 
