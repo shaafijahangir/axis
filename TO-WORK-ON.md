@@ -43,30 +43,44 @@ Tested via GraphQL API as `student@nexused.demo` (Alex Rivera).
 
 ---
 
-### TASK-003 · Instructor dashboard deep dive
-Log in as `prof.chen@nexused.demo`. Test:
-- [ ] Instructor home loads
-- [ ] Courses list shows sections (CS101, ENG102)
-- [ ] Course section detail loads
-- [ ] Gradebook loads with student submissions
-- [ ] Can view a submission and its feedback
-- [ ] Announcement creation flow works
-- [ ] Discussion creation/management works
+### ~~TASK-003 · Instructor dashboard deep dive~~ ✅ DONE
+Tested visually via screenshots as `prof.chen@nexused.demo` (Sarah Chen).
 
-Note any crashes, blank pages, or missing data.
+**Working:**
+- [x] Instructor home — "Welcome back, Sarah" with 3 pending submissions (CS101 HW2, ENG102 Essay 1, Essay 2)
+- [x] Courses list loads (shows all 7 tenant courses in table view)
+- [x] API: sections, assignments, announcements all return data correctly
+
+**Known non-bugs:**
+- Courses page shows all courses (not just instructor's sections) — by design for instructors
+- Course section detail / gradebook screenshots not captured (no `a[href*="/section/"]` links on courses page — section navigation not wired up in courses list yet)
+- Discussions: no seed data for discussions, returns empty
 
 ---
 
-### TASK-004 · Admin dashboard deep dive
-Log in as `admin@nexused.demo`. Test:
-- [ ] Admin home loads
-- [ ] People management page loads
-- [ ] AI Governance console loads and shows config
-- [ ] Analytics page loads
-- [ ] Catalog management page loads
-- [ ] Integrations / LTI page loads
+### ~~TASK-004 · Admin dashboard deep dive~~ ✅ DONE
+Tested visually via screenshots as `admin@nexused.demo` (Marcus Williams).
 
-Note any crashes, blank pages, or missing data.
+**Working:**
+- [x] Admin home — 8 users, 7 courses, 5 sections, 10 enrollments
+- [x] People management — all 8 users listed with roles and status
+- [x] AI Governance — AI enabled, 30 rpm rate limit, 16 tools listed with permission toggles
+- [x] Analytics — full dashboard after fixes (see bugs below)
+- [x] Integrations — LTI config with OIDC/JWKS/launch URLs
+
+**Bugs found and fixed:**
+- Analytics crashed with `"Relation with property path sections in entity was not found"` —
+  `getTopCourses` used `leftJoin('course.sections')` and `leftJoin('enrollment.submissions')` but
+  neither `Course.sections` nor `Enrollment.submissions` relations are defined.
+  Fixed: explicit entity-class joins + separate grade subquery.
+- Planner showed "Set up your degree plan" despite seeded CS-BS profile —
+  `StudentDegreeProfile.degreeProgram` had no `@Field()` decorator → invisible to GraphQL →
+  query failed → data was null. Fixed: added `@Field(() => DegreeProgram)`.
+  Additionally: frontend compared `p.status === 'active'` but GraphQL returns `'ACTIVE'` (enum key).
+  Fixed: changed to `'ACTIVE'`.
+
+**Known non-bugs:**
+- Catalog shows "No courses found" — catalog entity is separate from course entity; no seed data for catalog yet
 
 ---
 

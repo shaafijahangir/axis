@@ -1,5 +1,5 @@
 import { InputType, Field } from '@nestjs/graphql';
-import { IsString, IsUUID, IsOptional, MaxLength } from 'class-validator';
+import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 
 @InputType()
 export class StartConversationInput {
@@ -14,29 +14,29 @@ export class StartConversationInput {
 
   @Field({ nullable: true })
   @IsOptional()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   courseId?: string;
 
   @Field({ nullable: true })
   @IsOptional()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   assignmentId?: string;
 
   @Field({ nullable: true })
   @IsOptional()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   submissionId?: string;
 
   @Field({ nullable: true })
   @IsOptional()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId?: string;
 }
 
 @InputType()
 export class SendMessageInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   conversationId: string;
 
   @Field()

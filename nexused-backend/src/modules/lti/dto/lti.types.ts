@@ -5,12 +5,12 @@ import {
   registerEnumType,
 } from '@nestjs/graphql';
 import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
   IsString,
   IsUrl,
-  IsOptional,
-  IsEnum,
-  IsBoolean,
-  IsUUID,
+  Matches,
 } from 'class-validator';
 import { LtiPlatformStatus } from '../entities/lti-platform.entity';
 
@@ -63,7 +63,7 @@ export class CreateLtiPlatformInput {
 @InputType()
 export class UpdateLtiPlatformInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   id: string;
 
   @Field({ nullable: true })
@@ -98,7 +98,7 @@ export class UpdateLtiPlatformInput {
 @InputType()
 export class CreateLtiDeploymentInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   platformId: string;
 
   @Field()
@@ -117,11 +117,11 @@ export class CreateLtiDeploymentInput {
 @InputType()
 export class LinkLtiContextInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   contextId: string;
 
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 }
 
@@ -209,7 +209,7 @@ export class LtiLaunchSession {
 @InputType()
 export class UpdateLtiServicesInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   deploymentId: string;
 
   @Field({ nullable: true })

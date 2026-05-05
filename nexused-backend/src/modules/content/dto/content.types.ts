@@ -1,9 +1,9 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
 import {
-  IsString,
-  IsOptional,
-  IsUUID,
   IsInt,
+  IsOptional,
+  IsString,
+  Matches,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -11,7 +11,7 @@ import {
 @InputType()
 export class CreateContentInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 
   @Field()
@@ -27,11 +27,11 @@ export class CreateContentInput {
 @InputType()
 export class UpdateContentInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   id: string;
 
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 
   @Field({ nullable: true })

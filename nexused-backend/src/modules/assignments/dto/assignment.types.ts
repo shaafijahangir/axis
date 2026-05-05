@@ -1,11 +1,11 @@
 import { InputType, ObjectType, Field, Float } from '@nestjs/graphql';
 import {
-  IsString,
-  IsOptional,
-  IsUUID,
-  IsNumber,
-  IsEnum,
   IsDateString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Matches,
   MaxLength,
 } from 'class-validator';
 import { AssignmentType } from '../../../database/entities/assignment.entity';
@@ -13,7 +13,7 @@ import { AssignmentType } from '../../../database/entities/assignment.entity';
 @InputType()
 export class CreateAssignmentInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 
   @Field()
@@ -66,7 +66,7 @@ export class CreateAssignmentInput {
 @InputType()
 export class CreateSubmissionInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   assignmentId: string;
 
   /** JSON string representing the submission content */
@@ -79,11 +79,11 @@ export class CreateSubmissionInput {
 @InputType()
 export class UpdateAssignmentInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   id: string;
 
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 
   @Field({ nullable: true })
@@ -125,7 +125,7 @@ export class ExtendDeadlinesInput {
   assignmentIds: string[];
 
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 
   @Field()
@@ -136,7 +136,7 @@ export class ExtendDeadlinesInput {
 @InputType()
 export class GradeSubmissionInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   submissionId: string;
 
   @Field(() => Float)

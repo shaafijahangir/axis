@@ -1,5 +1,11 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
-import { IsOptional, IsString, IsEnum, IsUUID, IsArray } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
 import { SectionStatus } from '../../../database/entities/course-section.entity';
 import {
   EnrollmentRole,
@@ -24,7 +30,7 @@ export class UpdateSectionInput {
 
   @Field({ nullable: true })
   @IsOptional()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   instructorId?: string;
 
   @Field({ nullable: true })
@@ -35,11 +41,11 @@ export class UpdateSectionInput {
 @InputType()
 export class AdminEnrollInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   userId: string;
 
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 
   @Field(() => EnrollmentRole, { nullable: true })
@@ -69,7 +75,7 @@ export class AdminUpdateEnrollmentInput {
 @InputType()
 export class BulkEnrollInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 
   @Field(() => [String])
@@ -97,22 +103,22 @@ export class BulkMoveInput {
   enrollmentIds: string[];
 
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   targetSectionId: string;
 }
 
 @InputType()
 export class AdminCreateSectionInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   courseId: string;
 
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   termId: string;
 
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   instructorId: string;
 
   @Field({ nullable: true })

@@ -1,15 +1,15 @@
 import { InputType, Field, Float, Int } from '@nestjs/graphql';
 import {
+  IsArray,
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
-  IsArray,
-  IsBoolean,
-  Min,
+  Matches,
   Max,
+  Min,
 } from 'class-validator';
 import { QuestionType } from '../entities/quiz-question.entity';
 
@@ -28,7 +28,7 @@ export class QuizOptionInput {
 @InputType()
 export class AddQuizQuestionInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   assignmentId: string;
 
   @Field()
@@ -54,7 +54,7 @@ export class AddQuizQuestionInput {
 @InputType()
 export class UpdateQuizQuestionInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   id: string;
 
   @Field({ nullable: true })
@@ -77,7 +77,7 @@ export class UpdateQuizQuestionInput {
 @InputType()
 export class QuizAnswerInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   questionId: string;
 
   @Field(() => Int, { nullable: true })
@@ -95,7 +95,7 @@ export class QuizAnswerInput {
 @InputType()
 export class SubmitQuizInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   submissionId: string;
 
   @Field(() => [QuizAnswerInput])
@@ -106,7 +106,7 @@ export class SubmitQuizInput {
 @InputType()
 export class UpdateQuizSettingsInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   assignmentId: string;
 
   @Field(() => Int, { nullable: true })
@@ -131,7 +131,7 @@ export class UpdateQuizSettingsInput {
 @InputType()
 export class ReorderQuestionsInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   assignmentId: string;
 
   @Field(() => [String])

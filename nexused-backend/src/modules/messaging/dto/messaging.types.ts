@@ -1,5 +1,5 @@
 import { InputType, ObjectType, Field, Int } from '@nestjs/graphql';
-import { IsString, IsUUID, MinLength, MaxLength } from 'class-validator';
+import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { User, UserRole } from '../../../database/entities/user.entity';
 import { DirectMessage } from '../entities/direct-message.entity';
 
@@ -8,7 +8,7 @@ import { DirectMessage } from '../entities/direct-message.entity';
 @InputType()
 export class SendMessageInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   recipientId: string;
 
   @Field()
@@ -21,7 +21,7 @@ export class SendMessageInput {
 @InputType()
 export class SendMessageToConversationInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   conversationId: string;
 
   @Field()

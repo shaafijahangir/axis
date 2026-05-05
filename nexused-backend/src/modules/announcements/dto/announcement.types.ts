@@ -1,10 +1,10 @@
 import { InputType, Field } from '@nestjs/graphql';
 import {
-  IsString,
-  IsOptional,
-  IsUUID,
   IsBoolean,
   IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
   MaxLength,
 } from 'class-validator';
 import { AnnouncementPriority } from '../../../database/entities/announcement.entity';
@@ -12,7 +12,7 @@ import { AnnouncementPriority } from '../../../database/entities/announcement.en
 @InputType()
 export class CreateAnnouncementInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 
   @Field()

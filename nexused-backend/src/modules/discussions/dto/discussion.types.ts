@@ -1,9 +1,9 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
 import {
   IsNotEmpty,
-  IsString,
   IsOptional,
-  IsUUID,
+  IsString,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -11,7 +11,7 @@ import {
 @InputType()
 export class CreateDiscussionInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 
   @Field()
@@ -29,7 +29,7 @@ export class CreateDiscussionInput {
 @InputType()
 export class CreateDiscussionReplyInput {
   @Field()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   discussionId: string;
 
   @Field()
@@ -39,7 +39,7 @@ export class CreateDiscussionReplyInput {
 
   @Field({ nullable: true })
   @IsOptional()
-  @IsUUID()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   parentReplyId?: string;
 }
 
