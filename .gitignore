@@ -12,6 +12,11 @@ coverage/
 playwright-report/
 test-results/
 playwright/.cache/
+.playwright-mcp/
+
+# Dev session screenshots (wf*-*.png, audit-*, stu-*, shot-*, task*, etc.)
+*.png
+take-screenshots.mjs
 
 # Production
 build/

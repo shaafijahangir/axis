@@ -22,7 +22,6 @@ const ROLE_OPTIONS = [
   { value: 'INSTRUCTOR', label: 'Instructor' },
   { value: 'ADMIN', label: 'Admin' },
   { value: 'TA', label: 'TA' },
-  { value: 'PARENT', label: 'Parent' },
 ] as const;
 
 const createUserSchema = z.object({
