@@ -146,18 +146,33 @@ export class AnalyticsService {
    * Get grade statistics with distribution.
    */
   async getGradeStats(tenantId: string): Promise<GradeStats> {
-    // Get aggregate stats
+    // Get aggregate stats across all submitted work
     const stats = await this.submissionRepo
       .createQueryBuilder('submission')
       .select('COUNT(*)', 'total')
-      .addSelect('COUNT(submission.gradedAt)', 'graded')
-      .addSelect('COALESCE(AVG(submission.score), 0)', 'avgScore')
+      .addSelect(
+        'COUNT(*) FILTER (WHERE submission.gradedAt IS NOT NULL)',
+        'graded',
+      )
+      .addSelect(
+        'COUNT(*) FILTER (WHERE submission.submittedAt IS NOT NULL AND submission.gradedAt IS NULL)',
+        'ungraded',
+      )
+      .addSelect(
+        'COALESCE(AVG(submission.score) FILTER (WHERE submission.score IS NOT NULL), 0)',
+        'avgScore',
+      )
       .where('submission.tenantId = :tenantId', { tenantId })
-      .andWhere('submission.score IS NOT NULL')
-      .getRawOne<{ total: string; graded: string; avgScore: string }>();
+      .getRawOne<{
+        total: string;
+        graded: string;
+        ungraded: string;
+        avgScore: string;
+      }>();
 
     const totalSubmissions = parseInt(stats?.total ?? '0', 10);
     const gradedSubmissions = parseInt(stats?.graded ?? '0', 10);
+    const ungradedSubmissions = parseInt(stats?.ungraded ?? '0', 10);
     const averageScore = parseFloat(stats?.avgScore ?? '0');
 
     // Get all scores for median calculation
@@ -226,7 +241,7 @@ export class AnalyticsService {
       medianScore,
       totalSubmissions,
       gradedSubmissions,
-      ungradedSubmissions: totalSubmissions - gradedSubmissions,
+      ungradedSubmissions,
       distribution,
     };
   }
@@ -239,9 +254,12 @@ export class AnalyticsService {
       await Promise.all([
         this.assignmentRepo.count({ where: { tenantId } }),
         this.submissionRepo.count({ where: { tenantId } }),
-        this.submissionRepo.count({
-          where: { tenantId, gradedAt: null as unknown as Date },
-        }),
+        this.submissionRepo
+          .createQueryBuilder('submission')
+          .where('submission.tenantId = :tenantId', { tenantId })
+          .andWhere('submission.submittedAt IS NOT NULL')
+          .andWhere('submission.gradedAt IS NULL')
+          .getCount(),
         this.submissionRepo
           .createQueryBuilder('submission')
           .select(

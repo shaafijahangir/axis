@@ -156,21 +156,33 @@ Login: `ta.jordan@nexused.demo` / `password123`
 
 ---
 
-## 🔵 WORKFLOW-006 · Analytics Accuracy
+## ✅ WORKFLOW-006 · Analytics Accuracy — DONE
 
 > After running WORKFLOW-001 through WORKFLOW-005, verify admin analytics reflect reality.
 
-**Numbers to verify**
-- [ ] Total users count matches what was created
-- [ ] Enrollments count matches actual enrollments
-- [ ] Pending grading count: "13 total" vs "Ungraded: 0" inconsistency — root cause?
-- [ ] Grade distribution includes grades from TASK-006 + WORKFLOW-003
-- [ ] AI Conversations count reflects WORKFLOW-005 sessions
-- [ ] At-risk students: are any students below 60% average?
+**Bugs fixed:**
+- `gradeStats.ungradedSubmissions` was always 0 — `getGradeStats()` filtered to
+  `WHERE score IS NOT NULL` before counting, so `ungradedSubmissions = totalScored - graded`
+  was always 0. Fixed: switched to `COUNT(*) FILTER` expressions covering ALL submissions
+  (total, graded, submitted-but-ungraded).
+- `submissionMetrics.pendingGrading` returned ALL 14 submissions — TypeORM
+  `count({ where: { gradedAt: null } })` generated incorrect SQL (tested via comparison
+  mismatch). Fixed: explicit QueryBuilder `WHERE submittedAt IS NOT NULL AND gradedAt IS NULL`
+  to count only submitted-but-ungraded work.
+
+**Numbers verified (post-fix)**
+- [x] Total users: 10 — matches seed (7 students, 2 instructors, 1 admin + 1 TA via WORKFLOW-001)
+- [x] Total enrollments: 10 (9 active) — consistent
+- [x] gradeStats.pendingGrading: 4 now matches ungradedSubmissions: 4 ✓
+- [x] gradedSubmissions: 10 (those with gradedAt IS NOT NULL), total: 14
+- [x] averageScore: 63.8% — computed from seed + TASK-006 grades
+- [x] AI conversations: 4 (from test sessions; tokens = 0 without API key) ✓
+- [x] At-risk students: 0 (no student below 60% threshold) ✓
 
 **Top Courses**
-- [ ] CS101 appears at top (most enrollments)
-- [ ] Average grade column is accurate
+- [x] CS101 at top with 4 enrollments ✓
+- [x] ENG102 second with 3 enrollments ✓
+- [x] Average grade column accurate (CS101: 89.25%, ENG102: 84.33%) ✓
 
 ---
 
