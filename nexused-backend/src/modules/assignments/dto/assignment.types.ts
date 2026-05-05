@@ -121,7 +121,9 @@ export class UpdateAssignmentInput {
 @InputType()
 export class ExtendDeadlinesInput {
   @Field(() => [String])
-  @IsUUID('4', { each: true })
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, {
+    each: true,
+  })
   assignmentIds: string[];
 
   @Field()

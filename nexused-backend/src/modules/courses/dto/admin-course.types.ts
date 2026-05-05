@@ -91,7 +91,9 @@ export class BulkEnrollInput {
 export class BulkDropInput {
   @Field(() => [String])
   @IsArray()
-  @IsUUID('4', { each: true })
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, {
+    each: true,
+  })
   enrollmentIds: string[];
 }
 
@@ -99,7 +101,9 @@ export class BulkDropInput {
 export class BulkMoveInput {
   @Field(() => [String])
   @IsArray()
-  @IsUUID('4', { each: true })
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, {
+    each: true,
+  })
   enrollmentIds: string[];
 
   @Field()
