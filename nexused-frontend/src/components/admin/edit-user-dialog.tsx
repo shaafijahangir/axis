@@ -26,18 +26,18 @@ import {
 import { ADMIN_UPDATE_USER_MUTATION } from '@/lib/graphql/mutations/admin-users';
 
 const ROLE_OPTIONS = [
-  { value: 'student', label: 'Student' },
-  { value: 'instructor', label: 'Instructor' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'ta', label: 'TA' },
-  { value: 'parent', label: 'Parent' },
+  { value: 'STUDENT', label: 'Student' },
+  { value: 'INSTRUCTOR', label: 'Instructor' },
+  { value: 'ADMIN', label: 'Admin' },
+  { value: 'TA', label: 'TA' },
+  { value: 'PARENT', label: 'Parent' },
 ] as const;
 
 const STATUS_OPTIONS = [
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' },
-  { value: 'suspended', label: 'Suspended' },
-  { value: 'pending', label: 'Pending' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'INACTIVE', label: 'Inactive' },
+  { value: 'SUSPENDED', label: 'Suspended' },
+  { value: 'PENDING', label: 'Pending' },
 ] as const;
 
 const editUserSchema = z.object({

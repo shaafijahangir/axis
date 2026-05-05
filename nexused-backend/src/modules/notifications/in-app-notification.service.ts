@@ -26,7 +26,7 @@ export class InAppNotificationService {
       type: input.type,
       title: input.title,
       body: input.body,
-      data: input.data ?? null,
+      _data: input.data ?? null,
       read: false,
     });
     return this.notificationRepo.save(notification);

@@ -18,11 +18,11 @@ import { Label } from '@/components/ui/label';
 import { ADMIN_CREATE_USER_MUTATION } from '@/lib/graphql/mutations/admin-users';
 
 const ROLE_OPTIONS = [
-  { value: 'student', label: 'Student' },
-  { value: 'instructor', label: 'Instructor' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'ta', label: 'TA' },
-  { value: 'parent', label: 'Parent' },
+  { value: 'STUDENT', label: 'Student' },
+  { value: 'INSTRUCTOR', label: 'Instructor' },
+  { value: 'ADMIN', label: 'Admin' },
+  { value: 'TA', label: 'TA' },
+  { value: 'PARENT', label: 'Parent' },
 ] as const;
 
 const createUserSchema = z.object({
@@ -55,7 +55,7 @@ export function CreateUserDialog({
     watch,
   } = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
-    defaultValues: { roles: ['student'] },
+    defaultValues: { roles: ['STUDENT'] },
   });
 
   // eslint-disable-next-line react-hooks/incompatible-library

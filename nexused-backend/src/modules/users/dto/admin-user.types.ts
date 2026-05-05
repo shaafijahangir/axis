@@ -1,5 +1,12 @@
 import { ObjectType, Field, InputType, Int } from '@nestjs/graphql';
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { User, UserRole, UserStatus } from '../../../database/entities';
 
 @ObjectType()
@@ -37,6 +44,8 @@ export class AdminCreateUserInput {
   lastName: string;
 
   @Field(() => [UserRole])
+  @IsArray()
+  @IsEnum(UserRole, { each: true })
   roles: UserRole[];
 }
 
@@ -59,6 +68,8 @@ export class AdminUpdateUserInput {
 
   @Field(() => [UserRole], { nullable: true })
   @IsOptional()
+  @IsArray()
+  @IsEnum(UserRole, { each: true })
   roles?: UserRole[];
 
   @Field(() => UserStatus, { nullable: true })

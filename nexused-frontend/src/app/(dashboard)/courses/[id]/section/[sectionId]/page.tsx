@@ -49,7 +49,7 @@ interface SectionData {
 }
 
 interface TimelineEntryData {
-  type: 'assignment' | 'announcement' | 'content' | 'discussion';
+  type: string;
   id: string;
   title: string;
   body?: string;

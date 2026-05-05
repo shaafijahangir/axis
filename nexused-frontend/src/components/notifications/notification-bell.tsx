@@ -26,7 +26,7 @@ interface AppNotification {
   type: string;
   title: string;
   body: string;
-  data: Record<string, string> | null;
+  data: string | null;
   read: boolean;
   createdAt: string;
 }
@@ -53,7 +53,7 @@ export function NotificationBell() {
     myNotifications: AppNotification[];
   }>(MY_NOTIFICATIONS_QUERY, {
     variables: { limit: 20, offset: 0 },
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'no-cache',
   });
 
   const [markRead] = useMutation<{
@@ -92,7 +92,10 @@ export function NotificationBell() {
     if (!n.read) {
       await markRead({ variables: { id: n.id } });
     }
-    const path = n.data?.path;
+    const parsed = n.data
+      ? (JSON.parse(n.data) as Record<string, string>)
+      : null;
+    const path = parsed?.path;
     if (path) router.push(path);
   };
 
@@ -184,12 +187,14 @@ export function NotificationBell() {
                           aria-hidden="true"
                         />
                       )}
-                      {n.data?.path && (
-                        <ExternalLink
-                          className="h-3 w-3 text-muted-foreground/50"
-                          aria-hidden="true"
-                        />
-                      )}
+                      {n.data &&
+                        (JSON.parse(n.data) as Record<string, string>)
+                          ?.path && (
+                          <ExternalLink
+                            className="h-3 w-3 text-muted-foreground/50"
+                            aria-hidden="true"
+                          />
+                        )}
                     </div>
                   </div>
                 </button>

@@ -38,7 +38,7 @@ import { UPDATE_ENROLLMENT_POLICY_MUTATION } from '@/lib/graphql/mutations/enrol
 // ─── Types ──────────────────────────────────────────────────────────────
 
 interface EnrollmentPolicy {
-  prerequisiteEnforcement: 'strict' | 'warn' | 'off';
+  prerequisiteEnforcement: string;
   creditHourLimitPerTerm: number | null;
   enrollmentWindowStart: string | null;
   enrollmentWindowEnd: string | null;
@@ -72,7 +72,10 @@ const EMPTY_FORM: PolicyForm = {
 
 function policyToForm(policy: EnrollmentPolicy): PolicyForm {
   return {
-    prerequisiteEnforcement: policy.prerequisiteEnforcement,
+    prerequisiteEnforcement: policy.prerequisiteEnforcement.toLowerCase() as
+      | 'strict'
+      | 'warn'
+      | 'off',
     creditHourLimitPerTerm:
       policy.creditHourLimitPerTerm != null
         ? String(policy.creditHourLimitPerTerm)
@@ -178,7 +181,8 @@ export default function EnrollmentPolicyPage() {
     }
   };
 
-  const selectedMeta = ENFORCEMENT_META[form.prerequisiteEnforcement];
+  const selectedMeta =
+    ENFORCEMENT_META[form.prerequisiteEnforcement] ?? ENFORCEMENT_META['warn'];
 
   return (
     <div className="container max-w-2xl py-6 space-y-6">

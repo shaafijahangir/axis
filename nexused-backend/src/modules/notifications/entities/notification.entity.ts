@@ -38,13 +38,21 @@ export class Notification extends TenantScopedEntity {
   @Column({ type: 'text' })
   body: string;
 
-  /**
-   * Deep-link data for navigation on click.
-   * e.g. { path: '/courses/x/section/y/assignment/z' }
-   */
+  @Column({ type: 'jsonb', nullable: true, name: 'data' })
+  _data: Record<string, string> | null;
+
+  /** Serialized as a JSON string for the GraphQL String scalar. */
   @Field(() => String, { nullable: true })
-  @Column({ type: 'jsonb', nullable: true })
-  data: Record<string, string> | null;
+  get data(): string | null {
+    return this._data ? JSON.stringify(this._data) : null;
+  }
+  set data(value: Record<string, string> | string | null) {
+    if (typeof value === 'string') {
+      this._data = value ? (JSON.parse(value) as Record<string, string>) : null;
+    } else {
+      this._data = value;
+    }
+  }
 
   @Field()
   @Column({ default: false })

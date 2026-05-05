@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime } from '@/lib/utils/relative-time';
 
 interface TimelineEntryCardProps {
-  type: 'assignment' | 'announcement' | 'content' | 'discussion';
+  type: string;
   id: string;
   title: string;
   body?: string;
@@ -61,9 +61,10 @@ export function TimelineEntryCard({
   isLocked,
   isAnswered,
 }: TimelineEntryCardProps) {
-  const isAssignment = type === 'assignment';
-  const isContent = type === 'content';
-  const isDiscussion = type === 'discussion';
+  const normalizedType = type.toLowerCase() as typeof type;
+  const isAssignment = normalizedType === 'assignment';
+  const isContent = normalizedType === 'content';
+  const isDiscussion = normalizedType === 'discussion';
   const isDraft = isContent && !publishedAt;
 
   const Icon = isContent
