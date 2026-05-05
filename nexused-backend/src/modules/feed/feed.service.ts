@@ -350,31 +350,40 @@ export class FeedService {
       order: { createdAt: 'DESC' },
     });
 
-    // Batch-fetch grades when userId is provided
+    // Batch-fetch submissions when userId is provided
     const gradeMap = new Map<
       string,
       { score: number; gradedAt: Date; feedback: string }
     >();
+    const submittedMap = new Map<string, Date>();
 
     if (userId && assignments.length > 0) {
       const assignmentIds = assignments.map((a) => a.id);
-      const gradedSubmissions = await this.submissionRepo.find({
+      const submissions = await this.submissionRepo.find({
         where: {
           userId,
           assignmentId: In(assignmentIds),
         },
       });
 
-      // Keep the latest graded submission per assignment
-      for (const sub of gradedSubmissions) {
-        if (!sub.gradedAt) continue;
-        const existing = gradeMap.get(sub.assignmentId);
-        if (!existing || sub.gradedAt > existing.gradedAt) {
-          gradeMap.set(sub.assignmentId, {
-            score: sub.score,
-            gradedAt: sub.gradedAt,
-            feedback: sub.feedback,
-          });
+      for (const sub of submissions) {
+        // Track latest submittedAt per assignment
+        if (sub.submittedAt) {
+          const existing = submittedMap.get(sub.assignmentId);
+          if (!existing || sub.submittedAt > existing) {
+            submittedMap.set(sub.assignmentId, sub.submittedAt);
+          }
+        }
+        // Track latest graded submission per assignment
+        if (sub.gradedAt) {
+          const existing = gradeMap.get(sub.assignmentId);
+          if (!existing || sub.gradedAt > existing.gradedAt) {
+            gradeMap.set(sub.assignmentId, {
+              score: sub.score,
+              gradedAt: sub.gradedAt,
+              feedback: sub.feedback,
+            });
+          }
         }
       }
     }
@@ -391,6 +400,7 @@ export class FeedService {
         dueAt: a.dueAt,
         pinned: false,
         timestamp: a.createdAt,
+        submittedAt: submittedMap.get(a.id),
         score: grade?.score,
         gradedAt: grade?.gradedAt,
         feedback: grade?.feedback,

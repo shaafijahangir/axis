@@ -12,6 +12,7 @@ import {
   EyeOff,
   MessageSquare,
   Lock,
+  Send,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,7 @@ interface TimelineEntryCardProps {
   timestamp: string;
   courseId: string;
   sectionId: string;
+  submittedAt?: string;
   score?: number;
   gradedAt?: string;
   feedback?: string;
@@ -54,6 +56,7 @@ export function TimelineEntryCard({
   timestamp,
   courseId,
   sectionId,
+  submittedAt,
   score,
   gradedAt,
   publishedAt,
@@ -92,8 +95,13 @@ export function TimelineEntryCard({
         : 'text-blue-500';
 
   const isGraded = isAssignment && gradedAt != null && score != null;
+  const isSubmitted = isAssignment && submittedAt != null && !isGraded;
   const isPastDueUngraded =
-    isAssignment && !isGraded && dueAt && new Date(dueAt) < new Date();
+    isAssignment &&
+    !isGraded &&
+    !isSubmitted &&
+    dueAt &&
+    new Date(dueAt) < new Date();
 
   const typeLabel = isContent
     ? 'Content'
@@ -162,6 +170,15 @@ export function TimelineEntryCard({
               <Badge className="ml-auto bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">
                 <CheckCircle className="mr-1 h-3 w-3" />
                 {score}/{pointsPossible}
+              </Badge>
+            )}
+            {isSubmitted && (
+              <Badge
+                variant="outline"
+                className="ml-auto text-xs text-blue-600 border-blue-300 dark:text-blue-400 dark:border-blue-700"
+              >
+                <Send className="mr-1 h-3 w-3" />
+                Submitted
               </Badge>
             )}
             {isPastDueUngraded && (

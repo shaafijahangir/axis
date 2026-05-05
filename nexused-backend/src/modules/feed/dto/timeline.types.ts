@@ -57,6 +57,9 @@ export class TimelineEntry {
 
   // ── Grade fields (populated for assignment entries when userId is provided) ──
 
+  @Field({ nullable: true })
+  submittedAt?: Date;
+
   @Field(() => Float, { nullable: true })
   score?: number;
 

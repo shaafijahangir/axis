@@ -60,6 +60,7 @@ interface TimelineEntryData {
   priority?: string;
   pinned: boolean;
   timestamp: string;
+  submittedAt?: string;
   score?: number;
   gradedAt?: string;
   feedback?: string;
@@ -241,6 +242,7 @@ export default function SectionTimelinePage() {
               timestamp={entry.timestamp}
               courseId={courseId}
               sectionId={sectionId}
+              submittedAt={entry.submittedAt}
               score={entry.score}
               gradedAt={entry.gradedAt}
               feedback={entry.feedback}
