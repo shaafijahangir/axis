@@ -34,7 +34,7 @@ export class StartConversationInput {
 }
 
 @InputType()
-export class SendMessageInput {
+export class ContinueConversationInput {
   @Field()
   @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   conversationId: string;

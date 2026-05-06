@@ -66,16 +66,16 @@ export default function NewAiConversationScreen() {
         variables: {
           input: {
             agentType: agentKey,
-            initialMessage: trimmed,
+            message: trimmed,
           },
         },
       });
 
-      const id = data?.startAiConversation?.id;
-      if (!id) throw new Error('No conversation ID returned');
+      const conversationId = data?.startConversation?.conversationId;
+      if (!conversationId) throw new Error('No conversation ID returned');
 
       // Replace this screen — back button goes to AI tab, not back here
-      router.replace(`/ai/${id}`);
+      router.replace(`/ai/${conversationId}?agent=${agentKey}`);
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : 'Could not start conversation';

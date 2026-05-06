@@ -20,7 +20,7 @@ interface Conversation {
   title: string | null;
   lastMessage: {
     id: string;
-    body: string;
+    content: string;
     createdAt: string;
     sender: { firstName: string; lastName: string };
   } | null;
@@ -81,7 +81,7 @@ function ConversationRow({ item }: { item: Conversation }) {
             style={[styles.preview, item.unreadCount > 0 && styles.previewBold]}
             numberOfLines={1}
           >
-            {item.lastMessage?.body ?? 'No messages yet'}
+            {item.lastMessage?.content ?? 'No messages yet'}
           </Text>
           {item.unreadCount > 0 && (
             <View style={styles.badge}>

@@ -22,8 +22,8 @@ export const START_AI_CONVERSATION_MUTATION = gql`
  * Returns the AI response with tool usage info.
  */
 export const SEND_AI_MESSAGE_MUTATION = gql`
-  mutation SendAiMessage($input: SendMessageInput!) {
-    sendMessage(input: $input) {
+  mutation ContinueConversation($input: ContinueConversationInput!) {
+    continueConversation(input: $input) {
       conversationId
       responseText
       toolsUsed

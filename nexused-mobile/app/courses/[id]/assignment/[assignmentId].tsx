@@ -1,11 +1,9 @@
 /**
- * Assignment detail + submission screen (MOB-APP-005).
+ * Assignment detail + submission screen.
  *
- * Shows assignment details, existing submission status, and a text
- * submission form. File upload (camera/R2) is Phase B enhancement.
- *
- * WHY: Assignment submission is the #1 student action on mobile.
- * Students check due dates and submit on the go — this has to work perfectly.
+ * Assignment.type (not assignmentType), Assignment.pointsPossible (not points).
+ * No mySubmission field on Assignment — use separate mySubmissions query.
+ * Submission mutation: submitAssignment (not createSubmission).
  */
 import { useState } from 'react';
 import {
@@ -24,6 +22,7 @@ import { useLocalSearchParams, Stack } from 'expo-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
   ASSIGNMENT_QUERY,
+  MY_SUBMISSIONS_QUERY,
   SUBMIT_ASSIGNMENT_MUTATION,
 } from '../../../../src/graphql/queries';
 
@@ -40,12 +39,11 @@ interface AssignmentData {
     id: string;
     title: string;
     description: string | null;
-    assignmentType: string;
+    type: string;
     dueAt: string | null;
-    points: number | null;
+    pointsPossible: number | null;
     maxAttempts: number | null;
     timeLimitMinutes: number | null;
-    mySubmission: Submission | null;
   };
 }
 
@@ -71,7 +69,7 @@ function statusColor(status: string): string {
 }
 
 export default function AssignmentDetailScreen() {
-  const { assignmentId } = useLocalSearchParams<{
+  const { id: courseId, assignmentId } = useLocalSearchParams<{
     id: string;
     assignmentId: string;
     sectionId: string;
@@ -80,21 +78,33 @@ export default function AssignmentDetailScreen() {
   const [textContent, setTextContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data, loading, refetch } = useQuery<AssignmentData>(
-    ASSIGNMENT_QUERY,
-    {
+  const { data: assignmentData, loading: assignmentLoading } =
+    useQuery<AssignmentData>(ASSIGNMENT_QUERY, {
       variables: { id: assignmentId },
       skip: !assignmentId,
       fetchPolicy: 'cache-and-network',
-    },
-  );
+    });
+
+  const {
+    data: submissionsData,
+    loading: submissionsLoading,
+    refetch,
+  } = useQuery<{ mySubmissions: Submission[] }>(MY_SUBMISSIONS_QUERY, {
+    variables: { assignmentId },
+    skip: !assignmentId,
+    fetchPolicy: 'cache-and-network',
+  });
 
   const [submitAssignment] = useMutation(SUBMIT_ASSIGNMENT_MUTATION);
 
-  const assignment = data?.assignment;
-  const submission = assignment?.mySubmission;
+  const assignment = assignmentData?.assignment;
+  const submissions = submissionsData?.mySubmissions ?? [];
+  const latestSubmission = submissions[submissions.length - 1] ?? null;
   const isSubmitted =
-    submission?.status === 'SUBMITTED' || submission?.status === 'GRADED';
+    latestSubmission?.status === 'SUBMITTED' ||
+    latestSubmission?.status === 'GRADED';
+
+  const loading = assignmentLoading || submissionsLoading;
 
   const handleSubmit = async () => {
     if (!textContent.trim()) {
@@ -178,9 +188,11 @@ export default function AssignmentDetailScreen() {
                 </Text>
               </View>
             )}
-            {assignment.points && (
+            {assignment.pointsPossible && (
               <View style={styles.metaChip}>
-                <Text style={styles.metaChipText}>{assignment.points} pts</Text>
+                <Text style={styles.metaChipText}>
+                  {assignment.pointsPossible} pts
+                </Text>
               </View>
             )}
             {assignment.maxAttempts && (
@@ -198,8 +210,8 @@ export default function AssignmentDetailScreen() {
           ) : null}
         </View>
 
-        {/* Existing submission */}
-        {submission && (
+        {/* Most recent submission */}
+        {latestSubmission && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Your submission</Text>
             <View style={styles.submissionCard}>
@@ -207,37 +219,44 @@ export default function AssignmentDetailScreen() {
                 <View
                   style={[
                     styles.statusBadge,
-                    { backgroundColor: `${statusColor(submission.status)}20` },
+                    {
+                      backgroundColor: `${statusColor(latestSubmission.status)}20`,
+                    },
                   ]}
                 >
                   <Text
                     style={[
                       styles.statusText,
-                      { color: statusColor(submission.status) },
+                      { color: statusColor(latestSubmission.status) },
                     ]}
                   >
-                    {submission.status.charAt(0) +
-                      submission.status.slice(1).toLowerCase()}
+                    {latestSubmission.status.charAt(0) +
+                      latestSubmission.status.slice(1).toLowerCase()}
                   </Text>
                 </View>
-                {submission.submittedAt && (
+                {latestSubmission.submittedAt && (
                   <Text style={styles.submittedAt}>
-                    {formatDate(submission.submittedAt)}
+                    {formatDate(latestSubmission.submittedAt)}
                   </Text>
                 )}
               </View>
 
-              {submission.score !== null && (
+              {latestSubmission.score !== null && (
                 <Text style={styles.score}>
-                  Score: {submission.score}
-                  {assignment.points ? ` / ${assignment.points}` : ''} pts
+                  Score: {latestSubmission.score}
+                  {assignment.pointsPossible
+                    ? ` / ${assignment.pointsPossible}`
+                    : ''}{' '}
+                  pts
                 </Text>
               )}
 
-              {submission.feedback && (
+              {latestSubmission.feedback && (
                 <View style={styles.feedbackBox}>
                   <Text style={styles.feedbackLabel}>Instructor feedback</Text>
-                  <Text style={styles.feedbackText}>{submission.feedback}</Text>
+                  <Text style={styles.feedbackText}>
+                    {latestSubmission.feedback}
+                  </Text>
                 </View>
               )}
             </View>
@@ -248,7 +267,7 @@ export default function AssignmentDetailScreen() {
         {!isSubmitted && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>
-              {submission ? 'Resubmit your work' : 'Your response'}
+              {latestSubmission ? 'Resubmit your work' : 'Your response'}
             </Text>
             <TextInput
               style={styles.textArea}

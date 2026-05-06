@@ -1,6 +1,6 @@
 /**
  * Course detail screen — unified timeline (assignments + content + announcements).
- * Same data model as the web course timeline.
+ * Backend returns flat TimelineEntry type (sectionTimeline query), not a union.
  *
  * WHY: The timeline is the core course UX. Students don't navigate folders —
  * they scroll a chronological stream of what's happening in the course.
@@ -18,35 +18,20 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useQuery } from '@apollo/client/react';
 import { COURSE_TIMELINE_QUERY } from '../../../src/graphql/queries';
 
-type TimelineItemType = 'Assignment' | 'Announcement' | 'CourseContent';
-
-interface Assignment {
-  __typename: 'Assignment';
+// TimelineEntryType enum: ANNOUNCEMENT | ASSIGNMENT | CONTENT
+interface TimelineEntry {
   id: string;
+  type: string;
   title: string;
-  description: string | null;
-  assignmentType: string;
+  body: string | null;
   dueAt: string | null;
-  points: number | null;
-}
-
-interface Announcement {
-  __typename: 'Announcement';
-  id: string;
-  title: string;
-  body: string;
-  createdAt: string;
-}
-
-interface CourseContent {
-  __typename: 'CourseContent';
-  id: string;
-  title: string;
-  contentType: string;
+  pointsPossible: number | null;
+  assignmentType: string | null;
+  authorName: string | null;
+  pinned: boolean;
   publishedAt: string | null;
+  timestamp: string;
 }
-
-type TimelineItem = Assignment | Announcement | CourseContent;
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString([], {
@@ -65,29 +50,29 @@ function formatDue(dueAt: string | null): string {
   return `Due ${formatDate(dueAt)}`;
 }
 
-function typeLabel(typename: TimelineItemType): string {
-  switch (typename) {
-    case 'Assignment':
-      return 'Assignment';
-    case 'Announcement':
-      return 'Announcement';
-    case 'CourseContent':
-      return 'Content';
-    default:
-      return typename;
-  }
-}
-
-function typeColor(typename: TimelineItemType): string {
-  switch (typename) {
-    case 'Assignment':
+function entryColor(type: string): string {
+  switch (type) {
+    case 'ASSIGNMENT':
       return '#f59e0b';
-    case 'Announcement':
+    case 'ANNOUNCEMENT':
       return '#3b82f6';
-    case 'CourseContent':
+    case 'CONTENT':
       return '#10b981';
     default:
       return '#94a3b8';
+  }
+}
+
+function entryLabel(type: string): string {
+  switch (type) {
+    case 'ASSIGNMENT':
+      return 'Assignment';
+    case 'ANNOUNCEMENT':
+      return 'Announcement';
+    case 'CONTENT':
+      return 'Content';
+    default:
+      return type;
   }
 }
 
@@ -96,29 +81,25 @@ function TimelineCard({
   sectionId,
   courseId,
 }: {
-  item: TimelineItem;
+  item: TimelineEntry;
   sectionId: string;
   courseId: string;
 }) {
-  const color = typeColor(item.__typename);
-  const label = typeLabel(item.__typename);
+  const color = entryColor(item.type);
+  const label = entryLabel(item.type);
+  const isAssignment = item.type === 'ASSIGNMENT';
+  const due = isAssignment ? formatDue(item.dueAt) : '';
+  const date = !isAssignment
+    ? formatDate(item.publishedAt ?? item.timestamp)
+    : '';
 
   const handlePress = () => {
-    if (item.__typename === 'Assignment') {
+    if (isAssignment) {
       router.push(
         `/courses/${courseId}/assignment/${item.id}?sectionId=${sectionId}`,
       );
     }
   };
-
-  const isAssignment = item.__typename === 'Assignment';
-  const due = item.__typename === 'Assignment' ? formatDue(item.dueAt) : '';
-  const date =
-    item.__typename === 'Announcement'
-      ? formatDate(item.createdAt)
-      : item.__typename === 'CourseContent' && item.publishedAt
-        ? formatDate(item.publishedAt)
-        : '';
 
   return (
     <TouchableOpacity
@@ -135,17 +116,11 @@ function TimelineCard({
           {item.title}
         </Text>
 
-        {item.__typename === 'Announcement' && (
+        {item.body ? (
           <Text style={styles.cardSub} numberOfLines={2}>
             {item.body}
           </Text>
-        )}
-
-        {item.__typename === 'Assignment' && item.description && (
-          <Text style={styles.cardSub} numberOfLines={2}>
-            {item.description}
-          </Text>
-        )}
+        ) : null}
 
         <View style={styles.cardMeta}>
           {due ? (
@@ -159,8 +134,8 @@ function TimelineCard({
             </Text>
           ) : null}
           {date ? <Text style={styles.date}>{date}</Text> : null}
-          {item.__typename === 'Assignment' && item.points ? (
-            <Text style={styles.points}>{item.points} pts</Text>
+          {isAssignment && item.pointsPossible ? (
+            <Text style={styles.points}>{item.pointsPossible} pts</Text>
           ) : null}
         </View>
       </View>
@@ -176,14 +151,14 @@ export default function CourseDetailScreen() {
   }>();
 
   const { data, loading, refetch } = useQuery<{
-    courseTimeline: TimelineItem[];
+    sectionTimeline: TimelineEntry[];
   }>(COURSE_TIMELINE_QUERY, {
     variables: { sectionId },
     skip: !sectionId,
     fetchPolicy: 'cache-and-network',
   });
 
-  const items = data?.courseTimeline ?? [];
+  const items = data?.sectionTimeline ?? [];
 
   return (
     <>
@@ -197,7 +172,7 @@ export default function CourseDetailScreen() {
           style={styles.list}
           contentContainerStyle={styles.content}
           data={items}
-          keyExtractor={(item, i) => `${item.__typename}-${item.id}-${i}`}
+          keyExtractor={(item, i) => `${item.type}-${item.id}-${i}`}
           renderItem={({ item }) => (
             <TimelineCard
               item={item}

@@ -20,7 +20,6 @@ interface Enrollment {
   status: string;
   section: {
     id: string;
-    name: string;
     course: {
       id: string;
       code: string;

@@ -14,47 +14,46 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { useQuery, useMutation } from '@apollo/client/react';
-import { router } from 'expo-router';
-import { FEED_QUERY, MARK_FEED_READ_MUTATION } from '../../src/graphql/queries';
+import { useQuery } from '@apollo/client/react';
+import { FEED_QUERY } from '../../src/graphql/queries';
 import { useAuth } from '../../src/hooks/useAuth';
 
 interface FeedItem {
   id: string;
-  itemType: string;
+  type: string;
   title: string;
   body: string | null;
-  priority: number;
+  subtitle: string | null;
   dueAt: string | null;
-  courseTitle: string | null;
-  courseSectionId: string | null;
-  referenceId: string | null;
-  isRead: boolean;
-  createdAt: string;
+  courseTitle: string;
+  courseCode: string;
+  sectionId: string;
+  assignmentId: string | null;
+  timestamp: string;
 }
 
-function priorityLabel(priority: number): string {
-  if (priority >= 80) return 'Urgent';
-  if (priority >= 50) return 'Important';
-  return 'FYI';
-}
-
-function priorityColor(priority: number): string {
-  if (priority >= 80) return '#ef4444';
-  if (priority >= 50) return '#f59e0b';
-  return '#94a3b8';
-}
-
-function itemTypeLabel(type: string): string {
+function typeLabel(type: string): string {
   const map: Record<string, string> = {
-    ASSIGNMENT_DUE: 'Assignment due',
+    DEADLINE: 'Assignment due',
     GRADE_POSTED: 'Grade posted',
     ANNOUNCEMENT: 'Announcement',
-    CONTENT_PUBLISHED: 'New content',
-    DISCUSSION: 'Discussion',
-    MESSAGE: 'Message',
+    COURSE_UPDATE: 'Course update',
+    ENROLLMENT_UPDATE: 'Enrollment update',
   };
   return map[type] ?? type;
+}
+
+function typeColor(type: string): string {
+  switch (type) {
+    case 'DEADLINE':
+      return '#f59e0b';
+    case 'GRADE_POSTED':
+      return '#16a34a';
+    case 'ANNOUNCEMENT':
+      return '#3b82f6';
+    default:
+      return '#94a3b8';
+  }
 }
 
 function formatDue(dueAt: string | null): string | null {
@@ -69,36 +68,37 @@ function formatDue(dueAt: string | null): string | null {
   return `Due in ${days}d`;
 }
 
-function FeedCard({ item, onPress }: { item: FeedItem; onPress: () => void }) {
+function FeedCard({ item }: { item: FeedItem }) {
   const due = formatDue(item.dueAt);
+  const color = typeColor(item.type);
 
   return (
-    <TouchableOpacity
-      style={[styles.card, item.isRead && styles.cardRead]}
-      onPress={onPress}
-      activeOpacity={0.75}
-    >
+    <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.typeLabel}>{itemTypeLabel(item.itemType)}</Text>
-        {!item.isRead && <View style={styles.unreadDot} />}
+        <Text style={[styles.typeLabel, { color }]}>
+          {typeLabel(item.type)}
+        </Text>
+        <Text style={styles.course}>{item.courseCode}</Text>
       </View>
 
       <Text style={styles.cardTitle} numberOfLines={2}>
         {item.title}
       </Text>
 
-      {item.body ? (
+      {item.subtitle ? (
+        <Text style={styles.cardBody} numberOfLines={2}>
+          {item.subtitle}
+        </Text>
+      ) : item.body ? (
         <Text style={styles.cardBody} numberOfLines={2}>
           {item.body}
         </Text>
       ) : null}
 
       <View style={styles.cardFooter}>
-        {item.courseTitle ? (
-          <Text style={styles.courseLabel} numberOfLines={1}>
-            {item.courseTitle}
-          </Text>
-        ) : null}
+        <Text style={styles.courseLabel} numberOfLines={1}>
+          {item.courseTitle}
+        </Text>
         {due ? (
           <Text
             style={[styles.dueLabel, due === 'Overdue' && { color: '#ef4444' }]}
@@ -106,52 +106,19 @@ function FeedCard({ item, onPress }: { item: FeedItem; onPress: () => void }) {
             {due}
           </Text>
         ) : null}
-        <View
-          style={[
-            styles.priorityBadge,
-            { backgroundColor: `${priorityColor(item.priority)}20` },
-          ]}
-        >
-          <Text
-            style={[
-              styles.priorityText,
-              { color: priorityColor(item.priority) },
-            ]}
-          >
-            {priorityLabel(item.priority)}
-          </Text>
-        </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
 export default function HomeScreen() {
-  const { user, logout } = useAuth();
-  const { data, loading, refetch } = useQuery<{ myFeedItems: FeedItem[] }>(
+  const { user } = useAuth();
+  const { data, loading, refetch } = useQuery<{ studentFeed: FeedItem[] }>(
     FEED_QUERY,
     { fetchPolicy: 'network-only' },
   );
-  const [markRead] = useMutation(MARK_FEED_READ_MUTATION);
 
-  const items = data?.myFeedItems ?? [];
-
-  const handlePress = async (item: FeedItem) => {
-    // Mark as read
-    void markRead({ variables: { feedItemId: item.id } });
-
-    // Navigate to the relevant resource
-    if (item.courseSectionId && item.referenceId) {
-      if (
-        item.itemType === 'ASSIGNMENT_DUE' ||
-        item.itemType === 'GRADE_POSTED'
-      ) {
-        router.push(
-          `/courses/${item.referenceId}?sectionId=${item.courseSectionId}`,
-        );
-      }
-    }
-  };
+  const items = data?.studentFeed ?? [];
 
   if (loading && items.length === 0) {
     return (
@@ -167,9 +134,7 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       data={items}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <FeedCard item={item} onPress={() => handlePress(item)} />
-      )}
+      renderItem={({ item }) => <FeedCard item={item} />}
       refreshControl={
         <RefreshControl
           refreshing={loading}
@@ -236,9 +201,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  cardRead: {
-    opacity: 0.7,
-  },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -247,15 +209,14 @@ const styles = StyleSheet.create({
   typeLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#0f172a',
+  course: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94a3b8',
+    letterSpacing: 0.5,
   },
   cardTitle: {
     fontSize: 15,
@@ -284,15 +245,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: '#f59e0b',
-  },
-  priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 100,
-  },
-  priorityText: {
-    fontSize: 11,
-    fontWeight: '600',
   },
   empty: {
     alignItems: 'center',

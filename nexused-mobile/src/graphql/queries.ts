@@ -1,32 +1,31 @@
 import { gql } from '@apollo/client';
 
 // ─── Feed ─────────────────────────────────────────────────────────────────────
+// studentFeed: [FeedItem!]!
+// FeedItemType enum: ANNOUNCEMENT | COURSE_UPDATE | DEADLINE | ENROLLMENT_UPDATE | GRADE_POSTED
 
 export const FEED_QUERY = gql`
-  query MyFeedItems {
-    myFeedItems {
+  query StudentFeed {
+    studentFeed {
       id
-      itemType
+      type
       title
       body
-      priority
+      subtitle
       dueAt
       courseTitle
-      courseSectionId
-      referenceId
-      isRead
-      createdAt
+      courseCode
+      sectionId
+      assignmentId
+      pointsPossible
+      score
+      timestamp
     }
   }
 `;
 
-export const MARK_FEED_READ_MUTATION = gql`
-  mutation MarkFeedItemRead($feedItemId: String!) {
-    markFeedItemRead(feedItemId: $feedItemId)
-  }
-`;
-
 // ─── Courses ──────────────────────────────────────────────────────────────────
+// CourseSection has no 'name' field
 
 export const MY_COURSES_QUERY = gql`
   query MyEnrollments {
@@ -35,7 +34,6 @@ export const MY_COURSES_QUERY = gql`
       status
       section {
         id
-        name
         course {
           id
           code
@@ -51,37 +49,31 @@ export const MY_COURSES_QUERY = gql`
   }
 `;
 
+// ─── Timeline ─────────────────────────────────────────────────────────────────
+// sectionTimeline returns flat TimelineEntry type (NOT a GraphQL union)
+// TimelineEntryType enum: ANNOUNCEMENT | ASSIGNMENT | CONTENT
+
 export const COURSE_TIMELINE_QUERY = gql`
-  query CourseTimeline($sectionId: String!) {
-    courseTimeline(sectionId: $sectionId) {
-      ... on Assignment {
-        __typename
-        id
-        title
-        description
-        assignmentType
-        dueAt
-        points
-      }
-      ... on Announcement {
-        __typename
-        id
-        title
-        body
-        createdAt
-      }
-      ... on CourseContent {
-        __typename
-        id
-        title
-        contentType
-        publishedAt
-      }
+  query SectionTimeline($sectionId: String!) {
+    sectionTimeline(sectionId: $sectionId) {
+      id
+      type
+      title
+      body
+      dueAt
+      pointsPossible
+      assignmentType
+      authorName
+      pinned
+      publishedAt
+      timestamp
     }
   }
 `;
 
 // ─── Assignments ──────────────────────────────────────────────────────────────
+// Assignment.type (not assignmentType), Assignment.pointsPossible (not points)
+// No mySubmission field — use mySubmissions query separately
 
 export const ASSIGNMENT_QUERY = gql`
   query Assignment($id: String!) {
@@ -89,25 +81,30 @@ export const ASSIGNMENT_QUERY = gql`
       id
       title
       description
-      assignmentType
+      type
       dueAt
-      points
+      pointsPossible
       maxAttempts
       timeLimitMinutes
-      mySubmission {
-        id
-        status
-        score
-        feedback
-        submittedAt
-      }
+    }
+  }
+`;
+
+export const MY_SUBMISSIONS_QUERY = gql`
+  query MySubmissions($assignmentId: String!) {
+    mySubmissions(assignmentId: $assignmentId) {
+      id
+      status
+      score
+      feedback
+      submittedAt
     }
   }
 `;
 
 export const SUBMIT_ASSIGNMENT_MUTATION = gql`
-  mutation CreateSubmission($input: CreateSubmissionInput!) {
-    createSubmission(input: $input) {
+  mutation SubmitAssignment($input: CreateSubmissionInput!) {
+    submitAssignment(input: $input) {
       id
       status
       submittedAt
@@ -116,37 +113,35 @@ export const SUBMIT_ASSIGNMENT_MUTATION = gql`
 `;
 
 // ─── Grades ───────────────────────────────────────────────────────────────────
+// myGrades: [CourseSectionGrades!]! — course-grouped grade summaries with pre-computed averages
 
 export const MY_GRADES_QUERY = gql`
   query MyGrades {
-    myEnrollments {
-      id
-      section {
-        id
-        name
-        course {
-          id
-          code
-          title
-        }
-      }
-      submissions {
-        id
-        status
+    myGrades {
+      courseCode
+      courseTitle
+      courseId
+      sectionId
+      overallPercentage
+      totalPointsEarned
+      totalPointsPossible
+      assignments {
+        assignmentId
+        assignmentTitle
         score
-        submittedAt
-        assignment {
-          id
-          title
-          points
-          dueAt
-        }
+        pointsPossible
+        percentage
+        feedback
+        gradedAt
       }
     }
   }
 `;
 
 // ─── Messaging ────────────────────────────────────────────────────────────────
+// DirectMessage uses 'content' (not 'body')
+// conversationMessages returns PaginatedMessagesResponse { messages, hasMore, totalCount }
+// sendMessageToConversation: for existing thread (conversationId + content)
 
 export const MY_CONVERSATIONS_QUERY = gql`
   query MyConversations {
@@ -155,7 +150,7 @@ export const MY_CONVERSATIONS_QUERY = gql`
       title
       lastMessage {
         id
-        body
+        content
         createdAt
         sender {
           firstName
@@ -175,23 +170,26 @@ export const MY_CONVERSATIONS_QUERY = gql`
 export const CONVERSATION_MESSAGES_QUERY = gql`
   query ConversationMessages($conversationId: String!) {
     conversationMessages(conversationId: $conversationId) {
-      id
-      body
-      createdAt
-      sender {
+      messages {
         id
-        firstName
-        lastName
+        content
+        createdAt
+        sender {
+          id
+          firstName
+          lastName
+        }
       }
+      hasMore
     }
   }
 `;
 
 export const SEND_MESSAGE_MUTATION = gql`
-  mutation SendMessage($input: SendMessageInput!) {
-    sendMessage(input: $input) {
+  mutation SendMessageToConversation($input: SendMessageToConversationInput!) {
+    sendMessageToConversation(input: $input) {
       id
-      body
+      content
       createdAt
       sender {
         id
@@ -246,59 +244,54 @@ export const MARK_ALL_NOTIFICATIONS_READ_MUTATION = gql`
 `;
 
 // ─── AI ───────────────────────────────────────────────────────────────────────
+// AiConversation: id, agentType, courseId, status, createdAt, updatedAt
+//   (no title, no messages, no lastMessage)
+// AiMessage: id, role, content, createdAt, tokenCount, toolCalls, toolResults
+//   (no toolName, toolInput, toolResult)
+// continueConversation: renamed from sendMessage to avoid conflict with messaging module
 
 export const MY_AI_CONVERSATIONS_QUERY = gql`
   query MyAiConversations {
     myAiConversations {
       id
-      title
       agentType
+      courseId
+      status
       createdAt
-      lastMessage {
-        role
-        content
-        createdAt
-      }
+      updatedAt
     }
   }
 `;
 
-export const AI_CONVERSATION_QUERY = gql`
-  query AiConversation($id: String!) {
-    aiConversation(id: $id) {
+export const AI_MESSAGES_QUERY = gql`
+  query AiMessages($conversationId: String!) {
+    aiMessages(conversationId: $conversationId) {
       id
-      title
-      agentType
-      messages {
-        id
-        role
-        content
-        createdAt
-        toolName
-        toolInput
-        toolResult
-      }
+      role
+      content
+      createdAt
     }
   }
 `;
 
 export const START_AI_CONVERSATION_MUTATION = gql`
-  mutation StartAiConversation($input: StartAiConversationInput!) {
-    startAiConversation(input: $input) {
-      id
-      agentType
+  mutation StartConversation($input: StartConversationInput!) {
+    startConversation(input: $input) {
+      conversationId
+      responseText
+      toolsUsed
+      totalInputTokens
+      totalOutputTokens
+      turns
     }
   }
 `;
 
-export const SEND_AI_MESSAGE_MUTATION = gql`
-  mutation SendAiMessage($conversationId: String!, $content: String!) {
-    sendAiMessage(conversationId: $conversationId, content: $content) {
-      id
-      role
-      content
-      createdAt
-      toolName
+export const CONTINUE_AI_CONVERSATION_MUTATION = gql`
+  mutation ContinueConversation($input: ContinueConversationInput!) {
+    continueConversation(input: $input) {
+      conversationId
+      responseText
     }
   }
 `;

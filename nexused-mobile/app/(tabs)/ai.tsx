@@ -20,14 +20,11 @@ import { MY_AI_CONVERSATIONS_QUERY } from '../../src/graphql/queries';
 
 interface AiConversation {
   id: string;
-  title: string | null;
   agentType: string;
+  courseId: string | null;
+  status: string;
   createdAt: string;
-  lastMessage: {
-    role: string;
-    content: string;
-    createdAt: string;
-  } | null;
+  updatedAt: string;
 }
 
 const AGENTS = [
@@ -71,21 +68,18 @@ function ConversationCard({ item }: { item: AiConversation }) {
             {agentLabel(item.agentType)}
           </Text>
         </View>
-        <Text style={styles.time}>
-          {item.lastMessage
-            ? formatTime(item.lastMessage.createdAt)
-            : formatTime(item.createdAt)}
-        </Text>
+        <Text style={styles.time}>{formatTime(item.updatedAt)}</Text>
       </View>
       <Text style={styles.title} numberOfLines={1}>
-        {item.title ?? 'Conversation'}
+        {agentLabel(item.agentType)} conversation
       </Text>
-      {item.lastMessage && (
-        <Text style={styles.preview} numberOfLines={2}>
-          {item.lastMessage.role === 'assistant' ? '🤖 ' : ''}
-          {item.lastMessage.content}
-        </Text>
-      )}
+      <Text style={styles.preview} numberOfLines={1}>
+        {new Date(item.createdAt).toLocaleDateString([], {
+          month: 'long',
+          day: 'numeric',
+        })}
+        {item.status === 'completed' ? ' · Completed' : ''}
+      </Text>
     </TouchableOpacity>
   );
 }

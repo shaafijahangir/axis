@@ -37,7 +37,7 @@ export const apolloClient = new ApolloClient({
     typePolicies: {
       Query: {
         fields: {
-          myFeedItems: {
+          studentFeed: {
             merge: false, // Always replace on refetch
           },
           myConversations: {

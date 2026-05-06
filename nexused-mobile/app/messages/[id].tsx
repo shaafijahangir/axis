@@ -3,8 +3,9 @@
  * Uses polling (5s) instead of Socket.IO for now; Socket.IO on RN
  * requires react-native-url-polyfill setup and is a Phase B enhancement.
  *
- * WHY: Polling at 5s is acceptable for messaging UX on mobile;
- * Socket.IO real-time is a nice-to-have, not a blocker.
+ * DirectMessage uses 'content' (not 'body').
+ * conversationMessages returns PaginatedMessagesResponse { messages, hasMore }.
+ * Sending uses sendMessageToConversation (not sendMessage which is for new DMs).
  */
 import { useState, useRef, useEffect } from 'react';
 import {
@@ -28,7 +29,7 @@ import { useAuth } from '../../src/hooks/useAuth';
 
 interface Message {
   id: string;
-  body: string;
+  content: string;
   createdAt: string;
   sender: {
     id: string;
@@ -67,7 +68,7 @@ function MessageBubble({
           </Text>
         )}
         <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]}>
-          {message.body}
+          {message.content}
         </Text>
         <Text style={[styles.bubbleTime, isOwn && styles.bubbleTimeOwn]}>
           {formatTime(message.createdAt)}
@@ -80,19 +81,18 @@ function MessageBubble({
 export default function MessageThreadScreen() {
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const [body, setBody] = useState('');
+  const [content, setContent] = useState('');
   const [isSending, setIsSending] = useState(false);
   const listRef = useRef<FlatList>(null);
 
-  const { data, loading } = useQuery<{ conversationMessages: Message[] }>(
-    CONVERSATION_MESSAGES_QUERY,
-    {
-      variables: { conversationId },
-      skip: !conversationId,
-      fetchPolicy: 'cache-and-network',
-      pollInterval: 5_000,
-    },
-  );
+  const { data, loading } = useQuery<{
+    conversationMessages: { messages: Message[]; hasMore: boolean };
+  }>(CONVERSATION_MESSAGES_QUERY, {
+    variables: { conversationId },
+    skip: !conversationId,
+    fetchPolicy: 'cache-and-network',
+    pollInterval: 5_000,
+  });
 
   const [sendMessage] = useMutation(SEND_MESSAGE_MUTATION, {
     refetchQueries: [
@@ -103,7 +103,7 @@ export default function MessageThreadScreen() {
     ],
   });
 
-  const messages = data?.conversationMessages ?? [];
+  const messages = data?.conversationMessages?.messages ?? [];
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -113,20 +113,19 @@ export default function MessageThreadScreen() {
   }, [messages.length]);
 
   const handleSend = async () => {
-    const trimmed = body.trim();
+    const trimmed = content.trim();
     if (!trimmed || isSending) return;
 
     setIsSending(true);
-    setBody('');
+    setContent('');
     try {
       await sendMessage({
         variables: {
-          input: { conversationId, body: trimmed },
+          input: { conversationId, content: trimmed },
         },
       });
     } catch {
-      // Restore body on failure
-      setBody(trimmed);
+      setContent(trimmed);
     } finally {
       setIsSending(false);
     }
@@ -166,8 +165,8 @@ export default function MessageThreadScreen() {
       <View style={styles.inputBar}>
         <TextInput
           style={styles.input}
-          value={body}
-          onChangeText={setBody}
+          value={content}
+          onChangeText={setContent}
           placeholder="Message…"
           placeholderTextColor="#94a3b8"
           multiline
@@ -178,10 +177,10 @@ export default function MessageThreadScreen() {
         <TouchableOpacity
           style={[
             styles.sendButton,
-            (!body.trim() || isSending) && styles.sendButtonDisabled,
+            (!content.trim() || isSending) && styles.sendButtonDisabled,
           ]}
           onPress={handleSend}
-          disabled={!body.trim() || isSending}
+          disabled={!content.trim() || isSending}
           activeOpacity={0.8}
         >
           <Text style={styles.sendButtonText}>↑</Text>

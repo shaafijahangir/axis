@@ -1,13 +1,9 @@
 /**
  * AI chat thread — full conversation with an agent.
  *
- * WHY: The AI thread is the core value-add screen on mobile. Students can ask
- * questions mid-study without switching to a laptop. The UX must feel fast
- * even if the AI takes a few seconds — hence the "AI is thinking…" indicator
- * and the optimistic input clear.
- *
- * Tool use messages (role=tool_use/tool_result) are rendered as small chips,
- * not full bubbles — they're implementation detail, not conversation content.
+ * Uses aiMessages(conversationId) for history and continueConversation for sending.
+ * Tool use messages (role=tool_use/tool_result) are rendered as small chips.
+ * The agentType comes from the list screen via route params.
  */
 import { useState, useRef, useEffect } from 'react';
 import {
@@ -24,8 +20,8 @@ import {
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
-  AI_CONVERSATION_QUERY,
-  SEND_AI_MESSAGE_MUTATION,
+  AI_MESSAGES_QUERY,
+  CONTINUE_AI_CONVERSATION_MUTATION,
 } from '../../src/graphql/queries';
 
 interface AiMessage {
@@ -33,18 +29,6 @@ interface AiMessage {
   role: string;
   content: string;
   createdAt: string;
-  toolName: string | null;
-  toolInput: string | null;
-  toolResult: string | null;
-}
-
-interface ConversationData {
-  aiConversation: {
-    id: string;
-    title: string | null;
-    agentType: string;
-    messages: AiMessage[];
-  };
 }
 
 const AGENT_NAMES: Record<string, string> = {
@@ -52,12 +36,12 @@ const AGENT_NAMES: Record<string, string> = {
   feedback_copilot: 'Feedback Copilot',
 };
 
-function ToolChip({ message }: { message: AiMessage }) {
-  const isUse = message.role === 'tool_use';
+function ToolChip({ role }: { role: string }) {
+  const isUse = role === 'tool_use';
   return (
     <View style={styles.toolChip}>
       <Text style={styles.toolChipText}>
-        {isUse ? `⚙ Using ${message.toolName ?? 'tool'}…` : '✓ Done'}
+        {isUse ? '⚙ Using tool…' : '✓ Done'}
       </Text>
     </View>
   );
@@ -90,24 +74,23 @@ function MessageBubble({ message }: { message: AiMessage }) {
 }
 
 export default function AiChatScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, agent } = useLocalSearchParams<{ id: string; agent?: string }>();
   const [content, setContent] = useState('');
   const [isSending, setIsSending] = useState(false);
   const listRef = useRef<FlatList>(null);
 
-  const { data, loading, refetch } = useQuery<ConversationData>(
-    AI_CONVERSATION_QUERY,
+  const { data, loading, refetch } = useQuery<{ aiMessages: AiMessage[] }>(
+    AI_MESSAGES_QUERY,
     {
-      variables: { id },
-      skip: !id,
+      variables: { conversationId: id },
+      skip: !id || id === 'new',
       fetchPolicy: 'cache-and-network',
     },
   );
 
-  const [sendAiMessage] = useMutation(SEND_AI_MESSAGE_MUTATION);
+  const [continueConversation] = useMutation(CONTINUE_AI_CONVERSATION_MUTATION);
 
-  const conversation = data?.aiConversation;
-  const messages = conversation?.messages ?? [];
+  const messages = data?.aiMessages ?? [];
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -118,22 +101,24 @@ export default function AiChatScreen() {
 
   const handleSend = async () => {
     const trimmed = content.trim();
-    if (!trimmed || isSending) return;
+    if (!trimmed || isSending || !id || id === 'new') return;
 
     setIsSending(true);
-    setContent(''); // Clear optimistically
+    setContent('');
     try {
-      await sendAiMessage({
-        variables: { conversationId: id, content: trimmed },
+      await continueConversation({
+        variables: { input: { conversationId: id, message: trimmed } },
       });
-      // Refetch to get AI response — not streaming on mobile (Phase B)
       await refetch();
     } catch {
-      setContent(trimmed); // Restore on failure
+      setContent(trimmed);
     } finally {
       setIsSending(false);
     }
   };
+
+  const agentType = agent ?? '';
+  const agentName = AGENT_NAMES[agentType] ?? 'AI';
 
   if (loading && messages.length === 0) {
     return (
@@ -143,19 +128,13 @@ export default function AiChatScreen() {
     );
   }
 
-  const agentName =
-    AGENT_NAMES[conversation?.agentType ?? ''] ??
-    conversation?.agentType ??
-    'AI';
-  const title = conversation?.title ?? agentName;
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#f8fafc' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={88}
     >
-      <Stack.Screen options={{ title }} />
+      <Stack.Screen options={{ title: agentName }} />
 
       <FlatList
         ref={listRef}
@@ -165,7 +144,7 @@ export default function AiChatScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
           if (item.role === 'tool_use' || item.role === 'tool_result') {
-            return <ToolChip message={item} />;
+            return <ToolChip role={item.role} />;
           }
           return <MessageBubble message={item} />;
         }}
@@ -177,7 +156,6 @@ export default function AiChatScreen() {
         }
       />
 
-      {/* "AI is thinking" shown while waiting for refetch */}
       {isSending && (
         <View style={styles.thinkingBar}>
           <ActivityIndicator size="small" color="#6366f1" />
@@ -185,7 +163,6 @@ export default function AiChatScreen() {
         </View>
       )}
 
-      {/* Input bar */}
       <View style={styles.inputBar}>
         <TextInput
           style={styles.input}

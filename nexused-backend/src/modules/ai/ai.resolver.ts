@@ -13,7 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   StartConversationInput,
-  SendMessageInput,
+  ContinueConversationInput,
 } from './dto/chat-message.dto';
 import { AgentResponseDto, AgentInfoDto } from './dto/agent-response.dto';
 
@@ -60,9 +60,9 @@ export class AiResolver {
   }
 
   @Mutation(() => AgentResponseDto)
-  async sendMessage(
+  async continueConversation(
     @CurrentUser() user: User,
-    @Args('input') input: SendMessageInput,
+    @Args('input') input: ContinueConversationInput,
   ): Promise<AgentResponseDto> {
     return this.agentExecutor.continueConversation({
       conversationId: input.conversationId,

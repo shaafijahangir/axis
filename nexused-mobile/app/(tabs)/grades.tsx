@@ -1,6 +1,6 @@
 /**
- * Grades tab — per-course grade summary, then per-assignment breakdown on expand.
- * WHY: Students check grades constantly. This is one of the top 3 reasons they open the app.
+ * Grades tab — per-course grade summary with per-assignment breakdown.
+ * Uses myGrades: [CourseSectionGrades!]! which returns pre-computed averages.
  */
 import {
   View,
@@ -13,84 +13,58 @@ import {
 import { useQuery } from '@apollo/client/react';
 import { MY_GRADES_QUERY } from '../../src/graphql/queries';
 
-interface Submission {
-  id: string;
-  status: string;
-  score: number | null;
-  submittedAt: string | null;
-  assignment: {
-    id: string;
-    title: string;
-    points: number | null;
-    dueAt: string | null;
-  };
+interface GradedAssignment {
+  assignmentId: string;
+  assignmentTitle: string;
+  score: number;
+  pointsPossible: number;
+  percentage: number;
+  feedback: string | null;
+  gradedAt: string;
 }
 
-interface GradeSection {
-  id: string;
-  section: {
-    id: string;
-    name: string;
-    course: { id: string; code: string; title: string };
-  };
-  submissions: Submission[];
+interface CourseSectionGrades {
+  courseCode: string;
+  courseTitle: string;
+  courseId: string;
+  sectionId: string;
+  overallPercentage: number;
+  totalPointsEarned: number;
+  totalPointsPossible: number;
+  assignments: GradedAssignment[];
 }
 
-function scoreDisplay(score: number | null, points: number | null): string {
-  if (score === null) return '—';
-  if (points) return `${score} / ${points}`;
-  return `${score}`;
+function letterGrade(pct: number): string {
+  if (pct >= 90) return 'A';
+  if (pct >= 80) return 'B';
+  if (pct >= 70) return 'C';
+  if (pct >= 60) return 'D';
+  return 'F';
 }
 
-function scorePercent(
-  score: number | null,
-  points: number | null,
-): number | null {
-  if (score === null || !points) return null;
-  return Math.round((score / points) * 100);
+function gradeColor(pct: number): string {
+  if (pct >= 80) return '#16a34a';
+  if (pct >= 60) return '#f59e0b';
+  return '#ef4444';
 }
 
-function courseAverage(submissions: Submission[]): string {
-  const graded = submissions.filter((s) => s.score !== null);
-  if (graded.length === 0) return '—';
-  const earned = graded.reduce((sum, s) => sum + (s.score ?? 0), 0);
-  const possible = graded.reduce(
-    (sum, s) => sum + (s.assignment.points ?? 0),
-    0,
-  );
-  if (!possible) return '—';
-  return `${Math.round((earned / possible) * 100)}%`;
-}
-
-function SubmissionRow({ sub }: { sub: Submission }) {
-  const pct = scorePercent(sub.score, sub.assignment.points);
+function AssignmentRow({ item }: { item: GradedAssignment }) {
+  const color = gradeColor(item.percentage);
 
   return (
     <View style={styles.subRow}>
       <View style={styles.subLeft}>
         <Text style={styles.subTitle} numberOfLines={1}>
-          {sub.assignment.title}
+          {item.assignmentTitle}
         </Text>
-        <Text style={styles.subStatus}>{sub.status.toLowerCase()}</Text>
       </View>
       <View style={styles.subRight}>
         <Text style={styles.subScore}>
-          {scoreDisplay(sub.score, sub.assignment.points)}
+          {item.score} / {item.pointsPossible}
         </Text>
-        {pct !== null && (
-          <Text
-            style={[
-              styles.subPct,
-              pct >= 80
-                ? { color: '#16a34a' }
-                : pct >= 60
-                  ? { color: '#f59e0b' }
-                  : { color: '#ef4444' },
-            ]}
-          >
-            {pct}%
-          </Text>
-        )}
+        <Text style={[styles.subPct, { color }]}>
+          {Math.round(item.percentage)}%
+        </Text>
       </View>
     </View>
   );
@@ -98,17 +72,17 @@ function SubmissionRow({ sub }: { sub: Submission }) {
 
 export default function GradesScreen() {
   const { data, loading, refetch } = useQuery<{
-    myEnrollments: GradeSection[];
+    myGrades: CourseSectionGrades[];
   }>(MY_GRADES_QUERY, { fetchPolicy: 'cache-and-network' });
 
   const sections =
-    data?.myEnrollments
-      .filter((e: GradeSection) => e.submissions && e.submissions.length > 0)
-      .map((e: GradeSection) => ({
-        key: e.id,
-        title: `${e.section.course.code} — ${e.section.course.title}`,
-        average: courseAverage(e.submissions),
-        data: e.submissions,
+    data?.myGrades
+      .filter((g) => g.assignments.length > 0)
+      .map((g) => ({
+        key: g.sectionId,
+        title: `${g.courseCode} — ${g.courseTitle}`,
+        average: `${Math.round(g.overallPercentage)}% (${letterGrade(g.overallPercentage)})`,
+        data: g.assignments,
       })) ?? [];
 
   if (loading && sections.length === 0) {
@@ -124,14 +98,14 @@ export default function GradesScreen() {
       style={styles.list}
       contentContainerStyle={styles.content}
       sections={sections}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <SubmissionRow sub={item} />}
+      keyExtractor={(item) => item.assignmentId}
+      renderItem={({ item }) => <AssignmentRow item={item} />}
       renderSectionHeader={({ section }) => (
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle} numberOfLines={1}>
             {section.title}
           </Text>
-          <Text style={styles.sectionAvg}>Avg: {section.average}</Text>
+          <Text style={styles.sectionAvg}>{section.average}</Text>
         </View>
       )}
       refreshControl={
@@ -200,17 +174,11 @@ const styles = StyleSheet.create({
   },
   subLeft: {
     flex: 1,
-    gap: 2,
   },
   subTitle: {
     fontSize: 14,
     fontWeight: '500',
     color: '#0f172a',
-  },
-  subStatus: {
-    fontSize: 12,
-    color: '#94a3b8',
-    textTransform: 'capitalize',
   },
   subRight: {
     alignItems: 'flex-end',
