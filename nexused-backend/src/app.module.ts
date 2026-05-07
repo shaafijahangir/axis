@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { GqlThrottlerGuard } from './guards/gql-throttler.guard';
 import { SentryModule, SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -143,10 +144,10 @@ import { ScheduleModule } from '@nestjs/schedule';
       provide: APP_FILTER,
       useClass: SentryGlobalFilter,
     },
-    // T3-005: Global rate limiting guard (100 req/min per IP)
+    // T3-005: Global rate limiting guard — GqlThrottlerGuard handles both REST and GraphQL contexts
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: GqlThrottlerGuard,
     },
   ],
 })
