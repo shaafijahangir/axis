@@ -566,7 +566,7 @@ async function seed() {
       await qr.query(
         `INSERT INTO assignments (id, "tenantId", "sectionId", "moduleId", title, description, type, "pointsPossible", "dueAt", rubric, settings, "createdAt", "updatedAt")
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NULL,'{}',$10,$11)
-         ON CONFLICT (id) DO UPDATE SET title=$5`,
+         ON CONFLICT (id) DO UPDATE SET title=$5, "dueAt"=$9`,
         [
           id,
           IDS.tenant,

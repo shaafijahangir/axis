@@ -348,9 +348,11 @@ async function seedDemo() {
   await ds.initialize();
   console.log('Connected to database.');
 
-  // Resolve the existing demo tenant ID
+  // Use the fixed demo tenant UUID created by seed.ts
+  const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
   const tenantResult = await ds.query<{ id: string }[]>(
-    `SELECT id FROM tenants ORDER BY "createdAt" LIMIT 1`,
+    `SELECT id FROM tenants WHERE id = $1`,
+    [DEMO_TENANT_ID],
   );
   if (!tenantResult.length) {
     console.error(
@@ -479,10 +481,11 @@ async function seedDemo() {
     console.log(`  ${courseIds.length} courses created.`);
 
     // Re-fetch actual course IDs (conflict-do-nothing may have skipped some inserts)
-    const fetchedCourses = await ds.query<{ id: string; code: string }[]>(
+    // Must use qr.query to read within the same transaction
+    const fetchedCourses = (await qr.query(
       `SELECT id, code FROM courses WHERE "tenantId" = $1 AND code = ANY($2::text[])`,
       [tenantId, COURSE_CATALOG.map((c) => c.code)],
-    );
+    )) as { id: string; code: string }[];
     const courseMap = new Map(fetchedCourses.map((c) => [c.code, c.id]));
 
     // ─── 4. Sections ──────────────────────────────────────────────
@@ -549,15 +552,7 @@ async function seedDemo() {
       }
     }
 
-    // Also enroll each instructor as the section instructor
-    for (const [sectionId, instrId] of sectionToInstructor) {
-      await qr.query(
-        `INSERT INTO enrollments (id, "tenantId", "userId", "sectionId", role, status, "enrolledAt", "createdAt", "updatedAt")
-         VALUES (uuid_generate_v4(),$1,$2,$3,'instructor','active',NOW(),$4,$5)
-         ON CONFLICT DO NOTHING`,
-        [tenantId, instrId, sectionId, now, now],
-      );
-    }
+    // Instructors are linked via course_sections.instructorId FK, not via enrollments
     console.log(`  ~${enrollmentCount} student enrollments created.`);
 
     // ─── 6. Assignments ────────────────────────────────────────────
@@ -603,13 +598,12 @@ async function seedDemo() {
     let submissionCount = 0;
 
     // Get all enrollments for the newly created sections
-    const enrollmentRows = await ds.query<
-      { userId: string; sectionId: string }[]
-    >(
+    // Must use qr.query to read within the same transaction
+    const enrollmentRows = (await qr.query(
       `SELECT "userId", "sectionId" FROM enrollments
        WHERE "tenantId" = $1 AND "sectionId" = ANY($2::uuid[]) AND role = 'student'`,
       [tenantId, sectionIds],
-    );
+    )) as { userId: string; sectionId: string }[];
 
     for (const row of enrollmentRows) {
       const assignments = assignmentMap.get(row.sectionId) ?? [];
