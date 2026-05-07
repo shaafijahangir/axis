@@ -18,8 +18,16 @@ export const authApi = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Login failed');
+      if (response.status === 401) {
+        throw new Error('Invalid email or password. Please try again.');
+      }
+      if (response.status === 429) {
+        throw new Error('Too many login attempts. Please wait and try again.');
+      }
+      const error = (await response.json().catch(() => ({}))) as {
+        message?: string;
+      };
+      throw new Error(error.message || 'Login failed. Please try again.');
     }
 
     return response.json();

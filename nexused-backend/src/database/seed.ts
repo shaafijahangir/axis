@@ -52,6 +52,13 @@ const IDS = {
   csBS: '50000000-0000-0000-0000-000000000001',
   // Student degree profile
   studentProfile: '60000000-0000-0000-0000-000000000001',
+  // Announcements (fixed so re-seeding doesn't create duplicates)
+  ann_cs101_welcome: '70000000-0000-0000-0000-000000000001',
+  ann_cs101_midterm: '70000000-0000-0000-0000-000000000002',
+  ann_cs101_officehours: '70000000-0000-0000-0000-000000000003',
+  ann_math201_update: '70000000-0000-0000-0000-000000000004',
+  ann_eng102_essay: '70000000-0000-0000-0000-000000000005',
+  ann_phys150_lab: '70000000-0000-0000-0000-000000000006',
 };
 
 async function seed() {
@@ -384,7 +391,7 @@ async function seed() {
       await qr.query(
         `INSERT INTO enrollments (id, "tenantId", "userId", "sectionId", role, status, "enrolledAt", "completedAt", "finalGrade", "createdAt", "updatedAt")
          VALUES (uuid_generate_v4(),$1,$2,$3,$4,$5,NOW(),$6,$7,$8,$9)
-         ON CONFLICT DO NOTHING`,
+         ON CONFLICT ("userId", "sectionId") DO NOTHING`,
         [
           IDS.tenant,
           userId,
@@ -711,6 +718,7 @@ async function seed() {
     // ─── 9. Announcements ──────────────────────────────────────
     const announcements = [
       [
+        IDS.ann_cs101_welcome,
         IDS.cs101sec,
         IDS.instructor,
         'Welcome to CS101!',
@@ -720,6 +728,7 @@ async function seed() {
         past(30),
       ],
       [
+        IDS.ann_cs101_midterm,
         IDS.cs101sec,
         IDS.instructor,
         'Midterm Study Guide Posted',
@@ -729,6 +738,7 @@ async function seed() {
         past(1),
       ],
       [
+        IDS.ann_cs101_officehours,
         IDS.cs101sec,
         IDS.ta,
         'Extra Office Hours This Week',
@@ -738,6 +748,7 @@ async function seed() {
         past(0),
       ],
       [
+        IDS.ann_math201_update,
         IDS.math201sec,
         IDS.instructor2,
         'Calculus II — Course Update',
@@ -747,6 +758,7 @@ async function seed() {
         past(3),
       ],
       [
+        IDS.ann_eng102_essay,
         IDS.eng102sec,
         IDS.instructor,
         'Essay 2 Guidelines Updated',
@@ -756,6 +768,7 @@ async function seed() {
         past(2),
       ],
       [
+        IDS.ann_phys150_lab,
         IDS.phys150sec,
         IDS.instructor2,
         'Lab Safety Reminder',
@@ -767,6 +780,7 @@ async function seed() {
     ];
 
     for (const [
+      annId,
       secId,
       authId,
       title,
@@ -777,9 +791,20 @@ async function seed() {
     ] of announcements) {
       await qr.query(
         `INSERT INTO announcements (id, "tenantId", "sectionId", "authorId", title, body, priority, pinned, "createdAt", "updatedAt")
-         VALUES (uuid_generate_v4(),$1,$2,$3,$4,$5,$6,$7,$8,$9)
-         ON CONFLICT DO NOTHING`,
-        [IDS.tenant, secId, authId, title, body, prio, pinned, created, now],
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         ON CONFLICT (id) DO NOTHING`,
+        [
+          annId,
+          IDS.tenant,
+          secId,
+          authId,
+          title,
+          body,
+          prio,
+          pinned,
+          created,
+          now,
+        ],
       );
     }
     console.log(`  ${announcements.length} announcements created.`);

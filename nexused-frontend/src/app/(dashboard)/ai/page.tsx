@@ -26,9 +26,11 @@ export default function AiPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const conversationIdFromUrl = searchParams.get('conversation');
+  // agentType is encoded in the URL so it survives router.push remounts
+  const agentTypeFromUrl = searchParams.get('agent');
 
-  // Track the agent type for the active conversation
-  const [activeAgentType, setActiveAgentType] = useState<string | null>(null);
+  // Used only for the 'new' conversation flow (no URL yet)
+  const [pendingAgentType, setPendingAgentType] = useState<string | null>(null);
 
   // Mobile: track whether we're showing the right panel
   const [mobileShowRight, setMobileShowRight] = useState(
@@ -43,26 +45,24 @@ export default function AiPage() {
   // Handle selecting an existing conversation
   const handleSelectConversation = useCallback(
     (id: string, agentType: string) => {
-      router.push(`/ai?conversation=${id}`);
-      setActiveAgentType(agentType);
+      router.push(`/ai?conversation=${id}&agent=${agentType}`);
       setViewMode('conversation');
       setMobileShowRight(true);
     },
     [router],
   );
 
-  // Handle starting a new conversation flow
+  // Handle starting a new conversation flow — no URL push to avoid remount
   const handleNewConversation = useCallback(() => {
-    router.push('/ai');
+    setPendingAgentType(null);
     setViewMode('new');
     setMobileShowRight(true);
-  }, [router]);
+  }, []);
 
   // Handle when a new conversation is successfully created
   const handleConversationStarted = useCallback(
     (conversationId: string, agentType: string) => {
-      router.push(`/ai?conversation=${conversationId}`);
-      setActiveAgentType(agentType);
+      router.push(`/ai?conversation=${conversationId}&agent=${agentType}`);
       setViewMode('conversation');
     },
     [router],
@@ -70,7 +70,7 @@ export default function AiPage() {
 
   // Handle selecting an agent from the empty state
   const handleSelectAgentFromEmpty = useCallback((agentType: string) => {
-    setActiveAgentType(agentType);
+    setPendingAgentType(agentType);
     setViewMode('new');
     setMobileShowRight(true);
   }, []);
@@ -89,20 +89,19 @@ export default function AiPage() {
           <AiNewConversation
             onConversationStarted={handleConversationStarted}
             onBack={handleBack}
-            preselectedAgent={activeAgentType ?? undefined}
+            preselectedAgent={pendingAgentType ?? undefined}
           />
         );
       case 'conversation':
-        if (conversationIdFromUrl && activeAgentType) {
+        if (conversationIdFromUrl && agentTypeFromUrl) {
           return (
             <AiChatThread
               conversationId={conversationIdFromUrl}
-              agentType={activeAgentType}
+              agentType={agentTypeFromUrl}
               onBack={handleBack}
             />
           );
         }
-        // Fallback to empty if no conversation selected
         return <AiEmptyState onSelectAgent={handleSelectAgentFromEmpty} />;
       case 'empty':
       default:
