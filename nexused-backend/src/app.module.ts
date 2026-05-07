@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { SentryModule, SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
@@ -76,6 +77,8 @@ import { ScheduleModule } from '@nestjs/schedule';
         logging: configService.get('database.logging'),
       }),
     }),
+    // T3-003: Sentry error tracking (only active when SENTRY_DSN env var is set)
+    SentryModule.forRoot(),
     // HTTP rate limiting — 100 req/min globally, stricter limits on auth endpoints
     ThrottlerModule.forRoot([
       {
@@ -134,6 +137,11 @@ import { ScheduleModule } from '@nestjs/schedule';
     {
       provide: APP_INTERCEPTOR,
       useClass: TenantInterceptor,
+    },
+    // T3-003: Sentry global exception filter — captures unhandled errors
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
     },
     // T3-005: Global rate limiting guard (100 req/min per IP)
     {

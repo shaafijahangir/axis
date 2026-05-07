@@ -1,3 +1,25 @@
+// T3-003: Sentry must be initialized before any other imports
+import * as Sentry from '@sentry/nestjs';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV ?? 'development',
+    integrations: [nodeProfilingIntegration()],
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+    profilesSampleRate: 0.1,
+    beforeSend(event) {
+      // Strip PII from breadcrumbs — no student emails or names in error reports
+      if (event.breadcrumbs) {
+        event.breadcrumbs = event.breadcrumbs.filter(
+          (b) => !b.message?.match(/email|password|token/i),
+        );
+      }
+      return event;
+    },
+  });
+}
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
