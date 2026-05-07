@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import * as express from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
@@ -44,6 +45,7 @@ export class AuthController {
     res.clearCookie(COOKIE_NAME, { path: '/' });
   }
 
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @Post('register')
   async register(
     @Body() registerDto: RegisterDto,
@@ -54,6 +56,7 @@ export class AuthController {
     return result;
   }
 
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @UseGuards(LocalAuthGuard)
   @Post('login')
   login(

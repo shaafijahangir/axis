@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
@@ -75,6 +76,14 @@ import { ScheduleModule } from '@nestjs/schedule';
         logging: configService.get('database.logging'),
       }),
     }),
+    // HTTP rate limiting — 100 req/min globally, stricter limits on auth endpoints
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     // In-process event system for AI reactions and audit logging
     EventEmitterModule.forRoot(),
     // Redis-backed job queue for heavy async AI tasks (feedback generation, etc.)
@@ -125,6 +134,11 @@ import { ScheduleModule } from '@nestjs/schedule';
     {
       provide: APP_INTERCEPTOR,
       useClass: TenantInterceptor,
+    },
+    // T3-005: Global rate limiting guard (100 req/min per IP)
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })
