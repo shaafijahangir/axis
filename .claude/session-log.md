@@ -5,6 +5,242 @@
 
 ---
 
+## Session 46 — T3-003/004/005 Infrastructure + Feature API Testing
+
+**Date:** 2026-05-06
+**Goal:** Implement rate limiting (T3-005), structured logging (T3-004), Sentry (T3-003); then test Messaging, Discussions, Notifications, and Quiz end-to-end via API
+**Status:** COMPLETE
+
+### Work Done
+
+**T3-005: GQL-aware rate limiting — DONE (commit 1b10248)**
+- `GqlThrottlerGuard` extends `ThrottlerGuard`, overrides `getRequestResponse()` to detect `context.getType() === 'graphql'` and extract `req` from `GqlExecutionContext` instead of crashing
+- ThrottlerModule: named `'default'`, 100 req/min global
+- Auth endpoints (`/api/auth/login`, `/api/auth/register`): 10 req/min via `@Throttle({ default: { ... } })`
+- `/api/health`: `@SkipThrottle()` — Docker health probes never 429
+
+**T3-004: Winston structured logging — DONE**
+- Dev: colorized human-readable with timestamp prefix
+- Production: JSON format, no stack traces in output
+- Injected into NestFactory.create() via WinstonModule
+
+**T3-003: Sentry error tracking — DONE**
+- Backend: `Sentry.init()` before all imports in `main.ts`, `SentryModule.forRoot()` in AppModule, `SentryGlobalFilter` as global exception filter. PII scrubbing in `beforeSend` (email/password/token breadcrumbs)
+- Frontend: `withSentryConfig` in `next.config.ts`, `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`. All conditional on DSN env var
+- Both environments: off by default in dev unless `SENTRY_DSN` is set
+
+**Four-Feature API Test — ALL PASSING**
+- Messaging (5 ops): sendMessage → myConversations → sendMessageToConversation → conversationMessages → markConversationAsRead
+- Discussions (5 ops): createDiscussion → sectionDiscussions → replyToDiscussion → pinDiscussion → markReplyAsAnswer
+- Notifications (5 ops): myNotifications → unreadNotificationCount → markNotificationRead → unreadCount decrease → markAllNotificationsRead
+- Quiz (5 ops): createAssignment(type=quiz) → addQuizQuestion×2 → startQuiz → submitQuiz → autoScore=100
+
+### Critical API Discoveries (correct field names)
+- `sendMessage(input: SendMessageInput!)` — input object, not bare args
+- `CreateDiscussionInput.body` (not `content`); `CreateDiscussionReplyInput.body` (not `content`)
+- `pinDiscussion(id: String!)` (not `discussionId`)
+- `markReplyAsAnswer(replyId: String!)` returns `DiscussionReply.isInstructorAnswer` (not `isAnswer`)
+- `Notification.read` (not `isRead`)
+- `CreateAssignmentInput.pointsPossible` (not `maxScore`); type enum value is `"quiz"` (lowercase)
+- `addQuizQuestion` (singular); `AddQuizQuestionInput` uses `questionText`, `questionType: MULTIPLE_CHOICE`, options `{text, isCorrect}`, selectedOption is Int index
+- `SubmitQuizInput.submissionId` — must call `startQuiz` first to get submission ID
+
+---
+
+## Session 45 — Pre-Sales Bug Fixes + Seed Data Repair
+
+**Date:** 2026-05-07
+**Goal:** Fix all startup issues and seed data bugs before sales demo
+**Status:** COMPLETE
+
+### Work Done
+
+**BUG-001: seed-demo.ts — ds.query inside transaction (critical) — FIXED**
+- `ds.query` (auto-commit) was used inside a transaction managed by `qr` (query runner)
+- Newly inserted courses were invisible to the section-creation loop → 0 sections created
+- Fix: changed to `qr.query(...)` with `as T[]` cast (TypeORM QueryRunner returns `any`)
+
+**BUG-002: seed-demo.ts — invalid EnrollmentRole 'instructor' — FIXED**
+- Tried to INSERT enrollments with `role = 'instructor'` but enum only has student/ta/observer
+- Instructors link to sections via `course_sections.instructorId` FK, not via enrollments
+- Fix: removed the instructor enrollment block entirely
+
+**BUG-003: seed-demo.ts — stale tenant lookup — FIXED**
+- `SELECT id FROM tenants ORDER BY "createdAt" LIMIT 1` picked oldest tenant (stale dev data)
+- Fix: hardcoded the fixed demo UUID `00000000-0000-0000-0000-000000000001`
+
+**BUG-004: seed.ts — stale dueAt on re-run — FIXED**
+- `ON CONFLICT (id) DO UPDATE SET title=$5` never updated `dueAt`
+- Running seed again kept months-old past dates → student feed empty (no future assignments)
+- Fix: added `"dueAt"=$9` to the UPDATE SET clause
+
+**BUG-005: Frontend — Turbopack startup race condition — FIXED**
+- Next.js 16.0.10 Turbopack generates `_document.js` before `[turbopack]_runtime.js` exists → 500 on first request
+- Fix: added `--webpack` flag to frontend `npm run dev` script (webpack compiler is stable)
+
+**BUG-006: ts-node broken in pnpm node_modules — WORKAROUND**
+- pnpm installs ts-node package dir empty on this Windows machine (no dist/)
+- Workaround: `npm install -g ts-node@10.9.2` (global) — seed scripts resolve from PATH
+- Removed the empty local ts-node dir so global resolves cleanly
+
+### Verified Working
+- `npm run seed` — seeds base tenant, users, courses, sections, assignments with FUTURE due dates
+- `npm run seed:demo` — seeds 60 students, 10 courses, 10 sections, ~232 enrollments, ~1346 submissions
+- Frontend dev server starts cleanly with webpack
+- Login (student@nexused.demo / password123) → redirects to /home
+
+### Still Needs (T1-002)
+- Add `ANTHROPIC_API_KEY` to `nexused-backend/.env` to test AI features end-to-end
+
+---
+
+## Session 44 — T3-001 Docker Deployment + E2E Data Flow Verification
+
+**Date:** 2026-05-06
+**Goal:** Complete production Docker deployment config; verify full data flow end-to-end
+**Status:** COMPLETE
+
+### Work Done
+
+**T3-001: Production Docker deployment — DONE**
+- `nexused-backend/Dockerfile`: multi-stage build (builder → production), apk python3/make/g++ for bcrypt native module, health check on `/api/health`
+- `nexused-frontend/Dockerfile`: 3-stage (deps → builder → production), standalone output, non-root nextjs user
+- `nexused-frontend/next.config.ts`: added `output: "standalone"` required for containerized deployment
+- `docker-compose.yml`: local dev stack — postgres:16-alpine, redis:7-alpine, backend, frontend with health checks
+- `docker-compose.prod.yml`: production stack — adds nginx, internal network for DB/Redis isolation, external network for nginx only
+- `nginx/nginx.conf`: HTTPS termination, HTTP→HTTPS redirect, /api/ → backend:3001, /_next/static/ cached 1y, / → frontend:3000, WebSocket upgrade
+- `.env.production.example`: full secrets template covering all 20+ env vars
+- `pdf-parse` downgraded 2.4.5 → 1.1.1 (v2 declares dist/ as main but ships no dist/ directory — startup crash)
+
+**Critical Bug Found and Fixed: Missing class-validator decorators on all InputType DTOs**
+- Root cause: `@InputType()` classes had `@Field()` (GraphQL) decorators but no class-validator decorators (`@IsString()` etc.)
+- Global `ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })` strips any property without a class-validator decorator and throws 400 — making `createCourse`, `recordEngagement`, and `updateUser` completely broken in production
+- Fixed files (commit a897a50):
+  - `nexused-backend/src/modules/courses/dto/course.types.ts` — `CreateCourseInput`, `UpdateCourseInput`, `CatalogFilterInput`, `BatchCourseItem`, `CreateSectionInput`
+  - `nexused-backend/src/modules/feed/dto/engagement.types.ts` — `RecordEngagementInput`, `RecordEngagementBatchInput`
+  - `nexused-backend/src/modules/users/dto/user.types.ts` — `UpdateUserInput`
+
+**Full E2E Data Flow Verified (API + Browser)**
+1. ✅ Admin creates academic term: Fall 2026 (`f1d5d79b-38a9-4759-922b-4e8bfde24786`)
+2. ✅ Instructor creates CS101 section: Room 101, cap 30 (`9c185be5-7b3f-40d4-9cb7-702e38b25064`)
+3. ✅ Instructor creates assignment: "Homework 1: Variables and Types", 100pts, due 2026-10-15 (`4ba316b5-38aa-4523-b5df-8ccfb4e842ce`)
+4. ✅ Student enrolls in CS101 section (ACTIVE status, `020a1808-43ae-4b23-9bd6-961627e55956`)
+5. ✅ Student submits assignment (`970d0747-1c11-4225-9103-e2ec9290e7fd`)
+6. ✅ Instructor grades submission: score=92, feedback with instructor note
+7. ✅ Instructor gradebook: classAverage=92, student percentage=92%, totalEarned=92/100
+8. ✅ Student home feed shows "92.00/100.00 points" on assignment card
+9. ✅ Student /grades page shows: CS101 92%, row "Homework 1 | assignment | 92/100 | 92% | May 6", Total 92/100
+
+### Test Accounts (tenant: 00000000-0000-0000-0000-000000000001)
+- `student@test.nexused.local` / `TestPass123!` — role: student, userId: d01d7c7d-e10d-43ca-8141-46e7587c0949
+- `instructor@test.nexused.local` / `TestPass123!` — role: instructor, userId: 2cd76468-ac29-4c78-99eb-bbfeee67d971
+- `admin@test.nexused.local` / `TestPass123!` — role: admin, userId: 73064fe4-28fd-481f-8885-c7a8208215d0
+
+### Current State
+- T3-001 complete and committed to origin/main
+- All three layers (API → DB → GraphQL → frontend) confirmed working on real data
+- T1-002 still blocked: ANTHROPIC_API_KEY not in nexused-backend/.env (AI features return 500)
+
+### Next Up
+- T1-002: User adds ANTHROPIC_API_KEY to .env → verify AI chat end-to-end
+- T2-002 through T2-004: Remaining mobile audit items (push notifications plugin, app store metadata)
+- FEAT-002: Wire up AiEventListener stubs to real handlers
+
+---
+
+## Session 42 — PLAN.md Execution: T1 Tier (Audit + Demo Readiness)
+
+**Date:** 2026-05-05
+**Goal:** Execute Tier 1 of PLAN.md — audit half-built modules, fix E2E infrastructure, demo seed
+**Status:** COMPLETE (T1-001, T1-003, T1-004, T1-005 done; T1-002 blocked on API key)
+
+### Work Done
+
+**T1-001: Audit "built but not connected" modules — DONE (all pass)**
+- Notifications: backend fully implemented (resolver, in-app service, event listener). Frontend bell wired — calls `myNotifications` + `unreadNotificationCount`, polls 30s, mark read/all.
+- Discussions: backend fully implemented (7 resolver ops, transactions, @mention parsing). Frontend: detail page, create page, section timeline links. SECTION_DISCUSSIONS_QUERY unused (intentional — discussions surfaced via timeline).
+- Quiz: backend fully implemented (auto-grading, time limits, attempt tracking). Frontend: QuizBuilder (instructor) + QuizDelivery (student) in assignment page. Both wired to GraphQL.
+- All three modules: **no wiring work needed.** Already production-ready.
+
+**T1-002: Real AI demo environment — BLOCKED**
+- Infrastructure complete: AnthropicProvider, AgentExecutor, 16 tools, 2 agents, AI chat frontend all wired.
+- ANTHROPIC_API_KEY missing from nexused-backend/.env — user must add it.
+
+**T1-003: Remove placeholder parent role — DONE**
+- Removed PARENT from create-user-dialog.tsx and edit-user-dialog.tsx role selectors.
+- ParentHomeFeed still exists but is unreachable (no admin can create parent accounts now).
+
+**T1-004: Dynamic E2E test factory — DONE**
+- Rewrote seed.fixture.ts: authenticates as test student, queries myEnrollments → sectionTimeline to discover real IDs at test runtime.
+- CI can still override via E2E_COURSE_ID / E2E_SECTION_ID / E2E_ASSIGNMENT_ID env vars.
+- Also added .gitignore rules for dev session screenshots (*.png, .playwright-mcp/).
+
+**T1-005: Faker.js seed:demo — DONE (no Faker dependency)**
+- Created seed-demo.ts: 60 students, 6 instructors, 10 courses, 10 sections, ~180 enrollments, ~500 submissions with realistic grade distribution.
+- Uses name/subject pools instead of Faker (avoids rollup dependency issue on Windows).
+- Added "seed:demo" script to nexused-backend/package.json.
+- Run after "npm run seed" to layer demo volume on top.
+
+### Current State
+- T1-001-T1-005 commits pushed to origin/main
+- PLAN.md Tier 1 largely complete; T1-002 requires ANTHROPIC_API_KEY from user
+- Ready to begin T2 (mobile audit) or T3 (production infrastructure)
+
+---
+
+## Session 43 — PLAN.md Execution: T2 Tier (Mobile Schema Alignment)
+
+**Date:** 2026-05-05
+**Goal:** Fix all schema mismatches in mobile GraphQL queries and screens
+**Status:** COMPLETE (T2-001 done)
+
+### Work Done
+
+**T2-001: Mobile GraphQL schema audit + full fix — DONE**
+
+Root cause discovered: AI resolver's `sendMessage` mutation (returning `AgentResponseDto`) 
+had a naming collision with messaging resolver's `sendMessage` (returning `DirectMessage`). 
+NestJS kept the messaging version, silently breaking all AI send functionality on both 
+web and mobile.
+
+**Backend fix:**
+- Renamed `SendMessageInput` → `ContinueConversationInput` in `ai/dto/chat-message.dto.ts`
+- Renamed mutation `sendMessage` → `continueConversation` in `ai/ai.resolver.ts`
+
+**Web frontend fix:**
+- Updated `SEND_AI_MESSAGE_MUTATION` to call `continueConversation(input: ContinueConversationInput!)`
+
+**Mobile: complete rewrite of `nexused-mobile/src/graphql/queries.ts`** + 9 screen files:
+- `studentFeed` (not `myFeedItems`), `FeedItemType` enum fields (`type` not `itemType`)
+- `sectionTimeline: [TimelineEntry!]!` flat type (not union-typed `courseTimeline`)
+- `submitAssignment` (not `createSubmission`)
+- `Assignment.type` / `pointsPossible` (not `assignmentType` / `points`)
+- `mySubmissions(assignmentId)` separate query (no `mySubmission` on Assignment)
+- `myGrades: [CourseSectionGrades!]!` (not `myEnrollments.submissions`)
+- `DirectMessage.content` (not `body`) in all message screens
+- `conversationMessages` returns `PaginatedMessagesResponse { messages [...] }`
+- `sendMessageToConversation` for existing threads
+- `aiMessages(conversationId)` for AI chat history (no `aiConversation(id)` query)
+- `continueConversation(input: ContinueConversationInput!)` for AI send
+- `startConversation` returns `AgentResponseDto.conversationId` (not `.id`)
+- Removed `section.name` (field doesn't exist on `CourseSection`)
+- Apollo cache policy: `studentFeed` (not `myFeedItems`)
+- AI new conversation screen: fixed input field `initialMessage` → `message`,
+  result path `startAiConversation.id` → `startConversation.conversationId`,
+  navigation passes `agent` param for screen title
+
+All 15 files committed as one atomic commit: df5675d
+
+### Current State
+- T2-001 complete; mobile queries now match actual backend schema
+- Every mobile screen should connect to real data (backend must be running + seeded)
+- T1-002 still blocked: user must add ANTHROPIC_API_KEY to nexused-backend/.env
+
+### Next Up
+T2-002 onwards: Remaining mobile audit tasks per PLAN.md, then T3 (production infra).
+
+---
+
 ## Session 41 — Frontend Design System Polish (POLISH-001)
 
 **Date:** 2026-04-03
