@@ -116,6 +116,10 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^jose$": "<rootDir>/__mocks__/jose.ts",
+      "^jose/(.*)$": "<rootDir>/__mocks__/jose.ts"
+    },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
