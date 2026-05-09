@@ -59,7 +59,7 @@ async function registerForPushAsync(): Promise<string | null> {
   // Android needs a notification channel
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'NexusEd',
+      name: 'Axis',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#0f172a',

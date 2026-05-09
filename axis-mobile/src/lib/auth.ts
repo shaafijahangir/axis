@@ -5,8 +5,8 @@
  */
 import * as SecureStore from 'expo-secure-store';
 
-const TOKEN_KEY = 'nexused_access_token';
-const USER_KEY = 'nexused_user';
+const TOKEN_KEY = 'Axis_access_token';
+const USER_KEY = 'Axis_user';
 
 export interface StoredUser {
   id: string;

@@ -173,7 +173,7 @@ export function useAuth() {
     if (!hasHardware || !isEnrolled) return false;
 
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Unlock NexusEd',
+      promptMessage: 'Unlock Axis',
       fallbackLabel: 'Use passcode',
     });
 

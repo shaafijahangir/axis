@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "NexusEd",
-    "slug": "nexused-mobile",
+    "name": "Axis",
+    "slug": "Axis-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "nexused",
+    "scheme": "Axis",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.nexused.mobile"
+      "bundleIdentifier": "app.Axis.mobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.nexused.mobile",
+      "package": "app.Axis.mobile",
       "edgeToEdgeEnabled": true
     },
     "web": {

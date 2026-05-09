@@ -75,7 +75,7 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Text style={styles.logo}>NexusEd</Text>
+          <Text style={styles.logo}>Axis</Text>
           <Text style={styles.subtitle}>Create your student account</Text>
         </View>
 

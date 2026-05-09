@@ -93,7 +93,7 @@ export default function LoginScreen() {
       >
         {/* Logo / header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>NexusEd</Text>
+          <Text style={styles.logo}>Axis</Text>
           <Text style={styles.subtitle}>Sign in to your student account</Text>
         </View>
 
