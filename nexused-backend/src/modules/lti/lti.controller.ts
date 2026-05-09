@@ -40,7 +40,7 @@ export class LtiController {
     private configService: ConfigService,
   ) {
     this.keyId =
-      this.configService.get<string>('lti.keyId') || 'nexused-lti-key-1';
+      this.configService.get<string>('lti.keyId') || 'Axis-lti-key-1';
     void this.initializeKeys();
   }
 
@@ -210,7 +210,7 @@ export class LtiController {
 
   /**
    * Tool Configuration Endpoint
-   * Returns configuration for platform admins to register NexusEd
+   * Returns configuration for platform admins to register Axis
    */
   @Get('config')
   getConfiguration(): Record<string, unknown> {

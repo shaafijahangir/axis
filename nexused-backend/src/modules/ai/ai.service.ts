@@ -19,7 +19,7 @@ import { ClaudeToolSchema } from './tools/tool.interface';
  * making it easy to add logging, caching, or fallback models later.
  *
  * PATTERN: Facade — simplifies the provider into the specific operations
- * NexusEd needs (message with tools, streaming).
+ * Axis needs (message with tools, streaming).
  */
 
 export interface SendMessageOptions {

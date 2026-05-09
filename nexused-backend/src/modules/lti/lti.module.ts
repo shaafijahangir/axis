@@ -19,7 +19,7 @@ import { AuthModule } from '../auth/auth.module';
 /**
  * LTI Module
  *
- * Provides LTI 1.3 integration for NexusEd:
+ * Provides LTI 1.3 integration for Axis:
  * - Platform registration and management (admin UI)
  * - OIDC login flow (REST endpoints)
  * - User provisioning and role mapping

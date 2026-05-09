@@ -112,7 +112,7 @@ export class CreateLtiDeploymentInput {
 }
 
 /**
- * Input for linking an LTI context to a NexusEd section
+ * Input for linking an LTI context to a Axis section
  */
 @InputType()
 export class LinkLtiContextInput {

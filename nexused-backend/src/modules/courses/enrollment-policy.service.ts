@@ -163,7 +163,7 @@ export class EnrollmentPolicyService {
    * for the target section's course.
    *
    * Source of truth: StudentDegreeProfile.completedCourseIds, which includes
-   * transfer credits, AP credits, and historical data outside NexusEd.
+   * transfer credits, AP credits, and historical data outside Axis.
    *
    * WHY profile over enrollment records: See StudentDegreeProfile entity
    * comment — transfer/AP/historical credits don't have enrollment rows.

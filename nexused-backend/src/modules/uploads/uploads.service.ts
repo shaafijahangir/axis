@@ -48,7 +48,7 @@ export class UploadsService implements OnModuleInit {
       'storage.secretAccessKey',
     );
 
-    this.bucket = this.configService.get<string>('storage.bucket') ?? 'nexused';
+    this.bucket = this.configService.get<string>('storage.bucket') ?? 'Axis';
     this.uploadUrlExpiry =
       this.configService.get<number>('storage.uploadUrlExpiry') ?? 900;
     this.downloadUrlExpiry =

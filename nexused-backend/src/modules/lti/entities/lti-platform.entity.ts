@@ -21,7 +21,7 @@ registerEnumType(LtiPlatformStatus, {
  * LtiPlatform Entity
  *
  * WHY: Stores configuration for external LMS platforms (Canvas, Brightspace,
- * Moodle, etc.) that can launch NexusEd as an LTI 1.3 tool.
+ * Moodle, etc.) that can launch Axis as an LTI 1.3 tool.
  *
  * PATTERN: Each platform registration contains the OIDC/OAuth 2.0 endpoints
  * and client credentials needed for secure launches.

@@ -11,9 +11,9 @@
  * Then adds the bulk realistic population on top.
  *
  * Primary demo accounts remain from seed.ts:
- *   student@nexused.demo  / password123
- *   prof.chen@nexused.demo / password123
- *   admin@nexused.demo     / password123
+ *   student@Axis.demo  / password123
+ *   prof.chen@Axis.demo / password123
+ *   admin@Axis.demo     / password123
  */
 
 import { DataSource } from 'typeorm';
@@ -338,7 +338,7 @@ async function seedDemo() {
     port: parseInt(process.env.DATABASE_PORT || '5432', 10),
     username: process.env.DATABASE_USERNAME || 'postgres',
     password: process.env.DATABASE_PASSWORD || 'postgres',
-    database: process.env.DATABASE_NAME || 'nexused',
+    database: process.env.DATABASE_NAME || 'Axis',
     schema: process.env.DATABASE_SCHEMA || 'public',
     entities,
     synchronize: false,
@@ -407,7 +407,7 @@ async function seedDemo() {
         [
           id,
           tenantId,
-          `${emailSlug}@nexused.demo`,
+          `${emailSlug}@Axis.demo`,
           passwordHash,
           first,
           last,
@@ -443,7 +443,7 @@ async function seedDemo() {
         [
           id,
           tenantId,
-          `${first.toLowerCase()}.${last.toLowerCase()}${i}@student.nexused.demo`,
+          `${first.toLowerCase()}.${last.toLowerCase()}${i}@student.Axis.demo`,
           passwordHash,
           first,
           last,
@@ -624,7 +624,7 @@ async function seedDemo() {
             tenantId,
             assignment.id,
             row.userId,
-            JSON.stringify({ text: 'Submitted via NexusEd', files: [] }),
+            JSON.stringify({ text: 'Submitted via Axis', files: [] }),
             submittedAt,
             graded ? score : null,
             graded ? submittedAt : null,

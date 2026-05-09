@@ -66,7 +66,7 @@ export class LtiContext extends TenantScopedEntity {
   label: string | null;
 
   /**
-   * Linked NexusEd CourseSection (if mapped)
+   * Linked Axis CourseSection (if mapped)
    * An admin or instructor must link the LTI context to a section
    */
   @Field(() => String, { nullable: true })
@@ -79,7 +79,7 @@ export class LtiContext extends TenantScopedEntity {
 
   /**
    * Whether this context is actively linked
-   * false = context exists but not linked to a NexusEd section
+   * false = context exists but not linked to a Axis section
    */
   @Field()
   @Column({ default: false })

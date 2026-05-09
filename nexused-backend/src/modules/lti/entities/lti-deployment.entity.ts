@@ -11,9 +11,9 @@ import { LtiPlatform } from './lti-platform.entity';
  * different permissions or target courses.
  *
  * PATTERN: deployment_id is assigned by the platform during tool installation.
- * We need it to correctly identify which "instance" of NexusEd is being launched.
+ * We need it to correctly identify which "instance" of Axis is being launched.
  *
- * EXAMPLE: A university might install NexusEd in their Canvas instance,
+ * EXAMPLE: A university might install Axis in their Canvas instance,
  * then later install it again for a specific department with different settings.
  */
 @ObjectType()

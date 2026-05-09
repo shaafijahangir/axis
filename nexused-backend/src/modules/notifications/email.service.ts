@@ -29,7 +29,7 @@ export class EmailService implements OnModuleInit {
     const apiKey = this.configService.get<string>('email.resendApiKey');
     this.fromAddress =
       this.configService.get<string>('email.fromAddress') ??
-      'NexusEd <noreply@nexused.app>';
+      'Axis <noreply@Axis.app>';
     this.replyTo = this.configService.get<string>('email.replyTo') ?? '';
     this.enabled = this.configService.get<boolean>('email.enabled') ?? true;
 

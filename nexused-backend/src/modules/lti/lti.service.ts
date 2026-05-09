@@ -24,7 +24,7 @@ import {
 } from './dto/lti.types';
 
 /**
- * LTI Role URIs to NexusEd role mapping
+ * LTI Role URIs to Axis role mapping
  * Based on LTI 1.3 spec role URIs
  */
 const LTI_ROLE_MAP: Record<string, UserRole> = {
@@ -418,7 +418,7 @@ export class LtiService {
   }
 
   /**
-   * Get or create a NexusEd user from LTI claims
+   * Get or create a Axis user from LTI claims
    */
   private async getOrCreateUser(
     platform: LtiPlatform,
@@ -450,8 +450,8 @@ export class LtiService {
         return ltiUser.user;
       }
 
-      // Map LTI roles to NexusEd roles
-      const nexusedRoles = this.mapLtiRoles(ltiRoles);
+      // Map LTI roles to Axis roles
+      const AxisRoles = this.mapLtiRoles(ltiRoles);
 
       // Try to find existing user by email
       let user: User | null = null;
@@ -469,7 +469,7 @@ export class LtiService {
           email: email || `${ltiUserId}@lti.local`,
           firstName: firstName || 'LTI',
           lastName: lastNameParts.join(' ') || 'User',
-          roles: nexusedRoles,
+          roles: AxisRoles,
           passwordHash: '', // LTI users don't need a password
           isActive: true,
         });
@@ -500,7 +500,7 @@ export class LtiService {
   }
 
   /**
-   * Map LTI role URIs to NexusEd roles
+   * Map LTI role URIs to Axis roles
    */
   private mapLtiRoles(ltiRoles: string[]): UserRole[] {
     const roles = new Set<UserRole>();

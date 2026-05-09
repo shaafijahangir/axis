@@ -137,7 +137,7 @@ export class SemesterCostResult {
  * Financial aid eligibility thresholds per tenant.
  *
  * WHY: Aid eligibility rules vary by institution and aid type (Pell Grant,
- * subsidized loans, institutional aid). Configuring these here lets NexusEd
+ * subsidized loans, institutional aid). Configuring these here lets Axis
  * flag at-risk semesters without hard-coding federal defaults (which may not
  * apply to all institutions or aid types).
  *

@@ -31,7 +31,7 @@ registerEnumType(DegreeProfileStatus, {
  * rather than computing from Enrollment records because:
  * 1. Transfer credits may not have enrollments
  * 2. AP/test credits have no course section
- * 3. Historical data from before NexusEd adoption
+ * 3. Historical data from before Axis adoption
  */
 @ObjectType()
 @Entity('student_degree_profiles')

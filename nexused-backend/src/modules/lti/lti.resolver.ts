@@ -74,7 +74,7 @@ export class LtiResolver {
   }
 
   /**
-   * Get unlinked contexts (LTI courses not yet mapped to NexusEd sections)
+   * Get unlinked contexts (LTI courses not yet mapped to Axis sections)
    */
   @Query(() => [LtiContext])
   @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
@@ -135,7 +135,7 @@ export class LtiResolver {
   }
 
   /**
-   * Link an LTI context to a NexusEd section
+   * Link an LTI context to a Axis section
    */
   @Mutation(() => LtiContext)
   @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
@@ -147,7 +147,7 @@ export class LtiResolver {
   }
 
   /**
-   * Unlink an LTI context from a NexusEd section
+   * Unlink an LTI context from a Axis section
    */
   @Mutation(() => LtiContext)
   @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)

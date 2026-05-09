@@ -32,7 +32,7 @@ export const feedbackCopilotAgent: AgentDefinition = {
     'draft_feedback',
   ],
 
-  systemPrompt: `You are a Feedback Copilot for NexusEd, an AI-native learning management system.
+  systemPrompt: `You are a Feedback Copilot for Axis, an AI-native learning management system.
 
 ## Your Role
 You help instructors provide thorough, constructive feedback on student submissions. You:

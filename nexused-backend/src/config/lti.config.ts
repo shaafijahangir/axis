@@ -10,9 +10,9 @@ import { registerAs } from '@nestjs/config';
  * our signatures using our public JWKS endpoint.
  */
 export default registerAs('lti', () => ({
-  // Tool configuration (NexusEd as an LTI Tool/Provider)
+  // Tool configuration (Axis as an LTI Tool/Provider)
   toolUrl: process.env.LTI_TOOL_URL || 'http://localhost:3001',
-  toolName: process.env.LTI_TOOL_NAME || 'NexusEd',
+  toolName: process.env.LTI_TOOL_NAME || 'Axis',
 
   // OIDC endpoints (relative paths, will be prefixed with toolUrl)
   loginPath: '/api/lti/login',
@@ -25,7 +25,7 @@ export default registerAs('lti', () => ({
   // and store in environment variables or secrets manager
   privateKey: process.env.LTI_PRIVATE_KEY || null,
   publicKey: process.env.LTI_PUBLIC_KEY || null,
-  keyId: process.env.LTI_KEY_ID || 'nexused-lti-key-1',
+  keyId: process.env.LTI_KEY_ID || 'Axis-lti-key-1',
 
   // State/nonce expiration (in seconds)
   stateExpiry: parseInt(process.env.LTI_STATE_EXPIRY || '600', 10), // 10 minutes

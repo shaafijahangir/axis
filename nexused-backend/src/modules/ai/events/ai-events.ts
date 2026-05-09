@@ -1,5 +1,5 @@
 /**
- * Typed event definitions for the NexusEd event system.
+ * Typed event definitions for the Axis event system.
  *
  * WHY typed events: NestJS EventEmitter2 uses string event names by default,
  * which is error-prone. These constants + interfaces ensure type safety

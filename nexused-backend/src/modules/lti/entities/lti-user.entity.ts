@@ -47,7 +47,7 @@ export class LtiUser extends TenantScopedEntity {
   ltiUserId: string;
 
   /**
-   * Linked NexusEd User
+   * Linked Axis User
    */
   @Field()
   @Column({ name: 'user_id' })

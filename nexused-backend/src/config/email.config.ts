@@ -6,7 +6,7 @@ import { registerAs } from '@nestjs/config';
  */
 export default registerAs('email', () => ({
   resendApiKey: process.env.RESEND_API_KEY || '',
-  fromAddress: process.env.EMAIL_FROM || 'NexusEd <noreply@nexused.app>',
+  fromAddress: process.env.EMAIL_FROM || 'Axis <noreply@Axis.app>',
   replyTo: process.env.EMAIL_REPLY_TO || '',
   // Set to false in production after verifying domain in Resend dashboard
   enabled: process.env.EMAIL_ENABLED !== 'false',

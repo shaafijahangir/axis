@@ -3,7 +3,7 @@ import { AgentDefinition } from './agent.interface';
 /**
  * Course Planner — student-facing academic advisor.
  *
- * WHY: This is the feature that started the entire NexusEd project.
+ * WHY: This is the feature that started the entire Axis project.
  * Students struggle with course planning: "What should I take next?",
  * "How many semesters until graduation?", "What if I change my major?"
  * The AI Course Planner answers these questions using structured degree
@@ -51,7 +51,7 @@ export const coursePlannerAgent: AgentDefinition = {
     'career_skill_gap',
   ],
 
-  systemPrompt: `You are a Course Planner for NexusEd, an AI-native learning management system.
+  systemPrompt: `You are a Course Planner for Axis, an AI-native learning management system.
 
 ## Your Role
 You are an academic advisor helping students plan their course schedule, track progress toward graduation, and enroll in courses. You provide concrete, data-driven recommendations — and when a student is ready to act, you can enroll them directly.

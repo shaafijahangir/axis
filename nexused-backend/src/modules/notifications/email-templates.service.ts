@@ -24,7 +24,7 @@ export class EmailTemplatesService {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NexusEd</title>
+  <title>Axis</title>
 </head>
 <body style="margin:0;padding:0;background-color:${this.bgColor};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${this.bgColor};padding:32px 16px;">
@@ -34,7 +34,7 @@ export class EmailTemplatesService {
           <!-- Header -->
           <tr>
             <td style="padding-bottom:24px;">
-              <span style="font-size:20px;font-weight:700;color:${this.brandColor};letter-spacing:-0.5px;">NexusEd</span>
+              <span style="font-size:20px;font-weight:700;color:${this.brandColor};letter-spacing:-0.5px;">Axis</span>
             </td>
           </tr>
           <!-- Card -->
@@ -46,7 +46,7 @@ export class EmailTemplatesService {
           <!-- Footer -->
           <tr>
             <td style="padding-top:24px;text-align:center;font-size:12px;color:${this.textMuted};">
-              You're receiving this because you have an account on NexusEd.<br>
+              You're receiving this because you have an account on Axis.<br>
               To manage your notification preferences, visit your account settings.
             </td>
           </tr>

@@ -2,15 +2,15 @@
  * Database Seed Script
  *
  * WHY: Populates the database with realistic demo data so you can
- * experience the full student journey through NexusEd.
+ * experience the full student journey through Axis.
  *
  * USAGE: npm run seed
  *
  * CREDENTIALS (all passwords are "password123"):
- *   Student:    student@nexused.demo
- *   Instructor: prof.chen@nexused.demo
- *   Admin:      admin@nexused.demo
- *   TA:         ta.jordan@nexused.demo
+ *   Student:    student@Axis.demo
+ *   Instructor: prof.chen@Axis.demo
+ *   Admin:      admin@Axis.demo
+ *   TA:         ta.jordan@Axis.demo
  */
 
 import { DataSource } from 'typeorm';
@@ -68,7 +68,7 @@ async function seed() {
     port: parseInt(process.env.DATABASE_PORT || '5432', 10),
     username: process.env.DATABASE_USERNAME || 'postgres',
     password: process.env.DATABASE_PASSWORD || 'postgres',
-    database: process.env.DATABASE_NAME || 'nexused',
+    database: process.env.DATABASE_NAME || 'Axis',
     schema: process.env.DATABASE_SCHEMA || 'public',
     entities,
     synchronize: false,
@@ -93,7 +93,7 @@ async function seed() {
        ON CONFLICT (id) DO UPDATE SET name = $2`,
       [
         IDS.tenant,
-        'NexusEd Demo',
+        'Axis Demo',
         'localhost',
         'demo',
         '{}',
@@ -109,7 +109,7 @@ async function seed() {
     const users = [
       [
         IDS.student,
-        'student@nexused.demo',
+        'student@Axis.demo',
         'Alex',
         'Rivera',
         '{student}',
@@ -118,7 +118,7 @@ async function seed() {
       ],
       [
         IDS.instructor,
-        'prof.chen@nexused.demo',
+        'prof.chen@Axis.demo',
         'Sarah',
         'Chen',
         '{instructor}',
@@ -127,7 +127,7 @@ async function seed() {
       ],
       [
         IDS.admin,
-        'admin@nexused.demo',
+        'admin@Axis.demo',
         'Marcus',
         'Williams',
         '{admin}',
@@ -136,7 +136,7 @@ async function seed() {
       ],
       [
         IDS.ta,
-        'ta.jordan@nexused.demo',
+        'ta.jordan@Axis.demo',
         'Jordan',
         'Kim',
         '{student,ta}',
@@ -145,7 +145,7 @@ async function seed() {
       ],
       [
         IDS.instructor2,
-        'prof.patel@nexused.demo',
+        'prof.patel@Axis.demo',
         'Raj',
         'Patel',
         '{instructor}',
@@ -154,7 +154,7 @@ async function seed() {
       ],
       [
         IDS.student2,
-        'maria@nexused.demo',
+        'maria@Axis.demo',
         'Maria',
         'Santos',
         '{student}',
@@ -163,7 +163,7 @@ async function seed() {
       ],
       [
         IDS.student3,
-        'james@nexused.demo',
+        'james@Axis.demo',
         'James',
         'Thompson',
         '{student}',
@@ -702,7 +702,7 @@ async function seed() {
           IDS.tenant,
           aId,
           s.user,
-          JSON.stringify({ text: 'Submitted via NexusEd', files: [] }),
+          JSON.stringify({ text: 'Submitted via Axis', files: [] }),
           submitted,
           s.score,
           s.score !== null ? submitted : null,
@@ -899,10 +899,10 @@ async function seed() {
     await qr.commitTransaction();
     console.log('\nSeed complete! Here are your login credentials:');
     console.log('─'.repeat(50));
-    console.log('  Student:    student@nexused.demo  / password123');
-    console.log('  Instructor: prof.chen@nexused.demo / password123');
-    console.log('  Admin:      admin@nexused.demo     / password123');
-    console.log('  TA:         ta.jordan@nexused.demo / password123');
+    console.log('  Student:    student@Axis.demo  / password123');
+    console.log('  Instructor: prof.chen@Axis.demo / password123');
+    console.log('  Admin:      admin@Axis.demo     / password123');
+    console.log('  TA:         ta.jordan@Axis.demo / password123');
     console.log('─'.repeat(50));
     console.log('Open http://localhost:3000 and sign in!\n');
   } catch (err) {

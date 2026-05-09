@@ -11,7 +11,7 @@ export default registerAs('storage', () => ({
   endpoint: process.env.R2_ENDPOINT || '',
   accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
   secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
-  bucket: process.env.R2_BUCKET || 'nexused',
+  bucket: process.env.R2_BUCKET || 'Axis',
   // Public CDN URL prefix for publicly-accessible files (e.g. profile pictures)
   publicUrl: process.env.R2_PUBLIC_URL || '',
   // Presigned URL expiry in seconds (15 minutes for uploads, 1 hour for downloads)
