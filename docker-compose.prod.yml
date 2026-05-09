@@ -32,7 +32,7 @@ services:
 
   backend:
     build:
-      context: ./nexused-backend
+      context: ./axis-backend
       dockerfile: Dockerfile
     env_file:
       - .env.production
@@ -50,7 +50,7 @@ services:
 
   frontend:
     build:
-      context: ./nexused-frontend
+      context: ./axis-frontend
       dockerfile: Dockerfile
     environment:
       NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL}
