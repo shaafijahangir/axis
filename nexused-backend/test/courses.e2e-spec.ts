@@ -43,7 +43,7 @@ beforeAll(async () => {
         '   These tests run in CI with the PostgreSQL service container.\n' +
         '   To run locally, start a PostgreSQL instance with:\n' +
         '   - Host: localhost:5432\n' +
-        '   - User: test, Password: test, Database: nexused_test\n',
+        '   - User: test, Password: test, Database: axis_test\n',
     );
   }
 });

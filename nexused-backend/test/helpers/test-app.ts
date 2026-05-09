@@ -74,7 +74,7 @@ export async function isDatabaseAvailable(): Promise<boolean> {
     port: parseInt(process.env.DATABASE_PORT || '5432', 10),
     user: process.env.DATABASE_USERNAME || 'test',
     password: process.env.DATABASE_PASSWORD || 'test',
-    database: process.env.DATABASE_NAME || 'nexused_test',
+    database: process.env.DATABASE_NAME || 'axis_test',
     connectionTimeoutMillis: 3000,
   });
 
@@ -160,7 +160,7 @@ export async function createTestApp(): Promise<TestContext> {
               port: parseInt(process.env.DATABASE_PORT || '5432', 10),
               username: process.env.DATABASE_USERNAME || 'test',
               password: process.env.DATABASE_PASSWORD || 'test',
-              database: process.env.DATABASE_NAME || 'nexused_test',
+              database: process.env.DATABASE_NAME || 'axis_test',
               synchronize: true,
               logging: false,
             },
