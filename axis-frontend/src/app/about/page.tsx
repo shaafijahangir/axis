@@ -240,9 +240,9 @@ function Vision() {
 
         <div className="space-y-5 text-muted-foreground leading-relaxed">
           <p>
-            Axis is not trying to out-feature Canvas or compete on
-            integrations with Brightspace. Those platforms had decades and
-            hundreds of millions of dollars. That&apos;s not the game.
+            Axis is not trying to out-feature Canvas or compete on integrations
+            with Brightspace. Those platforms had decades and hundreds of
+            millions of dollars. That&apos;s not the game.
           </p>
           <p>
             The game is this: a platform that makes students say &ldquo;I

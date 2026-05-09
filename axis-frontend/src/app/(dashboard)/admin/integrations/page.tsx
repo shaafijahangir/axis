@@ -484,8 +484,8 @@ export default function LtiIntegrationsPage() {
         <CardContent className="prose prose-sm dark:prose-invert max-w-none">
           <ol className="space-y-2">
             <li>
-              <strong>Configure Axis in your LMS</strong>: Go to your LMS
-              admin panel (Canvas Admin → Developer Keys, Brightspace → External
+              <strong>Configure Axis in your LMS</strong>: Go to your LMS admin
+              panel (Canvas Admin → Developer Keys, Brightspace → External
               Learning Tools, etc.) and create a new LTI 1.3 tool using the
               configuration above.
             </li>
@@ -506,8 +506,8 @@ export default function LtiIntegrationsPage() {
             </li>
             <li>
               <strong>Link courses</strong>: Once users launch from the LMS,
-              their course contexts will appear here. Link them to Axis
-              sections for grade passback and roster sync.
+              their course contexts will appear here. Link them to Axis sections
+              for grade passback and roster sync.
             </li>
           </ol>
         </CardContent>
