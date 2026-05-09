@@ -1,4 +1,4 @@
-# NexusEd
+# Axis
 
 **An AI-native learning platform that tells you what matters right now.**
 
@@ -7,11 +7,11 @@
 
 ---
 
-## What Is NexusEd?
+## What Is Axis?
 
-NexusEd is a next-generation Learning Management System built from scratch with AI as infrastructure, not an add-on. It replaces the fragmented edtech stack (SIS + LMS + advising + messaging) with a single, intelligent platform.
+Axis is a next-generation Learning Management System built from scratch with AI as infrastructure, not an add-on. It replaces the fragmented edtech stack (SIS + LMS + advising + messaging) with a single, intelligent platform.
 
-Traditional LMS platforms are file cabinets with a gradebook. NexusEd is a **feed-first, AI-prioritized** experience where every role — student, instructor, admin, parent — sees exactly what needs their attention, right now.
+Traditional LMS platforms are file cabinets with a gradebook. Axis is a **feed-first, AI-prioritized** experience where every role — student, instructor, admin, parent — sees exactly what needs their attention, right now.
 
 > See [MISSION.md](./MISSION.md) for the full origin story and design philosophy.
 > See [ROADMAP.md](./ROADMAP.md) for where this project is heading.
@@ -105,8 +105,8 @@ These are non-negotiable and inform every decision:
 ## Project Structure
 
 ```
-nexused/
-├── nexused-frontend/             # Next.js 16 frontend
+axis/
+├── axis-frontend/             # Next.js 16 frontend
 │   └── src/
 │       ├── app/
 │       │   ├── (auth)/           # Login, registration
@@ -129,7 +129,7 @@ nexused/
 │       │   └── utils/            # Utilities (relative-time, etc.)
 │       └── stores/               # Zustand state (auth)
 │
-├── nexused-backend/              # NestJS GraphQL API
+├── axis-backend/              # NestJS GraphQL API
 │   └── src/
 │       ├── modules/
 │       │   ├── auth/             # Authentication (JWT + Google OAuth)
@@ -149,7 +149,7 @@ nexused/
 │       ├── guards/               # JWT auth + roles guards
 │       └── decorators/           # @CurrentUser, @Roles
 │
-├── MISSION.md                    # Why NexusEd exists (origin story)
+├── MISSION.md                    # Why Axis exists (origin story)
 ├── ROADMAP.md                    # Development trajectory (Phases 2.5→5)
 ├── BACKLOG.md                    # Prioritized task list (P0→P3 + features)
 ├── STORY.md                      # Project narrative with architecture diagram
@@ -196,13 +196,13 @@ Each institution gets its own PostgreSQL schema. Row-Level Security provides def
 ```bash
 # Clone
 git clone <repository-url>
-cd nexused
+cd axis
 
 # Frontend
-cd nexused-frontend && npm install
+cd axis-frontend && npm install
 
 # Backend
-cd ../nexused-backend && npm install
+cd ../axis-backend && npm install
 
 # Configure environment
 cp .env.example .env
@@ -213,10 +213,10 @@ cp .env.example .env
 
 ```bash
 # Terminal 1 — Backend (http://localhost:3001/api)
-cd nexused-backend && npm run start:dev
+cd axis-backend && npm run start:dev
 
 # Terminal 2 — Frontend (http://localhost:3000)
-cd nexused-frontend && npm run dev
+cd axis-frontend && npm run dev
 ```
 
 GraphQL Playground: http://localhost:3001/api/graphql

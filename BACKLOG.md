@@ -1,4 +1,4 @@
-# NexusEd Backlog
+# Axis Backlog
 
 > **Priority levels:** P0 (fix before ANY new features) → P1 (fix before demo) → P2 (fix before production) → P3 (do when capacity allows)
 >
@@ -196,7 +196,7 @@
 ### ARCH-003: Remove unused @tanstack/react-query
 - **Status:** `DONE`
 - **Completed:** 2026-02-07
-- **File:** `nexused-frontend/package.json`
+- **File:** `axis-frontend/package.json`
 - **Problem:** `@tanstack/react-query` is installed but never imported. Adds ~30KB to bundle and confuses contributors.
 - **Fix:** `npm uninstall @tanstack/react-query` from the frontend project.
 - **Acceptance:** Package removed from `package.json` and `node_modules`. No import references exist.
@@ -231,8 +231,8 @@
   - `.github/workflows/ci.yml` — Unified CI with pnpm + turbo
 - **Files Modified:**
   - Root `package.json` — Added turbo scripts, packageManager field
-  - `nexused-backend/package.json` — Added `dev`, `typecheck` scripts
-  - `nexused-frontend/package.json` — Added `typecheck` script
+  - `axis-backend/package.json` — Added `dev`, `typecheck` scripts
+  - `axis-frontend/package.json` — Added `typecheck` script
   - `.gitignore` — Added package-lock.json exclusion
 - **Files Removed:**
   - `.github/workflows/backend-ci.yml`, `.github/workflows/frontend-ci.yml` (replaced by unified ci.yml)
@@ -295,23 +295,23 @@
 - **Status:** `DONE`
 - **Completed:** 2026-02-10
 - **Files Created:**
-  - `nexused-frontend/playwright.config.ts` — Playwright configuration
-  - `nexused-frontend/e2e/fixtures/auth.fixture.ts` — Auth fixtures (loginAs, loginAsStudent, etc.)
-  - `nexused-frontend/e2e/fixtures/seed.fixture.ts` — Test data and GraphQL helper
-  - `nexused-frontend/e2e/fixtures/index.ts` — Fixture barrel export
-  - `nexused-frontend/e2e/01-login.spec.ts` — Login flow tests (7 tests)
-  - `nexused-frontend/e2e/02-feed.spec.ts` — Feed viewing tests (8 tests)
-  - `nexused-frontend/e2e/03-course-navigation.spec.ts` — Course navigation tests (9 tests)
-  - `nexused-frontend/e2e/04-submit-assignment.spec.ts` — Assignment submission tests (7 tests)
-  - `nexused-frontend/e2e/05-grade-submission.spec.ts` — Grading flow tests (9 tests)
-  - `nexused-backend/src/health/health.controller.ts` — Health endpoint for CI readiness
+  - `axis-frontend/playwright.config.ts` — Playwright configuration
+  - `axis-frontend/e2e/fixtures/auth.fixture.ts` — Auth fixtures (loginAs, loginAsStudent, etc.)
+  - `axis-frontend/e2e/fixtures/seed.fixture.ts` — Test data and GraphQL helper
+  - `axis-frontend/e2e/fixtures/index.ts` — Fixture barrel export
+  - `axis-frontend/e2e/01-login.spec.ts` — Login flow tests (7 tests)
+  - `axis-frontend/e2e/02-feed.spec.ts` — Feed viewing tests (8 tests)
+  - `axis-frontend/e2e/03-course-navigation.spec.ts` — Course navigation tests (9 tests)
+  - `axis-frontend/e2e/04-submit-assignment.spec.ts` — Assignment submission tests (7 tests)
+  - `axis-frontend/e2e/05-grade-submission.spec.ts` — Grading flow tests (9 tests)
+  - `axis-backend/src/health/health.controller.ts` — Health endpoint for CI readiness
 - **Files Modified:**
-  - `nexused-frontend/package.json` — Added Playwright scripts
+  - `axis-frontend/package.json` — Added Playwright scripts
   - `package.json` — Added test:e2e script and wait-on dependency
   - `turbo.json` — Added test:e2e task
   - `.github/workflows/ci.yml` — Added E2E test job
   - `.gitignore` — Added Playwright output directories
-  - `nexused-backend/src/app.module.ts` — Added HealthController
+  - `axis-backend/src/app.module.ts` — Added HealthController
 - **Test flows covered:**
   1. Login (successful login, invalid credentials, session persistence, logout)
   2. View feed (student feed, instructor feed, navigation items)
@@ -371,14 +371,14 @@
 - **Completed:** 2026-02-10
 - **Priority:** MEDIUM
 - **Files Created:**
-  - `nexused-backend/src/modules/messaging/messaging.gateway.ts` — WebSocket gateway with JWT auth from cookies, room-based subscriptions
-  - `nexused-frontend/src/lib/socket.ts` — Socket.IO client initialization with auth
-  - `nexused-frontend/src/hooks/use-socket.ts` — React hooks for socket lifecycle, conversation events, typing indicators
+  - `axis-backend/src/modules/messaging/messaging.gateway.ts` — WebSocket gateway with JWT auth from cookies, room-based subscriptions
+  - `axis-frontend/src/lib/socket.ts` — Socket.IO client initialization with auth
+  - `axis-frontend/src/hooks/use-socket.ts` — React hooks for socket lifecycle, conversation events, typing indicators
 - **Files Modified:**
-  - `nexused-backend/src/modules/messaging/messaging.service.ts` — Added EventEmitter2 events for MESSAGE_SENT, CONVERSATION_CREATED
-  - `nexused-backend/src/modules/messaging/messaging.module.ts` — Added MessagingGateway, JwtModule
-  - `nexused-frontend/src/components/messaging/conversation-list.tsx` — Real-time updates instead of 10s polling
-  - `nexused-frontend/src/components/messaging/message-thread.tsx` — Real-time messages, typing indicators
+  - `axis-backend/src/modules/messaging/messaging.service.ts` — Added EventEmitter2 events for MESSAGE_SENT, CONVERSATION_CREATED
+  - `axis-backend/src/modules/messaging/messaging.module.ts` — Added MessagingGateway, JwtModule
+  - `axis-frontend/src/components/messaging/conversation-list.tsx` — Real-time updates instead of 10s polling
+  - `axis-frontend/src/components/messaging/message-thread.tsx` — Real-time messages, typing indicators
 - **Features:**
   - JWT authentication from httpOnly cookies in WebSocket handshake
   - Room-based subscriptions per conversation
@@ -393,15 +393,15 @@
 - **Completed:** 2026-02-10
 - **Priority:** MEDIUM
 - **Files Created:**
-  - `nexused-frontend/src/hooks/use-widget-preferences.ts` — Hook for widget visibility, collapse state, type mappings
-  - `nexused-frontend/src/components/feed/widget-settings.tsx` — Settings dialog with Switch toggles per widget type
-  - `nexused-frontend/src/lib/graphql/mutations/user.ts` — UPDATE_PREFERENCES_MUTATION
+  - `axis-frontend/src/hooks/use-widget-preferences.ts` — Hook for widget visibility, collapse state, type mappings
+  - `axis-frontend/src/components/feed/widget-settings.tsx` — Settings dialog with Switch toggles per widget type
+  - `axis-frontend/src/lib/graphql/mutations/user.ts` — UPDATE_PREFERENCES_MUTATION
 - **Files Modified:**
-  - `nexused-frontend/src/types/auth.ts` — Added preferences field to User type
-  - `nexused-frontend/src/stores/auth.store.ts` — Added setUser method for preferences updates
-  - `nexused-frontend/src/lib/graphql/queries/user.ts` — Added preferences to ME_QUERY
-  - `nexused-frontend/src/components/feed/student-home-feed.tsx` — Widget filtering + settings button
-  - `nexused-frontend/src/components/feed/instructor-home-feed.tsx` — Widget filtering + settings button
+  - `axis-frontend/src/types/auth.ts` — Added preferences field to User type
+  - `axis-frontend/src/stores/auth.store.ts` — Added setUser method for preferences updates
+  - `axis-frontend/src/lib/graphql/queries/user.ts` — Added preferences to ME_QUERY
+  - `axis-frontend/src/components/feed/student-home-feed.tsx` — Widget filtering + settings button
+  - `axis-frontend/src/components/feed/instructor-home-feed.tsx` — Widget filtering + settings button
 - **Features:**
   - Students can toggle deadlines, grades, announcements, courseUpdates widgets
   - Instructors can toggle ungraded, upcomingDeadlines, announcements widgets
@@ -422,10 +422,10 @@
   - `app.module.ts` — Load migrations from `dist/database/migrations/*.js`
 - **Usage:**
   ```bash
-  pnpm --filter nexused-backend migration:generate -- src/database/migrations/AddNewFeature
-  pnpm --filter nexused-backend migration:run
-  pnpm --filter nexused-backend migration:revert
-  pnpm --filter nexused-backend migration:show
+  pnpm --filter axis-backend migration:generate -- src/database/migrations/AddNewFeature
+  pnpm --filter axis-backend migration:run
+  pnpm --filter axis-backend migration:revert
+  pnpm --filter axis-backend migration:show
   ```
 - **Acceptance:** ✓ `synchronize: false` in all environments. ✓ Migrations run on startup. ✓ CLI commands generate/run/revert migrations.
 
@@ -434,16 +434,16 @@
 - **Completed:** 2026-02-11
 - **Priority:** LOW
 - **Files Created:**
-  - `nexused-backend/src/modules/analytics/analytics.module.ts`
-  - `nexused-backend/src/modules/analytics/analytics.service.ts`
-  - `nexused-backend/src/modules/analytics/analytics.resolver.ts`
-  - `nexused-backend/src/modules/analytics/dto/analytics.types.ts`
-  - `nexused-frontend/src/lib/graphql/queries/analytics.ts`
-  - `nexused-frontend/src/app/(dashboard)/admin/analytics/page.tsx`
+  - `axis-backend/src/modules/analytics/analytics.module.ts`
+  - `axis-backend/src/modules/analytics/analytics.service.ts`
+  - `axis-backend/src/modules/analytics/analytics.resolver.ts`
+  - `axis-backend/src/modules/analytics/dto/analytics.types.ts`
+  - `axis-frontend/src/lib/graphql/queries/analytics.ts`
+  - `axis-frontend/src/app/(dashboard)/admin/analytics/page.tsx`
 - **Files Modified:**
-  - `nexused-backend/src/app.module.ts` — Added AnalyticsModule
-  - `nexused-frontend/src/lib/navigation.ts` — Added Analytics nav item for admins
-  - `nexused-frontend/src/app/(dashboard)/admin/page.tsx` — Redirects to /admin/analytics
+  - `axis-backend/src/app.module.ts` — Added AnalyticsModule
+  - `axis-frontend/src/lib/navigation.ts` — Added Analytics nav item for admins
+  - `axis-frontend/src/app/(dashboard)/admin/page.tsx` — Redirects to /admin/analytics
 - **Details:**
   - Backend AnalyticsModule with tenant-scoped aggregation queries
   - GraphQL queries: adminDashboard, tenantStats, userStats, gradeStats, submissionMetrics, atRiskStudents, aiUsageSummary, aiAgentUsage, topCourses
@@ -456,17 +456,17 @@
 - **Completed:** 2026-02-11
 - **Priority:** LOW
 - **Files Created:**
-  - `nexused-frontend/public/manifest.json` — PWA manifest with app metadata, icons, shortcuts
-  - `nexused-frontend/public/sw.js` — Service worker with caching strategies
-  - `nexused-frontend/public/icons/` — 8 PNG icons (72-512px) generated from SVG
-  - `nexused-frontend/src/app/offline/page.tsx` — Offline fallback page
-  - `nexused-frontend/src/hooks/use-pwa.ts` — PWA hook (install, online status, SW registration)
-  - `nexused-frontend/src/components/pwa/install-prompt.tsx` — Install banner component
-  - `nexused-frontend/src/components/pwa/offline-indicator.tsx` — Offline status banner
-  - `nexused-frontend/scripts/generate-icons.js` — Icon generation script
+  - `axis-frontend/public/manifest.json` — PWA manifest with app metadata, icons, shortcuts
+  - `axis-frontend/public/sw.js` — Service worker with caching strategies
+  - `axis-frontend/public/icons/` — 8 PNG icons (72-512px) generated from SVG
+  - `axis-frontend/src/app/offline/page.tsx` — Offline fallback page
+  - `axis-frontend/src/hooks/use-pwa.ts` — PWA hook (install, online status, SW registration)
+  - `axis-frontend/src/components/pwa/install-prompt.tsx` — Install banner component
+  - `axis-frontend/src/components/pwa/offline-indicator.tsx` — Offline status banner
+  - `axis-frontend/scripts/generate-icons.js` — Icon generation script
 - **Files Modified:**
-  - `nexused-frontend/src/app/layout.tsx` — PWA metadata, viewport, apple-touch-icon
-  - `nexused-frontend/src/app/(dashboard)/layout.tsx` — Added InstallPrompt, OfflineIndicator
+  - `axis-frontend/src/app/layout.tsx` — PWA metadata, viewport, apple-touch-icon
+  - `axis-frontend/src/app/(dashboard)/layout.tsx` — Added InstallPrompt, OfflineIndicator
 - **Details:**
   - Service worker caches: static assets (cache-first), pages (network-first with offline fallback), API (network-only)
   - Install prompt shows on supported browsers, dismissable per session
@@ -508,10 +508,10 @@
   - **Route announcer fix:** Refactored to use ref-based DOM manipulation instead of setState (React 19 compatible)
   - **Enhanced E2E tests:** Added 4 new test groups: form autocomplete verification, reduced motion CSS, live region assertions, password hint aria-describedby
 - **Files Created (Phase 2):**
-  - `nexused-frontend/src/components/a11y/accessibility-provider.tsx`
-  - `nexused-frontend/src/components/a11y/focus-on-route-change.tsx`
-  - `nexused-frontend/src/components/a11y/accessible-loader.tsx`
-  - `nexused-frontend/src/hooks/use-focus-management.ts`
+  - `axis-frontend/src/components/a11y/accessibility-provider.tsx`
+  - `axis-frontend/src/components/a11y/focus-on-route-change.tsx`
+  - `axis-frontend/src/components/a11y/accessible-loader.tsx`
+  - `axis-frontend/src/hooks/use-focus-management.ts`
 - **Files Modified (Phase 2):** `globals.css`, `auth-guard.tsx`, `login/page.tsx`, `register/page.tsx`, `(dashboard)/layout.tsx`, `route-announcer.tsx`, `06-accessibility.spec.ts`
 - **Acceptance:** ✓ Zero axe-core violations at critical/serious level. ✓ Keyboard-only navigation works. ✓ Screen reader announces route changes and feed updates. ✓ Skip link focuses main content. ✓ All interactive elements have accessible names. ✓ Reduced motion disables animations. ✓ High contrast mode enhances borders/text. ✓ Forms have autocomplete attributes. ✓ Focus moves to main content on navigation.
 
@@ -519,15 +519,15 @@
 - **Status:** `DONE`
 - **Completed:** 2026-02-11
 - **Priority:** LOW (but required for institutional adoption)
-- **Details:** Full LTI 1.3 integration allowing external LMS platforms (Canvas, Brightspace, Moodle, etc.) to launch NexusEd as a tool.
+- **Details:** Full LTI 1.3 integration allowing external LMS platforms (Canvas, Brightspace, Moodle, etc.) to launch Axis as a tool.
 - **Backend Implementation:**
   - 5 new entities: `LtiPlatform`, `LtiDeployment`, `LtiContext`, `LtiUser`, `LtiState`
   - `LtiService`: Platform management, OIDC login flow, JWT verification, user provisioning, role mapping, context linking
   - `LtiController`: REST endpoints for `/api/lti/login`, `/api/lti/launch`, `/api/lti/.well-known/jwks.json`, `/api/lti/config`
   - `LtiResolver`: GraphQL admin interface for platform registration
   - `LtiCleanupService`: Periodic cleanup of expired OIDC states
-  - Automatic user creation with LTI role to NexusEd role mapping
-  - Course context detection and linking to NexusEd sections
+  - Automatic user creation with LTI role to Axis role mapping
+  - Course context detection and linking to Axis sections
 - **Frontend Implementation:**
   - Admin integrations page at `/admin/integrations`
   - Tool configuration display for LMS registration
@@ -537,7 +537,7 @@
 - **Files Created:**
   - Backend: `lti.config.ts`, `lti-platform.entity.ts`, `lti-deployment.entity.ts`, `lti-context.entity.ts`, `lti-user.entity.ts`, `lti-state.entity.ts`, `lti.types.ts`, `lti.service.ts`, `lti.controller.ts`, `lti.resolver.ts`, `lti-cleanup.service.ts`, `lti.module.ts`
   - Frontend: `queries/lti.ts`, `mutations/lti.ts`, `admin/integrations/page.tsx`
-- **Acceptance:** ✓ NexusEd can be registered as an LTI 1.3 tool in external LMS. ✓ OIDC login flow implemented. ✓ Users auto-provisioned on first launch. ✓ Admin UI for managing platform registrations. ✓ Context linking for course mapping.
+- **Acceptance:** ✓ Axis can be registered as an LTI 1.3 tool in external LMS. ✓ OIDC login flow implemented. ✓ Users auto-provisioned on first launch. ✓ Admin UI for managing platform registrations. ✓ Context linking for course mapping.
 
 ### FEAT-012: Per-tenant AI governance console
 - **Status:** `DONE`
@@ -560,18 +560,18 @@
   - AI enabled/disabled toggle with warning banner
   - Added "AI Governance" nav item with Shield icon to admin navigation
 - **Files Created:**
-  - `nexused-backend/src/modules/ai/entities/tenant-ai-config.entity.ts`
-  - `nexused-backend/src/modules/ai/dto/governance.types.ts`
-  - `nexused-backend/src/modules/ai/governance.resolver.ts`
-  - `nexused-frontend/src/lib/graphql/queries/governance.ts`
-  - `nexused-frontend/src/lib/graphql/mutations/governance.ts`
-  - `nexused-frontend/src/app/(dashboard)/admin/ai-governance/page.tsx`
+  - `axis-backend/src/modules/ai/entities/tenant-ai-config.entity.ts`
+  - `axis-backend/src/modules/ai/dto/governance.types.ts`
+  - `axis-backend/src/modules/ai/governance.resolver.ts`
+  - `axis-frontend/src/lib/graphql/queries/governance.ts`
+  - `axis-frontend/src/lib/graphql/mutations/governance.ts`
+  - `axis-frontend/src/app/(dashboard)/admin/ai-governance/page.tsx`
 - **Files Modified:**
-  - `nexused-backend/src/modules/ai/governance.service.ts` — DB-backed config, monthly budget checks
-  - `nexused-backend/src/modules/ai/ai.module.ts` — Added TenantAiConfig entity, GovernanceResolver
-  - `nexused-backend/src/database/entities/index.ts` — Added TenantAiConfig
-  - `nexused-backend/src/modules/ai/governance.service.spec.ts` — Updated with TenantAiConfig mock, 3 new tests
-  - `nexused-frontend/src/lib/navigation.ts` — Added Shield icon, AI Governance nav for admin
+  - `axis-backend/src/modules/ai/governance.service.ts` — DB-backed config, monthly budget checks
+  - `axis-backend/src/modules/ai/ai.module.ts` — Added TenantAiConfig entity, GovernanceResolver
+  - `axis-backend/src/database/entities/index.ts` — Added TenantAiConfig
+  - `axis-backend/src/modules/ai/governance.service.spec.ts` — Updated with TenantAiConfig mock, 3 new tests
+  - `axis-frontend/src/lib/navigation.ts` — Added Shield icon, AI Governance nav for admin
 - **Acceptance:** ✓ Admin can change a tool from "auto" to "suggest" and it takes effect immediately. ✓ Usage logs are visible with timestamps and costs. ✓ Rate limits and budgets are configurable per tenant. ✓ AI can be disabled entirely per tenant. ✓ 104 tests pass.
 
 ### FEAT-013: Agent Builder admin UI
@@ -593,20 +593,20 @@
   - Added "Agent Builder" nav item with Bot icon to instructor navigation
   - Updated conversation list to display custom agent names from slug
 - **Files Created:**
-  - `nexused-backend/src/modules/ai/entities/custom-agent.entity.ts`
-  - `nexused-backend/src/modules/ai/dto/custom-agent.types.ts`
-  - `nexused-backend/src/modules/ai/custom-agent.service.ts`
-  - `nexused-backend/src/modules/ai/custom-agent.resolver.ts`
-  - `nexused-frontend/src/lib/graphql/queries/custom-agents.ts`
-  - `nexused-frontend/src/lib/graphql/mutations/custom-agents.ts`
-  - `nexused-frontend/src/app/(dashboard)/ai/agents/page.tsx`
+  - `axis-backend/src/modules/ai/entities/custom-agent.entity.ts`
+  - `axis-backend/src/modules/ai/dto/custom-agent.types.ts`
+  - `axis-backend/src/modules/ai/custom-agent.service.ts`
+  - `axis-backend/src/modules/ai/custom-agent.resolver.ts`
+  - `axis-frontend/src/lib/graphql/queries/custom-agents.ts`
+  - `axis-frontend/src/lib/graphql/mutations/custom-agents.ts`
+  - `axis-frontend/src/app/(dashboard)/ai/agents/page.tsx`
 - **Files Modified:**
-  - `nexused-backend/src/modules/ai/agent-executor.service.ts` — Uses CustomAgentService.resolveAgent()
-  - `nexused-backend/src/modules/ai/ai.resolver.ts` — Merges custom agents into availableAgents query
-  - `nexused-backend/src/modules/ai/ai.module.ts` — Registered CustomAgent entity, CustomAgentService, CustomAgentResolver
-  - `nexused-backend/src/database/entities/index.ts` — Added CustomAgent to entities array
-  - `nexused-frontend/src/lib/navigation.ts` — Added Agent Builder nav for instructors
-  - `nexused-frontend/src/components/ai/ai-conversation-list.tsx` — Custom agent label from slug
+  - `axis-backend/src/modules/ai/agent-executor.service.ts` — Uses CustomAgentService.resolveAgent()
+  - `axis-backend/src/modules/ai/ai.resolver.ts` — Merges custom agents into availableAgents query
+  - `axis-backend/src/modules/ai/ai.module.ts` — Registered CustomAgent entity, CustomAgentService, CustomAgentResolver
+  - `axis-backend/src/database/entities/index.ts` — Added CustomAgent to entities array
+  - `axis-frontend/src/lib/navigation.ts` — Added Agent Builder nav for instructors
+  - `axis-frontend/src/components/ai/ai-conversation-list.tsx` — Custom agent label from slug
 - **Acceptance:** ✓ Instructor can create a custom agent for their course. ✓ Custom agents appear in student's agent selector (role + course filtered). ✓ Agent respects governance rules (same AgentExecutor loop). ✓ 104 tests pass.
 
 ### FEAT-015: AI Course Planner
@@ -629,23 +629,23 @@
   - Added "Planner" nav item with Map icon to student navigation
   - Updated AI conversation list with Course Planner icon and label
 - **Files Created:**
-  - `nexused-backend/src/database/entities/degree-program.entity.ts`
-  - `nexused-backend/src/database/entities/student-degree-profile.entity.ts`
-  - `nexused-backend/src/modules/planner/planner.service.ts`
-  - `nexused-backend/src/modules/planner/planner.resolver.ts`
-  - `nexused-backend/src/modules/planner/planner.module.ts`
-  - `nexused-backend/src/modules/planner/dto/planner.types.ts`
-  - `nexused-backend/src/modules/ai/tools/planner.tools.ts`
-  - `nexused-backend/src/modules/ai/agents/course-planner.agent.ts`
-  - `nexused-frontend/src/lib/graphql/queries/planner.ts`
-  - `nexused-frontend/src/lib/graphql/mutations/planner.ts`
-  - `nexused-frontend/src/app/(dashboard)/planner/page.tsx`
+  - `axis-backend/src/database/entities/degree-program.entity.ts`
+  - `axis-backend/src/database/entities/student-degree-profile.entity.ts`
+  - `axis-backend/src/modules/planner/planner.service.ts`
+  - `axis-backend/src/modules/planner/planner.resolver.ts`
+  - `axis-backend/src/modules/planner/planner.module.ts`
+  - `axis-backend/src/modules/planner/dto/planner.types.ts`
+  - `axis-backend/src/modules/ai/tools/planner.tools.ts`
+  - `axis-backend/src/modules/ai/agents/course-planner.agent.ts`
+  - `axis-frontend/src/lib/graphql/queries/planner.ts`
+  - `axis-frontend/src/lib/graphql/mutations/planner.ts`
+  - `axis-frontend/src/app/(dashboard)/planner/page.tsx`
 - **Files Modified:**
-  - `nexused-backend/src/database/entities/index.ts` — Added DegreeProgram, StudentDegreeProfile
-  - `nexused-backend/src/modules/ai/ai.module.ts` — Registered planner tools and Course Planner agent
-  - `nexused-backend/src/app.module.ts` — Added PlannerModule
-  - `nexused-frontend/src/lib/navigation.ts` — Added Planner nav for students
-  - `nexused-frontend/src/components/ai/ai-conversation-list.tsx` — Course Planner icon and label
+  - `axis-backend/src/database/entities/index.ts` — Added DegreeProgram, StudentDegreeProfile
+  - `axis-backend/src/modules/ai/ai.module.ts` — Registered planner tools and Course Planner agent
+  - `axis-backend/src/app.module.ts` — Added PlannerModule
+  - `axis-frontend/src/lib/navigation.ts` — Added Planner nav for students
+  - `axis-frontend/src/components/ai/ai-conversation-list.tsx` — Course Planner icon and label
 - **Acceptance:** ✓ Student can set up degree profile. ✓ Progress tracked with per-requirement breakdown. ✓ Eligible courses filtered by prerequisites and requirements. ✓ What-if simulator shows credit transfer. ✓ AI Course Planner agent available in chat. ✓ 104 tests pass.
 
 ### FEAT-014: ML-based feed personalization
@@ -667,30 +667,30 @@
   - Updated `StudentHomeFeed` — wires engagement tracking into all feed cards
   - Updated `InstructorHomeFeed` — extracted `InstructorFeedCard` component with engagement tracking
 - **Files Created:**
-  - `nexused-backend/src/modules/feed/entities/feed-engagement.entity.ts`
-  - `nexused-backend/src/modules/feed/feed-personalization.service.ts`
-  - `nexused-backend/src/modules/feed/dto/engagement.types.ts`
-  - `nexused-backend/src/modules/feed/feed-personalization.service.spec.ts`
-  - `nexused-frontend/src/hooks/use-feed-engagement.ts`
-  - `nexused-frontend/src/lib/graphql/mutations/feed-engagement.ts`
+  - `axis-backend/src/modules/feed/entities/feed-engagement.entity.ts`
+  - `axis-backend/src/modules/feed/feed-personalization.service.ts`
+  - `axis-backend/src/modules/feed/dto/engagement.types.ts`
+  - `axis-backend/src/modules/feed/feed-personalization.service.spec.ts`
+  - `axis-frontend/src/hooks/use-feed-engagement.ts`
+  - `axis-frontend/src/lib/graphql/mutations/feed-engagement.ts`
 - **Files Modified:**
-  - `nexused-backend/src/modules/feed/feed.service.ts` — Removed sorting (delegated to personalization)
-  - `nexused-backend/src/modules/feed/feed.resolver.ts` — Added engagement mutations, personalized ranking
-  - `nexused-backend/src/modules/feed/feed.module.ts` — Registered FeedEngagement entity and personalization service
-  - `nexused-backend/src/database/entities/index.ts` — Added FeedEngagement to TypeORM
-  - `nexused-backend/src/modules/feed/feed.service.spec.ts` — Updated sort test
-  - `nexused-frontend/src/components/feed/feed-card.tsx` — Added engagement tracking props
-  - `nexused-frontend/src/components/feed/student-home-feed.tsx` — Wired engagement tracking
-  - `nexused-frontend/src/components/feed/instructor-home-feed.tsx` — Wired engagement tracking
+  - `axis-backend/src/modules/feed/feed.service.ts` — Removed sorting (delegated to personalization)
+  - `axis-backend/src/modules/feed/feed.resolver.ts` — Added engagement mutations, personalized ranking
+  - `axis-backend/src/modules/feed/feed.module.ts` — Registered FeedEngagement entity and personalization service
+  - `axis-backend/src/database/entities/index.ts` — Added FeedEngagement to TypeORM
+  - `axis-backend/src/modules/feed/feed.service.spec.ts` — Updated sort test
+  - `axis-frontend/src/components/feed/feed-card.tsx` — Added engagement tracking props
+  - `axis-frontend/src/components/feed/student-home-feed.tsx` — Wired engagement tracking
+  - `axis-frontend/src/components/feed/instructor-home-feed.tsx` — Wired engagement tracking
 - **Acceptance:** ✓ Engagement events tracked per user. ✓ Feed ranking adapts to user behavior. ✓ New users get rule-based fallback. ✓ Urgent deadlines still prioritized (0.35 weight). ✓ Admin can view engagement stats. ✓ 117 tests pass (13 new).
 
 ---
 
 ## Sprint: Institutional Onboarding & Catalog Management
 
-> **Goal:** An institution can get set up on NexusEd with their full course catalog and degree programs. This is the data foundation — nothing else (enrollment, graduation planning, AI course discovery) works without it.
+> **Goal:** An institution can get set up on Axis with their full course catalog and degree programs. This is the data foundation — nothing else (enrollment, graduation planning, AI course discovery) works without it.
 >
-> **Competitive angle:** DegreeWorks (Ellucian) charges $100k+/year and requires weeks of manual setup. NexusEd's AI-assisted import can onboard an institution's catalog in hours. This is the "wow" moment in a sales demo.
+> **Competitive angle:** DegreeWorks (Ellucian) charges $100k+/year and requires weeks of manual setup. Axis's AI-assisted import can onboard an institution's catalog in hours. This is the "wow" moment in a sales demo.
 
 ### ONBOARD-001: Catalog Data Model Extensions
 - **Status:** `DONE`
@@ -764,7 +764,7 @@
 
 > **Goal:** Build the complete enrollment flow — from course discovery to AI-assisted enrollment to institutional-scale management. This is the first AI-native enrollment system in any LMS.
 >
-> **Innovation thesis:** Every LMS treats enrollment as admin plumbing (CSV imports, manual assignment). NexusEd makes enrollment a student-facing, AI-powered experience. A student can say "I need a 3-credit elective" and the AI finds, recommends, and enrolls them.
+> **Innovation thesis:** Every LMS treats enrollment as admin plumbing (CSV imports, manual assignment). Axis makes enrollment a student-facing, AI-powered experience. A student can say "I need a 3-credit elective" and the AI finds, recommends, and enrolls them.
 
 ### ENROLL-001: Course Catalog (Browse & Search)
 - **Status:** `DONE`
@@ -970,7 +970,7 @@
   - Backend: Audit log for all SIS-originated changes
   - Backend: Webhook signature verification for security
   - Frontend: Admin integrations page → SIS configuration section
-- **Acceptance:** External SIS can send enrollment events via webhook. NexusEd creates/updates/drops enrollments based on SIS data. All changes are audited.
+- **Acceptance:** External SIS can send enrollment events via webhook. Axis creates/updates/drops enrollments based on SIS data. All changes are audited.
 
 ---
 
@@ -978,7 +978,7 @@
 
 > **Goal:** Every student gets a personalized, semester-by-semester graduation roadmap that adapts to their timeline, finances, and life circumstances. This is the DegreeWorks killer — 10x better UX, 10x cheaper, and AI-native.
 >
-> **Product thesis:** This may be a stronger product than the LMS itself. Many universities already have Canvas/Moodle but hate their degree audit tool or don't have one. NexusEd can be "the AI-native graduation planner that also has an LMS built in."
+> **Product thesis:** This may be a stronger product than the LMS itself. Many universities already have Canvas/Moodle but hate their degree audit tool or don't have one. Axis can be "the AI-native graduation planner that also has an LMS built in."
 >
 > **How it differs from FEAT-015:** The existing Course Planner tracks progress and checks prerequisites. This sprint generates a **complete semester-by-semester plan** that accounts for time, money, course availability, and life changes.
 
@@ -1106,7 +1106,7 @@
 
 > **Prerequisites:** All P0/P1 items DONE, core features stable. This sprint makes the web app fully usable on phones before considering a native app.
 >
-> **Goal:** Students can use NexusEd on their phones via a responsive web app. No native app needed yet.
+> **Goal:** Students can use Axis on their phones via a responsive web app. No native app needed yet.
 
 ### MOB-001: Responsive audit and fixes for all dashboard layouts
 - **Status:** `DONE`
@@ -1233,7 +1233,7 @@
 - **Scope:**
   - Backend: New `notifications` module with:
     - Resend SDK integration (or SendGrid — Resend is simpler, better DX)
-    - Email template system with NexusEd branding (from address, logo, colors)
+    - Email template system with Axis branding (from address, logo, colors)
     - Event-driven triggers via EventEmitter2:
       - `SUBMISSION_GRADED` → email student: "Your submission for {assignment} was graded: {score}/{points}"
       - `ASSIGNMENT_CREATED` → email section: "New assignment in {courseCode}: {title}, due {dueDate}"
@@ -1343,9 +1343,9 @@
     - Social proof section (placeholder for testimonials/university logos)
     - CTA: "Request a Demo" / "Try it Free"
     - Footer: links to Features, About, Login, Register
-  - Shared layout with marketing nav (NexusEd logo, Features, About, Login, Get Started)
+  - Shared layout with marketing nav (Axis logo, Features, About, Login, Get Started)
   - Responsive, accessible (same Tailwind + shadcn system)
-- **Acceptance:** Visiting nexused.app (or localhost:3000) shows a professional landing page. Login/Register are accessible from nav. Page is responsive and accessible.
+- **Acceptance:** Visiting axis.app (or localhost:3000) shows a professional landing page. Login/Register are accessible from nav. Page is responsive and accessible.
 
 ### SITE-002: Features Page
 - **Status:** `DONE`
@@ -1358,7 +1358,7 @@
     - Institutional Management (AI governance, analytics, LTI, catalog import)
     - For Students / For Instructors / For Admins sections
   - Screenshots or mockup images for each feature
-- **Acceptance:** A prospective user can understand what NexusEd does and how it differs from Canvas/Moodle/Brightspace.
+- **Acceptance:** A prospective user can understand what Axis does and how it differs from Canvas/Moodle/Brightspace.
 
 ### SITE-003: About Page
 - **Status:** `DONE`
@@ -1368,8 +1368,8 @@
     - The story (adapted from MISSION.md — the UVic frustration, the advisor who liked it but couldn't act, building it yourself)
     - Vision statement
     - Contact form or email for institutional inquiries
-  - Authentic, human — this story is NexusEd's strongest marketing asset
-- **Acceptance:** A university decision-maker can read why NexusEd exists and reach out.
+  - Authentic, human — this story is Axis's strongest marketing asset
+- **Acceptance:** A university decision-maker can read why Axis exists and reach out.
 
 ---
 
@@ -1384,7 +1384,7 @@
 ### MOB-APP-001: Expo Project Setup
 - **Status:** `DONE`
 - **Priority:** HIGH — Foundation for all mobile work
-- **Scope:** Expo + Expo Router in `nexused-mobile/`, Apollo Client, shared types, expo-secure-store, biometric auth
+- **Scope:** Expo + Expo Router in `axis-mobile/`, Apollo Client, shared types, expo-secure-store, biometric auth
 - **Acceptance:** App scaffolded, builds for iOS simulator, can reach backend GraphQL endpoint.
 
 ### MOB-APP-002: Mobile Auth Flow
@@ -1437,7 +1437,7 @@
 
 ## 10x Differentiators (Already Built — Protect These)
 
-> These are what separate NexusEd from every competitor. Don't remove, simplify, or refactor these unless you fully understand why they exist.
+> These are what separate Axis from every competitor. Don't remove, simplify, or refactor these unless you fully understand why they exist.
 
 | ID | Gem | Key Files |
 |----|-----|-----------|

@@ -1,4 +1,4 @@
-# NexusEd Compliance Roadmap
+# Axis Compliance Roadmap
 
 > What's needed to sell to universities. SOC 2 Type II + FERPA + procurement artifacts.
 
@@ -25,7 +25,7 @@ SOC 2 is an auditing framework from the AICPA. A Type II report proves your secu
 
 ### Trust Service Criteria (Pick Which to Include)
 
-| Criterion | Required? | Covers | Recommended for NexusEd? |
+| Criterion | Required? | Covers | Recommended for Axis? |
 |-----------|----------|--------|--------------------------|
 | **Security** | Mandatory | Unauthorized access protection | Yes (always) |
 | **Availability** | Optional | Uptime, DR, SLAs | Yes — universities expect uptime guarantees |
@@ -54,7 +54,7 @@ SOC 2 is an auditing framework from the AICPA. A Type II report proves your secu
 
 ### Technical Controls Required
 
-| Control | Status in NexusEd | Gap |
+| Control | Status in Axis | Gap |
 |---------|-------------------|-----|
 | MFA on production systems | Not implemented | Need MFA on cloud console, GitHub, admin accounts |
 | Role-based access control | Implemented (UserRole enum + guards) | Good |
@@ -132,7 +132,7 @@ Every university will require a DPA with these provisions:
 |-----------|--------------|
 | **Purpose limitation** | Student data used only to provide the LMS service — no data mining, no ad targeting |
 | **No re-disclosure** | Don't share student data with any third party without FERPA authorization |
-| **Institutional ownership** | The university owns the data, not NexusEd |
+| **Institutional ownership** | The university owns the data, not Axis |
 | **Audit rights** | The university can audit your data handling |
 | **Breach notification** | Notify within 24-72 hours of a breach (varies by state) |
 | **Data deletion** | Destroy all student data when the contract ends |
@@ -141,7 +141,7 @@ Every university will require a DPA with these provisions:
 
 ### Technical Controls Required
 
-| Control | NexusEd Status | Action Needed |
+| Control | Axis Status | Action Needed |
 |---------|---------------|---------------|
 | Encryption at rest (AES-256) | Verify DB + R2 config | Confirm and document |
 | Encryption in transit (TLS 1.2+) | Likely in place | Confirm |
@@ -183,9 +183,9 @@ If selling to universities in these states, additional requirements apply:
 
 ## 3. University Procurement Artifacts Checklist
 
-When a university evaluates NexusEd, they will request these:
+When a university evaluates Axis, they will request these:
 
-| Artifact | Description | NexusEd Status |
+| Artifact | Description | Axis Status |
 |----------|------------|----------------|
 | **SOC 2 Type II Report** | CPA-audited security report | Not started |
 | **HECVAT (completed)** | ~250-question security questionnaire (EDUCAUSE standard) | Not started |
@@ -215,11 +215,11 @@ Having a pre-filled HECVAT dramatically accelerates procurement. It's free — j
 
 ---
 
-## 4. What NexusEd Already Has (Head Start)
+## 4. What Axis Already Has (Head Start)
 
 These existing features directly map to compliance requirements:
 
-| NexusEd Feature | Compliance Requirement It Addresses |
+| Axis Feature | Compliance Requirement It Addresses |
 |----------------|-------------------------------------|
 | Multi-tenant architecture with tenantId on every entity | Data isolation between institutions |
 | JwtAuthGuard + RolesGuard on every resolver | Access control / RBAC |
@@ -239,7 +239,7 @@ These existing features directly map to compliance requirements:
 ### Months 1-2: Foundation
 - [ ] Sign up for Drata or Vanta (choose one)
 - [ ] Write all 8-12 policy documents using platform templates
-- [ ] Implement MFA on cloud console, GitHub, and NexusEd admin accounts
+- [ ] Implement MFA on cloud console, GitHub, and Axis admin accounts
 - [ ] Set up centralized logging with 12-month retention
 - [ ] Draft DPA template (engage EdTech attorney, $2-5K)
 - [ ] Draft privacy policy

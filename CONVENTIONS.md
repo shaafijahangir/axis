@@ -1,4 +1,4 @@
-# NexusEd Code Conventions
+# Axis Code Conventions
 
 > Single source of truth for how code is written in this project. Follow these patterns exactly. When in doubt, match existing code rather than inventing new patterns.
 

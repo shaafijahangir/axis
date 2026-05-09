@@ -1,17 +1,17 @@
-# NexusEd Architecture
+# Axis Architecture
 
-> This document describes how NexusEd is built, how data flows through the system, and how modules connect. Read this to understand the system before making changes.
+> This document describes how Axis is built, how data flows through the system, and how modules connect. Read this to understand the system before making changes.
 
 ---
 
 ## System Overview
 
-NexusEd is a **multi-tenant, AI-native Learning Management System** built as a monorepo with two applications:
+Axis is a **multi-tenant, AI-native Learning Management System** built as a monorepo with two applications:
 
 ```
-nexused/
-├── nexused-backend/     NestJS 11 — GraphQL API, business logic, AI engine
-├── nexused-frontend/    Next.js 16 — React 19 UI with App Router
+axis/
+├── axis-backend/     NestJS 11 — GraphQL API, business logic, AI engine
+├── axis-frontend/    Next.js 16 — React 19 UI with App Router
 ├── CLAUDE.md            Agent instructions and coding standards
 ├── ARCHITECTURE.md      This file — system design reference
 ├── CONVENTIONS.md       Code patterns and naming rules
@@ -163,7 +163,7 @@ Rate limiting and daily token budgets are enforced per-tenant.
 ## Frontend Architecture
 
 ```
-nexused-frontend/src/
+axis-frontend/src/
 ├── app/                    Next.js App Router
 │   ├── (auth)/             Public routes (login, register)
 │   ├── (dashboard)/        Protected routes (all features)

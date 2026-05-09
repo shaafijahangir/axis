@@ -1,4 +1,4 @@
-# The NexusEd Story
+# The Axis Story
 
 > *A narrative map of what we're building, why every piece exists, and how it all fits together.*
 
@@ -10,20 +10,20 @@ Imagine you're not building software. You're building an **entire university cam
 
 Traditional LMS platforms (Canvas, Brightspace, Moodle) are like old university buildings: the registrar's office is in one building, your classroom is in another, the advisor's office has a three-week wait, and nobody put up signs. You wander. You get lost. You miss things. The building doesn't care.
 
-NexusEd is the campus that **watches, learns, and acts**.
+Axis is the campus that **watches, learns, and acts**.
 
 ---
 
 ## The Five Buildings
 
-Every feature in NexusEd maps to one of five "buildings" on this campus. Each building has a clear purpose, and together they form a complete institution.
+Every feature in Axis maps to one of five "buildings" on this campus. Each building has a clear purpose, and together they form a complete institution.
 
 ### Building 1: The Main Hall (Feed & Navigation)
 *"Walk in and immediately know what matters."*
 
 This is the front door of the entire campus. In a traditional university, you'd check your email, then your LMS, then your calendar, then your advisor's door — four systems, four mental models, four chances to miss something.
 
-NexusEd's Main Hall is a **single intelligent feed**. You walk in and a screen shows you:
+Axis's Main Hall is a **single intelligent feed**. You walk in and a screen shows you:
 - "Your assignment in PSYC 300 is due in 4 hours. You haven't started."
 - "Professor Chen graded your midterm. You got 87%."
 - "New announcement: office hours moved to Thursday."
@@ -41,7 +41,7 @@ Not 30 notifications. Three to five items, ranked by urgency. The building knows
 
 Traditional LMS classrooms have the syllabus taped to one wall, assignments in a filing cabinet, discussions in a separate room, and grades in a locked drawer. You reconstruct the course in your head every time.
 
-NexusEd classrooms are a **single timeline**. Content, assignments, discussions, and announcements flow chronologically in one stream. You scroll through the semester like reading a story. The lesson connects to the assignment connects to the discussion about that assignment — because that's how learning actually works.
+Axis classrooms are a **single timeline**. Content, assignments, discussions, and announcements flow chronologically in one stream. You scroll through the semester like reading a story. The lesson connects to the assignment connects to the discussion about that assignment — because that's how learning actually works.
 
 Instructors don't wrestle with 47 configuration screens. They build content with a rich text editor, create assignments with rubrics, grade inline with immediate feedback, and see their entire class in one view.
 
@@ -56,7 +56,7 @@ Instructors don't wrestle with 47 configuration screens. They build content with
 
 In traditional universities, you email your professor and wait days. You don't know if your TA handles that question. Group project coordination happens across three different apps.
 
-NexusEd's Communications Tower knows your relationships. Students see their instructors and classmates. Instructors see their students. The right contacts surface automatically based on your enrollments.
+Axis's Communications Tower knows your relationships. Students see their instructors and classmates. Instructors see their students. The right contacts surface automatically based on your enrollments.
 
 **What's built:** Direct messaging with conversation threads, enrollment-based contact resolution, unread badges in navigation, cursor-based message pagination, read tracking.
 
@@ -67,7 +67,7 @@ NexusEd's Communications Tower knows your relationships. Students see their inst
 ### Building 4: The Brain (AI Intelligence Layer)
 *"The campus that thinks."*
 
-This is what makes NexusEd fundamentally different from every other LMS. It's not a chatbot bolted onto a file cabinet. It's the **nervous system of the entire campus**.
+This is what makes Axis fundamentally different from every other LMS. It's not a chatbot bolted onto a file cabinet. It's the **nervous system of the entire campus**.
 
 The Brain has three layers:
 
@@ -85,7 +85,7 @@ Every AI action goes through a three-tier permission system:
 - **Suggest**: Sensitive actions are proposed but wait for human approval (drafting feedback, sending messages)
 - **Blocked**: Dangerous actions are architecturally impossible (changing grades, accessing other students' data)
 
-This isn't a feature. It's a **trust architecture**. Institutions won't adopt AI they can't control. NexusEd gives them control at the infrastructure level, not through policy documents.
+This isn't a feature. It's a **trust architecture**. Institutions won't adopt AI they can't control. Axis gives them control at the infrastructure level, not through policy documents.
 
 **What's built:** Full agentic loop (AgentExecutor with multi-turn tool calls), governance engine with action types + rate limiting + daily token budgets, per-tenant cost tracking, event-driven architecture (10 typed events), tool registry (16 tools), agent registry (Study Coach + Feedback Copilot definitions), context snapshot system (freezes academic state to prevent hallucination).
 
@@ -96,9 +96,9 @@ This isn't a feature. It's a **trust architecture**. Institutions won't adopt AI
 ### Building 5: The Administration Wing (Multi-Tenant Platform)
 *"One campus blueprint, infinite institutions."*
 
-NexusEd isn't one university. It's the **blueprint that any institution can use** to stand up their own campus. Each institution (tenant) gets their own isolated data, their own AI budgets, their own billing, their own rules — running on shared infrastructure.
+Axis isn't one university. It's the **blueprint that any institution can use** to stand up their own campus. Each institution (tenant) gets their own isolated data, their own AI budgets, their own billing, their own rules — running on shared infrastructure.
 
-This is the SaaS layer. It's why NexusEd is a business, not just a project:
+This is the SaaS layer. It's why Axis is a business, not just a project:
 - **Tenant isolation**: PostgreSQL Row-Level Security ensures Institution A never sees Institution B's data.
 - **Subscription tiers**: FREE → BASIC → PROFESSIONAL → ENTERPRISE, already modeled in the tenant entity.
 - **AI cost control**: Per-tenant token budgets and rate limits. Enterprise tier unlocks higher limits and custom governance rules.
@@ -112,7 +112,7 @@ This is the SaaS layer. It's why NexusEd is a business, not just a project:
 
 ## The 10 Hidden Gems
 
-These are things already built that most people would never notice — but they're what separate NexusEd from every competitor. These are not incremental improvements. Each one represents an architectural decision that would take competitors months to replicate.
+These are things already built that most people would never notice — but they're what separate Axis from every competitor. These are not incremental improvements. Each one represents an architectural decision that would take competitors months to replicate.
 
 | # | Gem | Why It Matters |
 |---|-----|----------------|
@@ -263,7 +263,7 @@ An honest assessment of what needs fixing before institutions would trust this:
 ## Data Flow: How a Student's Day Works
 
 ```
-Student opens NexusEd
+Student opens Axis
        │
        ▼
 ┌─────────────────────────────────┐
@@ -374,13 +374,13 @@ Each phase builds on the previous. You can't demo AI (Phase 4) without fixing se
 
 The traditional edtech market is a **$400B industry built on mediocrity**. Canvas has 30% market share not because it's great, but because switching costs are enormous. Brightspace wins contracts through analytics dashboards that administrators like, not learning experiences that students love.
 
-NexusEd attacks from a direction none of them can follow:
+Axis attacks from a direction none of them can follow:
 
 1. **AI-native, not AI-added.** You can't retrofit a feed-first, agentic architecture onto a 15-year-old codebase. They'd have to rebuild from scratch — and they won't, because their existing customers are paying.
 
-2. **Student-first, not admin-first.** Every incumbent optimized for the buyer (administrators), not the user (students). NexusEd optimizes for the user and makes the buyer happy as a side effect (through analytics, governance, cost control).
+2. **Student-first, not admin-first.** Every incumbent optimized for the buyer (administrators), not the user (students). Axis optimizes for the user and makes the buyer happy as a side effect (through analytics, governance, cost control).
 
-3. **Governance as a feature.** The #1 objection to AI in education is "we can't control it." NexusEd's three-tier governance isn't a restriction — it's the selling point. "Your institution controls exactly what the AI can do, at the infrastructure level."
+3. **Governance as a feature.** The #1 objection to AI in education is "we can't control it." Axis's three-tier governance isn't a restriction — it's the selling point. "Your institution controls exactly what the AI can do, at the infrastructure level."
 
 4. **The advisor that scales.** The AI Course Planner solves a problem that every university has and none can fix with humans alone: every student needs personalized academic advising, and there aren't enough advisors. This isn't a feature — it's the reason institutions will switch.
 

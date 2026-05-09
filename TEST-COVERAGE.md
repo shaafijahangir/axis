@@ -1,4 +1,4 @@
-# NexusEd — Test Coverage Audit
+# Axis — Test Coverage Audit
 
 > **Status as of 2026-05-07**
 >
@@ -225,10 +225,10 @@ These are the things a real production LMS needs checked before each release. Us
 Run coverage report:
 ```bash
 # Backend
-cd nexused-backend && npm run test:cov
+cd axis-backend && npm run test:cov
 
 # Frontend (once Vitest is configured)
-cd nexused-frontend && npm run test:cov
+cd axis-frontend && npm run test:cov
 ```
 
 ---
@@ -256,7 +256,7 @@ describe('CoursesResolver', () => {
 ```typescript
 // test/e2e/auth.e2e-spec.ts
 // Use @nestjs/testing createNestApplication
-// Use a separate test database (DATABASE_NAME=nexused_test in .env.test)
+// Use a separate test database (DATABASE_NAME=axis_test in .env.test)
 // Seed with factories, teardown after each test
 ```
 

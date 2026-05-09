@@ -1,4 +1,4 @@
-# NexusEd Security
+# Axis Security
 
 > Security posture, authentication model, data isolation strategy, and compliance considerations. This document is required reading before touching auth, tenancy, or user data.
 
@@ -8,7 +8,7 @@
 
 ### Model
 
-NexusEd uses **JWT tokens stored in httpOnly cookies**, authenticated via Passport.js.
+Axis uses **JWT tokens stored in httpOnly cookies**, authenticated via Passport.js.
 
 ```
 Login Flow:
@@ -84,7 +84,7 @@ Request → JwtAuthGuard → RolesGuard → Resolver/Controller
 
 ### Architecture
 
-NexusEd is a **shared-database, shared-schema** multi-tenant system. All tenants share the same PostgreSQL database and tables. Isolation is enforced through application-level filtering.
+Axis is a **shared-database, shared-schema** multi-tenant system. All tenants share the same PostgreSQL database and tables. Isolation is enforced through application-level filtering.
 
 ```
                   ┌──────────────────────┐
@@ -217,11 +217,11 @@ JSONB columns store flexible data (profiles, preferences, rubrics, AI context). 
 
 ## FERPA Compliance Considerations
 
-NexusEd handles **student education records** as defined by FERPA (Family Educational Rights and Privacy Act). The following applies to US institutional deployments:
+Axis handles **student education records** as defined by FERPA (Family Educational Rights and Privacy Act). The following applies to US institutional deployments:
 
 ### What FERPA Requires
 
-| Requirement | NexusEd Status |
+| Requirement | Axis Status |
 |-------------|---------------|
 | Student records accessible only to authorized personnel | Enforced via RBAC + tenant isolation |
 | Parents can access minor student records | Parent role exists, linking mechanism TBD |

@@ -1,4 +1,4 @@
-# NexusEd Development Roadmap
+# Axis Development Roadmap
 
 > **Guiding filter:** Does this feature boost growth or eliminate noise? If not, it doesn't belong.
 >
@@ -111,7 +111,7 @@
 - [x] Resend SDK integration via `NotificationsModule`
 - [x] Event-driven: `SUBMISSION_GRADED` → email student, `ASSIGNMENT_CREATED` → email section, `ENROLLMENT_CREATED` → email student
 - [x] Due date reminders cron (8am + 6pm UTC, skips already-submitted assignments)
-- [x] HTML email templates with NexusEd branding (inline styles, email-client compatible)
+- [x] HTML email templates with Axis branding (inline styles, email-client compatible)
 - [x] User notification preferences stored in user.preferences JSONB (5 toggle types)
 - [x] Settings page at `/settings` with toggle UI; "Settings" added to user menu
 - **Completed:** 2026-02-23
@@ -165,12 +165,12 @@ The web platform is feature-complete for a working LMS demo. Students can upload
 **Estimated:** 5-6 weeks
 **Goal:** A focused student mobile app with the 20% of features students use 80% of the time.
 
-> **Architecture:** `nexused-mobile/` in the monorepo. Shared GraphQL schema and TypeScript types from the backend. Expo Router for navigation. Apollo Client for data fetching. Socket.IO for real-time messaging. expo-secure-store for token storage. Firebase Cloud Messaging for push.
+> **Architecture:** `axis-mobile/` in the monorepo. Shared GraphQL schema and TypeScript types from the backend. Expo Router for navigation. Apollo Client for data fetching. Socket.IO for real-time messaging. expo-secure-store for token storage. Firebase Cloud Messaging for push.
 >
 > **Scope:** Students only. Instructors and admins use the web app. The mobile app is for checking grades, reading the feed, submitting assignments, messaging, and talking to AI.
 
 ### B1: Project Setup — MOB-APP-001
-- [ ] Expo + Expo Router project in `nexused-mobile/`
+- [ ] Expo + Expo Router project in `axis-mobile/`
 - [ ] Apollo Client mobile configuration (credentials, token from secure storage)
 - [ ] Shared GraphQL types from backend
 - [ ] Secure token storage (expo-secure-store)
@@ -255,7 +255,7 @@ Students have a native iOS + Android app for their daily LMS interactions. Push 
 
 ### C4: LTI Grade Passback (AGS) — BIZ-004
 - [ ] Assignment and Grade Services 2.0 implementation
-- [ ] Grades assigned in NexusEd flow back to Canvas/Blackboard/Moodle gradebook
+- [ ] Grades assigned in Axis flow back to Canvas/Blackboard/Moodle gradebook
 - [ ] Line item management
 
 ### C5: Advanced Enrollment Features
@@ -275,7 +275,7 @@ Students have a native iOS + Android app for their daily LMS interactions. Push 
 - [ ] Configurable visibility (what parents can/can't see)
 
 ### Outcome
-NexusEd is commercially ready. Universities can self-onboard, pay for subscriptions, use institutional SSO, and integrate with their existing LMS via LTI. The product has a sales funnel from landing page → demo → onboarding → paid.
+Axis is commercially ready. Universities can self-onboard, pay for subscriptions, use institutional SSO, and integrate with their existing LMS via LTI. The product has a sales funnel from landing page → demo → onboarding → paid.
 
 ---
 

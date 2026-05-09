@@ -13,15 +13,15 @@ All four entity union-type crashes fixed: `file-upload`, `assignment`, `discussi
 ## 🟡 FUNCTIONAL — App features to test & fix
 
 > These require the backend running. Seed credentials: all passwords are `password123`.
-> - Student:    `student@nexused.demo`
-> - Instructor: `prof.chen@nexused.demo`
-> - Admin:      `admin@nexused.demo`
-> - TA:         `ta.jordan@nexused.demo`
+> - Student:    `student@axis.demo`
+> - Instructor: `prof.chen@axis.demo`
+> - Admin:      `admin@axis.demo`
+> - TA:         `ta.jordan@axis.demo`
 
 ---
 
 ### ~~TASK-002 · Student dashboard deep dive~~ ✅ DONE
-Tested via GraphQL API as `student@nexused.demo` (Alex Rivera).
+Tested via GraphQL API as `student@axis.demo` (Alex Rivera).
 
 **Working:**
 - [x] Login — JWT auth OK
@@ -44,7 +44,7 @@ Tested via GraphQL API as `student@nexused.demo` (Alex Rivera).
 ---
 
 ### ~~TASK-003 · Instructor dashboard deep dive~~ ✅ DONE
-Tested visually via screenshots as `prof.chen@nexused.demo` (Sarah Chen).
+Tested visually via screenshots as `prof.chen@axis.demo` (Sarah Chen).
 
 **Working:**
 - [x] Instructor home — "Welcome back, Sarah" with 3 pending submissions (CS101 HW2, ENG102 Essay 1, Essay 2)
@@ -59,7 +59,7 @@ Tested visually via screenshots as `prof.chen@nexused.demo` (Sarah Chen).
 ---
 
 ### ~~TASK-004 · Admin dashboard deep dive~~ ✅ DONE
-Tested visually via screenshots as `admin@nexused.demo` (Marcus Williams).
+Tested visually via screenshots as `admin@axis.demo` (Marcus Williams).
 
 **Working:**
 - [x] Admin home — 8 users, 7 courses, 5 sections, 10 enrollments
@@ -85,7 +85,7 @@ Tested visually via screenshots as `admin@nexused.demo` (Marcus Williams).
 ---
 
 ### ~~TASK-005 · AI Study Coach end-to-end test~~ ✅ DONE
-Tested via GraphQL API as `student@nexused.demo`.
+Tested via GraphQL API as `student@axis.demo`.
 
 **Working:**
 - [x] Can start a conversation — `availableAgents` returns Study Coach + Course Planner
@@ -172,4 +172,4 @@ Mobile: sidebar collapses to bottom tab bar (Home, Courses, AI, Messages, Grades
 - No "parent" role exists in the data model — seed only has student, instructor, admin, TA
 - Backend port: `3001` | Frontend port: `3000`
 - Playwright MCP is available for browser testing (`mcp__plugin_playwright_playwright__*`)
-- Seed script: `nexused-backend/src/database/seed.ts` — run with `npm run seed` inside the backend
+- Seed script: `axis-backend/src/database/seed.ts` — run with `npm run seed` inside the backend

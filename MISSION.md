@@ -1,8 +1,8 @@
-# The Mission Behind NexusEd
+# The Mission Behind Axis
 
 ## Why This Exists
 
-NexusEd was born out of frustration — the real kind, not the startup pitch kind.
+Axis was born out of frustration — the real kind, not the startup pitch kind.
 
 Its creator, a student at the University of Victoria in British Columbia, lived through exactly what this platform aims to fix. Brightspace, the LMS used at UVic, is a perfect example of the problem: functional enough to check boxes, broken enough to fail students daily.
 
@@ -10,7 +10,7 @@ The experience went deeper than bad software. Academic advisors who don't reply 
 
 When the creator proposed an AI course planner assistant to UVic — a tool that could help students understand their degree requirements, plan their next semester, and reduce the anxiety of academic planning — the head software engineer at UVic liked the idea. But he couldn't act on it. It was a business decision, not a technical one. The institution that exists to serve students couldn't adopt a tool that would genuinely serve them.
 
-That's the moment NexusEd became necessary.
+That's the moment Axis became necessary.
 
 ---
 
@@ -46,7 +46,7 @@ There is something that happens when you realize the system won't fix itself —
 
 So you build the thing yourself. Not because it's easy, but because every semester that passes without it means more students are sitting alone wondering if they're on the right track, with no one answering.
 
-NexusEd is the answer to a question no institution bothered to ask: what would it look like if we actually built technology that served students first?
+Axis is the answer to a question no institution bothered to ask: what would it look like if we actually built technology that served students first?
 
 ---
 
@@ -76,17 +76,17 @@ The technology to solve this exists. The institutions won't adopt it. So we buil
 
 ---
 
-## What NexusEd Believes
+## What Axis Believes
 
 ### Learning Should Be Feed-First, Not Folder-First
 
-When a student opens NexusEd, they don't see a list of courses and folders. They see a single, intelligent answer to: **"What matters right now?"**
+When a student opens Axis, they don't see a list of courses and folders. They see a single, intelligent answer to: **"What matters right now?"**
 
 An AI-prioritized feed that surfaces upcoming deadlines, unread feedback, next lessons, and urgent announcements — ranked by what actually needs their attention. Not 30 notifications. Three to five prioritized items.
 
 ### AI Should Be Invisible Before It's Visible
 
-The most important AI in NexusEd is the kind you never interact with directly. It's the reason the home feed knows that your assignment due in 4 hours (that you haven't started) is more important than the announcement posted this morning.
+The most important AI in Axis is the kind you never interact with directly. It's the reason the home feed knows that your assignment due in 4 hours (that you haven't started) is more important than the announcement posted this morning.
 
 The visible AI — a study coach, a course planner, a feedback assistant — matters too. But the invisible intelligence that makes the whole platform feel like it understands you is the foundation.
 
@@ -102,7 +102,7 @@ This replaces the advisor who doesn't reply, the appointment that's booked three
 
 ### Three Nav Items, Not Thirteen
 
-If a platform needs a complex navigation structure, it hasn't figured out its information architecture. NexusEd gives students three nav items: Home, Courses, Messages. Everything else is either inside those or surfaced by the feed.
+If a platform needs a complex navigation structure, it hasn't figured out its information architecture. Axis gives students three nav items: Home, Courses, Messages. Everything else is either inside those or surfaced by the feed.
 
 ### A Course Is a Timeline, Not a Filing Cabinet
 
@@ -110,7 +110,7 @@ Inside a course, content, assignments, and discussions are not separate tabs. Th
 
 ---
 
-## Who NexusEd Serves
+## Who Axis Serves
 
 **Students first.** Always. They are the reason the institution exists, even when the institution forgets that.
 
@@ -124,7 +124,7 @@ Inside a course, content, assignments, and discussions are not separate tabs. Th
 
 ## The Long-Term Vision
 
-NexusEd is not trying to be a better Brightspace. It's trying to be the platform that makes students say: "I actually know what I need to do, I'm not stressed about whether I'm on track, and I feel supported."
+Axis is not trying to be a better Brightspace. It's trying to be the platform that makes students say: "I actually know what I need to do, I'm not stressed about whether I'm on track, and I feel supported."
 
 A revolutionary, agentic LMS that **boosts growth and eliminates noise**.
 

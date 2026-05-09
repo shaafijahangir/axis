@@ -1,4 +1,4 @@
-# NexusEd Data Model
+# Axis Data Model
 
 > Complete reference for every entity, its fields, relationships, and JSONB schema contracts. Read this before writing any query, creating an entity, or modifying a relationship.
 
@@ -380,7 +380,7 @@ Conversation (1)
 | tokenEndpoint | varchar | Token URL |
 | jwksEndpoint | varchar | JWKS URL |
 | publicKey | text | Platform public key |
-| privateKey | text | NexusEd private key |
+| privateKey | text | Axis private key |
 | isActive | boolean | default: true |
 
 ### LtiDeployment, LtiContext, LtiState, LtiUser
