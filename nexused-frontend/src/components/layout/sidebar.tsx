@@ -28,7 +28,7 @@ export function Sidebar() {
     >
       <div className="flex h-16 items-center gap-2 border-b px-6">
         <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />
-        <span className="text-lg font-bold">NexusEd</span>
+        <span className="text-lg font-bold">Axis</span>
       </div>
       <Separator />
       <nav aria-label="Main navigation" className="flex flex-col gap-1 p-4">

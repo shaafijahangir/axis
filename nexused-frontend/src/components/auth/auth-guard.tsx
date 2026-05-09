@@ -33,7 +33,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
           aria-hidden="true"
         />
-        <span className="sr-only">Loading NexusEd, please wait...</span>
+        <span className="sr-only">Loading Axis, please wait...</span>
       </div>
     );
   }

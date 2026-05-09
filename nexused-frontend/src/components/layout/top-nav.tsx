@@ -12,7 +12,7 @@ export function TopNav() {
     >
       <div className="flex items-center gap-2 md:hidden">
         <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />
-        <span className="text-lg font-bold">NexusEd</span>
+        <span className="text-lg font-bold">Axis</span>
       </div>
       <div className="hidden md:block" />
       <div className="flex items-center gap-1">

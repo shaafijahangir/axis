@@ -64,7 +64,7 @@ function Hero() {
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-relaxed text-muted-foreground">
-          NexusEd replaces filing-cabinet LMSes with an AI-first platform that
+          Axis replaces filing-cabinet LMSes with an AI-first platform that
           answers the question every student actually has:{' '}
           <strong className="font-semibold text-foreground">
             what do I need to do next?
@@ -107,7 +107,7 @@ function Hero() {
               </div>
               <div className="flex-1 mx-3 h-6 rounded-md border border-border bg-background px-3 flex items-center">
                 <span className="text-[11px] text-muted-foreground">
-                  nexused.app/dashboard
+                  Axis.app/dashboard
                 </span>
               </div>
             </div>
@@ -119,7 +119,7 @@ function Hero() {
                 <div className="mb-4 flex items-center gap-2 px-1">
                   <div className="h-6 w-6 rounded-md bg-primary shrink-0" />
                   <span className="hidden sm:block text-xs font-bold text-foreground">
-                    NexusEd
+                    Axis
                   </span>
                 </div>
                 {[
@@ -680,7 +680,7 @@ function Differentiators() {
               AI sets up your institution.
             </>
           }
-          description="DegreeWorks charges $100k+/year and requires weeks of manual setup. NexusEd's AI extraction pipeline processes a 50-page academic calendar and puts structured course data in front of an admin for review — in minutes."
+          description="DegreeWorks charges $100k+/year and requires weeks of manual setup. Axis's AI extraction pipeline processes a 50-page academic calendar and puts structured course data in front of an admin for review — in minutes."
           bullets={[
             'Natural language prerequisite parsing ("minimum C+ or permission of instructor")',
             'Degree requirement group extraction and mapping',
@@ -701,7 +701,7 @@ function Differentiators() {
               AI finds and enrolls you.
             </>
           }
-          description="Every other LMS treats enrollment as admin plumbing — CSV imports and manual assignment. NexusEd makes it a student-facing, conversational experience. Describe what you need in plain language and the AI does the rest."
+          description="Every other LMS treats enrollment as admin plumbing — CSV imports and manual assignment. Axis makes it a student-facing, conversational experience. Describe what you need in plain language and the AI does the rest."
           bullets={[
             'Natural language course search across the full catalog',
             'Schedule conflict detection before suggesting options',
@@ -851,7 +851,7 @@ function CTA() {
           Your students deserve better than a filing cabinet.
         </h2>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-primary-foreground/80">
-          Get NexusEd running in hours, not months. No vendor lock-in. No
+          Get Axis running in hours, not months. No vendor lock-in. No
           six-figure implementation fees.
         </p>
 

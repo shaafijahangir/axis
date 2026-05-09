@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * NexusEd E2E Test Configuration
+ * Axis E2E Test Configuration
  *
  * These tests verify the 5 critical user flows:
  * 1. Login

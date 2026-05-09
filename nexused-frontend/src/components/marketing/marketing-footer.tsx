@@ -36,7 +36,7 @@ export function MarketingFooter() {
                   aria-hidden="true"
                 />
               </div>
-              <span className="font-bold text-foreground">NexusEd</span>
+              <span className="font-bold text-foreground">Axis</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               AI-native LMS built by someone who lived the problem, for every
@@ -104,16 +104,16 @@ export function MarketingFooter() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} NexusEd. Built to serve students
+            &copy; {new Date().getFullYear()} Axis. Built to serve students
             first.
           </p>
           <p className="text-xs text-muted-foreground">
             Questions?{' '}
             <a
-              href="mailto:hello@nexused.app"
+              href="mailto:hello@Axis.app"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
-              hello@nexused.app
+              hello@Axis.app
             </a>
           </p>
         </div>

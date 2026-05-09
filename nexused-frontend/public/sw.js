@@ -1,5 +1,5 @@
 /**
- * NexusEd Service Worker
+ * Axis Service Worker
  *
  * Provides offline support and caching for the PWA.
  *
@@ -9,7 +9,7 @@
  * - Pages: Stale-while-revalidate
  */
 
-const CACHE_NAME = 'nexused-v1';
+const CACHE_NAME = 'Axis-v1';
 const OFFLINE_URL = '/offline';
 
 // Static assets to cache immediately on install
@@ -157,17 +157,17 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: 'NexusEd', body: event.data.text() };
+    payload = { title: 'Axis', body: event.data.text() };
   }
 
-  const { title = 'NexusEd', body = '', url = '/', type } = payload;
+  const { title = 'Axis', body = '', url = '/', type } = payload;
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon: '/icons/icon-192x192.png',
       badge: '/icons/icon-72x72.png',
-      tag: type || 'nexused-notification',
+      tag: type || 'Axis-notification',
       renotify: true,
       data: { url },
     })

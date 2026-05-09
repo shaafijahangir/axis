@@ -22,8 +22,8 @@ test.describe('Login Flow', () => {
   test('should show login page with email and password fields', async ({ page }) => {
     await page.goto('/login');
 
-    // Verify page elements — heading is "NexusEd", sign-in text is in a <p>
-    await expect(page.getByRole('heading', { name: /nexused/i })).toBeVisible();
+    // Verify page elements — heading is "Axis", sign-in text is in a <p>
+    await expect(page.getByRole('heading', { name: /Axis/i })).toBeVisible();
     await expect(page.getByLabel(/email/i)).toBeVisible();
     await expect(page.getByLabel(/password/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /sign in|log in/i })).toBeVisible();

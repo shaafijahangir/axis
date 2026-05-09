@@ -45,7 +45,7 @@ const CHECKLIST_ITEMS = [
 export function EnrollmentOnboardingChecklist({
   sectionId,
 }: EnrollmentOnboardingChecklistProps) {
-  const storageKey = `nexused_onboarding_dismissed_${sectionId}`;
+  const storageKey = `Axis_onboarding_dismissed_${sectionId}`;
 
   const [visible, setVisible] = useState(() => {
     if (typeof window === 'undefined') return false;

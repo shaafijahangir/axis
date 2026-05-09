@@ -156,7 +156,7 @@ export default function LtiIntegrationsPage() {
         <div>
           <h1 className="text-2xl font-bold">LTI Integrations</h1>
           <p className="text-muted-foreground">
-            Connect NexusEd with external learning platforms using LTI 1.3
+            Connect Axis with external learning platforms using LTI 1.3
           </p>
         </div>
       </div>
@@ -166,10 +166,10 @@ export default function LtiIntegrationsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" aria-hidden="true" />
-            NexusEd Tool Configuration
+            Axis Tool Configuration
           </CardTitle>
           <CardDescription>
-            Use these values when registering NexusEd in your LMS (Canvas,
+            Use these values when registering Axis in your LMS (Canvas,
             Brightspace, Moodle, etc.)
           </CardDescription>
         </CardHeader>
@@ -280,7 +280,7 @@ export default function LtiIntegrationsPage() {
               Registered Platforms
             </CardTitle>
             <CardDescription>
-              External LMS platforms that can launch NexusEd via LTI
+              External LMS platforms that can launch Axis via LTI
             </CardDescription>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -484,7 +484,7 @@ export default function LtiIntegrationsPage() {
         <CardContent className="prose prose-sm dark:prose-invert max-w-none">
           <ol className="space-y-2">
             <li>
-              <strong>Configure NexusEd in your LMS</strong>: Go to your LMS
+              <strong>Configure Axis in your LMS</strong>: Go to your LMS
               admin panel (Canvas Admin → Developer Keys, Brightspace → External
               Learning Tools, etc.) and create a new LTI 1.3 tool using the
               configuration above.
@@ -501,12 +501,12 @@ export default function LtiIntegrationsPage() {
             </li>
             <li>
               <strong>Test the integration</strong>: Create a test assignment in
-              your LMS and launch NexusEd. The first launch will activate the
+              your LMS and launch Axis. The first launch will activate the
               platform registration.
             </li>
             <li>
               <strong>Link courses</strong>: Once users launch from the LMS,
-              their course contexts will appear here. Link them to NexusEd
+              their course contexts will appear here. Link them to Axis
               sections for grade passback and roster sync.
             </li>
           </ol>

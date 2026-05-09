@@ -27,21 +27,21 @@ interface TestUser {
 // Default test users (these should match seeded data in test database)
 const TEST_USERS = {
   student: {
-    email: process.env.E2E_STUDENT_EMAIL || 'student@test.nexused.local',
+    email: process.env.E2E_STUDENT_EMAIL || 'student@test.Axis.local',
     password: process.env.E2E_STUDENT_PASSWORD || 'TestPass123!',
     firstName: 'Test',
     lastName: 'Student',
     role: 'student' as const,
   },
   instructor: {
-    email: process.env.E2E_INSTRUCTOR_EMAIL || 'instructor@test.nexused.local',
+    email: process.env.E2E_INSTRUCTOR_EMAIL || 'instructor@test.Axis.local',
     password: process.env.E2E_INSTRUCTOR_PASSWORD || 'TestPass123!',
     firstName: 'Test',
     lastName: 'Instructor',
     role: 'instructor' as const,
   },
   admin: {
-    email: process.env.E2E_ADMIN_EMAIL || 'admin@test.nexused.local',
+    email: process.env.E2E_ADMIN_EMAIL || 'admin@test.Axis.local',
     password: process.env.E2E_ADMIN_PASSWORD || 'TestPass123!',
     firstName: 'Test',
     lastName: 'Admin',

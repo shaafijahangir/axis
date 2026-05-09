@@ -24,9 +24,9 @@ import { MarketingNav } from '@/components/marketing/marketing-nav';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
 
 export const metadata: Metadata = {
-  title: 'Features — NexusEd',
+  title: 'Features — Axis',
   description:
-    'Every feature in NexusEd is built around one question: does this serve students? AI study coach, graduation roadmap, catalog import, and more.',
+    'Every feature in Axis is built around one question: does this serve students? AI study coach, graduation roadmap, catalog import, and more.',
 };
 
 // ─── Shared ────────────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ function FeaturesHero() {
         </h1>
 
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground leading-relaxed">
-          NexusEd isn&apos;t a better filing cabinet. It&apos;s a platform built
+          Axis isn&apos;t a better filing cabinet. It&apos;s a platform built
           from first principles — starting with what students actually need,
           then working backward to what admins and instructors need to deliver
           it.
@@ -238,7 +238,7 @@ function ForStudents() {
             A platform that knows what you need before you ask.
           </h2>
           <p className="mt-4 max-w-xl text-muted-foreground leading-relaxed">
-            Canvas shows you folders. NexusEd answers the question every student
+            Canvas shows you folders. Axis answers the question every student
             actually has: what do I need to do right now, and am I on track to
             graduate?
           </p>
@@ -262,7 +262,7 @@ const INSTRUCTOR_FEATURES = [
     iconBg: 'bg-rose-100',
     iconColor: 'text-rose-600',
     title: 'AI Catalog Import',
-    body: "Upload a PDF academic calendar or course catalog. NexusEd's AI extraction pipeline finds courses, prerequisites, and degree requirements — flagging anything it's uncertain about for human review.",
+    body: "Upload a PDF academic calendar or course catalog. Axis's AI extraction pipeline finds courses, prerequisites, and degree requirements — flagging anything it's uncertain about for human review.",
     bullets: [
       'PDF → structured course data in minutes',
       'Natural language prerequisite parsing',
@@ -276,7 +276,7 @@ const INSTRUCTOR_FEATURES = [
     iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
     title: 'AI-Assisted Course Creation',
-    body: 'Upload a syllabus and NexusEd generates a course structure — weeks, content items, assignment suggestions — ready for instructor review and adjustment.',
+    body: 'Upload a syllabus and Axis generates a course structure — weeks, content items, assignment suggestions — ready for instructor review and adjustment.',
     bullets: [
       'Syllabus → course outline in seconds',
       'Suggested assignment types and due dates',
@@ -398,7 +398,7 @@ const ADMIN_FEATURES = [
     iconBg: 'bg-yellow-100',
     iconColor: 'text-yellow-600',
     title: 'Integrations',
-    body: 'Connect NexusEd to your existing infrastructure. LTI 1.3, Cloudflare R2 for file storage, Resend for transactional email.',
+    body: 'Connect Axis to your existing infrastructure. LTI 1.3, Cloudflare R2 for file storage, Resend for transactional email.',
     bullets: [
       'LTI 1.3 compliant (Canvas, Brightspace, Moodle)',
       'Cloudflare R2 file storage',
@@ -472,61 +472,61 @@ function ForAdmins() {
 const COMPARISON = [
   {
     capability: 'AI-prioritized home feed',
-    nexused: true,
+    Axis: true,
     canvas: false,
     brightspace: false,
   },
   {
     capability: 'Graduation roadmap with prerequisites',
-    nexused: true,
+    Axis: true,
     canvas: false,
     brightspace: false,
   },
   {
     capability: 'AI study coach (per-student context)',
-    nexused: true,
+    Axis: true,
     canvas: false,
     brightspace: false,
   },
   {
     capability: 'AI catalog import from PDF',
-    nexused: true,
+    Axis: true,
     canvas: false,
     brightspace: false,
   },
   {
     capability: 'AI governance controls',
-    nexused: true,
+    Axis: true,
     canvas: false,
     brightspace: false,
   },
   {
     capability: 'Financial projections in graduation plan',
-    nexused: true,
+    Axis: true,
     canvas: false,
     brightspace: false,
   },
   {
     capability: 'Course timeline (content + assignments + discussions)',
-    nexused: true,
+    Axis: true,
     canvas: false,
     brightspace: false,
   },
   {
     capability: 'Multi-tenant SaaS, self-hostable',
-    nexused: true,
+    Axis: true,
     canvas: true,
     brightspace: true,
   },
   {
     capability: 'LTI 1.3 integration',
-    nexused: true,
+    Axis: true,
     canvas: true,
     brightspace: true,
   },
   {
     capability: 'FERPA compliance',
-    nexused: true,
+    Axis: true,
     canvas: true,
     brightspace: true,
   },
@@ -558,7 +558,7 @@ function ComparisonTable() {
         <div>
           <SectionLabel>Comparison</SectionLabel>
           <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            What NexusEd does that Canvas and Brightspace don&apos;t.
+            What Axis does that Canvas and Brightspace don&apos;t.
           </h2>
           <p className="mt-4 text-muted-foreground leading-relaxed">
             The comparison isn&apos;t about parity — it&apos;s about what
@@ -574,7 +574,7 @@ function ComparisonTable() {
                   Capability
                 </th>
                 <th className="px-5 py-4 text-center font-semibold text-primary">
-                  NexusEd
+                  Axis
                 </th>
                 <th className="px-5 py-4 text-center font-semibold text-muted-foreground">
                   Canvas
@@ -594,7 +594,7 @@ function ComparisonTable() {
                     {row.capability}
                   </td>
                   <td className="px-5 py-3.5 text-center">
-                    {row.nexused ? <Yes /> : <No />}
+                    {row.Axis ? <Yes /> : <No />}
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     {row.canvas ? <Yes /> : <No />}
@@ -630,7 +630,7 @@ function FeaturesCTA() {
           Ready to see it in action?
         </h2>
         <p className="text-lg text-primary-foreground/80 leading-relaxed">
-          Get NexusEd running in hours. No vendor lock-in. No six-figure
+          Get Axis running in hours. No vendor lock-in. No six-figure
           implementation fees.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">

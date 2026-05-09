@@ -13,26 +13,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'NexusEd',
+  title: 'Axis',
   description: 'AI-native Learning Management System',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'NexusEd',
+    title: 'Axis',
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
     type: 'website',
-    siteName: 'NexusEd',
-    title: 'NexusEd',
+    siteName: 'Axis',
+    title: 'Axis',
     description: 'AI-native Learning Management System',
   },
   twitter: {
     card: 'summary',
-    title: 'NexusEd',
+    title: 'Axis',
     description: 'AI-native Learning Management System',
   },
 };
@@ -73,8 +73,8 @@ export default function RootLayout({
           name="apple-mobile-web-app-status-bar-style"
           content="black-translucent"
         />
-        <meta name="apple-mobile-web-app-title" content="NexusEd" />
-        <meta name="application-name" content="NexusEd" />
+        <meta name="apple-mobile-web-app-title" content="Axis" />
+        <meta name="application-name" content="Axis" />
         <meta name="msapplication-TileColor" content="#0f172a" />
         <meta name="msapplication-tap-highlight" content="no" />
       </head>

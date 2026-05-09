@@ -23,7 +23,7 @@ export function MarketingNav() {
               aria-hidden="true"
             />
           </div>
-          <span className="text-lg font-bold tracking-tight">NexusEd</span>
+          <span className="text-lg font-bold tracking-tight">Axis</span>
         </Link>
 
         {/* Desktop nav */}

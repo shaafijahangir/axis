@@ -13,9 +13,9 @@ import { MarketingNav } from '@/components/marketing/marketing-nav';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
 
 export const metadata: Metadata = {
-  title: 'Our Story — NexusEd',
+  title: 'Our Story — Axis',
   description:
-    'NexusEd was built by a student who lived the problem. This is the story of why filing-cabinet LMSes fail students — and what we built instead.',
+    'Axis was built by a student who lived the problem. This is the story of why filing-cabinet LMSes fail students — and what we built instead.',
 };
 
 // ─── Story ────────────────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ function Story() {
           </div>
           <div>
             <p className="font-semibold text-foreground">
-              The story behind NexusEd
+              The story behind Axis
             </p>
             <p className="text-sm text-muted-foreground">
               Written by the founder
@@ -51,7 +51,7 @@ function Story() {
 
         <div className="space-y-5 text-muted-foreground leading-relaxed">
           <p className="text-lg text-foreground/90">
-            NexusEd was born out of frustration — the real kind, not the startup
+            Axis was born out of frustration — the real kind, not the startup
             pitch kind.
           </p>
 
@@ -146,7 +146,7 @@ function Story() {
           </p>
 
           <p className="text-foreground/90 font-medium">
-            NexusEd is the answer to a question no institution bothered to ask:
+            Axis is the answer to a question no institution bothered to ask:
             what would it look like if we actually built technology that served
             students first?
           </p>
@@ -171,7 +171,7 @@ const VALUES = [
     iconBg: 'bg-amber-50',
     iconColor: 'text-amber-600',
     title: 'AI should be invisible before it is visible.',
-    body: 'The most important AI in NexusEd is the kind you never interact with directly. The prioritized feed. The course recommendation. The prerequisite check. Ambient intelligence that makes the platform feel like it understands you — before you open the chat.',
+    body: 'The most important AI in Axis is the kind you never interact with directly. The prioritized feed. The course recommendation. The prerequisite check. Ambient intelligence that makes the platform feel like it understands you — before you open the chat.',
   },
   {
     icon: Building2,
@@ -240,7 +240,7 @@ function Vision() {
 
         <div className="space-y-5 text-muted-foreground leading-relaxed">
           <p>
-            NexusEd is not trying to out-feature Canvas or compete on
+            Axis is not trying to out-feature Canvas or compete on
             integrations with Brightspace. Those platforms had decades and
             hundreds of millions of dollars. That&apos;s not the game.
           </p>
@@ -284,18 +284,18 @@ function Contact() {
               <Mail className="h-5 w-5 text-primary" aria-hidden="true" />
             </div>
             <h2 className="text-2xl font-bold tracking-tight text-foreground">
-              Interested in NexusEd for your institution?
+              Interested in Axis for your institution?
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               We&apos;re in early access. If you represent a college,
-              university, or online program and want to talk about what NexusEd
+              university, or online program and want to talk about what Axis
               could do for your students, reach out directly.
             </p>
           </div>
 
           <div className="space-y-3">
             <a
-              href="mailto:hello@nexused.app"
+              href="mailto:hello@Axis.app"
               className="flex items-center gap-3 rounded-xl border border-border bg-muted px-5 py-4 hover:border-primary/30 hover:bg-primary/5 transition-colors group"
             >
               <Mail
@@ -303,7 +303,7 @@ function Contact() {
                 aria-hidden="true"
               />
               <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                hello@nexused.app
+                hello@Axis.app
               </span>
             </a>
             <p className="text-xs text-muted-foreground px-1">

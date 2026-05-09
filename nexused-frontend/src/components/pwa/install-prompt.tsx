@@ -50,7 +50,7 @@ export function InstallPrompt() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm">Install NexusEd</h3>
+            <h3 className="font-semibold text-sm">Install Axis</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Add to your home screen for quick access and offline support.
             </p>
