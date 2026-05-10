@@ -179,7 +179,7 @@ axis/
 - **AI Usage Logs** — Per-tenant cost tracking (tokens, estimated USD)
 
 ### Multi-Tenancy
-Each institution gets its own PostgreSQL schema. Row-Level Security provides defense-in-depth. Shared infrastructure for operational efficiency.
+Each institution is scoped by a `tenantId` foreign key on all major entities. Row-Level Security provides defense-in-depth. Shared infrastructure for operational efficiency.
 
 ---
 
@@ -223,46 +223,10 @@ GraphQL Playground: http://localhost:3001/api/graphql
 
 ---
 
-## Current Status
-
-### Complete
-- [x] Project scaffolding (frontend + backend)
-- [x] Authentication system (JWT + Google OAuth)
-- [x] Multi-tenant foundation with RLS
-- [x] Core database schema (12 entities: 9 core + 3 AI)
-- [x] Base UI components (shadcn/ui)
-- [x] GraphQL API with tenant CRUD
-- [x] Login and registration pages
-- [x] Role-based navigation shell (3 nav items per role)
-- [x] Mobile-responsive layout (bottom bar + sidebar)
-- [x] AI-prioritized home feed (student, instructor, admin, parent views)
-- [x] Unified course timeline (assignments + announcements in one stream)
-- [x] Assignment creation, submission, and inline grading
-- [x] Gradebook with statistics and CSV export
-- [x] Course roster view
-- [x] AI agentic loop, governance engine, tool registry (backend only)
-
-### In Progress — Phase 2.5: Infrastructure Hardening
-- [ ] Fix 4 P0 security issues (tenant scoping, auth, JWT storage, indexes)
-- [ ] Fix 7 P1 data integrity issues (tenantId, transactions, Apollo config)
-- [ ] Architecture improvements (base entities, Turborepo, cleanup)
-
-### Not Yet Built
-- [ ] AI Chat UI (backend exists, no frontend)
-- [ ] Messaging system (documented but code not on main)
-- [ ] Content builder (documented but code not on main)
-- [ ] Real-time features (Socket.IO configured but unused)
-
-> See [ROADMAP.md](./ROADMAP.md) for the full development plan.
-> See [BACKLOG.md](./BACKLOG.md) for the prioritized task list.
-
----
-
 ## Security & Compliance Targets
 
 - **FERPA** — Student data protection
 - **WCAG 2.1 AA** — Accessibility
-- **SOC 2 Type II** — Target certification
 - **Encryption** — AES-256 at rest, TLS 1.3 in transit
 - **RLS** — PostgreSQL Row-Level Security for tenant isolation
 

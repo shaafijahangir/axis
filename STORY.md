@@ -150,7 +150,7 @@ An honest assessment of what needs fixing before institutions would trust this:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                                    NEXUSED PLATFORM                                 │
+│                                    Axis PLATFORM                                 │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                     │
 │  ┌─────────────────────────────────────────────────────────────────────────────┐     │
@@ -320,7 +320,7 @@ Student opens Axis
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
 │                                                                            │
-│   TRADITIONAL LMS                        NEXUSED                           │
+│   TRADITIONAL LMS                        Axis                           │
 │   (Canvas, Brightspace, Moodle)          (What we're building)             │
 │                                                                            │
 │   ┌───────────────────────┐              ┌───────────────────────┐         │
@@ -336,7 +336,7 @@ Student opens Axis
 │   │ No governance         │              │ 3-tier AI governance  │         │
 │   └───────────────────────┘              └───────────────────────┘         │
 │                                                                            │
-│   EDTECH AI (Khanmigo, Chegg)            NEXUSED AI                        │
+│   EDTECH AI (Khanmigo, Chegg)            Axis AI                        │
 │                                                                            │
 │   ┌───────────────────────┐              ┌───────────────────────┐         │
 │   │ Chatbot bolted on     │              │ Agentic loop          │         │
