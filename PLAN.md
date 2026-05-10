@@ -1,4 +1,4 @@
-# PLAN.md — NexusEd Engineering Master Plan
+# PLAN.md — Axis Engineering Master Plan
 
 > **Purpose:** Single source of truth for everything left to build, fix, and ship.
 > Honest assessment over optimism. Priority is not opinion — it's consequence.
@@ -139,7 +139,7 @@ These are not features. They are table stakes. A demo that crashes or shows wron
 **The right approach:** Keep the current seed as the **base seed** (exact UUIDs, predictable state for tests). Add a **`seed:demo` command** that layers in generated data on top.
 
 **Work:**
-- [ ] Install `@faker-js/faker` as a dev dependency in nexused-backend
+- [ ] Install `@faker-js/faker` as a dev dependency in axis-backend
 - [ ] Create `src/database/seed-demo.ts` — generates realistic demo data using Faker:
   - 3 departments × 5 instructors each = 15 instructors
   - 8 courses × 2 sections each = 16 active sections
@@ -256,8 +256,8 @@ Nothing ships without this. Currently there is no deployment configuration.
 **Problem:** No `Dockerfile`, no `docker-compose.prod.yml`, no deployment scripts. The app can only run by following README steps manually on a dev machine. This is not production.
 
 **Work:**
-- [ ] `Dockerfile` for nexused-backend (multi-stage: build → production image)
-- [ ] `Dockerfile` for nexused-frontend (Next.js standalone output)
+- [ ] `Dockerfile` for axis-backend (multi-stage: build → production image)
+- [ ] `Dockerfile` for axis-frontend (Next.js standalone output)
 - [ ] `docker-compose.prod.yml` with backend, frontend, postgres, and nginx reverse proxy
 - [ ] Environment variable documentation (`.env.production.example`)
 - [ ] Health check endpoints (backend `/health` already exists — wire it to Docker HEALTHCHECK)
@@ -274,7 +274,7 @@ Nothing ships without this. Currently there is no deployment configuration.
 **Problem:** There is no staging environment. Every change goes directly to dev (local) or prod. This is how you break demos.
 
 **Work:**
-- [ ] Deploy the Docker build to a staging URL (e.g., `staging.nexused.io`)
+- [ ] Deploy the Docker build to a staging URL (e.g., `staging.axis.io`)
 - [ ] Staging database with the `seed:demo` data loaded
 - [ ] Environment variable management: staging `.env` committed to a secrets manager, not a file
 - [ ] GitHub Actions: deploy to staging automatically on push to `main`
@@ -395,7 +395,7 @@ Universities use Shibboleth, Azure AD, or Okta. Without SSO, they will not adopt
 
 ### T4-004: LTI Grade Passback — Assignment and Grade Services 2.0 (BIZ-004)
 
-LTI launch exists. But when NexusEd grades a submission, the grade doesn't flow back to Canvas/Blackboard/Moodle. Without this, instructors have to enter grades twice. That is not acceptable.
+LTI launch exists. But when Axis grades a submission, the grade doesn't flow back to Canvas/Blackboard/Moodle. Without this, instructors have to enter grades twice. That is not acceptable.
 
 **Work:**
 - [ ] Implement LTI AGS 2.0 line item management
@@ -435,7 +435,7 @@ Only start these when you have paying customers giving feedback that drives prio
 - ENROLL-007: AI natural language course search ("find me a 3-credit elective on Thursday afternoons")
 - ENROLL-008: Bulk enrollment via admin CSV upload
 - ENROLL-010: Waitlist intelligence (auto-promote when seat opens, notify waitlisted students)
-- ENROLL-011: SIS event-driven sync — Banner/PeopleSoft/Workday pushes enrollment events to NexusEd
+- ENROLL-011: SIS event-driven sync — Banner/PeopleSoft/Workday pushes enrollment events to Axis
 
 ---
 

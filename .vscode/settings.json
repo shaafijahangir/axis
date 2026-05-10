@@ -15,5 +15,5 @@
     "**/.next": true,
     "**/coverage": true
   },
-  "typescript.tsdk": "nexused-backend/node_modules/typescript/lib"
+  "typescript.tsdk": "axis-backend/node_modules/typescript/lib"
 }

@@ -1,4 +1,4 @@
 packages:
-  - "nexused-backend"
-  - "nexused-frontend"
-  - "nexused-mobile"
+  - "axis-backend"
+  - "axis-frontend"
+  - "axis-mobile"

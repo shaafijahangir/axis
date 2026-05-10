@@ -1,35 +1,35 @@
 {
-  "name": "nexused",
+  "name": "axis",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "turbo dev",
-    "dev:backend": "turbo dev --filter=nexused-backend",
-    "dev:frontend": "turbo dev --filter=nexused-frontend",
-    "dev:mobile": "turbo dev --filter=nexused-mobile",
+    "dev:backend": "turbo dev --filter=axis-backend",
+    "dev:frontend": "turbo dev --filter=axis-frontend",
+    "dev:mobile": "turbo dev --filter=axis-mobile",
     "build": "turbo build",
-    "build:backend": "turbo build --filter=nexused-backend",
-    "build:frontend": "turbo build --filter=nexused-frontend",
+    "build:backend": "turbo build --filter=axis-backend",
+    "build:frontend": "turbo build --filter=axis-frontend",
     "lint": "turbo lint",
-    "lint:backend": "turbo lint --filter=nexused-backend",
-    "lint:frontend": "turbo lint --filter=nexused-frontend",
+    "lint:backend": "turbo lint --filter=axis-backend",
+    "lint:frontend": "turbo lint --filter=axis-frontend",
     "test": "turbo test",
-    "test:backend": "turbo test --filter=nexused-backend",
-    "test:e2e": "turbo test:e2e --filter=nexused-frontend",
+    "test:backend": "turbo test --filter=axis-backend",
+    "test:e2e": "turbo test:e2e --filter=axis-frontend",
     "typecheck": "turbo typecheck",
-    "typecheck:backend": "turbo typecheck --filter=nexused-backend",
-    "typecheck:frontend": "turbo typecheck --filter=nexused-frontend",
+    "typecheck:backend": "turbo typecheck --filter=axis-backend",
+    "typecheck:frontend": "turbo typecheck --filter=axis-frontend",
     "prepare": "husky"
   },
   "lint-staged": {
-    "nexused-backend/src/**/*.ts": [
+    "axis-backend/src/**/*.ts": [
       "prettier --write"
     ],
-    "nexused-frontend/src/**/*.{ts,tsx}": [
+    "axis-frontend/src/**/*.{ts,tsx}": [
       "prettier --write"
     ],
-    "nexused-mobile/**/*.{ts,tsx}": [
+    "axis-mobile/**/*.{ts,tsx}": [
       "prettier --write"
     ]
   },

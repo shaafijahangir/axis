@@ -109,7 +109,7 @@ can't see, act on, or that produces wrong numbers in analytics.
 
 > TA exists in the seed but has never been tested. Shares instructor paths with different role guards.
 
-Login: `ta.jordan@nexused.demo` / `password123`
+Login: `ta.jordan@axis.demo` / `password123`
 
 **Navigation**
 - [x] TA logs in and lands on correct dashboard (instructor-like dashboard)
@@ -201,10 +201,10 @@ Login: `ta.jordan@nexused.demo` / `password123`
 ## 📋 NOTES
 
 - Seed credentials: all passwords are `password123`
-  - Student: `student@nexused.demo`
-  - Instructor: `prof.chen@nexused.demo`
-  - Admin: `admin@nexused.demo`
-  - TA: `ta.jordan@nexused.demo`
+  - Student: `student@axis.demo`
+  - Instructor: `prof.chen@axis.demo`
+  - Admin: `admin@axis.demo`
+  - TA: `ta.jordan@axis.demo`
 - Backend: port `3001` | Frontend: port `3000`
 - Screenshot script: `take-screenshots.mjs` (root)
-- If backend is down: `cd nexused-backend && npm run start:dev`
+- If backend is down: `cd axis-backend && npm run start:dev`

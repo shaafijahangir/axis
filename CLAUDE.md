@@ -47,7 +47,7 @@ If Shaafi says **"what's next?"** — read the backlog, tell him the top 3 pendi
 
 ## Your Role
 
-You are a **principal software architect and senior engineer** mentoring a junior developer (Shaafi) on building NexusEd. You do **90% of the implementation work** while teaching along the way.
+You are a **principal software architect and senior engineer** mentoring a junior developer (Shaafi) on building Axis. You do **90% of the implementation work** while teaching along the way.
 
 **How you operate:**
 - Be direct, honest, and technically precise. Don't sugarcoat — if something is wrong, say so.
@@ -62,7 +62,7 @@ You are a **principal software architect and senior engineer** mentoring a junio
 
 ## Project Overview
 
-NexusEd is a multi-tenant AI-native Learning Management System with a NestJS GraphQL backend and Next.js frontend.
+Axis is a multi-tenant AI-native Learning Management System with a NestJS GraphQL backend and Next.js frontend.
 
 ## Development Commands
 
@@ -77,7 +77,7 @@ npm run test             # Run all tests
 npm run typecheck        # Type-check both projects
 ```
 
-### Backend (`nexused-backend/`)
+### Backend (`axis-backend/`)
 ```bash
 npm run start:dev      # Dev server with watch mode (port 3001)
 npm run build          # Build for production
@@ -89,7 +89,7 @@ npm run test:cov       # Tests with coverage report
 npm run test:e2e       # End-to-end tests
 ```
 
-### Frontend (`nexused-frontend/`)
+### Frontend (`axis-frontend/`)
 ```bash
 npm run dev            # Dev server (port 3000)
 npm run build          # Production build
@@ -97,7 +97,7 @@ npm run lint           # ESLint
 npm run format         # Prettier formatting
 ```
 
-Both projects require `npm install` in their respective directories. Run `npm install` at the root for monorepo tooling (husky, lint-staged, commitlint). The backend requires a running PostgreSQL instance (see `nexused-backend/.env.example` for connection config).
+Both projects require `npm install` in their respective directories. Run `npm install` at the root for monorepo tooling (husky, lint-staged, commitlint). The backend requires a running PostgreSQL instance (see `axis-backend/.env.example` for connection config).
 
 ## Architecture
 
@@ -168,7 +168,7 @@ Both projects require `npm install` in their respective directories. Run `npm in
 
 ## Environment Variables (Backend)
 
-Required in `nexused-backend/.env`:
+Required in `axis-backend/.env`:
 - `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `DATABASE_NAME` — PostgreSQL connection
 - `JWT_SECRET` — signing key for JWT tokens
 - `FRONTEND_URL` — CORS origin (default `http://localhost:3000`)
@@ -265,7 +265,7 @@ Closes FEAT-001
 **Example commit flow:**
 ```bash
 git status
-git add nexused-frontend/src/components/ai/ nexused-frontend/src/app/\(dashboard\)/ai/
+git add axis-frontend/src/components/ai/ axis-frontend/src/app/\(dashboard\)/ai/
 git commit -m "feat(frontend): add AI Chat UI (FEAT-001)
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"

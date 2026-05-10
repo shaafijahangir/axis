@@ -5,6 +5,49 @@
 
 ---
 
+## Session 47 — Playwright Bug Sweep + Test Coverage
+
+**Date:** 2026-05-07
+**Goal:** Run manual Playwright browser sweep, fix all discovered bugs, add unit test coverage
+**Status:** COMPLETE
+
+### Work Done
+
+**TEST-COVERAGE.md — Created**
+- Full audit: 32 services (5 tested), 27 resolvers (0 tested), 4 guards (0 tested), 0 frontend tests
+- Industry-standard checklist, coverage targets, backlog TEST-001 through TEST-013
+
+**Unit tests — 44 new tests, 161 total passing (9 suites)**
+- `auth.service.spec.ts` — 12 tests: register, validateUser, login (TEST-001)
+- `users.service.spec.ts` — 22 tests: tenant scoping, bcrypt, CRUD, pagination (TEST-002)
+- `guards/roles.guard.spec.ts` — 8 tests: all role boundaries (TEST-004)
+- ts-jest was broken (corrupted pnpm store) — fixed with `pnpm install --force`
+
+**Bug: AI chat panel broken — FIXED (commit bda6fe9)**
+- Root cause: `router.push('/ai?conversation=${id}')` remounts component, resetting `activeAgentType` state to null
+- Fix: encode agentType in URL as `?agent=${agentType}`; read via `searchParams.get('agent')`
+- `handleNewConversation` no longer pushes to URL (avoids unnecessary remount)
+
+**Bug: Login shows "Unauthorized" on bad credentials — FIXED (commit bda6fe9)**
+- `auth.ts`: 401 → "Invalid email or password. Please try again."
+- `auth.ts`: 429 → "Too many login attempts. Please wait and try again."
+- `response.json()` parse failures now handled gracefully
+
+**Bug: Feed/section timeline shows announcements 3-4× — FIXED (commit bda6fe9)**
+- Root cause: `seed.ts` used `uuid_generate_v4()` for announcement IDs; `ON CONFLICT DO NOTHING` never fired since each UUID is unique
+- Fix: 6 fixed UUIDs added to `IDS` object; INSERT uses `ON CONFLICT (id) DO NOTHING`
+- Enrollment seed also fixed: `ON CONFLICT (userId, sectionId) DO NOTHING`
+
+### Playwright Bug Sweep Results
+- ✅ Auth redirect (login → /home) working
+- ✅ Grades page renders correctly
+- ✅ Planner, assignments, course section pages all render
+- ✅ httpOnly cookie security confirmed (JS cannot read auth cookie)
+- ⚠️ Duplicate AI conversations in list — NOT a code bug (test data from Playwright session)
+- ⚠️ "Your enrollment:" text looked cut off — viewport artifact (flex-wrap), not a code bug
+
+---
+
 ## Session 46 — T3-003/004/005 Infrastructure + Feature API Testing
 
 **Date:** 2026-05-06

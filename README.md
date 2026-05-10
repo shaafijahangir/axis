@@ -1,4 +1,4 @@
-# NexusEd
+# Axis
 
 **An AI-native learning platform that tells you what matters right now.**
 
@@ -7,11 +7,11 @@
 
 ---
 
-## What Is NexusEd?
+## What Is Axis?
 
-NexusEd is a next-generation Learning Management System built from scratch with AI as infrastructure, not an add-on. It replaces the fragmented edtech stack (SIS + LMS + advising + messaging) with a single, intelligent platform.
+Axis is a next-generation Learning Management System built from scratch with AI as infrastructure, not an add-on. It replaces the fragmented edtech stack (SIS + LMS + advising + messaging) with a single, intelligent platform.
 
-Traditional LMS platforms are file cabinets with a gradebook. NexusEd is a **feed-first, AI-prioritized** experience where every role — student, instructor, admin, parent — sees exactly what needs their attention, right now.
+Traditional LMS platforms are file cabinets with a gradebook. Axis is a **feed-first, AI-prioritized** experience where every role — student, instructor, admin, parent — sees exactly what needs their attention, right now.
 
 > See [MISSION.md](./MISSION.md) for the full origin story and design philosophy.
 > See [ROADMAP.md](./ROADMAP.md) for where this project is heading.
@@ -105,8 +105,8 @@ These are non-negotiable and inform every decision:
 ## Project Structure
 
 ```
-nexused/
-├── nexused-frontend/             # Next.js 16 frontend
+axis/
+├── axis-frontend/             # Next.js 16 frontend
 │   └── src/
 │       ├── app/
 │       │   ├── (auth)/           # Login, registration
@@ -129,7 +129,7 @@ nexused/
 │       │   └── utils/            # Utilities (relative-time, etc.)
 │       └── stores/               # Zustand state (auth)
 │
-├── nexused-backend/              # NestJS GraphQL API
+├── axis-backend/              # NestJS GraphQL API
 │   └── src/
 │       ├── modules/
 │       │   ├── auth/             # Authentication (JWT + Google OAuth)
@@ -149,7 +149,7 @@ nexused/
 │       ├── guards/               # JWT auth + roles guards
 │       └── decorators/           # @CurrentUser, @Roles
 │
-├── MISSION.md                    # Why NexusEd exists (origin story)
+├── MISSION.md                    # Why Axis exists (origin story)
 ├── ROADMAP.md                    # Development trajectory (Phases 2.5→5)
 ├── BACKLOG.md                    # Prioritized task list (P0→P3 + features)
 ├── STORY.md                      # Project narrative with architecture diagram
@@ -179,7 +179,7 @@ nexused/
 - **AI Usage Logs** — Per-tenant cost tracking (tokens, estimated USD)
 
 ### Multi-Tenancy
-Each institution gets its own PostgreSQL schema. Row-Level Security provides defense-in-depth. Shared infrastructure for operational efficiency.
+Each institution is scoped by a `tenantId` foreign key on all major entities. Row-Level Security provides defense-in-depth. Shared infrastructure for operational efficiency.
 
 ---
 
@@ -196,13 +196,13 @@ Each institution gets its own PostgreSQL schema. Row-Level Security provides def
 ```bash
 # Clone
 git clone <repository-url>
-cd nexused
+cd axis
 
 # Frontend
-cd nexused-frontend && npm install
+cd axis-frontend && npm install
 
 # Backend
-cd ../nexused-backend && npm install
+cd ../axis-backend && npm install
 
 # Configure environment
 cp .env.example .env
@@ -213,48 +213,13 @@ cp .env.example .env
 
 ```bash
 # Terminal 1 — Backend (http://localhost:3001/api)
-cd nexused-backend && npm run start:dev
+cd axis-backend && npm run start:dev
 
 # Terminal 2 — Frontend (http://localhost:3000)
-cd nexused-frontend && npm run dev
+cd axis-frontend && npm run dev
 ```
 
 GraphQL Playground: http://localhost:3001/api/graphql
-
----
-
-## Current Status
-
-### Complete
-- [x] Project scaffolding (frontend + backend)
-- [x] Authentication system (JWT + Google OAuth)
-- [x] Multi-tenant foundation with RLS
-- [x] Core database schema (12 entities: 9 core + 3 AI)
-- [x] Base UI components (shadcn/ui)
-- [x] GraphQL API with tenant CRUD
-- [x] Login and registration pages
-- [x] Role-based navigation shell (3 nav items per role)
-- [x] Mobile-responsive layout (bottom bar + sidebar)
-- [x] AI-prioritized home feed (student, instructor, admin, parent views)
-- [x] Unified course timeline (assignments + announcements in one stream)
-- [x] Assignment creation, submission, and inline grading
-- [x] Gradebook with statistics and CSV export
-- [x] Course roster view
-- [x] AI agentic loop, governance engine, tool registry (backend only)
-
-### In Progress — Phase 2.5: Infrastructure Hardening
-- [ ] Fix 4 P0 security issues (tenant scoping, auth, JWT storage, indexes)
-- [ ] Fix 7 P1 data integrity issues (tenantId, transactions, Apollo config)
-- [ ] Architecture improvements (base entities, Turborepo, cleanup)
-
-### Not Yet Built
-- [ ] AI Chat UI (backend exists, no frontend)
-- [ ] Messaging system (documented but code not on main)
-- [ ] Content builder (documented but code not on main)
-- [ ] Real-time features (Socket.IO configured but unused)
-
-> See [ROADMAP.md](./ROADMAP.md) for the full development plan.
-> See [BACKLOG.md](./BACKLOG.md) for the prioritized task list.
 
 ---
 
@@ -262,7 +227,6 @@ GraphQL Playground: http://localhost:3001/api/graphql
 
 - **FERPA** — Student data protection
 - **WCAG 2.1 AA** — Accessibility
-- **SOC 2 Type II** — Target certification
 - **Encryption** — AES-256 at rest, TLS 1.3 in transit
 - **RLS** — PostgreSQL Row-Level Security for tenant isolation
 

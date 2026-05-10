@@ -1,4 +1,4 @@
-# NexusEd Technology Stack Decisions
+# Axis Technology Stack Decisions
 
 > Every technology choice here answers one question: **Is this the right tool for the problem, at this stage, for this team?**
 >
@@ -46,7 +46,7 @@ Each technology is evaluated on:
 
 **Verdict:** NestJS is the right choice. Don't change it.
 
-**Why it's right for NexusEd:**
+**Why it's right for Axis:**
 - Module system maps perfectly to our feature boundaries (auth, courses, assignments, AI, feed)
 - First-class GraphQL support with decorators (@Resolver, @Query, @Mutation)
 - Built-in dependency injection makes testing and mocking straightforward
@@ -163,7 +163,7 @@ It's installed in `package.json` but never imported anywhere. We use Apollo for 
 
 ### 4. API Protocol: GraphQL — KEEP
 
-**Verdict:** GraphQL is correct for NexusEd. Don't add REST or tRPC.
+**Verdict:** GraphQL is correct for Axis. Don't add REST or tRPC.
 
 **Why GraphQL is right:**
 - Our data is deeply relational (users → enrollments → sections → courses → assignments → submissions). GraphQL's nested queries prevent N+1 API calls.
@@ -308,7 +308,7 @@ The Vercel AI SDK already provides this abstraction with support for Anthropic, 
 **Current problem:**
 ```json
 // root package.json — sequential builds, no caching
-"build": "npm run build --prefix nexused-backend && npm run build --prefix nexused-frontend"
+"build": "npm run build --prefix axis-backend && npm run build --prefix axis-frontend"
 ```
 
 Backend and frontend builds are independent but run sequentially. Every build starts from scratch. CI runs are slow.
@@ -323,7 +323,7 @@ Backend and frontend builds are independent but run sequentially. Every build st
 - **Strict dependency resolution**: No phantom dependencies (a package can't import something it didn't declare)
 - **Disk space savings**: Hard-linked node_modules, shared across projects
 - **Faster installs**: ~2x faster than npm for monorepos
-- **Workspace protocol**: `"nexused-shared": "workspace:*"` for internal packages
+- **Workspace protocol**: `"axis-shared": "workspace:*"` for internal packages
 
 **Migration steps:**
 1. Install pnpm globally: `npm install -g pnpm`
@@ -405,7 +405,7 @@ Backend and frontend builds are independent but run sequentially. Every build st
 
 **PostgreSQL 16 — KEEP. No changes.**
 
-PostgreSQL is the correct database for NexusEd. The reasons are structural:
+PostgreSQL is the correct database for Axis. The reasons are structural:
 
 1. **Row-Level Security** — Our multi-tenant isolation depends on it. No other database offers RLS with this level of maturity.
 2. **JSONB** — Course settings, user preferences, rubrics, AI context snapshots — all stored as typed JSON with indexing. We use JSONB extensively.

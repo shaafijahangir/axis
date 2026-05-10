@@ -1,6 +1,6 @@
-# NexusEd Design System
+# Axis Design System
 
-> This document defines the visual language of NexusEd. Every UI decision should reference these principles and tokens. The goal: a tool that feels calm, professional, and invisible — so the learning content stays front and center.
+> This document defines the visual language of Axis. Every UI decision should reference these principles and tokens. The goal: a tool that feels calm, professional, and invisible — so the learning content stays front and center.
 
 ---
 
@@ -16,7 +16,7 @@ The UI exists to serve academic content, not to impress. Every pixel of chrome (
 - The interface should feel like a clean notebook, not a social media feed
 
 ### 3. Professional, Not Playful
-NexusEd serves universities and institutions. The aesthetic is closer to Notion or Linear than Kahoot or Duolingo. No rounded-everything, no bouncy animations, no emoji-heavy UI.
+Axis serves universities and institutions. The aesthetic is closer to Notion or Linear than Kahoot or Duolingo. No rounded-everything, no bouncy animations, no emoji-heavy UI.
 
 ### 4. Instantly Learnable
 - Three navigation items per role (max four for admin). If we need more, the IA is wrong.
