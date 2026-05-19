@@ -12,6 +12,7 @@ import {
 import { USER_COUNT_QUERY } from '@/lib/graphql/queries/admin-users';
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SendSchoolAnnouncementDialog } from '@/components/announcements/send-school-announcement-dialog';
 
 export function AdminHomeFeed() {
   const { user } = useAuthStore();
@@ -33,12 +34,15 @@ export function AdminHomeFeed() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back, {user?.firstName}. Here&apos;s an overview of your
-          institution.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome back, {user?.firstName}. Here&apos;s an overview of your
+            institution.
+          </p>
+        </div>
+        <SendSchoolAnnouncementDialog />
       </div>
 
       <div>

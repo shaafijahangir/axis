@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Course, CourseSection, Enrollment } from '../../database/entities';
 import { DegreeProgram } from '../../database/entities/degree-program.entity';
 import { StudentDegreeProfile } from '../../database/entities/student-degree-profile.entity';
+import { User } from '../../database/entities/user.entity';
+import { AcademicTerm } from '../../database/entities/academic-term.entity';
 import { CoursesService } from './courses.service';
 import { CoursesResolver } from './courses.resolver';
 import { AdminCoursesResolver } from './admin-courses.resolver';
@@ -19,6 +21,8 @@ import { WaitlistService } from './waitlist.service';
       Enrollment,
       DegreeProgram,
       StudentDegreeProfile,
+      User,
+      AcademicTerm,
     ]),
   ],
   providers: [

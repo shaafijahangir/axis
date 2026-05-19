@@ -33,3 +33,19 @@ export const IMPORT_REQUIREMENTS_FROM_CSV_MUTATION = gql`
     }
   }
 `;
+
+export const IMPORT_USERS_FROM_CSV_MUTATION = gql`
+  mutation ImportUsersFromCsv($csvData: String!) {
+    importUsersFromCsv(csvData: $csvData) {
+      ${IMPORT_RESULT_FRAGMENT}
+    }
+  }
+`;
+
+export const IMPORT_ENROLLMENTS_FROM_CSV_MUTATION = gql`
+  mutation ImportEnrollmentsFromCsv($csvData: String!) {
+    importEnrollmentsFromCsv(csvData: $csvData) {
+      ${IMPORT_RESULT_FRAGMENT}
+    }
+  }
+`;

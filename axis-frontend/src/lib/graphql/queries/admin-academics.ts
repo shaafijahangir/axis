@@ -46,6 +46,7 @@ export const ADMIN_SECTIONS_QUERY = gql`
       location
       capacity
       status
+      schedule
       course {
         id
         code

@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -29,12 +30,18 @@ import {
 } from '@/lib/graphql/queries/admin-academics';
 import { ADMIN_CREATE_SECTION_MUTATION } from '@/lib/graphql/mutations/admin-academics';
 
+const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'] as const;
+type WeekDay = (typeof DAYS)[number];
+
 const createSectionSchema = z.object({
   courseId: z.string().min(1, 'Course is required'),
   termId: z.string().min(1, 'Term is required'),
   instructorId: z.string().min(1, 'Instructor is required'),
   location: z.string().optional(),
   capacity: z.number().min(1).optional(),
+  meetingDays: z.array(z.string()).optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
 });
 
 type CreateSectionFormValues = z.infer<typeof createSectionSchema>;
@@ -96,7 +103,12 @@ export function CreateSectionDialog({
   );
 
   const onSubmit = (data: CreateSectionFormValues) => {
-    createSection({ variables: { input: data } });
+    const { meetingDays, startTime, endTime, ...rest } = data;
+    const schedule =
+      meetingDays?.length && startTime && endTime
+        ? JSON.stringify({ meetingDays, startTime, endTime })
+        : undefined;
+    createSection({ variables: { input: { ...rest, schedule } } });
   };
 
   const courses = coursesData?.courses ?? [];
@@ -203,6 +215,47 @@ export function CreateSectionDialog({
                 type="number"
                 {...register('capacity', { valueAsNumber: true })}
               />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Meeting Days</Label>
+            <div className="flex gap-3 flex-wrap">
+              {(['MON', 'TUE', 'WED', 'THU', 'FRI'] as const).map((day) => {
+                const days = watch('meetingDays') ?? [];
+                return (
+                  <div key={day} className="flex items-center gap-1.5">
+                    <Checkbox
+                      id={`day-${day}`}
+                      checked={days.includes(day)}
+                      onCheckedChange={(checked) => {
+                        const current = watch('meetingDays') ?? [];
+                        setValue(
+                          'meetingDays',
+                          checked
+                            ? [...current, day]
+                            : current.filter((d) => d !== day),
+                        );
+                      }}
+                    />
+                    <Label
+                      htmlFor={`day-${day}`}
+                      className="text-xs font-normal cursor-pointer"
+                    >
+                      {day}
+                    </Label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="start-time">Start Time</Label>
+              <Input id="start-time" type="time" {...register('startTime')} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="end-time">End Time</Label>
+              <Input id="end-time" type="time" {...register('endTime')} />
             </div>
           </div>
           <div className="flex justify-end gap-2">

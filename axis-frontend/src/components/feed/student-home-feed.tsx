@@ -4,6 +4,8 @@ import { useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useAuthStore } from '@/stores/auth.store';
 import { STUDENT_FEED_QUERY } from '@/lib/graphql/queries/feed';
+import { SCHOOL_ANNOUNCEMENTS_QUERY } from '@/lib/graphql/queries/announcements';
+import { Megaphone, AlertTriangle } from 'lucide-react';
 import { FeedCard } from './feed-card';
 import { FeedCardSkeleton } from './feed-card-skeleton';
 import { EmptyFeed } from './empty-feed';
@@ -30,6 +32,18 @@ interface FeedItemData {
   timestamp: string;
 }
 
+interface SchoolAnnouncement {
+  id: string;
+  title: string;
+  body: string;
+  scope: string;
+  targetGrade: number | null;
+  priority: string;
+  pinned: boolean;
+  createdAt: string;
+  author: { firstName: string; lastName: string };
+}
+
 export function StudentHomeFeed() {
   const { user } = useAuthStore();
   const { isWidgetEnabled } = useWidgetPreferences();
@@ -38,6 +52,14 @@ export function StudentHomeFeed() {
     STUDENT_FEED_QUERY,
     { fetchPolicy: 'cache-and-network' },
   );
+
+  const gradeLevel = user?.profile?.gradeLevel as number | undefined;
+  const { data: schoolAnnouncementsData } = useQuery<{
+    schoolAnnouncements: SchoolAnnouncement[];
+  }>(SCHOOL_ANNOUNCEMENTS_QUERY, {
+    variables: { grade: gradeLevel },
+    fetchPolicy: 'cache-and-network',
+  });
 
   // Filter feed items based on widget preferences
   const filteredFeed = useMemo(() => {
@@ -62,6 +84,41 @@ export function StudentHomeFeed() {
         </div>
         <WidgetSettings userRole="student" />
       </div>
+
+      {schoolAnnouncementsData?.schoolAnnouncements?.length ? (
+        <section aria-label="School announcements" className="space-y-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            School Announcements
+          </h2>
+          {schoolAnnouncementsData.schoolAnnouncements.map((ann) => (
+            <div
+              key={ann.id}
+              className={`rounded-lg border p-4 ${ann.priority === 'urgent' ? 'border-destructive/40 bg-destructive/5' : 'bg-muted/40'}`}
+            >
+              <div className="flex items-start gap-3">
+                {ann.priority === 'urgent' ? (
+                  <AlertTriangle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
+                ) : (
+                  <Megaphone className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <p className="font-medium text-sm">{ann.title}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5 line-clamp-3">
+                    {ann.body}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {ann.author.firstName} {ann.author.lastName} ·{' '}
+                    {new Date(ann.createdAt).toLocaleDateString()}
+                    {ann.scope === 'grade' && ann.targetGrade
+                      ? ` · Grade ${ann.targetGrade}`
+                      : ''}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : null}
 
       {loading ? (
         <div className="space-y-3" role="status" aria-label="Loading feed">

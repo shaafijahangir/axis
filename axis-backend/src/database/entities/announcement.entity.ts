@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
+import { ObjectType, Field, Int, registerEnumType } from '@nestjs/graphql';
 import { TenantScopedEntity } from './base.entity';
 import { CourseSection } from './course-section.entity';
 import { User } from './user.entity';
@@ -9,26 +9,46 @@ export enum AnnouncementPriority {
   URGENT = 'urgent',
 }
 
+export enum AnnouncementScope {
+  SECTION = 'section',
+  GRADE = 'grade',
+  SCHOOL_WIDE = 'school_wide',
+}
+
 registerEnumType(AnnouncementPriority, { name: 'AnnouncementPriority' });
+registerEnumType(AnnouncementScope, { name: 'AnnouncementScope' });
 
 /**
  * DATA-001: Added tenantId for direct tenant filtering without joins.
- * WHY: Previously required joining section → course to get tenantId.
+ * Scope added for school-wide and per-grade announcements.
  */
 @ObjectType()
 @Entity('announcements')
 @Index(['tenantId'])
 @Index(['sectionId'])
+@Index(['scope'])
 @Index(['createdAt'])
 export class Announcement extends TenantScopedEntity {
-  @Field()
-  @Column()
+  @Field({ nullable: true })
+  @Column({ nullable: true })
   sectionId: string;
 
-  @Field(() => CourseSection)
-  @ManyToOne(() => CourseSection)
+  @Field(() => CourseSection, { nullable: true })
+  @ManyToOne(() => CourseSection, { nullable: true })
   @JoinColumn({ name: 'sectionId' })
   section: CourseSection;
+
+  @Field(() => AnnouncementScope)
+  @Column({
+    type: 'enum',
+    enum: AnnouncementScope,
+    default: AnnouncementScope.SECTION,
+  })
+  scope: AnnouncementScope;
+
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'int', nullable: true })
+  targetGrade: number;
 
   @Field()
   @Column()

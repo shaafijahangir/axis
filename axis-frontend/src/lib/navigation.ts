@@ -13,6 +13,7 @@ import {
   Library,
   AlertTriangle,
   ClipboardList,
+  Calendar,
   type LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
@@ -35,6 +36,7 @@ export interface NavItem {
 const studentNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Courses', href: '/courses', icon: BookOpen },
+  { label: 'Schedule', href: '/schedule', icon: Calendar },
   { label: 'Grades', href: '/grades', icon: GraduationCap },
   { label: 'Planner', href: '/planner', icon: Map },
   { label: 'AI', href: '/ai', icon: Sparkles },
@@ -49,6 +51,7 @@ const studentNav: NavItem[] = [
 const instructorNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Courses', href: '/courses', icon: BookOpen },
+  { label: 'Schedule', href: '/schedule', icon: Calendar },
   { label: 'AI', href: '/ai', icon: Sparkles },
   { label: 'Agent Builder', href: '/ai/agents', icon: Bot },
   {
@@ -109,13 +112,8 @@ export function getNavForRole(roles: UserRole[]): NavItem[] {
 const studentMobileNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Courses', href: '/courses', icon: BookOpen },
+  { label: 'Schedule', href: '/schedule', icon: Calendar },
   { label: 'AI', href: '/ai', icon: Sparkles },
-  {
-    label: 'Messages',
-    href: '/messages',
-    icon: MessageSquare,
-    badgeKey: 'messages',
-  },
   { label: 'Grades', href: '/grades', icon: GraduationCap },
 ];
 

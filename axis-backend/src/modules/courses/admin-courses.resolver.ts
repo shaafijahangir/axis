@@ -205,4 +205,20 @@ export class AdminCoursesResolver {
   ): Promise<ImportResult> {
     return this.csvImportService.importRequirements(user.tenantId, csvData);
   }
+
+  @Mutation(() => ImportResult)
+  async importUsersFromCsv(
+    @CurrentUser() user: User,
+    @Args('csvData') csvData: string,
+  ): Promise<ImportResult> {
+    return this.csvImportService.importUsers(user.tenantId, csvData);
+  }
+
+  @Mutation(() => ImportResult)
+  async importEnrollmentsFromCsv(
+    @CurrentUser() user: User,
+    @Args('csvData') csvData: string,
+  ): Promise<ImportResult> {
+    return this.csvImportService.importEnrollments(user.tenantId, csvData);
+  }
 }

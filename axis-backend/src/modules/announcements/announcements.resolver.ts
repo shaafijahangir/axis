@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { Announcement } from '../../database/entities/announcement.entity';
 import { User, UserRole } from '../../database/entities/user.entity';
@@ -21,9 +21,23 @@ export class AnnouncementsResolver {
     return this.announcementsService.findBySectionId(sectionId);
   }
 
-  /**
-   * ARCH-002: tenantId no longer passed - service reads from TenantContext
-   */
+  /** School-wide and grade-level announcements visible to the current user's tenant. */
+  @Query(() => [Announcement])
+  async schoolAnnouncements(
+    @CurrentUser() user: User,
+    @Args('grade', { type: () => Int, nullable: true }) grade?: number,
+  ): Promise<Announcement[]> {
+    return this.announcementsService.findSchoolWide(user.tenantId, grade);
+  }
+
+  /** All announcements for the tenant — used by admin feed. */
+  @Query(() => [Announcement])
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR)
+  async allAnnouncements(@CurrentUser() user: User): Promise<Announcement[]> {
+    return this.announcementsService.findAllForTenant(user.tenantId);
+  }
+
   @Mutation(() => Announcement)
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)

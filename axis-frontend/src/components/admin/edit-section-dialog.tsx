@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -26,11 +27,16 @@ import {
 import { ADMIN_USERS_LIST_QUERY } from '@/lib/graphql/queries/admin-academics';
 import { UPDATE_SECTION_MUTATION } from '@/lib/graphql/mutations/admin-academics';
 
+const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'] as const;
+
 const editSectionSchema = z.object({
   location: z.string().optional(),
   capacity: z.number().min(1).optional(),
   status: z.string(),
   instructorId: z.string().min(1, 'Instructor is required'),
+  meetingDays: z.array(z.string()).optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
 });
 
 type EditSectionFormValues = z.infer<typeof editSectionSchema>;
@@ -41,6 +47,7 @@ interface AdminSection {
   location: string | null;
   capacity: number | null;
   status: string;
+  schedule?: string | null;
   course: { code: string; title: string };
 }
 
@@ -57,6 +64,24 @@ const STATUS_OPTIONS = [
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
+
+function parseSchedule(raw: string | null | undefined) {
+  if (!raw) return { meetingDays: [], startTime: '', endTime: '' };
+  try {
+    const parsed = JSON.parse(raw) as {
+      meetingDays?: string[];
+      startTime?: string;
+      endTime?: string;
+    };
+    return {
+      meetingDays: parsed.meetingDays ?? [],
+      startTime: parsed.startTime ?? '',
+      endTime: parsed.endTime ?? '',
+    };
+  } catch {
+    return { meetingDays: [], startTime: '', endTime: '' };
+  }
+}
 
 export function EditSectionDialog({
   open,
@@ -90,11 +115,17 @@ export function EditSectionDialog({
 
   useEffect(() => {
     if (section) {
+      const { meetingDays, startTime, endTime } = parseSchedule(
+        section.schedule,
+      );
       reset({
         location: section.location ?? '',
         capacity: section.capacity ?? undefined,
         status: section.status,
         instructorId: section.instructorId,
+        meetingDays,
+        startTime,
+        endTime,
       });
     }
   }, [section, reset]);
@@ -110,7 +141,14 @@ export function EditSectionDialog({
 
   const onSubmit = (data: EditSectionFormValues) => {
     if (!section) return;
-    updateSection({ variables: { id: section.id, input: data } });
+    const { meetingDays, startTime, endTime, ...rest } = data;
+    const schedule =
+      meetingDays?.length && startTime && endTime
+        ? JSON.stringify({ meetingDays, startTime, endTime })
+        : undefined;
+    updateSection({
+      variables: { id: section.id, input: { ...rest, schedule } },
+    });
   };
 
   const instructors = usersData?.adminUsers.users ?? [];
@@ -183,6 +221,51 @@ export function EditSectionDialog({
                 type="number"
                 {...register('capacity', { valueAsNumber: true })}
               />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Meeting Days</Label>
+            <div className="flex gap-3 flex-wrap">
+              {DAYS.map((day) => {
+                const days = watch('meetingDays') ?? [];
+                return (
+                  <div key={day} className="flex items-center gap-1.5">
+                    <Checkbox
+                      id={`edit-day-${day}`}
+                      checked={days.includes(day)}
+                      onCheckedChange={(checked) => {
+                        const current = watch('meetingDays') ?? [];
+                        setValue(
+                          'meetingDays',
+                          checked
+                            ? [...current, day]
+                            : current.filter((d) => d !== day),
+                        );
+                      }}
+                    />
+                    <Label
+                      htmlFor={`edit-day-${day}`}
+                      className="text-xs font-normal cursor-pointer"
+                    >
+                      {day}
+                    </Label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-start-time">Start Time</Label>
+              <Input
+                id="edit-start-time"
+                type="time"
+                {...register('startTime')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-end-time">End Time</Label>
+              <Input id="edit-end-time" type="time" {...register('endTime')} />
             </div>
           </div>
           <div className="flex justify-end gap-2">

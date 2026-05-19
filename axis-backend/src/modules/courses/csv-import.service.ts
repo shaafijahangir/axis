@@ -1,12 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { Course, CourseCategory } from '../../database/entities/course.entity';
 import {
   DegreeProgram,
   DegreeProgramType,
   RequirementGroup,
 } from '../../database/entities/degree-program.entity';
+import { User, UserRole } from '../../database/entities/user.entity';
+import { CourseSection } from '../../database/entities/course-section.entity';
+import {
+  Enrollment,
+  EnrollmentStatus,
+} from '../../database/entities/enrollment.entity';
+import { AcademicTerm } from '../../database/entities/academic-term.entity';
 import { ImportResult, ImportError } from './dto/course.types';
 
 // ─── CSV Parser ──────────────────────────────────────────────────────────────
@@ -115,6 +123,14 @@ export class CsvImportService {
     private courseRepo: Repository<Course>,
     @InjectRepository(DegreeProgram)
     private programRepo: Repository<DegreeProgram>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+    @InjectRepository(CourseSection)
+    private sectionRepo: Repository<CourseSection>,
+    @InjectRepository(Enrollment)
+    private enrollmentRepo: Repository<Enrollment>,
+    @InjectRepository(AcademicTerm)
+    private termRepo: Repository<AcademicTerm>,
     private dataSource: DataSource,
   ) {}
 
@@ -645,6 +661,330 @@ export class CsvImportService {
     this.logger.log(
       `Imported ${imported} requirement groups across ${programGroups.size} programs for tenant ${tenantId}`,
     );
+    return { imported, success: true, errors: [] };
+  }
+
+  // ── Users ────────────────────────────────────────────────────────────────────
+
+  /**
+   * Import users (students, teachers, parents) from CSV.
+   *
+   * Expected columns:
+   *   email*, first_name*, last_name*, role (student|instructor|admin|parent|ta),
+   *   password, grade_level
+   *
+   * Upsert by email+tenantId — safe to re-import after corrections.
+   * If no password column, defaults to "ChangeMe123!" — user must reset on first login.
+   */
+  async importUsers(tenantId: string, csvData: string): Promise<ImportResult> {
+    const rows = parseCSV(csvData);
+    if (rows.length < 2) {
+      return {
+        imported: 0,
+        success: false,
+        errors: [
+          {
+            row: 0,
+            field: 'file',
+            message: 'CSV is empty or has no data rows',
+          },
+        ],
+      };
+    }
+
+    const headers = buildHeaderMap(rows[0]);
+    const errors: ImportError[] = [];
+
+    const ROLE_MAP: Record<string, UserRole> = {
+      student: UserRole.STUDENT,
+      instructor: UserRole.INSTRUCTOR,
+      teacher: UserRole.INSTRUCTOR,
+      admin: UserRole.ADMIN,
+      parent: UserRole.PARENT,
+      ta: UserRole.TA,
+    };
+
+    const rowData: {
+      email: string;
+      firstName: string;
+      lastName: string;
+      roles: UserRole[];
+      password: string;
+      gradeLevel?: number;
+    }[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 1;
+
+      const email = col(row, headers, 'email').toLowerCase();
+      const firstName = col(row, headers, 'first_name');
+      const lastName = col(row, headers, 'last_name');
+
+      if (!email) {
+        errors.push({
+          row: rowNum,
+          field: 'email',
+          message: 'email is required',
+        });
+        continue;
+      }
+      if (!firstName) {
+        errors.push({
+          row: rowNum,
+          field: 'first_name',
+          message: 'first_name is required',
+        });
+        continue;
+      }
+      if (!lastName) {
+        errors.push({
+          row: rowNum,
+          field: 'last_name',
+          message: 'last_name is required',
+        });
+        continue;
+      }
+
+      const roleRaw = col(row, headers, 'role').toLowerCase();
+      const role = roleRaw
+        ? (ROLE_MAP[roleRaw] ?? UserRole.STUDENT)
+        : UserRole.STUDENT;
+
+      const gradeLevelRaw = col(row, headers, 'grade_level');
+      const gradeLevel = gradeLevelRaw
+        ? parseInt(gradeLevelRaw, 10)
+        : undefined;
+      if (gradeLevelRaw && isNaN(gradeLevel!)) {
+        errors.push({
+          row: rowNum,
+          field: 'grade_level',
+          message: `"${gradeLevelRaw}" is not a valid integer`,
+        });
+        continue;
+      }
+
+      rowData.push({
+        email,
+        firstName,
+        lastName,
+        roles: [role],
+        password: col(row, headers, 'password') || 'ChangeMe123!',
+        gradeLevel,
+      });
+    }
+
+    if (errors.length > 0) return { imported: 0, success: false, errors };
+
+    let imported = 0;
+
+    await this.dataSource.transaction(async (manager) => {
+      for (const data of rowData) {
+        const passwordHash = await bcrypt.hash(data.password, 10);
+        const existing = await manager.findOne(User, {
+          where: { email: data.email, tenantId },
+        });
+
+        const profile =
+          data.gradeLevel !== undefined
+            ? { gradeLevel: data.gradeLevel }
+            : undefined;
+
+        if (existing) {
+          const updateData: Partial<User> = {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            roles: data.roles,
+          };
+          if (profile) {
+            updateData.profile = { ...(existing.profile ?? {}), ...profile };
+          }
+          await manager.save(User, { ...existing, ...updateData });
+        } else {
+          const user = manager.create(User, {
+            email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            roles: data.roles,
+            passwordHash,
+            tenantId,
+            ...(profile && { profile }),
+          });
+          await manager.save(User, user);
+        }
+        imported++;
+      }
+    });
+
+    this.logger.log(`Imported ${imported} users for tenant ${tenantId}`);
+    return { imported, success: true, errors: [] };
+  }
+
+  // ── Enrollments ─────────────────────────────────────────────────────────────
+
+  /**
+   * Import enrollments from CSV.
+   *
+   * Expected columns:
+   *   student_email*, course_code*, term_name*
+   *
+   * Matches student by email, course by code, section by course+term (first active section).
+   * Upsert by userId+sectionId — idempotent.
+   */
+  async importEnrollments(
+    tenantId: string,
+    csvData: string,
+  ): Promise<ImportResult> {
+    const rows = parseCSV(csvData);
+    if (rows.length < 2) {
+      return {
+        imported: 0,
+        success: false,
+        errors: [
+          {
+            row: 0,
+            field: 'file',
+            message: 'CSV is empty or has no data rows',
+          },
+        ],
+      };
+    }
+
+    const headers = buildHeaderMap(rows[0]);
+    const errors: ImportError[] = [];
+
+    // Pre-load lookup maps
+    const users = await this.userRepo.find({
+      where: { tenantId },
+      select: ['id', 'email'],
+    });
+    const emailToUserId = new Map(
+      users.map((u) => [u.email.toLowerCase(), u.id]),
+    );
+
+    const courses = await this.courseRepo.find({
+      where: { tenantId },
+      select: ['id', 'code'],
+    });
+    const codeToId = new Map(courses.map((c) => [c.code.toLowerCase(), c.id]));
+
+    const terms = await this.termRepo.find({
+      where: { tenantId },
+      select: ['id', 'name'],
+    });
+    const termNameToId = new Map(
+      terms.map((t) => [t.name.toLowerCase(), t.id]),
+    );
+
+    const sections = await this.sectionRepo.find({
+      select: ['id', 'courseId', 'termId'],
+    });
+
+    const rowData: { userId: string; sectionId: string }[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 1;
+
+      const studentEmail = col(row, headers, 'student_email').toLowerCase();
+      const courseCode = col(row, headers, 'course_code').toLowerCase();
+      const termName = col(row, headers, 'term_name').toLowerCase();
+
+      if (!studentEmail) {
+        errors.push({
+          row: rowNum,
+          field: 'student_email',
+          message: 'student_email is required',
+        });
+        continue;
+      }
+      if (!courseCode) {
+        errors.push({
+          row: rowNum,
+          field: 'course_code',
+          message: 'course_code is required',
+        });
+        continue;
+      }
+      if (!termName) {
+        errors.push({
+          row: rowNum,
+          field: 'term_name',
+          message: 'term_name is required',
+        });
+        continue;
+      }
+
+      const userId = emailToUserId.get(studentEmail);
+      if (!userId) {
+        errors.push({
+          row: rowNum,
+          field: 'student_email',
+          message: `No user found with email "${studentEmail}"`,
+        });
+        continue;
+      }
+
+      const courseId = codeToId.get(courseCode);
+      if (!courseId) {
+        errors.push({
+          row: rowNum,
+          field: 'course_code',
+          message: `No course found with code "${courseCode}"`,
+        });
+        continue;
+      }
+
+      const termId = termNameToId.get(termName);
+      if (!termId) {
+        errors.push({
+          row: rowNum,
+          field: 'term_name',
+          message: `No term found with name "${termName}"`,
+        });
+        continue;
+      }
+
+      const section = sections.find(
+        (s) => s.courseId === courseId && s.termId === termId,
+      );
+      if (!section) {
+        errors.push({
+          row: rowNum,
+          field: 'course_code',
+          message: `No section found for course "${courseCode}" in term "${termName}"`,
+        });
+        continue;
+      }
+
+      rowData.push({ userId, sectionId: section.id });
+    }
+
+    if (errors.length > 0) return { imported: 0, success: false, errors };
+
+    let imported = 0;
+
+    await this.dataSource.transaction(async (manager) => {
+      for (const data of rowData) {
+        const existing = await manager.findOne(Enrollment, {
+          where: { userId: data.userId, sectionId: data.sectionId },
+        });
+        if (!existing) {
+          const enrollment = manager.create(Enrollment, {
+            userId: data.userId,
+            sectionId: data.sectionId,
+            tenantId,
+            status: EnrollmentStatus.ACTIVE,
+            role: 'student' as any,
+            enrolledAt: new Date(),
+          });
+          await manager.save(Enrollment, enrollment);
+        }
+        imported++;
+      }
+    });
+
+    this.logger.log(`Imported ${imported} enrollments for tenant ${tenantId}`);
     return { imported, success: true, errors: [] };
   }
 }

@@ -28,11 +28,18 @@ import {
   IMPORT_COURSES_FROM_CSV_MUTATION,
   IMPORT_PROGRAMS_FROM_CSV_MUTATION,
   IMPORT_REQUIREMENTS_FROM_CSV_MUTATION,
+  IMPORT_USERS_FROM_CSV_MUTATION,
+  IMPORT_ENROLLMENTS_FROM_CSV_MUTATION,
 } from '@/lib/graphql/mutations/csv-import';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type ImportType = 'courses' | 'programs' | 'requirements';
+type ImportType =
+  | 'courses'
+  | 'programs'
+  | 'requirements'
+  | 'users'
+  | 'enrollments';
 type WizardStep = 'select-type' | 'upload' | 'preview' | 'result';
 
 interface ImportError {
@@ -86,6 +93,27 @@ const TEMPLATES: Record<
     ].join('\n'),
     description:
       'One row per requirement group. Import programs before requirements. course_codes are comma-separated codes in quotes.',
+  },
+  users: {
+    headers: 'email,first_name,last_name,role,password,grade_level',
+    example: [
+      'alice@brentwood.ca,Alice,Smith,student,ChangeMe123!,11',
+      'bob@brentwood.ca,Bob,Jones,instructor,ChangeMe123!,',
+      'carol@brentwood.ca,Carol,White,parent,ChangeMe123!,',
+      'dave@brentwood.ca,Dave,Brown,student,ChangeMe123!,12',
+    ].join('\n'),
+    description:
+      'One row per user. role: student | instructor | teacher | admin | parent | ta. grade_level is optional (for students). Default password is used if omitted.',
+  },
+  enrollments: {
+    headers: 'student_email,course_code,term_name',
+    example: [
+      'alice@brentwood.ca,CS 101,Fall 2025',
+      'alice@brentwood.ca,MATH 101,Fall 2025',
+      'dave@brentwood.ca,CS 101,Fall 2025',
+    ].join('\n'),
+    description:
+      'One row per enrollment. Import users and sections before enrollments. Matches student by email, course by code, section by course+term.',
   },
 };
 
@@ -168,6 +196,20 @@ const TYPE_OPTIONS: {
   description: string;
   note: string;
 }[] = [
+  {
+    value: 'users',
+    label: 'Students & Staff',
+    icon: FileText,
+    description: 'Import student, teacher, and parent accounts',
+    note: 'Import first — enrollments reference user accounts',
+  },
+  {
+    value: 'enrollments',
+    label: 'Enrollments',
+    icon: List,
+    description: 'Enroll students into class sections',
+    note: 'Import after users and sections are created',
+  },
   {
     value: 'courses',
     label: 'Courses',
@@ -561,6 +603,14 @@ export default function CatalogImportPage() {
     importRequirementsFromCsv: ImportResult;
   }>(IMPORT_REQUIREMENTS_FROM_CSV_MUTATION);
 
+  const [importUsers] = useMutation<{
+    importUsersFromCsv: ImportResult;
+  }>(IMPORT_USERS_FROM_CSV_MUTATION);
+
+  const [importEnrollments] = useMutation<{
+    importEnrollmentsFromCsv: ImportResult;
+  }>(IMPORT_ENROLLMENTS_FROM_CSV_MUTATION);
+
   const handleImport = async () => {
     if (!importType) return;
     setImporting(true);
@@ -577,6 +627,14 @@ export default function CatalogImportPage() {
           variables: { csvData: csvText },
         });
         result = data!.importProgramsFromCsv;
+      } else if (importType === 'users') {
+        const { data } = await importUsers({ variables: { csvData: csvText } });
+        result = data!.importUsersFromCsv;
+      } else if (importType === 'enrollments') {
+        const { data } = await importEnrollments({
+          variables: { csvData: csvText },
+        });
+        result = data!.importEnrollmentsFromCsv;
       } else {
         const { data } = await importRequirements({
           variables: { csvData: csvText },

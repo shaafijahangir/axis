@@ -1,19 +1,38 @@
-import { InputType, Field } from '@nestjs/graphql';
+import { InputType, Field, Int } from '@nestjs/graphql';
 import {
   IsBoolean,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
+  Min,
 } from 'class-validator';
-import { AnnouncementPriority } from '../../../database/entities/announcement.entity';
+import {
+  AnnouncementPriority,
+  AnnouncementScope,
+} from '../../../database/entities/announcement.entity';
 
 @InputType()
 export class CreateAnnouncementInput {
-  @Field()
+  @Field({ nullable: true })
+  @IsOptional()
   @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
-  sectionId: string;
+  sectionId?: string;
+
+  @Field(() => AnnouncementScope, { nullable: true })
+  @IsOptional()
+  @IsEnum(AnnouncementScope)
+  scope?: AnnouncementScope;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(13)
+  targetGrade?: number;
 
   @Field()
   @IsString()
@@ -24,7 +43,7 @@ export class CreateAnnouncementInput {
   @IsString()
   body: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => AnnouncementPriority, { nullable: true })
   @IsOptional()
   @IsEnum(AnnouncementPriority)
   priority?: AnnouncementPriority;

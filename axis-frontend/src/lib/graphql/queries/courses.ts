@@ -12,6 +12,7 @@ export const MY_ENROLLMENTS_QUERY = gql`
       section {
         id
         location
+        schedule
         status
         course {
           id
@@ -25,6 +26,12 @@ export const MY_ENROLLMENTS_QUERY = gql`
           firstName
           lastName
         }
+        term {
+          id
+          name
+          startDate
+          endDate
+        }
       }
     }
   }
@@ -35,6 +42,7 @@ export const MY_SECTIONS_QUERY = gql`
     mySections {
       id
       location
+      schedule
       capacity
       status
       course {
@@ -47,6 +55,12 @@ export const MY_SECTIONS_QUERY = gql`
         id
         firstName
         lastName
+      }
+      term {
+        id
+        name
+        startDate
+        endDate
       }
     }
   }

@@ -15,6 +15,7 @@ export interface User {
   status?: string;
   tenantId?: string;
   preferences?: string | Record<string, unknown> | null;
+  profile?: Record<string, unknown> | null;
   createdAt?: string;
 }
 

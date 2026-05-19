@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Bell, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Bell, Calendar, Copy, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Card,
@@ -16,6 +17,8 @@ import { Separator } from '@/components/ui/separator';
 import { MY_NOTIFICATION_PREFERENCES_QUERY } from '@/lib/graphql/queries/notifications';
 import { UPDATE_NOTIFICATION_PREFERENCES_MUTATION } from '@/lib/graphql/mutations/notifications';
 import { PushSubscriptionToggle } from '@/components/notifications/push-subscription-toggle';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface NotificationPreferences {
   emailOnGrade: boolean;
@@ -58,6 +61,99 @@ const PREF_LABELS: {
     description: 'Get an email when someone sends you a direct message.',
   },
 ];
+
+// ─── Calendar Card ────────────────────────────────────────────────────────────
+
+function CalendarCard() {
+  const [calendarUrl, setCalendarUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/calendar/token', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data: { url: string }) => setCalendarUrl(data.url))
+      .catch(() => setCalendarUrl(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleCopy = async () => {
+    if (!calendarUrl) return;
+    await navigator.clipboard.writeText(calendarUrl);
+    setCopied(true);
+    toast.success('Calendar URL copied!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Calendar
+            className="h-5 w-5 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <CardTitle>Calendar Subscription</CardTitle>
+        </div>
+        <CardDescription>
+          Subscribe to your Axis schedule in Google Calendar, Apple Calendar, or
+          Outlook. Your class times and assignment due dates sync automatically.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Generating your subscription URL…
+          </div>
+        ) : calendarUrl ? (
+          <>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={calendarUrl}
+                className="font-mono text-xs"
+                aria-label="Calendar subscription URL"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleCopy}
+                aria-label="Copy URL"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p className="font-medium">How to add to Google Calendar:</p>
+              <ol className="list-decimal list-inside space-y-0.5">
+                <li>Copy the URL above</li>
+                <li>
+                  Open Google Calendar → click <strong>+</strong> next to
+                  &ldquo;Other calendars&rdquo;
+                </li>
+                <li>
+                  Choose <strong>From URL</strong>, paste the URL, and click Add
+                  Calendar
+                </li>
+              </ol>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Could not generate calendar URL. Please refresh the page.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
   const { data, loading } = useQuery<{
@@ -168,6 +264,8 @@ export default function SettingsPage() {
           <PushSubscriptionToggle />
         </CardContent>
       </Card>
+
+      <CalendarCard />
     </div>
   );
 }

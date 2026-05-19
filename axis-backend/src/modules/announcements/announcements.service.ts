@@ -1,15 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
-import { Announcement } from '../../database/entities/announcement.entity';
+import { In, IsNull, Or, Repository } from 'typeorm';
+import {
+  Announcement,
+  AnnouncementScope,
+} from '../../database/entities/announcement.entity';
 import { CreateAnnouncementInput } from './dto/announcement.types';
 import { TenantContext } from '../../tenant/tenant-context';
 
-/**
- * ARCH-002: Updated to use TenantContext for automatic tenant scoping.
- * Methods no longer need tenantId as a parameter - it's read from the
- * request context automatically.
- */
 @Injectable()
 export class AnnouncementsService {
   constructor(
@@ -54,17 +52,57 @@ export class AnnouncementsService {
       .getMany();
   }
 
-  /**
-   * ARCH-002: tenantId is now read from TenantContext instead of being
-   * passed as a parameter. This prevents forgetting to pass tenantId.
-   */
+  /** Returns all school-wide + optionally grade-filtered announcements for the tenant. */
+  async findSchoolWide(
+    tenantId: string,
+    grade?: number,
+  ): Promise<Announcement[]> {
+    const qb = this.announcementRepo
+      .createQueryBuilder('announcement')
+      .leftJoinAndSelect('announcement.author', 'author')
+      .where('announcement.tenantId = :tenantId', { tenantId })
+      .andWhere(
+        '(announcement.scope = :schoolWide OR (announcement.scope = :gradeScope AND announcement.targetGrade = :grade))',
+        {
+          schoolWide: AnnouncementScope.SCHOOL_WIDE,
+          gradeScope: AnnouncementScope.GRADE,
+          grade: grade ?? -1,
+        },
+      )
+      .orderBy('announcement.pinned', 'DESC')
+      .addOrderBy('announcement.createdAt', 'DESC');
+
+    if (grade !== undefined) {
+      qb.orWhere(
+        '(announcement.tenantId = :tenantId AND announcement.scope = :schoolWide)',
+        {
+          tenantId,
+          schoolWide: AnnouncementScope.SCHOOL_WIDE,
+        },
+      );
+    }
+
+    return qb.getMany();
+  }
+
+  /** Returns ALL announcements for a tenant (school-wide + grade + section). Admin view. */
+  async findAllForTenant(tenantId: string): Promise<Announcement[]> {
+    return this.announcementRepo.find({
+      where: { tenantId },
+      relations: ['author', 'section', 'section.course'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async create(
     authorId: string,
     input: CreateAnnouncementInput,
   ): Promise<Announcement> {
     const tenantId = this.tenantContext.getTenantId();
+    const scope = input.scope ?? AnnouncementScope.SECTION;
     const announcement = this.announcementRepo.create({
       ...input,
+      scope,
       tenantId,
       authorId,
     });
