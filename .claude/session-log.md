@@ -5,6 +5,48 @@
 
 ---
 
+## Session 48 — Brentwood MVP Sprint (6 Selling Points)
+
+**Date:** 2026-05-19
+**Goal:** Ship all 6 Brentwood demo features end-to-end
+**Status:** COMPLETE — committed 9f31583 + 9b6f113
+
+### Work Done
+
+**#1 Admin user management with K-12 grade level**
+- CSV import extended: `email,first_name,last_name,role,grade_level` → stores gradeLevel in `user.profile` JSONB
+- `importUsersFromCsv` GraphQL mutation added to admin-courses resolver
+
+**#3 Student visual schedule page**
+- `/schedule` page: CSS Grid weekly timetable (Mon–Fri, 07:00–18:00, 30-min rows)
+- Students see enrolled course blocks; instructors see their own sections
+- Section create/edit dialogs extended with meeting-days checkboxes + start/end time pickers
+- Schedule stored as JSON in `CourseSection.schedule` JSONB (no migration needed)
+- Schedule nav link added for student + instructor roles
+
+**#4 School-wide and grade-level announcements**
+- `Announcement` entity: `scope` enum (SECTION/GRADE/SCHOOL_WIDE), `targetGrade`, nullable `sectionId`
+- `schoolAnnouncements(grade?)` query returns SCHOOL_WIDE + matching grade announcements
+- `SendSchoolAnnouncementDialog` added to admin home feed header
+- School announcements banner shown above student home feed (urgent = red, normal = muted)
+- Fixed: AnnouncementPriority DTO field type was `String` → changed to `AnnouncementPriority` enum
+
+**#5 Google Calendar integration (Phase A — webcal subscription)**
+- `CalendarModule`: `GET /api/calendar/token` (JWT-protected) returns HMAC-SHA256 stable token + webcal URL
+- `GET /api/calendar/feed?token=...` generates ical with RRULE weekly events + assignment due-date alarms
+- Calendar subscription card added to Settings page with copy-to-clipboard + Google Calendar instructions
+
+**#6 CSV import for users + enrollments**
+- `importUsersFromCsv` — upserts by email+tenantId, assigns role, stores gradeLevel
+- `importEnrollmentsFromCsv` — student_email + course_code + term_name → creates enrollment
+- Admin CSV import wizard extended with 'users' and 'enrollments' import types
+- CSV templates with headers + examples added to wizard
+
+**Infrastructure fix**
+- Fixed `.husky/pre-push` hook: still used old `nexused-backend/frontend` directory names after rename
+
+---
+
 ## Session 47 — Playwright Bug Sweep + Test Coverage
 
 **Date:** 2026-05-07
@@ -130,10 +172,10 @@
 - `npm run seed` — seeds base tenant, users, courses, sections, assignments with FUTURE due dates
 - `npm run seed:demo` — seeds 60 students, 10 courses, 10 sections, ~232 enrollments, ~1346 submissions
 - Frontend dev server starts cleanly with webpack
-- Login (student@nexused.demo / password123) → redirects to /home
+- Login (student@Axis.demo / password123) → redirects to /home
 
 ### Still Needs (T1-002)
-- Add `ANTHROPIC_API_KEY` to `nexused-backend/.env` to test AI features end-to-end
+- Add `ANTHROPIC_API_KEY` to `Axis-backend/.env` to test AI features end-to-end
 
 ---
 
@@ -146,9 +188,9 @@
 ### Work Done
 
 **T3-001: Production Docker deployment — DONE**
-- `nexused-backend/Dockerfile`: multi-stage build (builder → production), apk python3/make/g++ for bcrypt native module, health check on `/api/health`
-- `nexused-frontend/Dockerfile`: 3-stage (deps → builder → production), standalone output, non-root nextjs user
-- `nexused-frontend/next.config.ts`: added `output: "standalone"` required for containerized deployment
+- `Axis-backend/Dockerfile`: multi-stage build (builder → production), apk python3/make/g++ for bcrypt native module, health check on `/api/health`
+- `Axis-frontend/Dockerfile`: 3-stage (deps → builder → production), standalone output, non-root nextjs user
+- `Axis-frontend/next.config.ts`: added `output: "standalone"` required for containerized deployment
 - `docker-compose.yml`: local dev stack — postgres:16-alpine, redis:7-alpine, backend, frontend with health checks
 - `docker-compose.prod.yml`: production stack — adds nginx, internal network for DB/Redis isolation, external network for nginx only
 - `nginx/nginx.conf`: HTTPS termination, HTTP→HTTPS redirect, /api/ → backend:3001, /_next/static/ cached 1y, / → frontend:3000, WebSocket upgrade
@@ -159,9 +201,9 @@
 - Root cause: `@InputType()` classes had `@Field()` (GraphQL) decorators but no class-validator decorators (`@IsString()` etc.)
 - Global `ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })` strips any property without a class-validator decorator and throws 400 — making `createCourse`, `recordEngagement`, and `updateUser` completely broken in production
 - Fixed files (commit a897a50):
-  - `nexused-backend/src/modules/courses/dto/course.types.ts` — `CreateCourseInput`, `UpdateCourseInput`, `CatalogFilterInput`, `BatchCourseItem`, `CreateSectionInput`
-  - `nexused-backend/src/modules/feed/dto/engagement.types.ts` — `RecordEngagementInput`, `RecordEngagementBatchInput`
-  - `nexused-backend/src/modules/users/dto/user.types.ts` — `UpdateUserInput`
+  - `Axis-backend/src/modules/courses/dto/course.types.ts` — `CreateCourseInput`, `UpdateCourseInput`, `CatalogFilterInput`, `BatchCourseItem`, `CreateSectionInput`
+  - `Axis-backend/src/modules/feed/dto/engagement.types.ts` — `RecordEngagementInput`, `RecordEngagementBatchInput`
+  - `Axis-backend/src/modules/users/dto/user.types.ts` — `UpdateUserInput`
 
 **Full E2E Data Flow Verified (API + Browser)**
 1. ✅ Admin creates academic term: Fall 2026 (`f1d5d79b-38a9-4759-922b-4e8bfde24786`)
@@ -175,14 +217,14 @@
 9. ✅ Student /grades page shows: CS101 92%, row "Homework 1 | assignment | 92/100 | 92% | May 6", Total 92/100
 
 ### Test Accounts (tenant: 00000000-0000-0000-0000-000000000001)
-- `student@test.nexused.local` / `TestPass123!` — role: student, userId: d01d7c7d-e10d-43ca-8141-46e7587c0949
-- `instructor@test.nexused.local` / `TestPass123!` — role: instructor, userId: 2cd76468-ac29-4c78-99eb-bbfeee67d971
-- `admin@test.nexused.local` / `TestPass123!` — role: admin, userId: 73064fe4-28fd-481f-8885-c7a8208215d0
+- `student@test.Axis.local` / `TestPass123!` — role: student, userId: d01d7c7d-e10d-43ca-8141-46e7587c0949
+- `instructor@test.Axis.local` / `TestPass123!` — role: instructor, userId: 2cd76468-ac29-4c78-99eb-bbfeee67d971
+- `admin@test.Axis.local` / `TestPass123!` — role: admin, userId: 73064fe4-28fd-481f-8885-c7a8208215d0
 
 ### Current State
 - T3-001 complete and committed to origin/main
 - All three layers (API → DB → GraphQL → frontend) confirmed working on real data
-- T1-002 still blocked: ANTHROPIC_API_KEY not in nexused-backend/.env (AI features return 500)
+- T1-002 still blocked: ANTHROPIC_API_KEY not in Axis-backend/.env (AI features return 500)
 
 ### Next Up
 - T1-002: User adds ANTHROPIC_API_KEY to .env → verify AI chat end-to-end
@@ -207,7 +249,7 @@
 
 **T1-002: Real AI demo environment — BLOCKED**
 - Infrastructure complete: AnthropicProvider, AgentExecutor, 16 tools, 2 agents, AI chat frontend all wired.
-- ANTHROPIC_API_KEY missing from nexused-backend/.env — user must add it.
+- ANTHROPIC_API_KEY missing from Axis-backend/.env — user must add it.
 
 **T1-003: Remove placeholder parent role — DONE**
 - Removed PARENT from create-user-dialog.tsx and edit-user-dialog.tsx role selectors.
@@ -221,7 +263,7 @@
 **T1-005: Faker.js seed:demo — DONE (no Faker dependency)**
 - Created seed-demo.ts: 60 students, 6 instructors, 10 courses, 10 sections, ~180 enrollments, ~500 submissions with realistic grade distribution.
 - Uses name/subject pools instead of Faker (avoids rollup dependency issue on Windows).
-- Added "seed:demo" script to nexused-backend/package.json.
+- Added "seed:demo" script to Axis-backend/package.json.
 - Run after "npm run seed" to layer demo volume on top.
 
 ### Current State
@@ -253,7 +295,7 @@ web and mobile.
 **Web frontend fix:**
 - Updated `SEND_AI_MESSAGE_MUTATION` to call `continueConversation(input: ContinueConversationInput!)`
 
-**Mobile: complete rewrite of `nexused-mobile/src/graphql/queries.ts`** + 9 screen files:
+**Mobile: complete rewrite of `Axis-mobile/src/graphql/queries.ts`** + 9 screen files:
 - `studentFeed` (not `myFeedItems`), `FeedItemType` enum fields (`type` not `itemType`)
 - `sectionTimeline: [TimelineEntry!]!` flat type (not union-typed `courseTimeline`)
 - `submitAssignment` (not `createSubmission`)
@@ -277,7 +319,7 @@ All 15 files committed as one atomic commit: df5675d
 ### Current State
 - T2-001 complete; mobile queries now match actual backend schema
 - Every mobile screen should connect to real data (backend must be running + seeded)
-- T1-002 still blocked: user must add ANTHROPIC_API_KEY to nexused-backend/.env
+- T1-002 still blocked: user must add ANTHROPIC_API_KEY to Axis-backend/.env
 
 ### Next Up
 T2-002 onwards: Remaining mobile audit tasks per PLAN.md, then T3 (production infra).
@@ -328,9 +370,9 @@ T2-002 onwards: Remaining mobile audit tasks per PLAN.md, then T3 (production in
 ### Work Done
 
 **CLEAN-001: Fix Tests + Working Tree — DONE**
-- Downgraded `jest` `^30.0.0` → `^29.7.0` and `@types/jest` `^30.0.0` → `^29.5.0` in nexused-backend (ts-jest 29 incompatibility)
+- Downgraded `jest` `^30.0.0` → `^29.7.0` and `@types/jest` `^30.0.0` → `^29.5.0` in Axis-backend (ts-jest 29 incompatibility)
 - Added `*.stackdump` to root `.gitignore`
-- Committed outstanding `nexused-mobile/tsconfig.json` change
+- Committed outstanding `Axis-mobile/tsconfig.json` change
 - Fixed test mocks: added `DataSource`, `EnrollmentPolicyService`, `WaitlistService` to CoursesService test; added `DiscussionsService` to FeedService test
 - Result: **117/117 tests passing**
 
@@ -487,7 +529,7 @@ Top of BACKLOG.md — read backlog for next priority task.
 
 **SITE-001/002/003 commit — DONE**
 - Marketing pages (landing, features, about) were built but uncommitted
-- Committed `nexused-frontend/src/app/page.tsx`, `features/page.tsx`, `about/page.tsx`, `marketing-nav.tsx`, `marketing-footer.tsx`, `globals.css`, `pnpm-lock.yaml`
+- Committed `Axis-frontend/src/app/page.tsx`, `features/page.tsx`, `about/page.tsx`, `marketing-nav.tsx`, `marketing-footer.tsx`, `globals.css`, `pnpm-lock.yaml`
 
 **GRAD-005: Course Availability Modeling — DONE**
 - `graduation-plan.entity.ts`: Added `availabilityWarning?: string` to `PlannedCourseData` JSONB interface
@@ -606,7 +648,7 @@ Frontend:
 - Installed `expo-notifications` (~0.32.16) + `expo-device` (~8.0.10)
 - `src/hooks/usePushNotifications.ts`: request permission → getExpoPushTokenAsync → `REGISTER_DEVICE_TOKEN_MUTATION` → notification-tap deep link routing
 - `app/_layout.tsx`: `PushNotificationSetup` component (child of ApolloProvider, reads isAuthenticated from useAuth, triggers push registration)
-- `nexused-backend/src/modules/notifications/web-push.service.ts`: `sendToUser` now fans out to web (VAPID) + mobile (Expo Push API) in parallel; stale `DeviceNotRegistered` tokens auto-cleaned
+- `Axis-backend/src/modules/notifications/web-push.service.ts`: `sendToUser` now fans out to web (VAPID) + mobile (Expo Push API) in parallel; stale `DeviceNotRegistered` tokens auto-cleaned
 - `src/graphql/queries.ts`: `REGISTER_DEVICE_TOKEN_MUTATION`, `MY_NOTIFICATIONS_QUERY`, `UNREAD_NOTIFICATION_COUNT_QUERY`, `MARK_NOTIFICATION_READ_MUTATION`, `MARK_ALL_NOTIFICATIONS_READ_MUTATION`
 
 **MOB-APP-010: Mobile Profile & Settings — DONE**
@@ -620,7 +662,7 @@ Frontend:
 - `app/ai/new/index.tsx`: agent intro bubble → first message → `startAiConversation` → `router.replace('/ai/${id}')`
 
 **ENROLL-007: Smart Course Discovery — DONE**
-- `nexused-backend/src/modules/ai/tools/course-discovery.tools.ts`: `discover_courses` tool
+- `Axis-backend/src/modules/ai/tools/course-discovery.tools.ts`: `discover_courses` tool
   - Full-text search (ILIKE) on code, title, description
   - Structured filters: minCredits, maxCredits, category (CORE/ELECTIVE/LAB/GENERAL_EDUCATION/SEMINAR), level (100/200/300/400), semester (Fall/Spring/Summer)
   - Section count per course via grouped COUNT query
@@ -650,7 +692,7 @@ Frontend:
 ### Work Done
 
 **MOB-APP-001: Expo project setup — DONE**
-- `nexused-mobile/` created in monorepo root
+- `Axis-mobile/` created in monorepo root
 - Added to pnpm-workspace.yaml and turbo.json (`dev:mobile` script)
 - Expo SDK 54 + Expo Router 4 (file-based routing, matches Next.js App Router pattern)
 - Apollo Client v4 (React hooks in `@apollo/client/react`, links in `@apollo/client/link/`)
@@ -742,7 +784,7 @@ Frontend:
 - All statically prerendered
 
 **SITE-003: About page — DONE**
-- `/about` — full founder story from MISSION.md, 3 value cards, long-term vision, contact section with hello@nexused.app
+- `/about` — full founder story from MISSION.md, 3 value cards, long-term vision, contact section with hello@Axis.app
 - Human and authentic; institutional contact CTA
 
 **Shared marketing components extracted:**
@@ -959,39 +1001,39 @@ Two-phase upload: client calls `requestUpload` → gets presigned PUT URL → PU
 ### Files Created (20 new files)
 
 ```
-nexused-backend/src/config/ai.config.ts
-nexused-backend/src/modules/ai/ai.module.ts
-nexused-backend/src/modules/ai/ai.service.ts
-nexused-backend/src/modules/ai/context.service.ts
-nexused-backend/src/modules/ai/agent-executor.service.ts
-nexused-backend/src/modules/ai/governance.service.ts
-nexused-backend/src/modules/ai/usage-tracking.service.ts
-nexused-backend/src/modules/ai/tools/tool.interface.ts
-nexused-backend/src/modules/ai/tools/tool-registry.ts
-nexused-backend/src/modules/ai/tools/course.tools.ts
-nexused-backend/src/modules/ai/tools/enrollment.tools.ts
-nexused-backend/src/modules/ai/tools/assignment.tools.ts
-nexused-backend/src/modules/ai/tools/grading.tools.ts
-nexused-backend/src/modules/ai/tools/analytics.tools.ts
-nexused-backend/src/modules/ai/agents/agent.interface.ts
-nexused-backend/src/modules/ai/agents/agent-registry.service.ts
-nexused-backend/src/modules/ai/agents/study-coach.agent.ts
-nexused-backend/src/modules/ai/agents/feedback-copilot.agent.ts
-nexused-backend/src/modules/ai/events/ai-events.ts
-nexused-backend/src/modules/ai/events/ai-event.listener.ts
-nexused-backend/src/modules/ai/dto/chat-message.dto.ts
-nexused-backend/src/modules/ai/dto/agent-response.dto.ts
-nexused-backend/src/modules/ai/entities/ai-conversation.entity.ts
-nexused-backend/src/modules/ai/entities/ai-message.entity.ts
-nexused-backend/src/modules/ai/entities/ai-usage-log.entity.ts
+Axis-backend/src/config/ai.config.ts
+Axis-backend/src/modules/ai/ai.module.ts
+Axis-backend/src/modules/ai/ai.service.ts
+Axis-backend/src/modules/ai/context.service.ts
+Axis-backend/src/modules/ai/agent-executor.service.ts
+Axis-backend/src/modules/ai/governance.service.ts
+Axis-backend/src/modules/ai/usage-tracking.service.ts
+Axis-backend/src/modules/ai/tools/tool.interface.ts
+Axis-backend/src/modules/ai/tools/tool-registry.ts
+Axis-backend/src/modules/ai/tools/course.tools.ts
+Axis-backend/src/modules/ai/tools/enrollment.tools.ts
+Axis-backend/src/modules/ai/tools/assignment.tools.ts
+Axis-backend/src/modules/ai/tools/grading.tools.ts
+Axis-backend/src/modules/ai/tools/analytics.tools.ts
+Axis-backend/src/modules/ai/agents/agent.interface.ts
+Axis-backend/src/modules/ai/agents/agent-registry.service.ts
+Axis-backend/src/modules/ai/agents/study-coach.agent.ts
+Axis-backend/src/modules/ai/agents/feedback-copilot.agent.ts
+Axis-backend/src/modules/ai/events/ai-events.ts
+Axis-backend/src/modules/ai/events/ai-event.listener.ts
+Axis-backend/src/modules/ai/dto/chat-message.dto.ts
+Axis-backend/src/modules/ai/dto/agent-response.dto.ts
+Axis-backend/src/modules/ai/entities/ai-conversation.entity.ts
+Axis-backend/src/modules/ai/entities/ai-message.entity.ts
+Axis-backend/src/modules/ai/entities/ai-usage-log.entity.ts
 ```
 
 ### Files Modified (3 files)
 
 ```
-nexused-backend/src/app.module.ts          — Added EventEmitterModule, BullModule, aiConfig, AiModule
-nexused-backend/src/database/entities/index.ts — Added AI entities to TypeORM entity array
-nexused-backend/src/modules/courses/courses.service.ts — Added event emission on create/createSection/enrollStudent
+Axis-backend/src/app.module.ts          — Added EventEmitterModule, BullModule, aiConfig, AiModule
+Axis-backend/src/database/entities/index.ts — Added AI entities to TypeORM entity array
+Axis-backend/src/modules/courses/courses.service.ts — Added event emission on create/createSection/enrollStudent
 ```
 
 ### Architecture Summary
@@ -1131,67 +1173,67 @@ nexused-backend/src/modules/courses/courses.service.ts — Added event emission 
 
 ```
 # Backend
-nexused-backend/src/database/entities/announcement.entity.ts
-nexused-backend/src/modules/announcements/announcements.module.ts
-nexused-backend/src/modules/announcements/announcements.service.ts
-nexused-backend/src/modules/announcements/announcements.resolver.ts
-nexused-backend/src/modules/announcements/dto/announcement.types.ts
-nexused-backend/src/modules/feed/feed.module.ts
-nexused-backend/src/modules/feed/feed.service.ts
-nexused-backend/src/modules/feed/feed.resolver.ts
-nexused-backend/src/modules/feed/dto/feed.types.ts
-nexused-backend/src/modules/feed/dto/timeline.types.ts
+Axis-backend/src/database/entities/announcement.entity.ts
+Axis-backend/src/modules/announcements/announcements.module.ts
+Axis-backend/src/modules/announcements/announcements.service.ts
+Axis-backend/src/modules/announcements/announcements.resolver.ts
+Axis-backend/src/modules/announcements/dto/announcement.types.ts
+Axis-backend/src/modules/feed/feed.module.ts
+Axis-backend/src/modules/feed/feed.service.ts
+Axis-backend/src/modules/feed/feed.resolver.ts
+Axis-backend/src/modules/feed/dto/feed.types.ts
+Axis-backend/src/modules/feed/dto/timeline.types.ts
 
 # Frontend - Navigation & Layout
-nexused-frontend/src/lib/navigation.ts
-nexused-frontend/src/components/layout/mobile-nav.tsx
-nexused-frontend/src/app/(dashboard)/home/page.tsx
-nexused-frontend/src/app/(dashboard)/messages/page.tsx
-nexused-frontend/src/app/(dashboard)/people/page.tsx
-nexused-frontend/src/app/(dashboard)/academics/page.tsx
+Axis-frontend/src/lib/navigation.ts
+Axis-frontend/src/components/layout/mobile-nav.tsx
+Axis-frontend/src/app/(dashboard)/home/page.tsx
+Axis-frontend/src/app/(dashboard)/messages/page.tsx
+Axis-frontend/src/app/(dashboard)/people/page.tsx
+Axis-frontend/src/app/(dashboard)/academics/page.tsx
 
 # Frontend - Feed
-nexused-frontend/src/components/feed/student-home-feed.tsx
-nexused-frontend/src/components/feed/instructor-home-feed.tsx
-nexused-frontend/src/components/feed/admin-home-feed.tsx
-nexused-frontend/src/components/feed/parent-home-feed.tsx
-nexused-frontend/src/components/feed/feed-card.tsx
-nexused-frontend/src/components/feed/feed-card-skeleton.tsx
-nexused-frontend/src/components/feed/empty-feed.tsx
-nexused-frontend/src/lib/utils/relative-time.ts
-nexused-frontend/src/lib/graphql/queries/feed.ts
+Axis-frontend/src/components/feed/student-home-feed.tsx
+Axis-frontend/src/components/feed/instructor-home-feed.tsx
+Axis-frontend/src/components/feed/admin-home-feed.tsx
+Axis-frontend/src/components/feed/parent-home-feed.tsx
+Axis-frontend/src/components/feed/feed-card.tsx
+Axis-frontend/src/components/feed/feed-card-skeleton.tsx
+Axis-frontend/src/components/feed/empty-feed.tsx
+Axis-frontend/src/lib/utils/relative-time.ts
+Axis-frontend/src/lib/graphql/queries/feed.ts
 
 # Frontend - Timeline
-nexused-frontend/src/components/courses/course-header.tsx
-nexused-frontend/src/components/courses/timeline-entry-card.tsx
-nexused-frontend/src/components/courses/timeline-skeleton.tsx
-nexused-frontend/src/lib/graphql/queries/timeline.ts
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx
+Axis-frontend/src/components/courses/course-header.tsx
+Axis-frontend/src/components/courses/timeline-entry-card.tsx
+Axis-frontend/src/components/courses/timeline-skeleton.tsx
+Axis-frontend/src/lib/graphql/queries/timeline.ts
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx
 
 # Frontend - Assignment
-nexused-frontend/src/components/assignments/assignment-detail.tsx
-nexused-frontend/src/components/assignments/submission-form.tsx
-nexused-frontend/src/components/assignments/submission-history.tsx
-nexused-frontend/src/lib/graphql/queries/assignments.ts
-nexused-frontend/src/lib/graphql/mutations/assignments.ts
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/assignment/[assignmentId]/page.tsx
+Axis-frontend/src/components/assignments/assignment-detail.tsx
+Axis-frontend/src/components/assignments/submission-form.tsx
+Axis-frontend/src/components/assignments/submission-history.tsx
+Axis-frontend/src/lib/graphql/queries/assignments.ts
+Axis-frontend/src/lib/graphql/mutations/assignments.ts
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/assignment/[assignmentId]/page.tsx
 ```
 
 ### Files Modified (~8 files)
 
 ```
-nexused-backend/src/app.module.ts — Added AnnouncementsModule, FeedModule
-nexused-backend/src/database/entities/index.ts — Added Announcement entity
-nexused-backend/src/modules/courses/courses.resolver.ts — Added section(id) query
-nexused-frontend/src/components/layout/sidebar.tsx — Rewrote with centralised nav config
-nexused-frontend/src/app/(dashboard)/layout.tsx — Added MobileNav, bottom padding
-nexused-frontend/src/stores/auth.store.ts — getRoleDashboardPath returns /home
-nexused-frontend/src/components/courses/section-list.tsx — Added View button, courseId prop
-nexused-frontend/src/app/(dashboard)/courses/[id]/page.tsx — Pass courseId to SectionList
-nexused-frontend/src/app/(dashboard)/student/page.tsx — Redirect to /home
-nexused-frontend/src/app/(dashboard)/instructor/page.tsx — Redirect to /home
-nexused-frontend/src/app/(dashboard)/admin/page.tsx — Redirect to /home
-nexused-frontend/src/lib/graphql/queries/courses.ts — Added SECTION_QUERY
+Axis-backend/src/app.module.ts — Added AnnouncementsModule, FeedModule
+Axis-backend/src/database/entities/index.ts — Added Announcement entity
+Axis-backend/src/modules/courses/courses.resolver.ts — Added section(id) query
+Axis-frontend/src/components/layout/sidebar.tsx — Rewrote with centralised nav config
+Axis-frontend/src/app/(dashboard)/layout.tsx — Added MobileNav, bottom padding
+Axis-frontend/src/stores/auth.store.ts — getRoleDashboardPath returns /home
+Axis-frontend/src/components/courses/section-list.tsx — Added View button, courseId prop
+Axis-frontend/src/app/(dashboard)/courses/[id]/page.tsx — Pass courseId to SectionList
+Axis-frontend/src/app/(dashboard)/student/page.tsx — Redirect to /home
+Axis-frontend/src/app/(dashboard)/instructor/page.tsx — Redirect to /home
+Axis-frontend/src/app/(dashboard)/admin/page.tsx — Redirect to /home
+Axis-frontend/src/lib/graphql/queries/courses.ts — Added SECTION_QUERY
 ```
 
 ### Next Session Priorities
@@ -1220,14 +1262,14 @@ nexused-frontend/src/lib/graphql/queries/courses.ts — Added SECTION_QUERY
 
 ### Files Created (2)
 ```
-nexused-frontend/src/components/assignments/create-assignment-form.tsx
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/assignment/create/page.tsx
+Axis-frontend/src/components/assignments/create-assignment-form.tsx
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/assignment/create/page.tsx
 ```
 
 ### Files Modified (3)
 ```
-nexused-frontend/src/lib/graphql/mutations/assignments.ts — Added CREATE_ASSIGNMENT_MUTATION
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added Create Assignment button
+Axis-frontend/src/lib/graphql/mutations/assignments.ts — Added CREATE_ASSIGNMENT_MUTATION
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added Create Assignment button
 ROADMAP.md — Updated checkboxes for Phase 1 + Phase 2
 ```
 
@@ -1261,20 +1303,20 @@ ROADMAP.md — Updated checkboxes for Phase 1 + Phase 2
 
 ### Files Created (3)
 ```
-nexused-frontend/src/components/courses/section-roster.tsx
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/roster/page.tsx
-nexused-frontend/src/components/assignments/submission-grading-list.tsx
+Axis-frontend/src/components/courses/section-roster.tsx
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/roster/page.tsx
+Axis-frontend/src/components/assignments/submission-grading-list.tsx
 ```
 
 ### Files Modified (6)
 ```
-nexused-backend/src/modules/courses/courses.service.ts — Added findEnrollmentsForSection()
-nexused-backend/src/modules/courses/courses.resolver.ts — Added sectionEnrollments query
-nexused-frontend/src/lib/graphql/queries/courses.ts — Added SECTION_ENROLLMENTS_QUERY
-nexused-frontend/src/lib/graphql/queries/assignments.ts — Added ASSIGNMENT_SUBMISSIONS_QUERY
-nexused-frontend/src/lib/graphql/mutations/assignments.ts — Added GRADE_SUBMISSION_MUTATION
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/assignment/[assignmentId]/page.tsx — Role-based view
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added Roster button
+Axis-backend/src/modules/courses/courses.service.ts — Added findEnrollmentsForSection()
+Axis-backend/src/modules/courses/courses.resolver.ts — Added sectionEnrollments query
+Axis-frontend/src/lib/graphql/queries/courses.ts — Added SECTION_ENROLLMENTS_QUERY
+Axis-frontend/src/lib/graphql/queries/assignments.ts — Added ASSIGNMENT_SUBMISSIONS_QUERY
+Axis-frontend/src/lib/graphql/mutations/assignments.ts — Added GRADE_SUBMISSION_MUTATION
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/assignment/[assignmentId]/page.tsx — Role-based view
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added Roster button
 ROADMAP.md — Checked off roster + inline grading
 ```
 
@@ -1312,7 +1354,7 @@ Instructor creates assignment → Student submits → Instructor grades → Stud
 
 ### Files Modified (3)
 ```
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/gradebook/page.tsx — Added CSV export
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/gradebook/page.tsx — Added CSV export
 ROADMAP.md — Checked off completed Phase 2 items
 .claude/session-log.md — This file
 ```
@@ -1378,38 +1420,38 @@ ROADMAP.md — Checked off completed Phase 2 items
 ### Files Created (11)
 ```
 # Backend entities
-nexused-backend/src/modules/messaging/entities/conversation.entity.ts
-nexused-backend/src/modules/messaging/entities/conversation-participant.entity.ts
-nexused-backend/src/modules/messaging/entities/direct-message.entity.ts
+Axis-backend/src/modules/messaging/entities/conversation.entity.ts
+Axis-backend/src/modules/messaging/entities/conversation-participant.entity.ts
+Axis-backend/src/modules/messaging/entities/direct-message.entity.ts
 
 # Backend module
-nexused-backend/src/modules/messaging/dto/messaging.types.ts
-nexused-backend/src/modules/messaging/messaging.service.ts
-nexused-backend/src/modules/messaging/messaging.resolver.ts
-nexused-backend/src/modules/messaging/messaging.module.ts
+Axis-backend/src/modules/messaging/dto/messaging.types.ts
+Axis-backend/src/modules/messaging/messaging.service.ts
+Axis-backend/src/modules/messaging/messaging.resolver.ts
+Axis-backend/src/modules/messaging/messaging.module.ts
 
 # Frontend GraphQL
-nexused-frontend/src/lib/graphql/queries/messaging.ts
-nexused-frontend/src/lib/graphql/mutations/messaging.ts
+Axis-frontend/src/lib/graphql/queries/messaging.ts
+Axis-frontend/src/lib/graphql/mutations/messaging.ts
 
 # Frontend hook
-nexused-frontend/src/hooks/use-unread-count.ts
+Axis-frontend/src/hooks/use-unread-count.ts
 
 # Frontend components
-nexused-frontend/src/components/messaging/conversation-list.tsx
-nexused-frontend/src/components/messaging/message-thread.tsx
-nexused-frontend/src/components/messaging/new-message-dialog.tsx
-nexused-frontend/src/components/messaging/empty-state.tsx
+Axis-frontend/src/components/messaging/conversation-list.tsx
+Axis-frontend/src/components/messaging/message-thread.tsx
+Axis-frontend/src/components/messaging/new-message-dialog.tsx
+Axis-frontend/src/components/messaging/empty-state.tsx
 ```
 
 ### Files Modified (6)
 ```
-nexused-backend/src/database/entities/index.ts — Added 3 messaging entities to TypeORM array
-nexused-backend/src/app.module.ts — Added MessagingModule import
-nexused-frontend/src/lib/navigation.ts — Added badgeKey to NavItem, set on Messages items
-nexused-frontend/src/components/layout/sidebar.tsx — Added unread badge rendering
-nexused-frontend/src/components/layout/mobile-nav.tsx — Added unread badge rendering
-nexused-frontend/src/app/(dashboard)/messages/page.tsx — Replaced stub with two-panel messaging UI
+Axis-backend/src/database/entities/index.ts — Added 3 messaging entities to TypeORM array
+Axis-backend/src/app.module.ts — Added MessagingModule import
+Axis-frontend/src/lib/navigation.ts — Added badgeKey to NavItem, set on Messages items
+Axis-frontend/src/components/layout/sidebar.tsx — Added unread badge rendering
+Axis-frontend/src/components/layout/mobile-nav.tsx — Added unread badge rendering
+Axis-frontend/src/app/(dashboard)/messages/page.tsx — Replaced stub with two-panel messaging UI
 ROADMAP.md — Checked off 4 messaging items
 ```
 
@@ -1466,24 +1508,24 @@ Instructor creates content (saved as Draft)
 
 ### Files Created (6)
 ```
-nexused-frontend/src/lib/graphql/queries/content.ts
-nexused-frontend/src/lib/graphql/mutations/content.ts
-nexused-frontend/src/components/courses/rich-text-editor.tsx
-nexused-frontend/src/components/courses/rich-text-viewer.tsx
-nexused-frontend/src/components/courses/content-editor-dialog.tsx
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/content/[contentId]/page.tsx
+Axis-frontend/src/lib/graphql/queries/content.ts
+Axis-frontend/src/lib/graphql/mutations/content.ts
+Axis-frontend/src/components/courses/rich-text-editor.tsx
+Axis-frontend/src/components/courses/rich-text-viewer.tsx
+Axis-frontend/src/components/courses/content-editor-dialog.tsx
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/content/[contentId]/page.tsx
 ```
 
 ### Files Modified (8)
 ```
-nexused-backend/src/modules/feed/dto/timeline.types.ts — Added CONTENT enum + publishedAt field
-nexused-backend/src/modules/feed/feed.module.ts — Imported ContentModule
-nexused-backend/src/modules/feed/feed.service.ts — Added content to timeline, isInstructor param
-nexused-backend/src/modules/feed/feed.resolver.ts — Pass isInstructor to getSectionTimeline
-nexused-frontend/src/lib/graphql/queries/timeline.ts — Added publishedAt field
-nexused-frontend/src/components/courses/timeline-entry-card.tsx — Added content type support
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added ContentEditorDialog + publishedAt
-nexused-frontend/src/app/globals.css — Typography plugin + Tiptap placeholder styles
+Axis-backend/src/modules/feed/dto/timeline.types.ts — Added CONTENT enum + publishedAt field
+Axis-backend/src/modules/feed/feed.module.ts — Imported ContentModule
+Axis-backend/src/modules/feed/feed.service.ts — Added content to timeline, isInstructor param
+Axis-backend/src/modules/feed/feed.resolver.ts — Pass isInstructor to getSectionTimeline
+Axis-frontend/src/lib/graphql/queries/timeline.ts — Added publishedAt field
+Axis-frontend/src/components/courses/timeline-entry-card.tsx — Added content type support
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added ContentEditorDialog + publishedAt
+Axis-frontend/src/app/globals.css — Typography plugin + Tiptap placeholder styles
 ROADMAP.md — Checked off final Phase 2 items
 ```
 
@@ -1516,7 +1558,7 @@ All Phase 2 items are now checked off:
 ### What Was Done
 
 **Round 1: Initial Assessment**
-- Comprehensive overview of NexusEd architecture and progress
+- Comprehensive overview of Axis architecture and progress
 - Identified 11 critical issues across codebase
 - Identified 10 "Hidden Gem" differentiators (agentic loop, governance, cost tracking, etc.)
 
@@ -1617,18 +1659,18 @@ None
 ### Files Modified (10)
 ```
 # Backend
-nexused-backend/src/main.ts — Added cookie-parser middleware
-nexused-backend/src/modules/auth/auth.controller.ts — Set httpOnly cookie, added logout endpoint
-nexused-backend/src/modules/auth/strategies/jwt.strategy.ts — Extract from cookie first
+Axis-backend/src/main.ts — Added cookie-parser middleware
+Axis-backend/src/modules/auth/auth.controller.ts — Set httpOnly cookie, added logout endpoint
+Axis-backend/src/modules/auth/strategies/jwt.strategy.ts — Extract from cookie first
 
 # Frontend
-nexused-frontend/src/lib/graphql/client.ts — credentials: 'include' instead of auth link
-nexused-frontend/src/stores/auth.store.ts — Removed token storage, async logout calls backend
-nexused-frontend/src/lib/api/auth.ts — Added credentials: 'include'
-nexused-frontend/src/app/(auth)/login/page.tsx — setAuth(user) instead of setAuth(token, user)
-nexused-frontend/src/app/(auth)/register/page.tsx — setAuth(user) instead of setAuth(token, user)
-nexused-frontend/src/components/layout/user-menu.tsx — await async logout
-nexused-frontend/src/components/auth/auth-guard.tsx — Use isAuthenticated instead of token
+Axis-frontend/src/lib/graphql/client.ts — credentials: 'include' instead of auth link
+Axis-frontend/src/stores/auth.store.ts — Removed token storage, async logout calls backend
+Axis-frontend/src/lib/api/auth.ts — Added credentials: 'include'
+Axis-frontend/src/app/(auth)/login/page.tsx — setAuth(user) instead of setAuth(token, user)
+Axis-frontend/src/app/(auth)/register/page.tsx — setAuth(user) instead of setAuth(token, user)
+Axis-frontend/src/components/layout/user-menu.tsx — await async logout
+Axis-frontend/src/components/auth/auth-guard.tsx — Use isAuthenticated instead of token
 BACKLOG.md — Updated SEC-003 to DONE
 ```
 
@@ -1678,22 +1720,22 @@ BACKLOG.md — Updated SEC-003 to DONE
 
 ### Files Created (10)
 ```
-nexused-frontend/src/lib/graphql/queries/ai.ts
-nexused-frontend/src/lib/graphql/mutations/ai.ts
-nexused-frontend/src/components/ai/ai-message-bubble.tsx
-nexused-frontend/src/components/ai/ai-thinking-indicator.tsx
-nexused-frontend/src/components/ai/ai-tool-indicator.tsx
-nexused-frontend/src/components/ai/ai-agent-selector.tsx
-nexused-frontend/src/components/ai/ai-chat-thread.tsx
-nexused-frontend/src/components/ai/ai-conversation-list.tsx
-nexused-frontend/src/components/ai/ai-empty-state.tsx
-nexused-frontend/src/components/ai/ai-new-conversation.tsx
-nexused-frontend/src/app/(dashboard)/ai/page.tsx
+Axis-frontend/src/lib/graphql/queries/ai.ts
+Axis-frontend/src/lib/graphql/mutations/ai.ts
+Axis-frontend/src/components/ai/ai-message-bubble.tsx
+Axis-frontend/src/components/ai/ai-thinking-indicator.tsx
+Axis-frontend/src/components/ai/ai-tool-indicator.tsx
+Axis-frontend/src/components/ai/ai-agent-selector.tsx
+Axis-frontend/src/components/ai/ai-chat-thread.tsx
+Axis-frontend/src/components/ai/ai-conversation-list.tsx
+Axis-frontend/src/components/ai/ai-empty-state.tsx
+Axis-frontend/src/components/ai/ai-new-conversation.tsx
+Axis-frontend/src/app/(dashboard)/ai/page.tsx
 ```
 
 ### Files Modified (2)
 ```
-nexused-frontend/src/lib/navigation.ts — Added Sparkles import, AI nav item to studentNav and instructorNav
+Axis-frontend/src/lib/navigation.ts — Added Sparkles import, AI nav item to studentNav and instructorNav
 BACKLOG.md — Updated FEAT-001 to DONE
 ```
 
@@ -1749,16 +1791,16 @@ BACKLOG.md — Updated FEAT-001 to DONE
 
 ### Files Created (2)
 ```
-nexused-backend/src/tenant/tenant-context.ts
-nexused-backend/src/tenant/tenant.interceptor.ts
+Axis-backend/src/tenant/tenant-context.ts
+Axis-backend/src/tenant/tenant.interceptor.ts
 ```
 
 ### Files Modified (5)
 ```
-nexused-backend/src/app.module.ts — Added APP_INTERCEPTOR with TenantInterceptor
-nexused-backend/src/tenant/tenant.module.ts — Made @Global, exports TenantContext
-nexused-backend/src/modules/announcements/announcements.service.ts — Uses TenantContext
-nexused-backend/src/modules/announcements/announcements.resolver.ts — No longer passes tenantId
+Axis-backend/src/app.module.ts — Added APP_INTERCEPTOR with TenantInterceptor
+Axis-backend/src/tenant/tenant.module.ts — Made @Global, exports TenantContext
+Axis-backend/src/modules/announcements/announcements.service.ts — Uses TenantContext
+Axis-backend/src/modules/announcements/announcements.resolver.ts — No longer passes tenantId
 CLAUDE.md — Auto-merge workflow update
 ```
 
@@ -1812,17 +1854,17 @@ CLAUDE.md — Auto-merge workflow update
 
 ### Files Created (3)
 ```
-nexused-backend/src/modules/ai/providers/ai-provider.interface.ts
-nexused-backend/src/modules/ai/providers/anthropic.provider.ts
-nexused-backend/src/modules/ai/providers/index.ts
+Axis-backend/src/modules/ai/providers/ai-provider.interface.ts
+Axis-backend/src/modules/ai/providers/anthropic.provider.ts
+Axis-backend/src/modules/ai/providers/index.ts
 ```
 
 ### Files Modified (5)
 ```
-nexused-backend/src/modules/ai/agent-executor.service.ts — Uses provider abstraction
-nexused-backend/src/modules/ai/ai.service.ts — Delegates to provider (deprecated)
-nexused-backend/src/modules/ai/ai.module.ts — Registers provider
-nexused-backend/src/modules/ai/tools/tool-registry.ts — Added toProviderFormat()
+Axis-backend/src/modules/ai/agent-executor.service.ts — Uses provider abstraction
+Axis-backend/src/modules/ai/ai.service.ts — Delegates to provider (deprecated)
+Axis-backend/src/modules/ai/ai.module.ts — Registers provider
+Axis-backend/src/modules/ai/tools/tool-registry.ts — Added toProviderFormat()
 BACKLOG.md — Updated ARCH-004 and ARCH-005 to DONE
 ```
 
@@ -1866,15 +1908,15 @@ Tests:       33 passed, 33 total
 
 ### Files Created (4)
 ```
-nexused-backend/src/test/factories/index.ts
-nexused-backend/src/test/mocks/repository.mock.ts
-nexused-backend/src/modules/ai/governance.service.spec.ts
-nexused-backend/src/modules/feed/feed.service.spec.ts
+Axis-backend/src/test/factories/index.ts
+Axis-backend/src/test/mocks/repository.mock.ts
+Axis-backend/src/modules/ai/governance.service.spec.ts
+Axis-backend/src/modules/feed/feed.service.spec.ts
 ```
 
 ### Files Modified (2)
 ```
-nexused-backend/src/database/entities/base.entity.ts — Fixed circular dependency
+Axis-backend/src/database/entities/base.entity.ts — Fixed circular dependency
 BACKLOG.md — Updated TEST-001 to DONE
 ```
 
@@ -1917,26 +1959,26 @@ BACKLOG.md — Updated TEST-001 to DONE
 
 ### Files Created (11)
 ```
-nexused-frontend/playwright.config.ts
-nexused-frontend/e2e/fixtures/auth.fixture.ts
-nexused-frontend/e2e/fixtures/seed.fixture.ts
-nexused-frontend/e2e/fixtures/index.ts
-nexused-frontend/e2e/01-login.spec.ts
-nexused-frontend/e2e/02-feed.spec.ts
-nexused-frontend/e2e/03-course-navigation.spec.ts
-nexused-frontend/e2e/04-submit-assignment.spec.ts
-nexused-frontend/e2e/05-grade-submission.spec.ts
-nexused-backend/src/health/health.controller.ts
+Axis-frontend/playwright.config.ts
+Axis-frontend/e2e/fixtures/auth.fixture.ts
+Axis-frontend/e2e/fixtures/seed.fixture.ts
+Axis-frontend/e2e/fixtures/index.ts
+Axis-frontend/e2e/01-login.spec.ts
+Axis-frontend/e2e/02-feed.spec.ts
+Axis-frontend/e2e/03-course-navigation.spec.ts
+Axis-frontend/e2e/04-submit-assignment.spec.ts
+Axis-frontend/e2e/05-grade-submission.spec.ts
+Axis-backend/src/health/health.controller.ts
 ```
 
 ### Files Modified (7)
 ```
-nexused-frontend/package.json — Added Playwright scripts (test:e2e, test:e2e:ui, etc.)
+Axis-frontend/package.json — Added Playwright scripts (test:e2e, test:e2e:ui, etc.)
 package.json — Added test:e2e script, wait-on dependency
 turbo.json — Added test:e2e task
 .github/workflows/ci.yml — Added E2E test job with server startup
 .gitignore — Added Playwright output directories
-nexused-backend/src/app.module.ts — Added HealthController
+Axis-backend/src/app.module.ts — Added HealthController
 BACKLOG.md — Updated TEST-004 to DONE
 ```
 
@@ -1994,24 +2036,24 @@ BACKLOG.md — Updated TEST-004 to DONE
 
 ### Files Created (4)
 ```
-nexused-backend/src/modules/messaging/messaging.gateway.ts
-nexused-frontend/src/lib/socket.ts
-nexused-frontend/src/hooks/use-socket.ts
-nexused-frontend/src/lib/graphql/mutations/user.ts
-nexused-frontend/src/hooks/use-widget-preferences.ts
-nexused-frontend/src/components/feed/widget-settings.tsx
-nexused-frontend/src/components/ui/switch.tsx (shadcn)
+Axis-backend/src/modules/messaging/messaging.gateway.ts
+Axis-frontend/src/lib/socket.ts
+Axis-frontend/src/hooks/use-socket.ts
+Axis-frontend/src/lib/graphql/mutations/user.ts
+Axis-frontend/src/hooks/use-widget-preferences.ts
+Axis-frontend/src/components/feed/widget-settings.tsx
+Axis-frontend/src/components/ui/switch.tsx (shadcn)
 ```
 
 ### Files Modified (7)
 ```
-nexused-backend/src/modules/messaging/messaging.service.ts — Added EventEmitter2 events
-nexused-backend/src/modules/messaging/messaging.module.ts — Added gateway
-nexused-frontend/src/lib/graphql/queries/user.ts — Added preferences to ME_QUERY
-nexused-frontend/src/types/auth.ts — Added preferences field to User type
-nexused-frontend/src/stores/auth.store.ts — Added setUser method
-nexused-frontend/src/components/feed/student-home-feed.tsx — Widget filtering + settings button
-nexused-frontend/src/components/feed/instructor-home-feed.tsx — Widget filtering + settings button
+Axis-backend/src/modules/messaging/messaging.service.ts — Added EventEmitter2 events
+Axis-backend/src/modules/messaging/messaging.module.ts — Added gateway
+Axis-frontend/src/lib/graphql/queries/user.ts — Added preferences to ME_QUERY
+Axis-frontend/src/types/auth.ts — Added preferences field to User type
+Axis-frontend/src/stores/auth.store.ts — Added setUser method
+Axis-frontend/src/components/feed/student-home-feed.tsx — Widget filtering + settings button
+Axis-frontend/src/components/feed/instructor-home-feed.tsx — Widget filtering + settings button
 ```
 
 ### Session 15 Status
@@ -2054,19 +2096,19 @@ nexused-frontend/src/components/feed/instructor-home-feed.tsx — Widget filteri
 
 ### Files Created (6)
 ```
-nexused-backend/src/modules/analytics/analytics.module.ts
-nexused-backend/src/modules/analytics/analytics.service.ts
-nexused-backend/src/modules/analytics/analytics.resolver.ts
-nexused-backend/src/modules/analytics/dto/analytics.types.ts
-nexused-frontend/src/lib/graphql/queries/analytics.ts
-nexused-frontend/src/app/(dashboard)/admin/analytics/page.tsx
+Axis-backend/src/modules/analytics/analytics.module.ts
+Axis-backend/src/modules/analytics/analytics.service.ts
+Axis-backend/src/modules/analytics/analytics.resolver.ts
+Axis-backend/src/modules/analytics/dto/analytics.types.ts
+Axis-frontend/src/lib/graphql/queries/analytics.ts
+Axis-frontend/src/app/(dashboard)/admin/analytics/page.tsx
 ```
 
 ### Files Modified (4)
 ```
-nexused-backend/src/app.module.ts — Added AnalyticsModule
-nexused-frontend/src/lib/navigation.ts — Added BarChart3 icon, Analytics nav item for admins
-nexused-frontend/src/app/(dashboard)/admin/page.tsx — Redirect to /admin/analytics
+Axis-backend/src/app.module.ts — Added AnalyticsModule
+Axis-frontend/src/lib/navigation.ts — Added BarChart3 icon, Analytics nav item for admins
+Axis-frontend/src/app/(dashboard)/admin/page.tsx — Redirect to /admin/analytics
 BACKLOG.md — Updated FEAT-008 to DONE
 ```
 
@@ -2120,21 +2162,21 @@ BACKLOG.md — Updated FEAT-008 to DONE
 
 ### Files Created (4)
 ```
-nexused-frontend/src/components/a11y/accessibility-provider.tsx
-nexused-frontend/src/components/a11y/focus-on-route-change.tsx
-nexused-frontend/src/components/a11y/accessible-loader.tsx
-nexused-frontend/src/hooks/use-focus-management.ts
+Axis-frontend/src/components/a11y/accessibility-provider.tsx
+Axis-frontend/src/components/a11y/focus-on-route-change.tsx
+Axis-frontend/src/components/a11y/accessible-loader.tsx
+Axis-frontend/src/hooks/use-focus-management.ts
 ```
 
 ### Files Modified (8)
 ```
-nexused-frontend/src/app/globals.css — Added prefers-reduced-motion, prefers-contrast, forced-colors media queries
-nexused-frontend/src/components/auth/auth-guard.tsx — Accessible loading state
-nexused-frontend/src/app/(auth)/login/page.tsx — autocomplete, aria-describedby, error id
-nexused-frontend/src/app/(auth)/register/page.tsx — autocomplete, aria-describedby, password-hint id
-nexused-frontend/src/app/(dashboard)/layout.tsx — AccessibilityProvider, FocusOnRouteChange, role="main"
-nexused-frontend/src/components/a11y/route-announcer.tsx — Ref-based approach (React 19 fix)
-nexused-frontend/e2e/06-accessibility.spec.ts — 4 new test groups
+Axis-frontend/src/app/globals.css — Added prefers-reduced-motion, prefers-contrast, forced-colors media queries
+Axis-frontend/src/components/auth/auth-guard.tsx — Accessible loading state
+Axis-frontend/src/app/(auth)/login/page.tsx — autocomplete, aria-describedby, error id
+Axis-frontend/src/app/(auth)/register/page.tsx — autocomplete, aria-describedby, password-hint id
+Axis-frontend/src/app/(dashboard)/layout.tsx — AccessibilityProvider, FocusOnRouteChange, role="main"
+Axis-frontend/src/components/a11y/route-announcer.tsx — Ref-based approach (React 19 fix)
+Axis-frontend/e2e/06-accessibility.spec.ts — 4 new test groups
 BACKLOG.md — Updated FEAT-010 with Phase 2 details
 ```
 
@@ -2169,7 +2211,7 @@ BACKLOG.md — Updated FEAT-010 with Phase 2 details
 ## Session 19 — FEAT-011: LTI 1.3 Integration
 
 **Started:** 2026-02-11
-**Goal:** Implement LTI 1.3 integration for institutional adoption — allow external LMS platforms to launch NexusEd
+**Goal:** Implement LTI 1.3 integration for institutional adoption — allow external LMS platforms to launch Axis
 **Status:** COMPLETE
 
 ### Work Done
@@ -2178,8 +2220,8 @@ BACKLOG.md — Updated FEAT-010 with Phase 2 details
 - Created `lti.config.ts` with tool configuration and RSA keypair settings
 - Created 5 LTI entities with proper indexes:
   - `LtiPlatform` — stores external LMS configuration (issuer, client_id, OIDC endpoints)
-  - `LtiDeployment` — specific deployment of NexusEd on a platform
-  - `LtiContext` — course context from launches, linkable to NexusEd sections
+  - `LtiDeployment` — specific deployment of Axis on a platform
+  - `LtiContext` — course context from launches, linkable to Axis sections
   - `LtiUser` — maps external LTI user IDs to internal User entities
   - `LtiState` — temporary state for OIDC flow (nonce validation)
 - Created `LtiService` with:
@@ -2221,19 +2263,19 @@ BACKLOG.md — Updated FEAT-010 with Phase 2 details
 **LTI 1.3 Flow Implemented**
 ```
 1. Platform calls /api/lti/login with issuer, client_id, login_hint
-2. NexusEd generates state/nonce, stores in lti_states table
-3. NexusEd redirects to platform's authorization endpoint
+2. Axis generates state/nonce, stores in lti_states table
+3. Axis redirects to platform's authorization endpoint
 4. User authenticates on platform
 5. Platform redirects to /api/lti/launch with id_token (JWT)
-6. NexusEd validates JWT signature using platform's JWKS
-7. NexusEd verifies nonce, extracts claims (user, roles, context)
-8. NexusEd provisions user (creates or updates) with mapped roles
-9. NexusEd creates/updates context if present
-10. NexusEd sets auth cookie and redirects to appropriate page
+6. Axis validates JWT signature using platform's JWKS
+7. Axis verifies nonce, extracts claims (user, roles, context)
+8. Axis provisions user (creates or updates) with mapped roles
+9. Axis creates/updates context if present
+10. Axis sets auth cookie and redirects to appropriate page
 ```
 
 **Role Mapping**
-| LTI Role URI | NexusEd Role |
+| LTI Role URI | Axis Role |
 |-------------|--------------|
 | .../membership#Instructor | INSTRUCTOR |
 | .../membership#ContentDeveloper | INSTRUCTOR |
@@ -2245,31 +2287,31 @@ BACKLOG.md — Updated FEAT-010 with Phase 2 details
 ### Files Created (15)
 ```
 # Backend
-nexused-backend/src/config/lti.config.ts
-nexused-backend/src/modules/lti/entities/lti-platform.entity.ts
-nexused-backend/src/modules/lti/entities/lti-deployment.entity.ts
-nexused-backend/src/modules/lti/entities/lti-context.entity.ts
-nexused-backend/src/modules/lti/entities/lti-user.entity.ts
-nexused-backend/src/modules/lti/entities/lti-state.entity.ts
-nexused-backend/src/modules/lti/entities/index.ts
-nexused-backend/src/modules/lti/dto/lti.types.ts
-nexused-backend/src/modules/lti/lti.service.ts
-nexused-backend/src/modules/lti/lti.controller.ts
-nexused-backend/src/modules/lti/lti.resolver.ts
-nexused-backend/src/modules/lti/lti-cleanup.service.ts
-nexused-backend/src/modules/lti/lti.module.ts
+Axis-backend/src/config/lti.config.ts
+Axis-backend/src/modules/lti/entities/lti-platform.entity.ts
+Axis-backend/src/modules/lti/entities/lti-deployment.entity.ts
+Axis-backend/src/modules/lti/entities/lti-context.entity.ts
+Axis-backend/src/modules/lti/entities/lti-user.entity.ts
+Axis-backend/src/modules/lti/entities/lti-state.entity.ts
+Axis-backend/src/modules/lti/entities/index.ts
+Axis-backend/src/modules/lti/dto/lti.types.ts
+Axis-backend/src/modules/lti/lti.service.ts
+Axis-backend/src/modules/lti/lti.controller.ts
+Axis-backend/src/modules/lti/lti.resolver.ts
+Axis-backend/src/modules/lti/lti-cleanup.service.ts
+Axis-backend/src/modules/lti/lti.module.ts
 
 # Frontend
-nexused-frontend/src/lib/graphql/queries/lti.ts
-nexused-frontend/src/lib/graphql/mutations/lti.ts
-nexused-frontend/src/app/(dashboard)/admin/integrations/page.tsx
+Axis-frontend/src/lib/graphql/queries/lti.ts
+Axis-frontend/src/lib/graphql/mutations/lti.ts
+Axis-frontend/src/app/(dashboard)/admin/integrations/page.tsx
 ```
 
 ### Files Modified (4)
 ```
-nexused-backend/src/database/entities/index.ts — Added LTI entities to TypeORM
-nexused-backend/src/app.module.ts — Added ltiConfig and LtiModule
-nexused-frontend/src/lib/navigation.ts — Added Integrations nav item for admin
+Axis-backend/src/database/entities/index.ts — Added LTI entities to TypeORM
+Axis-backend/src/app.module.ts — Added ltiConfig and LtiModule
+Axis-frontend/src/lib/navigation.ts — Added Integrations nav item for admin
 BACKLOG.md — Updated FEAT-011 to DONE
 ```
 
@@ -2376,34 +2418,34 @@ mongoose — ltijs dependency (not directly used)
 
 ### Files Created (2)
 ```
-nexused-frontend/src/components/a11y/route-announcer.tsx
-nexused-frontend/e2e/06-accessibility.spec.ts
+Axis-frontend/src/components/a11y/route-announcer.tsx
+Axis-frontend/e2e/06-accessibility.spec.ts
 ```
 
 ### Files Modified (18)
 ```
-nexused-frontend/eslint.config.mjs — Added strict jsx-a11y rules, shadcn override
-nexused-frontend/src/app/layout.tsx — Removed userScalable: false, maximumScale: 1
-nexused-frontend/src/app/globals.css — Added .sr-only, .skip-nav, :focus-visible styles
-nexused-frontend/src/app/(dashboard)/layout.tsx — Added skip link, RouteAnnouncer, main id/aria-label
-nexused-frontend/src/app/(auth)/layout.tsx — Added main landmark with aria-label
-nexused-frontend/src/app/(auth)/login/page.tsx — Added role="alert" to error div
-nexused-frontend/src/app/(auth)/register/page.tsx — Added role="alert" to error div
-nexused-frontend/src/components/layout/sidebar.tsx — aria-label, aria-current, aria-hidden on icons
-nexused-frontend/src/components/layout/mobile-nav.tsx — aria-label, aria-current, aria-hidden
-nexused-frontend/src/components/layout/top-nav.tsx — aria-label on header, aria-hidden on icon
-nexused-frontend/src/components/layout/user-menu.tsx — aria-label on dropdown trigger
-nexused-frontend/src/components/messaging/message-thread.tsx — aria-live, labels, button labels
-nexused-frontend/src/components/messaging/conversation-list.tsx — search label, button labels
-nexused-frontend/src/components/ai/ai-chat-thread.tsx — aria-live, form labels, button labels
-nexused-frontend/src/components/ai/ai-conversation-list.tsx — button labels, aria-hidden
-nexused-frontend/src/components/feed/feed-card.tsx — role="article", aria-label, aria-hidden
-nexused-frontend/src/components/feed/student-home-feed.tsx — section element, loading states
-nexused-frontend/src/components/feed/instructor-home-feed.tsx — section element, loading states
-nexused-frontend/src/components/feed/empty-feed.tsx — role="status", aria-hidden
-nexused-frontend/src/components/feed/widget-settings.tsx — Renamed role prop to userRole
-nexused-frontend/src/components/courses/timeline-entry-card.tsx — role="article", aria-label
-nexused-frontend/package.json — Added eslint-plugin-jsx-a11y, @axe-core/playwright
+Axis-frontend/eslint.config.mjs — Added strict jsx-a11y rules, shadcn override
+Axis-frontend/src/app/layout.tsx — Removed userScalable: false, maximumScale: 1
+Axis-frontend/src/app/globals.css — Added .sr-only, .skip-nav, :focus-visible styles
+Axis-frontend/src/app/(dashboard)/layout.tsx — Added skip link, RouteAnnouncer, main id/aria-label
+Axis-frontend/src/app/(auth)/layout.tsx — Added main landmark with aria-label
+Axis-frontend/src/app/(auth)/login/page.tsx — Added role="alert" to error div
+Axis-frontend/src/app/(auth)/register/page.tsx — Added role="alert" to error div
+Axis-frontend/src/components/layout/sidebar.tsx — aria-label, aria-current, aria-hidden on icons
+Axis-frontend/src/components/layout/mobile-nav.tsx — aria-label, aria-current, aria-hidden
+Axis-frontend/src/components/layout/top-nav.tsx — aria-label on header, aria-hidden on icon
+Axis-frontend/src/components/layout/user-menu.tsx — aria-label on dropdown trigger
+Axis-frontend/src/components/messaging/message-thread.tsx — aria-live, labels, button labels
+Axis-frontend/src/components/messaging/conversation-list.tsx — search label, button labels
+Axis-frontend/src/components/ai/ai-chat-thread.tsx — aria-live, form labels, button labels
+Axis-frontend/src/components/ai/ai-conversation-list.tsx — button labels, aria-hidden
+Axis-frontend/src/components/feed/feed-card.tsx — role="article", aria-label, aria-hidden
+Axis-frontend/src/components/feed/student-home-feed.tsx — section element, loading states
+Axis-frontend/src/components/feed/instructor-home-feed.tsx — section element, loading states
+Axis-frontend/src/components/feed/empty-feed.tsx — role="status", aria-hidden
+Axis-frontend/src/components/feed/widget-settings.tsx — Renamed role prop to userRole
+Axis-frontend/src/components/courses/timeline-entry-card.tsx — role="article", aria-label
+Axis-frontend/package.json — Added eslint-plugin-jsx-a11y, @axe-core/playwright
 BACKLOG.md — Updated FEAT-010 to DONE
 ```
 
@@ -2465,21 +2507,21 @@ BACKLOG.md — Updated FEAT-010 to DONE
 
 ### Files Created (6)
 ```
-nexused-backend/src/modules/ai/entities/tenant-ai-config.entity.ts
-nexused-backend/src/modules/ai/dto/governance.types.ts
-nexused-backend/src/modules/ai/governance.resolver.ts
-nexused-frontend/src/lib/graphql/queries/governance.ts
-nexused-frontend/src/lib/graphql/mutations/governance.ts
-nexused-frontend/src/app/(dashboard)/admin/ai-governance/page.tsx
+Axis-backend/src/modules/ai/entities/tenant-ai-config.entity.ts
+Axis-backend/src/modules/ai/dto/governance.types.ts
+Axis-backend/src/modules/ai/governance.resolver.ts
+Axis-frontend/src/lib/graphql/queries/governance.ts
+Axis-frontend/src/lib/graphql/mutations/governance.ts
+Axis-frontend/src/app/(dashboard)/admin/ai-governance/page.tsx
 ```
 
 ### Files Modified (6)
 ```
-nexused-backend/src/modules/ai/governance.service.ts — DB-backed config, monthly budget, audit logs, usage trend
-nexused-backend/src/modules/ai/ai.module.ts — Added TenantAiConfig, GovernanceResolver, exported GovernanceService
-nexused-backend/src/database/entities/index.ts — Added TenantAiConfig to entity array
-nexused-backend/src/modules/ai/governance.service.spec.ts — Updated for TenantAiConfig, 3 new tests
-nexused-frontend/src/lib/navigation.ts — Added Shield icon, AI Governance nav item for admin
+Axis-backend/src/modules/ai/governance.service.ts — DB-backed config, monthly budget, audit logs, usage trend
+Axis-backend/src/modules/ai/ai.module.ts — Added TenantAiConfig, GovernanceResolver, exported GovernanceService
+Axis-backend/src/database/entities/index.ts — Added TenantAiConfig to entity array
+Axis-backend/src/modules/ai/governance.service.spec.ts — Updated for TenantAiConfig, 3 new tests
+Axis-frontend/src/lib/navigation.ts — Added Shield icon, AI Governance nav item for admin
 BACKLOG.md — Updated FEAT-012 to DONE
 ```
 
@@ -2530,23 +2572,23 @@ BACKLOG.md — Updated FEAT-012 to DONE
 
 ### Files Created (7)
 ```
-nexused-backend/src/modules/ai/entities/custom-agent.entity.ts
-nexused-backend/src/modules/ai/dto/custom-agent.types.ts
-nexused-backend/src/modules/ai/custom-agent.service.ts
-nexused-backend/src/modules/ai/custom-agent.resolver.ts
-nexused-frontend/src/lib/graphql/queries/custom-agents.ts
-nexused-frontend/src/lib/graphql/mutations/custom-agents.ts
-nexused-frontend/src/app/(dashboard)/ai/agents/page.tsx
+Axis-backend/src/modules/ai/entities/custom-agent.entity.ts
+Axis-backend/src/modules/ai/dto/custom-agent.types.ts
+Axis-backend/src/modules/ai/custom-agent.service.ts
+Axis-backend/src/modules/ai/custom-agent.resolver.ts
+Axis-frontend/src/lib/graphql/queries/custom-agents.ts
+Axis-frontend/src/lib/graphql/mutations/custom-agents.ts
+Axis-frontend/src/app/(dashboard)/ai/agents/page.tsx
 ```
 
 ### Files Modified (6)
 ```
-nexused-backend/src/modules/ai/agent-executor.service.ts — Uses CustomAgentService.resolveAgent()
-nexused-backend/src/modules/ai/ai.resolver.ts — Merges custom agents into availableAgents query
-nexused-backend/src/modules/ai/ai.module.ts — Registered CustomAgent, CustomAgentService, CustomAgentResolver
-nexused-backend/src/database/entities/index.ts — Added CustomAgent to entities array
-nexused-frontend/src/lib/navigation.ts — Added Bot icon, Agent Builder nav for instructors
-nexused-frontend/src/components/ai/ai-conversation-list.tsx — Custom agent label from slug
+Axis-backend/src/modules/ai/agent-executor.service.ts — Uses CustomAgentService.resolveAgent()
+Axis-backend/src/modules/ai/ai.resolver.ts — Merges custom agents into availableAgents query
+Axis-backend/src/modules/ai/ai.module.ts — Registered CustomAgent, CustomAgentService, CustomAgentResolver
+Axis-backend/src/database/entities/index.ts — Added CustomAgent to entities array
+Axis-frontend/src/lib/navigation.ts — Added Bot icon, Agent Builder nav for instructors
+Axis-frontend/src/components/ai/ai-conversation-list.tsx — Custom agent label from slug
 ```
 
 ### New GraphQL Schema Additions
@@ -2599,26 +2641,26 @@ nexused-frontend/src/components/ai/ai-conversation-list.tsx — Custom agent lab
 
 ### Files Created (11)
 ```
-nexused-backend/src/database/entities/degree-program.entity.ts
-nexused-backend/src/database/entities/student-degree-profile.entity.ts
-nexused-backend/src/modules/planner/planner.service.ts
-nexused-backend/src/modules/planner/planner.resolver.ts
-nexused-backend/src/modules/planner/planner.module.ts
-nexused-backend/src/modules/planner/dto/planner.types.ts
-nexused-backend/src/modules/ai/tools/planner.tools.ts
-nexused-backend/src/modules/ai/agents/course-planner.agent.ts
-nexused-frontend/src/lib/graphql/queries/planner.ts
-nexused-frontend/src/lib/graphql/mutations/planner.ts
-nexused-frontend/src/app/(dashboard)/planner/page.tsx
+Axis-backend/src/database/entities/degree-program.entity.ts
+Axis-backend/src/database/entities/student-degree-profile.entity.ts
+Axis-backend/src/modules/planner/planner.service.ts
+Axis-backend/src/modules/planner/planner.resolver.ts
+Axis-backend/src/modules/planner/planner.module.ts
+Axis-backend/src/modules/planner/dto/planner.types.ts
+Axis-backend/src/modules/ai/tools/planner.tools.ts
+Axis-backend/src/modules/ai/agents/course-planner.agent.ts
+Axis-frontend/src/lib/graphql/queries/planner.ts
+Axis-frontend/src/lib/graphql/mutations/planner.ts
+Axis-frontend/src/app/(dashboard)/planner/page.tsx
 ```
 
 ### Files Modified (5)
 ```
-nexused-backend/src/database/entities/index.ts — Added DegreeProgram, StudentDegreeProfile
-nexused-backend/src/modules/ai/ai.module.ts — Registered planner tools and Course Planner agent
-nexused-backend/src/app.module.ts — Added PlannerModule
-nexused-frontend/src/lib/navigation.ts — Added Planner nav for students
-nexused-frontend/src/components/ai/ai-conversation-list.tsx — Course Planner icon and label
+Axis-backend/src/database/entities/index.ts — Added DegreeProgram, StudentDegreeProfile
+Axis-backend/src/modules/ai/ai.module.ts — Registered planner tools and Course Planner agent
+Axis-backend/src/app.module.ts — Added PlannerModule
+Axis-frontend/src/lib/navigation.ts — Added Planner nav for students
+Axis-frontend/src/components/ai/ai-conversation-list.tsx — Course Planner icon and label
 ```
 
 ### Build & Test Status
@@ -2671,24 +2713,24 @@ nexused-frontend/src/components/ai/ai-conversation-list.tsx — Course Planner i
 
 ### Files Created (6)
 ```
-nexused-backend/src/modules/feed/entities/feed-engagement.entity.ts
-nexused-backend/src/modules/feed/feed-personalization.service.ts
-nexused-backend/src/modules/feed/feed-personalization.service.spec.ts
-nexused-backend/src/modules/feed/dto/engagement.types.ts
-nexused-frontend/src/hooks/use-feed-engagement.ts
-nexused-frontend/src/lib/graphql/mutations/feed-engagement.ts
+Axis-backend/src/modules/feed/entities/feed-engagement.entity.ts
+Axis-backend/src/modules/feed/feed-personalization.service.ts
+Axis-backend/src/modules/feed/feed-personalization.service.spec.ts
+Axis-backend/src/modules/feed/dto/engagement.types.ts
+Axis-frontend/src/hooks/use-feed-engagement.ts
+Axis-frontend/src/lib/graphql/mutations/feed-engagement.ts
 ```
 
 ### Files Modified (9)
 ```
-nexused-backend/src/modules/feed/feed.service.ts — Removed sort (delegated to personalization)
-nexused-backend/src/modules/feed/feed.resolver.ts — Added engagement mutations + personalized ranking
-nexused-backend/src/modules/feed/feed.module.ts — Registered FeedEngagement and FeedPersonalizationService
-nexused-backend/src/database/entities/index.ts — Added FeedEngagement to TypeORM
-nexused-backend/src/modules/feed/feed.service.spec.ts — Updated sort test for new architecture
-nexused-frontend/src/components/feed/feed-card.tsx — Added engagement tracking props
-nexused-frontend/src/components/feed/student-home-feed.tsx — Wired engagement tracking
-nexused-frontend/src/components/feed/instructor-home-feed.tsx — Wired engagement tracking
+Axis-backend/src/modules/feed/feed.service.ts — Removed sort (delegated to personalization)
+Axis-backend/src/modules/feed/feed.resolver.ts — Added engagement mutations + personalized ranking
+Axis-backend/src/modules/feed/feed.module.ts — Registered FeedEngagement and FeedPersonalizationService
+Axis-backend/src/database/entities/index.ts — Added FeedEngagement to TypeORM
+Axis-backend/src/modules/feed/feed.service.spec.ts — Updated sort test for new architecture
+Axis-frontend/src/components/feed/feed-card.tsx — Added engagement tracking props
+Axis-frontend/src/components/feed/student-home-feed.tsx — Wired engagement tracking
+Axis-frontend/src/components/feed/instructor-home-feed.tsx — Wired engagement tracking
 BACKLOG.md — Updated FEAT-014 to DONE
 ```
 
@@ -2722,8 +2764,8 @@ Every P0, P1, P2, P3, and feature item in BACKLOG.md is now DONE.
 **Problem:** Submitting an assignment returned "Failed to submit. Please try again." because the `Submission` entity had `@Field(() => String)` on a JSONB column that stores JS objects — GraphQL String scalar can't serialize a JS object.
 
 **Fix (2 files):**
-1. `nexused-backend/src/database/entities/submission.entity.ts` — Separated JSONB storage column from GraphQL field. Added a getter `contentJson` with `@Field(() => String, { name: 'content', nullable: true })` that returns `JSON.stringify(this.content)`.
-2. `nexused-frontend/src/components/assignments/submission-form.tsx` — Added try-catch in `onSubmit` so `reset()` only runs on success path.
+1. `Axis-backend/src/database/entities/submission.entity.ts` — Separated JSONB storage column from GraphQL field. Added a getter `contentJson` with `@Field(() => String, { name: 'content', nullable: true })` that returns `JSON.stringify(this.content)`.
+2. `Axis-frontend/src/components/assignments/submission-form.tsx` — Added try-catch in `onSubmit` so `reset()` only runs on success path.
 
 ### Architecture Deep Dive
 
@@ -2826,17 +2868,17 @@ BACKLOG.md — Added 3 new sprints: Institutional Onboarding (ONBOARD-001–004)
 
 ### Files Created (3)
 ```
-nexused-frontend/src/app/(dashboard)/admin/catalog/page.tsx
-nexused-frontend/src/lib/graphql/queries/catalog.ts
-nexused-frontend/src/lib/graphql/mutations/catalog.ts
+Axis-frontend/src/app/(dashboard)/admin/catalog/page.tsx
+Axis-frontend/src/lib/graphql/queries/catalog.ts
+Axis-frontend/src/lib/graphql/mutations/catalog.ts
 ```
 
 ### Files Modified (4)
 ```
-nexused-backend/src/modules/courses/admin-courses.resolver.ts — Added 3 catalog queries + createCatalogCourse mutation
-nexused-backend/src/modules/courses/courses.service.ts — (ONBOARD-001 leftovers, already had catalog methods)
-nexused-backend/src/modules/courses/dto/course.types.ts — (ONBOARD-001 leftovers)
-nexused-frontend/src/lib/navigation.ts — Added Library icon, Catalog nav for admin
+Axis-backend/src/modules/courses/admin-courses.resolver.ts — Added 3 catalog queries + createCatalogCourse mutation
+Axis-backend/src/modules/courses/courses.service.ts — (ONBOARD-001 leftovers, already had catalog methods)
+Axis-backend/src/modules/courses/dto/course.types.ts — (ONBOARD-001 leftovers)
+Axis-frontend/src/lib/navigation.ts — Added Library icon, Catalog nav for admin
 ```
 
 ### Build & Test Status
@@ -2880,17 +2922,17 @@ nexused-frontend/src/lib/navigation.ts — Added Library icon, Catalog nav for a
 
 ### Files Created (3)
 ```
-nexused-backend/src/modules/courses/csv-import.service.ts
-nexused-frontend/src/app/(dashboard)/admin/catalog/import/page.tsx
-nexused-frontend/src/lib/graphql/mutations/csv-import.ts
+Axis-backend/src/modules/courses/csv-import.service.ts
+Axis-frontend/src/app/(dashboard)/admin/catalog/import/page.tsx
+Axis-frontend/src/lib/graphql/mutations/csv-import.ts
 ```
 
 ### Files Modified (4)
 ```
-nexused-backend/src/modules/courses/admin-courses.resolver.ts — Added CsvImportService + 3 import mutations
-nexused-backend/src/modules/courses/dto/course.types.ts — Added ImportError, ImportResult ObjectTypes
-nexused-backend/src/modules/courses/courses.module.ts — Added DegreeProgram entity, CsvImportService provider
-nexused-frontend/src/app/(dashboard)/admin/catalog/page.tsx — Added Link/Upload imports, Import button in header
+Axis-backend/src/modules/courses/admin-courses.resolver.ts — Added CsvImportService + 3 import mutations
+Axis-backend/src/modules/courses/dto/course.types.ts — Added ImportError, ImportResult ObjectTypes
+Axis-backend/src/modules/courses/courses.module.ts — Added DegreeProgram entity, CsvImportService provider
+Axis-frontend/src/app/(dashboard)/admin/catalog/page.tsx — Added Link/Upload imports, Import button in header
 ```
 
 ### Build & Test Status
@@ -2944,21 +2986,21 @@ nexused-frontend/src/app/(dashboard)/admin/catalog/page.tsx — Added Link/Uploa
 
 ### Files Created (7)
 ```
-nexused-backend/src/modules/catalog-extract/dto/extraction.types.ts
-nexused-backend/src/modules/catalog-extract/catalog-extract.service.ts
-nexused-backend/src/modules/catalog-extract/catalog-extract.resolver.ts
-nexused-backend/src/modules/catalog-extract/catalog-extract.module.ts
-nexused-frontend/src/app/(dashboard)/admin/catalog/import/document/page.tsx
-nexused-frontend/src/lib/graphql/mutations/catalog-extract.ts
+Axis-backend/src/modules/catalog-extract/dto/extraction.types.ts
+Axis-backend/src/modules/catalog-extract/catalog-extract.service.ts
+Axis-backend/src/modules/catalog-extract/catalog-extract.resolver.ts
+Axis-backend/src/modules/catalog-extract/catalog-extract.module.ts
+Axis-frontend/src/app/(dashboard)/admin/catalog/import/document/page.tsx
+Axis-frontend/src/lib/graphql/mutations/catalog-extract.ts
 ```
 
 ### Files Modified (6)
 ```
-nexused-backend/src/modules/courses/dto/course.types.ts — Added BatchCourseItem InputType
-nexused-backend/src/modules/courses/courses.service.ts — Added batchCreate method
-nexused-backend/src/modules/courses/admin-courses.resolver.ts — Added batchCreateCourses mutation
-nexused-backend/src/app.module.ts — Added CatalogExtractModule
-nexused-frontend/src/app/(dashboard)/admin/catalog/page.tsx — Added AI Import button + Sparkles icon
+Axis-backend/src/modules/courses/dto/course.types.ts — Added BatchCourseItem InputType
+Axis-backend/src/modules/courses/courses.service.ts — Added batchCreate method
+Axis-backend/src/modules/courses/admin-courses.resolver.ts — Added batchCreateCourses mutation
+Axis-backend/src/app.module.ts — Added CatalogExtractModule
+Axis-frontend/src/app/(dashboard)/admin/catalog/page.tsx — Added AI Import button + Sparkles icon
 BACKLOG.md — Updated ONBOARD-004 to DONE
 ```
 
@@ -3027,17 +3069,17 @@ BACKLOG.md — Updated ONBOARD-004 to DONE
 
 ### Files Created (4)
 ```
-nexused-backend/src/modules/courses/dto/catalog-student.types.ts
-nexused-backend/src/modules/courses/student-catalog.resolver.ts
-nexused-frontend/src/lib/graphql/queries/student-catalog.ts
-nexused-frontend/src/app/(dashboard)/courses/catalog/page.tsx
+Axis-backend/src/modules/courses/dto/catalog-student.types.ts
+Axis-backend/src/modules/courses/student-catalog.resolver.ts
+Axis-frontend/src/lib/graphql/queries/student-catalog.ts
+Axis-frontend/src/app/(dashboard)/courses/catalog/page.tsx
 ```
 
 ### Files Modified (3)
 ```
-nexused-backend/src/modules/courses/courses.service.ts — Added studentCatalog() + SectionStatus import
-nexused-backend/src/modules/courses/courses.module.ts — Registered StudentCatalogResolver
-nexused-frontend/src/app/(dashboard)/courses/page.tsx — Added "Browse Catalog" button
+Axis-backend/src/modules/courses/courses.service.ts — Added studentCatalog() + SectionStatus import
+Axis-backend/src/modules/courses/courses.module.ts — Registered StudentCatalogResolver
+Axis-frontend/src/app/(dashboard)/courses/page.tsx — Added "Browse Catalog" button
 BACKLOG.md — Updated ENROLL-001 to DONE
 ```
 
@@ -3109,18 +3151,18 @@ BACKLOG.md — Updated ENROLL-001 to DONE
 
 ### Files Created (3)
 ```
-nexused-frontend/src/lib/graphql/mutations/enrollment.ts
-nexused-frontend/src/components/courses/enroll-dialog.tsx
-nexused-frontend/src/components/courses/enrollment-settings-panel.tsx
+Axis-frontend/src/lib/graphql/mutations/enrollment.ts
+Axis-frontend/src/components/courses/enroll-dialog.tsx
+Axis-frontend/src/components/courses/enrollment-settings-panel.tsx
 ```
 
 ### Files Modified (6)
 ```
-nexused-backend/src/modules/courses/courses.service.ts — Validated enrollStudent() + 5 new methods
-nexused-backend/src/modules/courses/courses.resolver.ts — enrollInSection + 4 mutations + 1 query
-nexused-frontend/src/lib/graphql/queries/courses.ts — Extended SECTION_QUERY + PENDING_ENROLLMENTS_QUERY
-nexused-frontend/src/app/(dashboard)/courses/catalog/page.tsx — Wired EnrollDialog
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added EnrollmentSettingsPanel
+Axis-backend/src/modules/courses/courses.service.ts — Validated enrollStudent() + 5 new methods
+Axis-backend/src/modules/courses/courses.resolver.ts — enrollInSection + 4 mutations + 1 query
+Axis-frontend/src/lib/graphql/queries/courses.ts — Extended SECTION_QUERY + PENDING_ENROLLMENTS_QUERY
+Axis-frontend/src/app/(dashboard)/courses/catalog/page.tsx — Wired EnrollDialog
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx — Added EnrollmentSettingsPanel
 BACKLOG.md — ENROLL-002 → DONE
 ```
 
@@ -3202,20 +3244,20 @@ BACKLOG.md — ENROLL-002 → DONE
 
 ### Files Created (1)
 ```
-nexused-frontend/src/components/courses/enrollment-status-widget.tsx
+Axis-frontend/src/components/courses/enrollment-status-widget.tsx
 ```
 
 ### Files Modified (9)
 ```
-nexused-backend/src/modules/ai/events/ai-events.ts
-nexused-backend/src/database/entities/course-section.entity.ts
-nexused-backend/src/modules/courses/courses.service.ts
-nexused-backend/src/modules/courses/courses.resolver.ts
-nexused-frontend/src/lib/graphql/queries/courses.ts
-nexused-frontend/src/lib/graphql/mutations/enrollment.ts
-nexused-frontend/src/components/courses/section-roster.tsx
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx
-nexused-frontend/src/app/(dashboard)/courses/page.tsx
+Axis-backend/src/modules/ai/events/ai-events.ts
+Axis-backend/src/database/entities/course-section.entity.ts
+Axis-backend/src/modules/courses/courses.service.ts
+Axis-backend/src/modules/courses/courses.resolver.ts
+Axis-frontend/src/lib/graphql/queries/courses.ts
+Axis-frontend/src/lib/graphql/mutations/enrollment.ts
+Axis-frontend/src/components/courses/section-roster.tsx
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx
+Axis-frontend/src/app/(dashboard)/courses/page.tsx
 BACKLOG.md
 ```
 
@@ -3263,7 +3305,7 @@ BACKLOG.md
 **Frontend — `EnrollmentOnboardingChecklist` (new):**
 - Shown on section timeline page for active students, once per section (localStorage-keyed)
 - 3 checklist items: Review timeline, Check assignments, Meet Study Coach (with `/ai` link)
-- Dismiss button sets `nexused_onboarding_dismissed_{sectionId}` → `'true'` in localStorage
+- Dismiss button sets `Axis_onboarding_dismissed_{sectionId}` → `'true'` in localStorage
 - Starts hidden (avoids flash), reveals via `useEffect` if not already dismissed
 
 **Frontend — Section page (`[sectionId]/page.tsx`):**
@@ -3272,15 +3314,15 @@ BACKLOG.md
 
 ### Files Created (1)
 ```
-nexused-frontend/src/components/courses/enrollment-onboarding-checklist.tsx
+Axis-frontend/src/components/courses/enrollment-onboarding-checklist.tsx
 ```
 
 ### Files Modified (3)
 ```
-nexused-backend/src/modules/feed/dto/feed.types.ts
-nexused-backend/src/modules/feed/feed.service.ts
-nexused-frontend/src/components/feed/feed-card.tsx
-nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx
+Axis-backend/src/modules/feed/dto/feed.types.ts
+Axis-backend/src/modules/feed/feed.service.ts
+Axis-frontend/src/components/feed/feed-card.tsx
+Axis-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx
 ```
 
 ### Build & Test Status
@@ -3303,10 +3345,10 @@ nexused-frontend/src/app/(dashboard)/courses/[id]/section/[sectionId]/page.tsx
 ### Work Done
 
 #### ENROLL-005: Enroll-from-AI (`DONE`)
-- `nexused-backend/src/modules/ai/tools/enrollment.tools.ts`:
+- `Axis-backend/src/modules/ai/tools/enrollment.tools.ts`:
   - Added `check_enrollment_status` tool — uses `ctx.userId` (no userId input), optional courseCode filter, `actionType: 'auto'`
   - Added `enroll_in_course` tool — uses `ctx.userId`, `actionType: 'suggest'` (requires student confirmation), wraps errors as structured response
-- `nexused-backend/src/modules/ai/agents/course-planner.agent.ts`:
+- `Axis-backend/src/modules/ai/agents/course-planner.agent.ts`:
   - Added `check_enrollment_status`, `enroll_in_course`, `get_course_sections` to agent tools list
   - Extended system prompt with enrollment workflow (prereq check → section select → confirm → enroll)
 
@@ -3418,7 +3460,7 @@ Evaluated three options for mobile:
 - **Option 2:** PWA only — already started but iOS limitations make it unviable for universities
 - **Option 3 (CHOSEN):** Hybrid — responsive web for power users (instructors, admins) + focused React Native app for students
 
-**Decision:** Build a focused React Native (Expo) student app in the monorepo (`nexused-mobile/`). ~15 screens covering feed, grades, assignments, messages, AI chat, notifications. Shares the same GraphQL backend. Web app remains the primary interface for instructors and admins.
+**Decision:** Build a focused React Native (Expo) student app in the monorepo (`Axis-mobile/`). ~15 screens covering feed, grades, assignments, messages, AI chat, notifications. Shares the same GraphQL backend. Web app remains the primary interface for instructors and admins.
 
 **3. Roadmap Restructured into 3 Phases**
 
@@ -3442,7 +3484,7 @@ Evaluated three options for mobile:
 **4. Key Technical Decisions**
 - **File storage:** Cloudflare R2 — S3-compatible API, zero egress fees, generous free tier. Using `@aws-sdk/client-s3` so migration to S3 is a config change.
 - **Marketing pages:** Built inside existing Next.js app as `(marketing)` route group. Same design system, same deploy.
-- **Mobile in monorepo:** `nexused-mobile/` alongside `nexused-backend/` and `nexused-frontend/`. Shared GraphQL types via Turborepo.
+- **Mobile in monorepo:** `Axis-mobile/` alongside `Axis-backend/` and `Axis-frontend/`. Shared GraphQL types via Turborepo.
 
 ### Files Modified
 ```

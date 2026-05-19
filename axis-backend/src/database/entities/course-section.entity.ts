@@ -55,8 +55,18 @@ export class CourseSection extends BaseEntity {
   instructor: User;
 
   @Field(() => String, { nullable: true })
-  @Column({ type: 'jsonb', nullable: true })
-  schedule: Record<string, any>;
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+    transformer: {
+      // TS → DB: parse JSON string to object for JSONB storage
+      to: (v: string | null) => (v ? JSON.parse(v) : null),
+      // DB → TS: serialize the JSONB object to a JSON string for GraphQL
+      from: (v: Record<string, unknown> | null) =>
+        v ? JSON.stringify(v) : null,
+    },
+  })
+  schedule: string | null;
 
   @Field({ nullable: true })
   @Column({ type: 'varchar', nullable: true })

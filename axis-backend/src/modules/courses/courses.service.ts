@@ -199,13 +199,10 @@ export class CoursesService {
     instructorId: string,
     input: CreateSectionInput,
   ): Promise<CourseSection> {
-    const parsedSchedule = input.schedule
-      ? (JSON.parse(input.schedule) as Record<string, unknown>)
-      : null;
     const section = this.sectionsRepository.create({
       ...input,
       instructorId,
-      schedule: parsedSchedule as Record<string, unknown>,
+      schedule: input.schedule ?? null,
     });
     const saved = await this.sectionsRepository.save(section);
 
@@ -861,9 +858,7 @@ export class CoursesService {
       instructorId: input.instructorId,
       location: input.location,
       capacity: input.capacity,
-      schedule: input.schedule
-        ? (JSON.parse(input.schedule) as Record<string, unknown>)
-        : undefined,
+      schedule: input.schedule ?? undefined,
     });
     return this.sectionsRepository.save(section);
   }
@@ -889,9 +884,7 @@ export class CoursesService {
     if (input.instructorId !== undefined)
       updateData.instructorId = input.instructorId;
     if (input.schedule !== undefined)
-      updateData.schedule = input.schedule
-        ? (JSON.parse(input.schedule) as Record<string, unknown>)
-        : undefined;
+      updateData.schedule = input.schedule ?? undefined;
 
     await this.sectionsRepository.update(id, updateData);
     return this.sectionsRepository.findOneOrFail({
@@ -1211,7 +1204,7 @@ export class CoursesService {
 
       const catalogSection: CatalogSection = {
         id: section.id,
-        schedule: section.schedule ? JSON.stringify(section.schedule) : null,
+        schedule: section.schedule ?? null,
         location: section.location,
         capacity: section.capacity ?? null,
         enrolledCount,

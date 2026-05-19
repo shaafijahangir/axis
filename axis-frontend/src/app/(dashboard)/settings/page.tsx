@@ -70,7 +70,9 @@ function CalendarCard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/calendar/token', { credentials: 'include' })
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    fetch(`${apiUrl}/calendar/token`, { credentials: 'include' })
       .then((r) => r.json())
       .then((data: { url: string }) => setCalendarUrl(data.url))
       .catch(() => setCalendarUrl(null))

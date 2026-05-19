@@ -6,6 +6,7 @@ import { createHmac } from 'crypto';
 import ical, { ICalEventRepeatingFreq, ICalAlarmType } from 'ical-generator';
 import { User } from '../../database/entities/user.entity';
 import { Enrollment } from '../../database/entities/enrollment.entity';
+import { CourseSection } from '../../database/entities/course-section.entity';
 import { Assignment } from '../../database/entities/assignment.entity';
 
 export interface SectionSchedule {
@@ -35,6 +36,8 @@ export class CalendarService {
     private userRepo: Repository<User>,
     @InjectRepository(Enrollment)
     private enrollmentRepo: Repository<Enrollment>,
+    @InjectRepository(CourseSection)
+    private sectionRepo: Repository<CourseSection>,
     @InjectRepository(Assignment)
     private assignmentRepo: Repository<Assignment>,
     private configService: ConfigService,
@@ -75,7 +78,9 @@ export class CalendarService {
     for (const enrollment of enrollments) {
       const section = enrollment.section;
       const course = section.course;
-      const scheduleRaw = section.schedule as SectionSchedule | null;
+      const scheduleRaw: SectionSchedule | null = section.schedule
+        ? (JSON.parse(section.schedule) as SectionSchedule)
+        : null;
 
       if (
         !scheduleRaw?.meetingDays?.length ||
@@ -126,8 +131,61 @@ export class CalendarService {
       }
     }
 
+    // Add sections where this user is the instructor
+    const instructorSections = await this.sectionRepo
+      .createQueryBuilder('section')
+      .innerJoinAndSelect('section.course', 'course')
+      .innerJoinAndSelect('section.term', 'term')
+      .where('section.instructorId = :userId', { userId })
+      .andWhere('course.tenantId = :tenantId', { tenantId })
+      .getMany();
+
+    for (const section of instructorSections) {
+      const course = section.course;
+      const scheduleRaw: SectionSchedule | null = section.schedule
+        ? (JSON.parse(section.schedule) as SectionSchedule)
+        : null;
+      if (
+        !scheduleRaw?.meetingDays?.length ||
+        !scheduleRaw.startTime ||
+        !scheduleRaw.endTime
+      )
+        continue;
+
+      const termStart = section.term?.startDate ?? new Date();
+      const termEnd =
+        section.term?.endDate ?? new Date(Date.now() + 90 * 86400 * 1000);
+      const startParsed = parseTime(scheduleRaw.startTime);
+      const endParsed = parseTime(scheduleRaw.endTime);
+
+      for (const day of scheduleRaw.meetingDays) {
+        const dayIndex = DAY_MAP[day];
+        const firstOccurrence = new Date(termStart);
+        while (firstOccurrence.getDay() !== dayIndex) {
+          firstOccurrence.setDate(firstOccurrence.getDate() + 1);
+        }
+        const eventStart = new Date(firstOccurrence);
+        eventStart.setHours(startParsed.hour, startParsed.minute, 0, 0);
+        const eventEnd = new Date(firstOccurrence);
+        eventEnd.setHours(endParsed.hour, endParsed.minute, 0, 0);
+
+        calendar.createEvent({
+          summary: `[Teaching] ${course.code} — ${course.title}`,
+          location: section.location ?? '',
+          start: eventStart,
+          end: eventEnd,
+          repeating: { freq: ICalEventRepeatingFreq.WEEKLY, until: termEnd },
+          id: `instructor-${section.id}-${day}`,
+        });
+      }
+    }
+
     // Add assignment due dates
-    const sectionIds = enrollments.map((e) => e.section.id);
+    const enrolledSectionIds = enrollments.map((e) => e.section.id);
+    const instructorSectionIds = instructorSections.map((s) => s.id);
+    const sectionIds = [
+      ...new Set([...enrolledSectionIds, ...instructorSectionIds]),
+    ];
     if (sectionIds.length > 0) {
       const assignments = await this.assignmentRepo
         .createQueryBuilder('assignment')

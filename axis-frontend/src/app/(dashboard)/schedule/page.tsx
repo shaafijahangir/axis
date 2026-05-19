@@ -287,7 +287,7 @@ function StudentSchedule() {
   );
   const sections =
     data?.myEnrollments
-      .filter((e) => e.status === 'active')
+      .filter((e) => (e.status ?? '').toUpperCase() === 'ACTIVE')
       .map((e) => e.section) ?? [];
 
   if (loading) return <Skeleton className="h-64 w-full rounded-lg" />;
