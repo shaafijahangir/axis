@@ -1,1 +1,1 @@
-(cd nexused-backend && npx tsc --noEmit) && (cd nexused-frontend && npx tsc --noEmit)
+(cd axis-backend && npx tsc --noEmit) && (cd axis-frontend && npx tsc --noEmit)
