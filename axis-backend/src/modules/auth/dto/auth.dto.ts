@@ -47,3 +47,20 @@ export class AuthResponseDto {
     roles: UserRole[];
   };
 }
+
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  tenantId: string;
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  token: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
+}

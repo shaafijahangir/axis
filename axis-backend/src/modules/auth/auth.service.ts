@@ -1,5 +1,13 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto, AuthResponseDto } from './dto/auth.dto';
 import { UserRole } from '../../database/entities';
@@ -14,11 +22,14 @@ interface AuthUser {
   roles: UserRole[];
 }
 
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
+
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    @InjectRepository(User) private userRepo: Repository<User>,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
@@ -93,6 +104,57 @@ export class AuthService {
         roles: user.roles,
       },
     };
+  }
+
+  async forgotPassword(
+    email: string,
+    tenantId: string,
+  ): Promise<{ resetUrl: string }> {
+    const user = await this.usersService.findByEmail(email, tenantId);
+    if (!user) {
+      // Return success regardless to prevent email enumeration
+      return { resetUrl: '' };
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+
+    await this.userRepo.update(user.id, {
+      resetToken: token,
+      resetTokenExpiry: expiry,
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+
+    // In dev, surface the URL so you can test without email
+    console.log(`[PasswordReset] Reset URL for ${email}: ${resetUrl}`);
+
+    return { resetUrl };
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const user = await this.userRepo
+      .createQueryBuilder('user')
+      .addSelect('user.resetToken')
+      .addSelect('user.resetTokenExpiry')
+      .where('user.resetToken = :token', { token })
+      .getOne();
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    if (!user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.userRepo.update(user.id, {
+      passwordHash,
+      resetToken: null as unknown as string,
+      resetTokenExpiry: null as unknown as Date,
+    });
   }
 
   private generateToken(user: AuthUser | User): string {

@@ -76,4 +76,10 @@ export class User extends TenantScopedEntity {
 
   @Column({ nullable: true })
   googleId: string;
+
+  @Column({ nullable: true, select: false })
+  resetToken: string;
+
+  @Column({ type: 'timestamptz', nullable: true, select: false })
+  resetTokenExpiry: Date;
 }

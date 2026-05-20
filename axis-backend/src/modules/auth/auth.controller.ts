@@ -12,7 +12,12 @@ import { Throttle } from '@nestjs/throttler';
 import * as express from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
-import { RegisterDto, AuthResponseDto } from './dto/auth.dto';
+import {
+  RegisterDto,
+  AuthResponseDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 import { LocalAuthGuard } from '../../guards/local-auth.guard';
 import { User } from '../../database/entities/user.entity';
 
@@ -75,5 +80,36 @@ export class AuthController {
   } {
     this.clearCookie(res);
     return { success: true };
+  }
+
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(
+    @Body() body: ForgotPasswordDto,
+  ): Promise<{ message: string; resetUrl?: string }> {
+    const result = await this.authService.forgotPassword(
+      body.email,
+      body.tenantId,
+    );
+    // In dev, return the URL so testers can use it directly.
+    // In production, send an email and never return the URL.
+    const isDev =
+      this.configService.get<string>('app.nodeEnv') !== 'production';
+    return {
+      message:
+        'If an account with that email exists, a reset link has been sent.',
+      ...(isDev && result.resetUrl ? { resetUrl: result.resetUrl } : {}),
+    };
+  }
+
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(
+    @Body() body: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    await this.authService.resetPassword(body.token, body.password);
+    return { message: 'Password reset successfully. You can now sign in.' };
   }
 }
