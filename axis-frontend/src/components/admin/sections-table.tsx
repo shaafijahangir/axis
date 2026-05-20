@@ -38,6 +38,11 @@ interface AdminSection {
   location: string | null;
   capacity: number | null;
   status: string;
+  schedule?: string | null;
+  meetingDays?: string[] | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  room?: string | null;
   course: { id: string; code: string; title: string };
   instructor: { id: string; firstName: string; lastName: string };
 }

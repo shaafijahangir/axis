@@ -33,6 +33,13 @@ import {
 import { ACADEMIC_TERMS_QUERY } from '@/lib/graphql/queries/admin-academics';
 import { CREATE_SECTION_MUTATION } from '@/lib/graphql/mutations/courses';
 import { SectionList } from '@/components/courses/section-list';
+import {
+  ScheduleFields,
+  EMPTY_SCHEDULE,
+  scheduleFieldsToInput,
+  validateScheduleFields,
+  type ScheduleFieldsValue,
+} from '@/components/sections/schedule-fields';
 import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
 
@@ -56,6 +63,8 @@ function CreateSectionDialog({
   const [termId, setTermId] = useState('');
   const [location, setLocation] = useState('');
   const [capacity, setCapacity] = useState('');
+  const [schedule, setSchedule] = useState<ScheduleFieldsValue>(EMPTY_SCHEDULE);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   const { data: termsData } = useQuery<{ academicTerms: Term[] }>(
     ACADEMIC_TERMS_QUERY,
@@ -70,6 +79,8 @@ function CreateSectionDialog({
       setTermId('');
       setLocation('');
       setCapacity('');
+      setSchedule(EMPTY_SCHEDULE);
+      setScheduleError(null);
     },
     onError: (err) => toast.error(err.message),
   });
@@ -77,6 +88,12 @@ function CreateSectionDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!termId) return;
+    const err = validateScheduleFields(schedule);
+    if (err) {
+      setScheduleError(err);
+      return;
+    }
+    setScheduleError(null);
     createSection({
       variables: {
         input: {
@@ -84,6 +101,7 @@ function CreateSectionDialog({
           termId,
           location: location.trim() || undefined,
           capacity: capacity ? parseInt(capacity) : undefined,
+          ...scheduleFieldsToInput(schedule),
         },
       },
     });
@@ -120,10 +138,10 @@ function CreateSectionDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="location">Building / Location</Label>
             <Input
               id="location"
-              placeholder="e.g. Room 204, Online"
+              placeholder="e.g. Main Hall"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />
@@ -140,6 +158,12 @@ function CreateSectionDialog({
               onChange={(e) => setCapacity(e.target.value)}
             />
           </div>
+
+          <ScheduleFields
+            value={schedule}
+            onChange={setSchedule}
+            error={scheduleError}
+          />
 
           <DialogFooter>
             <Button

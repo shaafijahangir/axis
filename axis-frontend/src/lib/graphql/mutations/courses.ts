@@ -20,6 +20,10 @@ export const CREATE_SECTION_MUTATION = gql`
       location
       capacity
       status
+      meetingDays
+      startTime
+      endTime
+      room
     }
   }
 `;

@@ -54,23 +54,23 @@ export class ReportCard extends TenantScopedEntity {
   })
   status: ReportCardStatus;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
   teacherComment: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @Column({ type: 'varchar', length: 2, nullable: true })
   finalGrade: string | null;
 
-  @Field({ nullable: true })
+  // JSONB columns — not exposed directly via GraphQL; returned through
+  // ReportCardSummary DTO with JSON.stringify().
   @Column({ type: 'jsonb', nullable: true })
   gradeSummary: Record<string, unknown> | null;
 
-  @Field({ nullable: true })
   @Column({ type: 'jsonb', nullable: true })
   attendanceSummary: Record<string, unknown> | null;
 
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   @Column({ type: 'timestamp', nullable: true })
   publishedAt: Date | null;
 }

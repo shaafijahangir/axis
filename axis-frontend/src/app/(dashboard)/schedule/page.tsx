@@ -14,16 +14,21 @@ import { CalendarOff } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface SectionSchedule {
-  meetingDays: ('MON' | 'TUE' | 'WED' | 'THU' | 'FRI')[];
-  startTime: string; // "HH:MM"
-  endTime: string;
+interface LegacyScheduleBlob {
+  meetingDays?: string[];
+  startTime?: string;
+  endTime?: string;
 }
 
 interface ScheduleSection {
   id: string;
   location: string | null;
-  schedule: string | null; // JSON string
+  /** @deprecated SPRINT-1: legacy JSONB; prefer typed fields below */
+  schedule: string | null;
+  meetingDays: string[] | null;
+  startTime: string | null;
+  endTime: string | null;
+  room: string | null;
   course: { id: string; code: string; title: string };
   instructor: { firstName: string; lastName: string };
 }
@@ -100,25 +105,53 @@ interface TimetableBlock {
   colourClass: string;
 }
 
+/**
+ * SPRINT-1: Read the typed schedule columns; fall back to the legacy
+ * `schedule` JSONB blob if the section was created before Sprint 1.
+ */
+function readSchedule(section: ScheduleSection): {
+  meetingDays: string[];
+  startTime: string | null;
+  endTime: string | null;
+} {
+  if (section.meetingDays?.length && section.startTime && section.endTime) {
+    // Postgres `time` is returned as "HH:MM:SS"; trim to "HH:MM" for slot math
+    return {
+      meetingDays: section.meetingDays,
+      startTime: section.startTime.slice(0, 5),
+      endTime: section.endTime.slice(0, 5),
+    };
+  }
+  if (section.schedule) {
+    try {
+      const parsed = JSON.parse(section.schedule) as LegacyScheduleBlob;
+      if (parsed.meetingDays?.length && parsed.startTime && parsed.endTime) {
+        return {
+          meetingDays: parsed.meetingDays,
+          startTime: parsed.startTime,
+          endTime: parsed.endTime,
+        };
+      }
+    } catch {
+      // ignore — falls through to empty
+    }
+  }
+  return { meetingDays: [], startTime: null, endTime: null };
+}
+
 function buildBlocks(sections: ScheduleSection[]): TimetableBlock[] {
   const blocks: TimetableBlock[] = [];
   sections.forEach((section, idx) => {
-    if (!section.schedule) return;
-    let parsed: SectionSchedule;
-    try {
-      parsed = JSON.parse(section.schedule) as SectionSchedule;
-    } catch {
-      return;
-    }
-    if (!parsed.meetingDays?.length || !parsed.startTime || !parsed.endTime)
-      return;
+    const { meetingDays, startTime, endTime } = readSchedule(section);
+    if (!meetingDays.length || !startTime || !endTime) return;
 
-    const startSlot = timeToSlot(parsed.startTime);
-    const endSlot = timeToSlot(parsed.endTime);
+    const startSlot = timeToSlot(startTime);
+    const endSlot = timeToSlot(endTime);
     if (startSlot < 0 || endSlot > TOTAL_SLOTS || startSlot >= endSlot) return;
 
     const colour = COLOURS[idx % COLOURS.length];
-    for (const day of parsed.meetingDays) {
+    const displayLocation = section.room ?? section.location;
+    for (const day of meetingDays) {
       blocks.push({
         sectionId: section.id,
         courseId: section.course.id,
@@ -127,7 +160,7 @@ function buildBlocks(sections: ScheduleSection[]): TimetableBlock[] {
         day,
         startSlot,
         endSlot,
-        location: section.location,
+        location: displayLocation,
         instructor: `${section.instructor.firstName} ${section.instructor.lastName}`,
         colourClass: colour,
       });
@@ -256,11 +289,8 @@ function ScheduleGrid({ sections }: { sections: ScheduleSection[] }) {
 
 function ScheduleLegend({ sections }: { sections: ScheduleSection[] }) {
   const withSchedule = sections.filter((s) => {
-    try {
-      return s.schedule && JSON.parse(s.schedule).meetingDays?.length;
-    } catch {
-      return false;
-    }
+    const { meetingDays, startTime, endTime } = readSchedule(s);
+    return meetingDays.length > 0 && startTime && endTime;
   });
   if (!withSchedule.length) return null;
 

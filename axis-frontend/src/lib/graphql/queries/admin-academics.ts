@@ -47,6 +47,10 @@ export const ADMIN_SECTIONS_QUERY = gql`
       capacity
       status
       schedule
+      meetingDays
+      startTime
+      endTime
+      room
       course {
         id
         code
