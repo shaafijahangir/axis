@@ -75,8 +75,14 @@ import { ScheduleModule } from '@nestjs/schedule';
         database: configService.get('database.database'),
         schema: configService.get('database.schema'),
         entities: entities,
-        // TODO: Set back to false before production. Enabled for dev to create missing tables.
-        synchronize: true,
+        // SPRINT-7: synchronize is OFF in production (and any non-dev env)
+        // to prevent schema-drift data loss. Dev can opt in via
+        // DATABASE_SYNCHRONIZE=true. Run migrations otherwise:
+        //   npm run migration:generate -- src/database/migrations/<Name>
+        //   npm run migration:run
+        synchronize:
+          process.env.NODE_ENV !== 'production' &&
+          process.env.DATABASE_SYNCHRONIZE !== 'false',
         migrationsRun: configService.get('database.migrationsRun'),
         migrations: ['dist/database/migrations/*.js'],
         logging: configService.get('database.logging'),

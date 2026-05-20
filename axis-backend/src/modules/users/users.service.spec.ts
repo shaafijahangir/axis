@@ -15,7 +15,6 @@ import {
 } from '../../test/mocks/repository.mock';
 import {
   createUser,
-  createAdmin,
   UserRole,
   UserStatus,
   resetIdCounter,
