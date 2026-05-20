@@ -785,20 +785,19 @@ export class CsvImportService {
           where: { email: data.email, tenantId },
         });
 
-        const profile =
-          data.gradeLevel !== undefined
-            ? { gradeLevel: data.gradeLevel }
-            : undefined;
+        // SPRINT-3 + SPRINT-5: write gradeLevel to the typed column,
+        // only when the row is a STUDENT (matches validateK12Fields).
+        const isStudent = data.roles.includes(UserRole.STUDENT);
+        const gradeLevel =
+          isStudent && data.gradeLevel !== undefined ? data.gradeLevel : null;
 
         if (existing) {
           const updateData: Partial<User> = {
             firstName: data.firstName,
             lastName: data.lastName,
             roles: data.roles,
+            gradeLevel,
           };
-          if (profile) {
-            updateData.profile = { ...(existing.profile ?? {}), ...profile };
-          }
           await manager.save(User, { ...existing, ...updateData });
         } else {
           const user = manager.create(User, {
@@ -808,7 +807,7 @@ export class CsvImportService {
             roles: data.roles,
             passwordHash,
             tenantId,
-            ...(profile && { profile }),
+            gradeLevel,
           });
           await manager.save(User, user);
         }
