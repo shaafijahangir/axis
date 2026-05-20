@@ -1,4 +1,4 @@
-import { InputType, Field, Int } from '@nestjs/graphql';
+import { InputType, ObjectType, Field, Int } from '@nestjs/graphql';
 import {
   IsBoolean,
   IsEnum,
@@ -11,6 +11,7 @@ import {
   Min,
 } from 'class-validator';
 import {
+  Announcement,
   AnnouncementPriority,
   AnnouncementScope,
 } from '../../../database/entities/announcement.entity';
@@ -52,4 +53,22 @@ export class CreateAnnouncementInput {
   @IsOptional()
   @IsBoolean()
   pinned?: boolean;
+}
+
+/**
+ * SPRINT-4: Admin /admin/announcements list page result type.
+ */
+@ObjectType()
+export class PaginatedAnnouncements {
+  @Field(() => [Announcement])
+  items: Announcement[];
+
+  @Field(() => Int)
+  totalCount: number;
+
+  @Field(() => Int)
+  page: number;
+
+  @Field(() => Int)
+  pageSize: number;
 }
