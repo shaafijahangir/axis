@@ -1470,5 +1470,104 @@
 
 ---
 
-*Last updated: 2026-02-21 (Added Phase A/B/C sprints: INFRA-001–003, FEAT-016–017, MOB-001–005, SITE-001–003, MOB-APP-001–010)*
+## Sprint: MVP Production-Readiness (May 2026)
+
+> Closes the gap between "schools could demo it" and "schools could
+> pilot it Monday." Driven by the BRENTWOOD-MVP gap analysis +
+> follow-on senior-eng reflection. Six sprints, all merged to main.
+
+### SPRINT-1: Structured schedule data model + admin UI
+- **Status:** `DONE`
+- **Completed:** 2026-05-19 — PR #31
+- **Why:** Sections had a `schedule` JSONB blob with no editor. Visual
+  grid existed but data wasn't enterable.
+- **Shipped:** Typed columns (`meetingDays text[]`, `startTime time`,
+  `endTime time`, `room varchar`) + cross-field validation
+  (`endTime > startTime`, all-or-nothing rule) + form fields in all
+  three section dialogs (admin create/edit, instructor create) + grid
+  refactor to read typed fields.
+
+### SPRINT-2: Assignment file attachments end-to-end
+- **Status:** `DONE`
+- **Completed:** 2026-05-19 — PR #32
+- **Why:** R2 module existed but assignments + submissions didn't use it.
+- **Shipped:** `ASSIGNMENT_INSTRUCTIONS` upload context + `fileUploadIds`
+  on Create/Update DTOs + `attachments: [FileUpload!]!` field resolver
+  on Submission + Assignment + uploader UI + AttachmentList download
+  component. Atomic linking via `attachToContext` inside the create
+  transaction. Cross-context rejection (submission upload ≠ instructions).
+
+### SPRINT-3: K-12 student record fields
+- **Status:** `DONE`
+- **Completed:** 2026-05-19 — PR #33
+- **Why:** Grade-targeted announcements existed in the entity but had no
+  data to filter on.
+- **Shipped:** `User.gradeLevel`, `User.homeroomTeacherId` (FK to User
+  with `ON DELETE SET NULL`), `ParentStudent.relationship` enum
+  (PARENT/GUARDIAN/OTHER), `<K12StudentFields>` shared form fragment,
+  /people grade filter + "Grade · Homeroom" column,
+  `validateK12Fields` (gradeLevel only on STUDENT, homeroom must be
+  INSTRUCTOR). Announcement resolver auto-defaults `grade` to caller's
+  own `gradeLevel`.
+
+### SPRINT-4: Admin announcements composer
+- **Status:** `DONE`
+- **Completed:** 2026-05-19 — PR #34
+- **Why:** Backend supported SCHOOL_WIDE / GRADE / SECTION scopes but
+  there was no UI to send them.
+- **Shipped:** `/admin/announcements` page (paginated, scope filter) +
+  three-scope composer dialog with live "Visible to N students" preview
+  (powered by new `announcementRecipientCount` query) + scope contract
+  enforcement in `AnnouncementsService.create` + Megaphone nav link.
+
+### SPRINT-5: User + enrollment CSV import (finalisation)
+- **Status:** `DONE`
+- **Completed:** 2026-05-19 — PR #35
+- **Why:** Backend service existed; UI exposed it but with stale copy
+  and Sprint-3 typed-column mismatch.
+- **Shipped:** `importUsers` writes `gradeLevel` to the typed column for
+  STUDENT rows + page header copy updated + "Bulk Import" CTA on
+  /people for discoverability.
+
+### SPRINT-7: Production hardening
+- **Status:** `DONE`
+- **Completed:** 2026-05-19 — PR #36
+- **Shipped:** helmet middleware + `assertSecureJwtSecret()` boot check
+  (refuses example/short secrets in production) + daily 3am cleanup
+  cron (orphan FileUploads + expired reset tokens). Note: SPRINT-6
+  (Google Calendar sync) intentionally skipped.
+
+### CHORE: Production hardening pass
+- **Status:** `DONE`
+- **Completed:** 2026-05-19 — PR #37
+- **Shipped:** 38 new Jest specs (272 total, all green) covering
+  Sprints 1-5; AssignmentsService + AuthService specs repaired after
+  recent DI changes; R2 round-trip verified against local MinIO
+  (path-style auto-detection + AWS SDK v3 checksum disabled for
+  MinIO compat); real Playwright `08-sprint-deliverables.spec.ts`
+  with 6 specs that submit forms + assert DOM state; baseline
+  migration; `synchronize: false` in production via NODE_ENV gate;
+  4 dead imports removed.
+
+### CHORE: One-command dev workflow
+- **Status:** `DONE`
+- **Completed:** 2026-05-20 — PR #38
+- **Shipped:** MinIO added to `docker-compose.yml` with idempotent
+  bucket creation; new pnpm scripts (`infra:up/down/logs/reset`,
+  `dev:web`, `dev:phone`, `setup`); frontend dev defaults to port
+  3001 to match the FRONTEND_URL CORS allowlist.
+
+### CHORE: Onboarding docs refresh
+- **Status:** `DONE`
+- **Completed:** 2026-05-20 — PR #39
+- **Shipped:** README "Getting Started" rewritten for pnpm + Turborepo
+  + docker-compose workflow; CLAUDE.md command section aligned;
+  `.env.example` defaults wired to local infra so a fresh clone runs
+  after JWT_SECRET only.
+
+---
+
+*Last updated: 2026-05-20 (Added MVP Production-Readiness sprint:
+SPRINT-1–5, SPRINT-7, plus three CHORE PRs for tests, dev workflow,
+and onboarding docs)*
 *This file is the primary task reference for all development sessions.*
