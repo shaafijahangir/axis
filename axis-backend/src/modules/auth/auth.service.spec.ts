@@ -1,8 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { EmailService } from '../notifications/email.service';
+import { EmailTemplatesService } from '../notifications/email-templates.service';
+import { User } from '../../database/entities/user.entity';
+import { createMockRepository } from '../../test/mocks/repository.mock';
 import {
   createUser,
   createAdmin,
@@ -34,6 +39,22 @@ describe('AuthService', () => {
         {
           provide: JwtService,
           useValue: { sign: jest.fn() },
+        },
+        {
+          provide: EmailService,
+          useValue: { sendEmail: jest.fn() },
+        },
+        {
+          provide: EmailTemplatesService,
+          useValue: {
+            passwordReset: jest
+              .fn()
+              .mockReturnValue({ subject: 's', html: '<p></p>' }),
+          },
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: createMockRepository<User>(),
         },
       ],
     }).compile();

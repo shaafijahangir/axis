@@ -360,6 +360,11 @@ export interface CourseSectionFactoryOptions {
   sectionCode?: string;
   status?: SectionStatus;
   maxEnrollment?: number;
+  // SPRINT-1: structured schedule
+  meetingDays?: string[];
+  startTime?: string | null;
+  endTime?: string | null;
+  room?: string | null;
 }
 
 export function createCourseSection(
@@ -374,6 +379,10 @@ export function createCourseSection(
     sectionCode: options.sectionCode ?? '001',
     status: options.status ?? SectionStatus.ACTIVE,
     maxEnrollment: options.maxEnrollment ?? 30,
+    meetingDays: options.meetingDays ?? [],
+    startTime: options.startTime ?? null,
+    endTime: options.endTime ?? null,
+    room: options.room ?? null,
     createdAt: new Date(),
     updatedAt: new Date(),
     course: options.course,

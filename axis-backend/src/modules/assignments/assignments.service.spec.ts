@@ -2,11 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DataSource } from 'typeorm';
 import { AssignmentsService } from './assignments.service';
 import { Assignment } from '../../database/entities/assignment.entity';
 import { Submission } from '../../database/entities/submission.entity';
 import { CourseSection } from '../../database/entities/course-section.entity';
 import { Enrollment } from '../../database/entities/enrollment.entity';
+import {
+  FileUpload,
+  UploadContext,
+} from '../uploads/entities/file-upload.entity';
+import { UploadsService } from '../uploads/uploads.service';
 import { NexusEvents } from '../ai/events/ai-events';
 import {
   createMockRepository,
@@ -29,6 +35,9 @@ describe('AssignmentsService', () => {
   let submissionRepo: MockRepository<Submission>;
   let sectionRepo: MockRepository<CourseSection>;
   let enrollmentRepo: MockRepository<Enrollment>;
+  let fileUploadRepo: MockRepository<FileUpload>;
+  let uploadsService: jest.Mocked<UploadsService>;
+  let dataSource: { manager: { transaction: jest.Mock } };
   let eventEmitter: jest.Mocked<EventEmitter2>;
 
   const tenantId = 'tenant-001';
@@ -42,6 +51,33 @@ describe('AssignmentsService', () => {
     submissionRepo = createMockRepository<Submission>();
     sectionRepo = createMockRepository<CourseSection>();
     enrollmentRepo = createMockRepository<Enrollment>();
+    fileUploadRepo = createMockRepository<FileUpload>();
+
+    // SPRINT-2: dataSource.manager.transaction(cb) is used by create(). We
+    // simulate it by calling the callback with a fake manager that proxies
+    // create/save through the existing assignmentRepo Jest mocks — so the
+    // test's repo-level setup (e.g. `assignmentRepo.create!.mockReturnValue(...)`)
+    // continues to apply.
+    const txManager = {
+      create: jest.fn((_entity: unknown, value: unknown) =>
+        (assignmentRepo.create as jest.Mock)(value),
+      ),
+      save: jest.fn((_entity: unknown, value: unknown) =>
+        (assignmentRepo.save as jest.Mock)(value),
+      ),
+      findOne: jest.fn(),
+    };
+    dataSource = {
+      manager: {
+        transaction: jest.fn(async (cb: (m: typeof txManager) => unknown) =>
+          cb(txManager),
+        ),
+      },
+    };
+
+    uploadsService = {
+      attachToContext: jest.fn().mockResolvedValue({}),
+    } as unknown as jest.Mocked<UploadsService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -50,6 +86,9 @@ describe('AssignmentsService', () => {
         { provide: getRepositoryToken(Submission), useValue: submissionRepo },
         { provide: getRepositoryToken(CourseSection), useValue: sectionRepo },
         { provide: getRepositoryToken(Enrollment), useValue: enrollmentRepo },
+        { provide: getRepositoryToken(FileUpload), useValue: fileUploadRepo },
+        { provide: UploadsService, useValue: uploadsService },
+        { provide: DataSource, useValue: dataSource },
         {
           provide: EventEmitter2,
           useValue: { emit: jest.fn() },
@@ -769,6 +808,169 @@ describe('AssignmentsService', () => {
       expect(result.students[0].firstName).toBe('Bob');
       expect(result.students[1].firstName).toBe('Zoe');
       expect(result.students[2].firstName).toBe('Alice');
+    });
+  });
+
+  // ============================================================================
+  // SPRINT-2: File attachments
+  // ============================================================================
+
+  describe('createSubmission — attachments via fileUploadIds', () => {
+    const assignmentId = 'assign-1';
+
+    beforeEach(() => {
+      // findById tenant verification
+      assignmentRepo.createQueryBuilder!.mockReturnValue({
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest
+          .fn()
+          .mockResolvedValue(createAssignment({ id: assignmentId })),
+      } as never);
+      submissionRepo.count!.mockResolvedValue(0);
+    });
+
+    it('attaches each fileUploadId to the new submission via UploadsService', async () => {
+      const submission = createSubmission({
+        id: 'sub-1',
+        assignmentId,
+        userId,
+      });
+      submissionRepo.create!.mockReturnValue(submission);
+      submissionRepo.save!.mockResolvedValue(submission);
+      // findAttachments sanity check finds files with the right context
+      fileUploadRepo.find!.mockResolvedValue([
+        {
+          id: 'file-1',
+          context: UploadContext.ASSIGNMENT_SUBMISSION,
+        } as FileUpload,
+        {
+          id: 'file-2',
+          context: UploadContext.ASSIGNMENT_SUBMISSION,
+        } as FileUpload,
+      ]);
+
+      await service.createSubmission(userId, tenantId, {
+        assignmentId,
+        fileUploadIds: ['file-1', 'file-2'],
+      });
+
+      expect(uploadsService.attachToContext).toHaveBeenCalledWith(
+        'file-1',
+        'sub-1',
+        userId,
+        tenantId,
+      );
+      expect(uploadsService.attachToContext).toHaveBeenCalledWith(
+        'file-2',
+        'sub-1',
+        userId,
+        tenantId,
+      );
+    });
+
+    it('does not call attachToContext when no fileUploadIds provided', async () => {
+      const submission = createSubmission({ assignmentId, userId });
+      submissionRepo.create!.mockReturnValue(submission);
+      submissionRepo.save!.mockResolvedValue(submission);
+
+      await service.createSubmission(userId, tenantId, { assignmentId });
+
+      expect(uploadsService.attachToContext).not.toHaveBeenCalled();
+    });
+
+    it('rejects a file uploaded with the wrong context', async () => {
+      const submission = createSubmission({
+        id: 'sub-1',
+        assignmentId,
+        userId,
+      });
+      submissionRepo.create!.mockReturnValue(submission);
+      submissionRepo.save!.mockResolvedValue(submission);
+      // file was uploaded as INSTRUCTIONS, not SUBMISSION — reject
+      fileUploadRepo.find!.mockResolvedValue([
+        {
+          id: 'file-1',
+          context: UploadContext.ASSIGNMENT_INSTRUCTIONS,
+        } as FileUpload,
+      ]);
+
+      await expect(
+        service.createSubmission(userId, tenantId, {
+          assignmentId,
+          fileUploadIds: ['file-1'],
+        }),
+      ).rejects.toThrow(/wrong context/i);
+    });
+  });
+
+  describe('create assignment — instructor instructions attachments', () => {
+    it('links instruction files when fileUploadIds provided', async () => {
+      const saved = createAssignment({ id: 'assign-1', sectionId });
+      assignmentRepo.create!.mockReturnValue(saved);
+      assignmentRepo.save!.mockResolvedValue(saved);
+      fileUploadRepo.find!.mockResolvedValue([
+        {
+          id: 'instr-1',
+          context: UploadContext.ASSIGNMENT_INSTRUCTIONS,
+        } as FileUpload,
+      ]);
+
+      await service.create(
+        tenantId,
+        {
+          sectionId,
+          title: 'HW1',
+          pointsPossible: 100,
+          fileUploadIds: ['instr-1'],
+        },
+        'instructor-1',
+      );
+
+      expect(uploadsService.attachToContext).toHaveBeenCalledWith(
+        'instr-1',
+        'assign-1',
+        'instructor-1',
+        tenantId,
+      );
+    });
+
+    it('skips attachToContext when fileUploadIds empty', async () => {
+      const saved = createAssignment({ sectionId });
+      assignmentRepo.create!.mockReturnValue(saved);
+      assignmentRepo.save!.mockResolvedValue(saved);
+
+      await service.create(
+        tenantId,
+        { sectionId, title: 'HW2', pointsPossible: 100 },
+        'instructor-1',
+      );
+
+      expect(uploadsService.attachToContext).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findAttachments', () => {
+    it('queries by context + contextId + tenantId + confirmed', async () => {
+      fileUploadRepo.find!.mockResolvedValue([]);
+
+      await service.findAttachments(
+        UploadContext.ASSIGNMENT_SUBMISSION,
+        'sub-1',
+        tenantId,
+      );
+
+      expect(fileUploadRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            context: UploadContext.ASSIGNMENT_SUBMISSION,
+            contextId: 'sub-1',
+            tenantId,
+            confirmed: true,
+          },
+        }),
+      );
     });
   });
 });

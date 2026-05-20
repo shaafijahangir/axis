@@ -387,4 +387,166 @@ describe('UsersService', () => {
       expect(result.pageSize).toBe(20);
     });
   });
+
+  // ============================================================================
+  // SPRINT-3: K-12 student fields validation
+  // ============================================================================
+
+  describe('adminCreate — K-12 field validation', () => {
+    const baseInput = {
+      email: 'k12@test.edu',
+      password: 'password1!',
+      firstName: 'K12',
+      lastName: 'User',
+    };
+
+    it('persists gradeLevel + homeroomTeacherId on STUDENT', async () => {
+      const teacher = createUser({
+        tenantId,
+        id: 'teacher-1',
+        roles: [UserRole.INSTRUCTOR],
+      });
+      const student = createUser({ tenantId, roles: [UserRole.STUDENT] });
+      // First findOne (email uniqueness) → null; second (teacher lookup) → teacher
+      (repo.findOne as jest.Mock)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(teacher);
+      (repo.create as jest.Mock).mockReturnValue(student);
+      (repo.save as jest.Mock).mockResolvedValue(student);
+
+      await service.adminCreate(tenantId, {
+        ...baseInput,
+        roles: [UserRole.STUDENT],
+        gradeLevel: 11,
+        homeroomTeacherId: 'teacher-1',
+      });
+
+      const createCall = (repo.create as jest.Mock).mock.calls[0][0];
+      expect(createCall.gradeLevel).toBe(11);
+      expect(createCall.homeroomTeacherId).toBe('teacher-1');
+    });
+
+    it('rejects gradeLevel on a non-student account', async () => {
+      (repo.findOne as jest.Mock).mockResolvedValueOnce(null);
+
+      await expect(
+        service.adminCreate(tenantId, {
+          ...baseInput,
+          roles: [UserRole.INSTRUCTOR],
+          gradeLevel: 11,
+        }),
+      ).rejects.toThrow(/can only be set on student/i);
+      expect(repo.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects homeroomTeacherId on a non-student account', async () => {
+      (repo.findOne as jest.Mock).mockResolvedValueOnce(null);
+
+      await expect(
+        service.adminCreate(tenantId, {
+          ...baseInput,
+          roles: [UserRole.ADMIN],
+          homeroomTeacherId: 'teacher-1',
+        }),
+      ).rejects.toThrow(/can only be set on student/i);
+    });
+
+    it('rejects homeroomTeacherId that does not exist in tenant', async () => {
+      (repo.findOne as jest.Mock)
+        .mockResolvedValueOnce(null) // email uniqueness OK
+        .mockResolvedValueOnce(null); // homeroom lookup fails
+
+      await expect(
+        service.adminCreate(tenantId, {
+          ...baseInput,
+          roles: [UserRole.STUDENT],
+          homeroomTeacherId: 'ghost-id',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rejects homeroomTeacherId pointing to a non-instructor', async () => {
+      const otherStudent = createUser({
+        tenantId,
+        id: 'student-2',
+        roles: [UserRole.STUDENT],
+      });
+      (repo.findOne as jest.Mock)
+        .mockResolvedValueOnce(null) // email uniqueness OK
+        .mockResolvedValueOnce(otherStudent); // homeroom = a student
+
+      await expect(
+        service.adminCreate(tenantId, {
+          ...baseInput,
+          roles: [UserRole.STUDENT],
+          homeroomTeacherId: 'student-2',
+        }),
+      ).rejects.toThrow(/must have the INSTRUCTOR role/i);
+    });
+  });
+
+  describe('adminUpdate — K-12 validation on merged role list', () => {
+    it('rejects gradeLevel when role patch removes STUDENT', async () => {
+      const existing = createUser({
+        tenantId,
+        roles: [UserRole.STUDENT],
+      });
+      (existing as unknown as Record<string, unknown>).gradeLevel = 10;
+      (repo.findOne as jest.Mock).mockResolvedValue(existing);
+
+      await expect(
+        service.adminUpdate(existing.id, tenantId, {
+          roles: [UserRole.INSTRUCTOR],
+          // gradeLevel left in place — merged state would be gradeLevel on a non-student
+        }),
+      ).rejects.toThrow(/can only be set on student/i);
+    });
+
+    it('allows clearing gradeLevel + homeroom when role patch removes STUDENT', async () => {
+      const existing = createUser({
+        tenantId,
+        roles: [UserRole.STUDENT],
+      });
+      (repo.findOne as jest.Mock).mockResolvedValue(existing);
+      (repo.update as jest.Mock).mockResolvedValue({ affected: 1 });
+      (repo.findOneOrFail as jest.Mock).mockResolvedValue(existing);
+
+      await expect(
+        service.adminUpdate(existing.id, tenantId, {
+          roles: [UserRole.INSTRUCTOR],
+          gradeLevel: null,
+          homeroomTeacherId: null,
+        }),
+      ).resolves.toBeDefined();
+    });
+  });
+
+  describe('findAllForTenant — gradeLevel filter', () => {
+    it('adds gradeLevel WHERE clause when filter set', async () => {
+      const qb = createMockQueryBuilder<User>();
+      setupQueryBuilder(repo, qb);
+      (qb.getManyAndCount as jest.Mock).mockResolvedValue([[], 0]);
+
+      await service.findAllForTenant(tenantId, { gradeLevel: 11 });
+
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'user.gradeLevel = :gradeLevel',
+        { gradeLevel: 11 },
+      );
+    });
+
+    it('does not filter on gradeLevel when not provided', async () => {
+      const qb = createMockQueryBuilder<User>();
+      setupQueryBuilder(repo, qb);
+      (qb.getManyAndCount as jest.Mock).mockResolvedValue([[], 0]);
+
+      await service.findAllForTenant(tenantId);
+
+      const calls = (qb.andWhere as jest.Mock).mock.calls;
+      const gradeCalls = calls.filter((c) =>
+        String(c[0]).includes('gradeLevel'),
+      );
+      expect(gradeCalls).toHaveLength(0);
+    });
+  });
 });
