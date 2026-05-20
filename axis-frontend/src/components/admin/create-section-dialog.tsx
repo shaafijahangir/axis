@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +16,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -29,9 +29,13 @@ import {
   ADMIN_USERS_LIST_QUERY,
 } from '@/lib/graphql/queries/admin-academics';
 import { ADMIN_CREATE_SECTION_MUTATION } from '@/lib/graphql/mutations/admin-academics';
-
-const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'] as const;
-type WeekDay = (typeof DAYS)[number];
+import {
+  ScheduleFields,
+  EMPTY_SCHEDULE,
+  scheduleFieldsToInput,
+  validateScheduleFields,
+  type ScheduleFieldsValue,
+} from '@/components/sections/schedule-fields';
 
 const createSectionSchema = z.object({
   courseId: z.string().min(1, 'Course is required'),
@@ -39,9 +43,6 @@ const createSectionSchema = z.object({
   instructorId: z.string().min(1, 'Instructor is required'),
   location: z.string().optional(),
   capacity: z.number().min(1).optional(),
-  meetingDays: z.array(z.string()).optional(),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
 });
 
 type CreateSectionFormValues = z.infer<typeof createSectionSchema>;
@@ -57,6 +58,9 @@ export function CreateSectionDialog({
   onOpenChange,
   onSuccess,
 }: CreateSectionDialogProps) {
+  const [schedule, setSchedule] = useState<ScheduleFieldsValue>(EMPTY_SCHEDULE);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -95,6 +99,8 @@ export function CreateSectionDialog({
       onCompleted: () => {
         toast.success('Section created');
         reset();
+        setSchedule(EMPTY_SCHEDULE);
+        setScheduleError(null);
         onOpenChange(false);
         onSuccess();
       },
@@ -103,12 +109,15 @@ export function CreateSectionDialog({
   );
 
   const onSubmit = (data: CreateSectionFormValues) => {
-    const { meetingDays, startTime, endTime, ...rest } = data;
-    const schedule =
-      meetingDays?.length && startTime && endTime
-        ? JSON.stringify({ meetingDays, startTime, endTime })
-        : undefined;
-    createSection({ variables: { input: { ...rest, schedule } } });
+    const err = validateScheduleFields(schedule);
+    if (err) {
+      setScheduleError(err);
+      return;
+    }
+    setScheduleError(null);
+    createSection({
+      variables: { input: { ...data, ...scheduleFieldsToInput(schedule) } },
+    });
   };
 
   const courses = coursesData?.courses ?? [];
@@ -201,10 +210,10 @@ export function CreateSectionDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="section-location">Location</Label>
+              <Label htmlFor="section-location">Building / Location</Label>
               <Input
                 id="section-location"
-                placeholder="e.g. Room 201"
+                placeholder="e.g. Main Hall"
                 {...register('location')}
               />
             </div>
@@ -217,47 +226,13 @@ export function CreateSectionDialog({
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Meeting Days</Label>
-            <div className="flex gap-3 flex-wrap">
-              {(['MON', 'TUE', 'WED', 'THU', 'FRI'] as const).map((day) => {
-                const days = watch('meetingDays') ?? [];
-                return (
-                  <div key={day} className="flex items-center gap-1.5">
-                    <Checkbox
-                      id={`day-${day}`}
-                      checked={days.includes(day)}
-                      onCheckedChange={(checked) => {
-                        const current = watch('meetingDays') ?? [];
-                        setValue(
-                          'meetingDays',
-                          checked
-                            ? [...current, day]
-                            : current.filter((d) => d !== day),
-                        );
-                      }}
-                    />
-                    <Label
-                      htmlFor={`day-${day}`}
-                      className="text-xs font-normal cursor-pointer"
-                    >
-                      {day}
-                    </Label>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start-time">Start Time</Label>
-              <Input id="start-time" type="time" {...register('startTime')} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end-time">End Time</Label>
-              <Input id="end-time" type="time" {...register('endTime')} />
-            </div>
-          </div>
+
+          <ScheduleFields
+            value={schedule}
+            onChange={setSchedule}
+            error={scheduleError}
+          />
+
           <div className="flex justify-end gap-2">
             <Button
               type="button"

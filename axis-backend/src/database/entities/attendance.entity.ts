@@ -45,7 +45,7 @@ export class Attendance extends TenantScopedEntity {
   @Column({ type: 'enum', enum: AttendanceStatus })
   status: AttendanceStatus;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @Column({ type: 'varchar', length: 255, nullable: true })
   notes: string | null;
 }

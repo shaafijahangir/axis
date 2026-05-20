@@ -6,9 +6,31 @@ import {
   IsEnum,
   IsArray,
   IsInt,
+  IsIn,
+  MaxLength,
+  Matches,
   Min,
   Max,
+  ArrayUnique,
 } from 'class-validator';
+
+/**
+ * SPRINT-1: Allowed day codes for section meeting days.
+ * Mon-Sun supported; UI exposes Mon-Fri only.
+ */
+export const MEETING_DAY_CODES = [
+  'MON',
+  'TUE',
+  'WED',
+  'THU',
+  'FRI',
+  'SAT',
+  'SUN',
+] as const;
+export type MeetingDay = (typeof MEETING_DAY_CODES)[number];
+
+/** SPRINT-1: 24-hour "HH:MM" format. */
+export const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 import { CourseCategory } from '../../../database/entities/course.entity';
 import { Course } from '../../../database/entities/course.entity';
 
@@ -277,6 +299,31 @@ export class CreateSectionInput {
   @IsNumber()
   capacity?: number;
 
+  // ── SPRINT-1: typed schedule fields ──
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsIn(MEETING_DAY_CODES, { each: true })
+  meetingDays?: MeetingDay[];
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @Matches(TIME_REGEX, { message: 'startTime must be in HH:MM (24h) format' })
+  startTime?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @Matches(TIME_REGEX, { message: 'endTime must be in HH:MM (24h) format' })
+  endTime?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  room?: string;
+
+  /** @deprecated SPRINT-1: kept for one release; new code should use meetingDays/startTime/endTime. */
   @Field({ nullable: true })
   @IsOptional()
   @IsString()

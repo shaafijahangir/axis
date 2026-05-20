@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
@@ -195,13 +196,51 @@ export class CoursesService {
     return section;
   }
 
+  /**
+   * SPRINT-1: Cross-field validation for the typed schedule columns.
+   *  - If any of meetingDays/startTime/endTime is provided, the others must be too
+   *  - endTime must be strictly after startTime
+   *
+   * `null` or `undefined` values are treated as unset.
+   */
+  private validateSchedule(input: {
+    meetingDays?: string[] | null;
+    startTime?: string | null;
+    endTime?: string | null;
+  }): void {
+    const hasDays = !!input.meetingDays && input.meetingDays.length > 0;
+    const hasStart = !!input.startTime;
+    const hasEnd = !!input.endTime;
+
+    if (!hasDays && !hasStart && !hasEnd) return; // all unset is fine
+
+    if (!hasDays || !hasStart || !hasEnd) {
+      throw new BadRequestException(
+        'meetingDays, startTime, and endTime must all be set together (or all left blank)',
+      );
+    }
+
+    if (input.startTime! >= input.endTime!) {
+      throw new BadRequestException('endTime must be after startTime');
+    }
+  }
+
   async createSection(
     instructorId: string,
     input: CreateSectionInput,
   ): Promise<CourseSection> {
+    this.validateSchedule(input);
+
     const section = this.sectionsRepository.create({
-      ...input,
+      courseId: input.courseId,
+      termId: input.termId,
       instructorId,
+      location: input.location,
+      capacity: input.capacity,
+      meetingDays: input.meetingDays ?? [],
+      startTime: input.startTime ?? null,
+      endTime: input.endTime ?? null,
+      room: input.room ?? null,
       schedule: input.schedule ?? null,
     });
     const saved = await this.sectionsRepository.save(section);
@@ -852,12 +891,18 @@ export class CoursesService {
   async adminCreateSection(
     input: AdminCreateSectionInput,
   ): Promise<CourseSection> {
+    this.validateSchedule(input);
+
     const section = this.sectionsRepository.create({
       courseId: input.courseId,
       termId: input.termId,
       instructorId: input.instructorId,
       location: input.location,
       capacity: input.capacity,
+      meetingDays: input.meetingDays ?? [],
+      startTime: input.startTime ?? null,
+      endTime: input.endTime ?? null,
+      room: input.room ?? null,
       schedule: input.schedule ?? undefined,
     });
     return this.sectionsRepository.save(section);
@@ -877,12 +922,31 @@ export class CoursesService {
       throw new NotFoundException('Section not found');
     }
 
+    // SPRINT-1: validate the merged schedule state — if any field is touched,
+    // we need to look at the FINAL state (existing values + incoming patch)
+    const merged = {
+      meetingDays:
+        input.meetingDays !== undefined
+          ? input.meetingDays
+          : section.meetingDays,
+      startTime:
+        input.startTime !== undefined ? input.startTime : section.startTime,
+      endTime: input.endTime !== undefined ? input.endTime : section.endTime,
+    };
+    this.validateSchedule(merged);
+
     const updateData: Partial<CourseSection> = {};
     if (input.location !== undefined) updateData.location = input.location;
     if (input.capacity !== undefined) updateData.capacity = input.capacity;
     if (input.status !== undefined) updateData.status = input.status;
     if (input.instructorId !== undefined)
       updateData.instructorId = input.instructorId;
+    if (input.meetingDays !== undefined)
+      updateData.meetingDays = input.meetingDays;
+    if (input.startTime !== undefined)
+      updateData.startTime = input.startTime ?? null;
+    if (input.endTime !== undefined) updateData.endTime = input.endTime ?? null;
+    if (input.room !== undefined) updateData.room = input.room ?? null;
     if (input.schedule !== undefined)
       updateData.schedule = input.schedule ?? undefined;
 

@@ -26,6 +26,7 @@ registerEnumType(EnrollmentMode, { name: 'EnrollmentMode' });
 @Index(['instructorId'])
 @Index(['termId'])
 @Index(['enrollmentMode'])
+@Index(['termId', 'instructorId'])
 export class CourseSection extends BaseEntity {
   @Field()
   @Column()
@@ -53,6 +54,27 @@ export class CourseSection extends BaseEntity {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'instructorId' })
   instructor: User;
+
+  /**
+   * SPRINT-1: Typed schedule columns. Replaces the unstructured `schedule` JSONB.
+   * `schedule` is kept for one release for backward compatibility with legacy reads;
+   * new writes go to the typed columns. Drop in Sprint 7 migration.
+   */
+  @Field(() => [String])
+  @Column({ type: 'text', array: true, default: () => "'{}'" })
+  meetingDays: string[];
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'time', nullable: true })
+  startTime: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'time', nullable: true })
+  endTime: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  room: string | null;
 
   @Field(() => String, { nullable: true })
   @Column({

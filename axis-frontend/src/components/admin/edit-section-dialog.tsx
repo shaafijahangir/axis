@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,7 +16,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -26,17 +25,19 @@ import {
 } from '@/components/ui/select';
 import { ADMIN_USERS_LIST_QUERY } from '@/lib/graphql/queries/admin-academics';
 import { UPDATE_SECTION_MUTATION } from '@/lib/graphql/mutations/admin-academics';
-
-const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'] as const;
+import {
+  ScheduleFields,
+  EMPTY_SCHEDULE,
+  scheduleFieldsToInput,
+  validateScheduleFields,
+  type ScheduleFieldsValue,
+} from '@/components/sections/schedule-fields';
 
 const editSectionSchema = z.object({
   location: z.string().optional(),
   capacity: z.number().min(1).optional(),
   status: z.string(),
   instructorId: z.string().min(1, 'Instructor is required'),
-  meetingDays: z.array(z.string()).optional(),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
 });
 
 type EditSectionFormValues = z.infer<typeof editSectionSchema>;
@@ -48,6 +49,10 @@ interface AdminSection {
   capacity: number | null;
   status: string;
   schedule?: string | null;
+  meetingDays?: string[] | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  room?: string | null;
   course: { code: string; title: string };
 }
 
@@ -65,10 +70,29 @@ const STATUS_OPTIONS = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-function parseSchedule(raw: string | null | undefined) {
-  if (!raw) return { meetingDays: [], startTime: '', endTime: '' };
+/**
+ * SPRINT-1: Migrate a section's schedule into ScheduleFieldsValue.
+ * Prefer the new typed columns; fall back to the legacy `schedule` JSONB
+ * blob so sections created before Sprint 1 still edit correctly.
+ */
+function sectionToSchedule(section: AdminSection): ScheduleFieldsValue {
+  if (
+    section.meetingDays?.length ||
+    section.startTime ||
+    section.endTime ||
+    section.room
+  ) {
+    return {
+      meetingDays: section.meetingDays ?? [],
+      startTime: section.startTime ?? '',
+      endTime: section.endTime ?? '',
+      room: section.room ?? '',
+    };
+  }
+  // Legacy fallback
+  if (!section.schedule) return EMPTY_SCHEDULE;
   try {
-    const parsed = JSON.parse(raw) as {
+    const parsed = JSON.parse(section.schedule) as {
       meetingDays?: string[];
       startTime?: string;
       endTime?: string;
@@ -77,9 +101,10 @@ function parseSchedule(raw: string | null | undefined) {
       meetingDays: parsed.meetingDays ?? [],
       startTime: parsed.startTime ?? '',
       endTime: parsed.endTime ?? '',
+      room: '',
     };
   } catch {
-    return { meetingDays: [], startTime: '', endTime: '' };
+    return EMPTY_SCHEDULE;
   }
 }
 
@@ -89,10 +114,13 @@ export function EditSectionDialog({
   section,
   onSuccess,
 }: EditSectionDialogProps) {
+  const [schedule, setSchedule] = useState<ScheduleFieldsValue>(EMPTY_SCHEDULE);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+
   const {
-    register,
     handleSubmit,
     reset,
+    register,
     formState: { errors },
     setValue,
     watch,
@@ -115,18 +143,14 @@ export function EditSectionDialog({
 
   useEffect(() => {
     if (section) {
-      const { meetingDays, startTime, endTime } = parseSchedule(
-        section.schedule,
-      );
       reset({
         location: section.location ?? '',
         capacity: section.capacity ?? undefined,
         status: section.status,
         instructorId: section.instructorId,
-        meetingDays,
-        startTime,
-        endTime,
       });
+      setSchedule(sectionToSchedule(section));
+      setScheduleError(null);
     }
   }, [section, reset]);
 
@@ -141,13 +165,17 @@ export function EditSectionDialog({
 
   const onSubmit = (data: EditSectionFormValues) => {
     if (!section) return;
-    const { meetingDays, startTime, endTime, ...rest } = data;
-    const schedule =
-      meetingDays?.length && startTime && endTime
-        ? JSON.stringify({ meetingDays, startTime, endTime })
-        : undefined;
+    const err = validateScheduleFields(schedule);
+    if (err) {
+      setScheduleError(err);
+      return;
+    }
+    setScheduleError(null);
     updateSection({
-      variables: { id: section.id, input: { ...rest, schedule } },
+      variables: {
+        id: section.id,
+        input: { ...data, ...scheduleFieldsToInput(schedule) },
+      },
     });
   };
 
@@ -211,7 +239,7 @@ export function EditSectionDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-section-location">Location</Label>
+              <Label htmlFor="edit-section-location">Building / Location</Label>
               <Input id="edit-section-location" {...register('location')} />
             </div>
             <div className="space-y-2">
@@ -223,51 +251,13 @@ export function EditSectionDialog({
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Meeting Days</Label>
-            <div className="flex gap-3 flex-wrap">
-              {DAYS.map((day) => {
-                const days = watch('meetingDays') ?? [];
-                return (
-                  <div key={day} className="flex items-center gap-1.5">
-                    <Checkbox
-                      id={`edit-day-${day}`}
-                      checked={days.includes(day)}
-                      onCheckedChange={(checked) => {
-                        const current = watch('meetingDays') ?? [];
-                        setValue(
-                          'meetingDays',
-                          checked
-                            ? [...current, day]
-                            : current.filter((d) => d !== day),
-                        );
-                      }}
-                    />
-                    <Label
-                      htmlFor={`edit-day-${day}`}
-                      className="text-xs font-normal cursor-pointer"
-                    >
-                      {day}
-                    </Label>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-start-time">Start Time</Label>
-              <Input
-                id="edit-start-time"
-                type="time"
-                {...register('startTime')}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-end-time">End Time</Label>
-              <Input id="edit-end-time" type="time" {...register('endTime')} />
-            </div>
-          </div>
+
+          <ScheduleFields
+            value={schedule}
+            onChange={setSchedule}
+            error={scheduleError}
+          />
+
           <div className="flex justify-end gap-2">
             <Button
               type="button"

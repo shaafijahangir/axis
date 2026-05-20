@@ -13,6 +13,10 @@ export const MY_ENROLLMENTS_QUERY = gql`
         id
         location
         schedule
+        meetingDays
+        startTime
+        endTime
+        room
         status
         course {
           id
@@ -43,6 +47,10 @@ export const MY_SECTIONS_QUERY = gql`
       id
       location
       schedule
+      meetingDays
+      startTime
+      endTime
+      room
       capacity
       status
       course {

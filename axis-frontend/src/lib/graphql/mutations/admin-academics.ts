@@ -56,6 +56,10 @@ export const ADMIN_CREATE_SECTION_MUTATION = gql`
       location
       capacity
       status
+      meetingDays
+      startTime
+      endTime
+      room
     }
   }
 `;
@@ -68,6 +72,10 @@ export const UPDATE_SECTION_MUTATION = gql`
       capacity
       status
       instructorId
+      meetingDays
+      startTime
+      endTime
+      room
     }
   }
 `;
