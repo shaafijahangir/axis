@@ -183,6 +183,24 @@ export class EmailTemplatesService {
     };
   }
 
+  passwordReset(data: { firstName: string; resetUrl: string }): {
+    subject: string;
+    html: string;
+  } {
+    const content = `
+      ${this.h1('Reset your password')}
+      ${this.p(`Hi ${data.firstName},`)}
+      ${this.p('We received a request to reset your Axis password. Click the button below to choose a new password. This link expires in <strong>1 hour</strong>.')}
+      ${this.cta('Reset Password', data.resetUrl)}
+      ${this.divider()}
+      ${this.muted('If you did not request a password reset, you can safely ignore this email. Your password will not change.')}
+    `;
+    return {
+      subject: 'Reset your Axis password',
+      html: this.layout(content),
+    };
+  }
+
   dueDateReminder(data: {
     studentName: string;
     assignmentTitle: string;

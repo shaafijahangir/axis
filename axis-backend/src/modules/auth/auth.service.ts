@@ -9,6 +9,8 @@ import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { EmailService } from '../notifications/email.service';
+import { EmailTemplatesService } from '../notifications/email-templates.service';
 import { RegisterDto, AuthResponseDto } from './dto/auth.dto';
 import { UserRole } from '../../database/entities';
 import { User } from '../../database/entities/user.entity';
@@ -29,6 +31,8 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private emailService: EmailService,
+    private emailTemplates: EmailTemplatesService,
     @InjectRepository(User) private userRepo: Repository<User>,
   ) {}
 
@@ -127,7 +131,13 @@ export class AuthService {
     const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
-    // In dev, surface the URL so you can test without email
+    const { subject, html } = this.emailTemplates.passwordReset({
+      firstName: user.firstName,
+      resetUrl,
+    });
+    await this.emailService.sendEmail({ to: user.email, subject, html });
+
+    // Also log in dev so it works without RESEND_API_KEY configured
     console.log(`[PasswordReset] Reset URL for ${email}: ${resetUrl}`);
 
     return { resetUrl };

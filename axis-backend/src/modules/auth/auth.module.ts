@@ -7,6 +7,7 @@ import type { StringValue } from 'ms';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { User } from '../../database/entities/user.entity';
@@ -15,6 +16,7 @@ import { User } from '../../database/entities/user.entity';
   imports: [
     TypeOrmModule.forFeature([User]),
     UsersModule,
+    NotificationsModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
