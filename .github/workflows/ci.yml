@@ -11,6 +11,10 @@ env:
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 jobs:
+  # ──────────────────────────────────────────────────────────────────
+  # Unit tests + lint + typecheck + build.
+  # Runs on every PR. Fast (< 5 min on warm cache).
+  # ──────────────────────────────────────────────────────────────────
   ci:
     runs-on: ubuntu-latest
 
@@ -22,11 +26,21 @@ jobs:
           POSTGRES_PASSWORD: test
           POSTGRES_DB: axis_test
         ports:
-          - 5432:5432
+          - 5433:5432  # match the dev port so .env.example just works
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 3s
           --health-retries 5
 
     steps:
@@ -53,20 +67,30 @@ jobs:
       - name: Test
         run: pnpm test
         env:
+          # NODE_ENV unset → dev path → synchronize:true creates schema
+          # and assertSecureJwtSecret() is a no-op (only fires in prod).
           DATABASE_HOST: localhost
-          DATABASE_PORT: 5432
+          DATABASE_PORT: 5433
           DATABASE_USERNAME: test
           DATABASE_PASSWORD: test
           DATABASE_NAME: axis_test
-          JWT_SECRET: test-secret
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          # 64-char secret so future tightening doesn't surprise CI.
+          JWT_SECRET: ci-test-secret-do-not-use-in-prod-ci-test-secret-do-not-use-1234
 
       - name: Build
         run: pnpm build
 
+  # ──────────────────────────────────────────────────────────────────
+  # End-to-end tests against a running stack with seeded data.
+  # Runs only on main branch pushes (PRs run unit tests only — fast
+  # feedback). Brings up postgres + redis + a transient MinIO so the
+  # file-upload flow can round-trip.
+  # ──────────────────────────────────────────────────────────────────
   e2e:
     runs-on: ubuntu-latest
     needs: ci
-    # Only run E2E tests on main branch (PRs run unit tests only)
     if: github.ref == 'refs/heads/main'
 
     services:
@@ -77,11 +101,21 @@ jobs:
           POSTGRES_PASSWORD: test
           POSTGRES_DB: axis_test
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 3s
           --health-retries 5
 
     steps:
@@ -100,43 +134,79 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm --filter axis-frontend playwright:install
-        working-directory: .
+        run: pnpm --filter axis-frontend exec playwright install --with-deps chromium
+
+      # MinIO can't be a GitHub Actions service container because services
+      # don't accept command args (`server /data`). Run it manually.
+      - name: Start MinIO + create bucket
+        run: |
+          docker run -d --name axis-ci-minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=axisdev \
+            -e MINIO_ROOT_PASSWORD=axisdev123 \
+            minio/minio:latest server /data
+          # Wait for MinIO to be live
+          for i in {1..30}; do
+            if curl -fsS http://localhost:9000/minio/health/live >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          # Create the bucket
+          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
+          chmod +x /tmp/mc
+          /tmp/mc alias set local http://localhost:9000 axisdev axisdev123
+          /tmp/mc mb local/axis || true
 
       - name: Build projects
         run: pnpm build
 
-      - name: Start backend server
-        run: pnpm --filter axis-backend start:prod &
+      - name: Seed demo data
+        run: pnpm --filter axis-backend seed
         env:
           DATABASE_HOST: localhost
-          DATABASE_PORT: 5432
+          DATABASE_PORT: 5433
           DATABASE_USERNAME: test
           DATABASE_PASSWORD: test
           DATABASE_NAME: axis_test
-          JWT_SECRET: test-secret
-          FRONTEND_URL: http://localhost:3000
+          JWT_SECRET: ci-test-secret-do-not-use-in-prod-ci-test-secret-do-not-use-1234
 
-      - name: Start frontend server
+      - name: Start backend
+        run: pnpm --filter axis-backend start:prod &
+        env:
+          PORT: 3002
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5433
+          DATABASE_USERNAME: test
+          DATABASE_PASSWORD: test
+          DATABASE_NAME: axis_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: ci-test-secret-do-not-use-in-prod-ci-test-secret-do-not-use-1234
+          FRONTEND_URL: http://localhost:3001
+          R2_ENDPOINT: http://localhost:9000
+          R2_ACCESS_KEY_ID: axisdev
+          R2_SECRET_ACCESS_KEY: axisdev123
+          R2_BUCKET: axis
+          R2_REGION: us-east-1
+          R2_PUBLIC_URL: http://localhost:9000/axis
+
+      - name: Start frontend
         run: pnpm --filter axis-frontend start &
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:3001/api
+          PORT: 3001
+          NEXT_PUBLIC_API_URL: http://localhost:3002/api
 
       - name: Wait for servers
         run: |
-          npx wait-on http://localhost:3001/api/health http://localhost:3000 --timeout 60000
+          npx wait-on http://localhost:3002/api/health http://localhost:3001 --timeout 90000
 
       - name: Run E2E tests
         run: pnpm test:e2e
         env:
           CI: true
-          E2E_BASE_URL: http://localhost:3000
-          E2E_API_URL: http://localhost:3001/api
-          DATABASE_HOST: localhost
-          DATABASE_PORT: 5432
-          DATABASE_USERNAME: test
-          DATABASE_PASSWORD: test
-          DATABASE_NAME: axis_test
+          E2E_BASE_URL: http://localhost:3001
+          E2E_API_URL: http://localhost:3002/api
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
