@@ -9,6 +9,8 @@ export const ADMIN_CREATE_USER_MUTATION = gql`
       lastName
       roles
       status
+      gradeLevel
+      homeroomTeacherId
     }
   }
 `;
@@ -22,6 +24,8 @@ export const ADMIN_UPDATE_USER_MUTATION = gql`
       lastName
       roles
       status
+      gradeLevel
+      homeroomTeacherId
     }
   }
 `;

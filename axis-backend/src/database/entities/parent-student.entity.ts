@@ -1,7 +1,19 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { ObjectType, Field } from '@nestjs/graphql';
+import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
 import { TenantScopedEntity } from './base.entity';
 import { User } from './user.entity';
+
+/**
+ * SPRINT-3: How the parent account relates to the student. Defaults to
+ * PARENT so existing link rows stay consistent after the migration.
+ */
+export enum ParentRelationship {
+  PARENT = 'parent',
+  GUARDIAN = 'guardian',
+  OTHER = 'other',
+}
+
+registerEnumType(ParentRelationship, { name: 'ParentRelationship' });
 
 @ObjectType()
 @Entity('parent_students')
@@ -27,4 +39,12 @@ export class ParentStudent extends TenantScopedEntity {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'studentId' })
   student: User;
+
+  @Field(() => ParentRelationship)
+  @Column({
+    type: 'enum',
+    enum: ParentRelationship,
+    default: ParentRelationship.PARENT,
+  })
+  relationship: ParentRelationship;
 }

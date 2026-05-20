@@ -1,12 +1,13 @@
 import {
   Injectable,
+  BadRequestException,
   ConflictException,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserStatus } from '../../database/entities';
+import { User, UserRole, UserStatus } from '../../database/entities';
 import * as bcrypt from 'bcrypt';
 import {
   AdminCreateUserInput,
@@ -114,6 +115,12 @@ export class UsersService {
       qb.andWhere('user.status = :status', { status: filter.status });
     }
 
+    if (filter?.gradeLevel != null) {
+      qb.andWhere('user.gradeLevel = :gradeLevel', {
+        gradeLevel: filter.gradeLevel,
+      });
+    }
+
     qb.orderBy('user.createdAt', 'DESC').skip(offset).take(pageSize);
 
     const [users, totalCount] = await qb.getManyAndCount();
@@ -123,6 +130,49 @@ export class UsersService {
 
   async countForTenant(tenantId: string): Promise<number> {
     return this.usersRepository.count({ where: { tenantId } });
+  }
+
+  /**
+   * SPRINT-3: Validate the K-12 fields against the user's role list.
+   *  - gradeLevel only allowed when roles includes STUDENT
+   *  - homeroomTeacherId must point to an INSTRUCTOR in the same tenant
+   *
+   * Called from adminCreate and adminUpdate before persisting.
+   */
+  private async validateK12Fields(
+    tenantId: string,
+    roles: UserRole[],
+    gradeLevel: number | null | undefined,
+    homeroomTeacherId: string | null | undefined,
+  ): Promise<void> {
+    const isStudent = roles.includes(UserRole.STUDENT);
+
+    if (gradeLevel != null && !isStudent) {
+      throw new BadRequestException(
+        'Grade level can only be set on student accounts',
+      );
+    }
+    if (homeroomTeacherId != null && !isStudent) {
+      throw new BadRequestException(
+        'Homeroom teacher can only be set on student accounts',
+      );
+    }
+
+    if (homeroomTeacherId != null) {
+      const teacher = await this.usersRepository.findOne({
+        where: { id: homeroomTeacherId, tenantId },
+      });
+      if (!teacher) {
+        throw new NotFoundException(
+          'Homeroom teacher not found in this institution',
+        );
+      }
+      if (!teacher.roles.includes(UserRole.INSTRUCTOR)) {
+        throw new BadRequestException(
+          'Homeroom teacher must have the INSTRUCTOR role',
+        );
+      }
+    }
   }
 
   async adminCreate(
@@ -139,6 +189,13 @@ export class UsersService {
       );
     }
 
+    await this.validateK12Fields(
+      tenantId,
+      input.roles,
+      input.gradeLevel ?? null,
+      input.homeroomTeacherId ?? null,
+    );
+
     const hashedPassword = await bcrypt.hash(input.password, 10);
 
     const user = this.usersRepository.create({
@@ -149,6 +206,8 @@ export class UsersService {
       lastName: input.lastName,
       roles: input.roles,
       status: UserStatus.ACTIVE,
+      gradeLevel: input.gradeLevel ?? null,
+      homeroomTeacherId: input.homeroomTeacherId ?? null,
     });
 
     return this.usersRepository.save(user);
@@ -178,12 +237,32 @@ export class UsersService {
       }
     }
 
+    // SPRINT-3: validate against the merged role list — incoming roles
+    // patch wins, otherwise the user's current roles.
+    const mergedRoles = input.roles ?? user.roles;
+    const mergedGradeLevel =
+      input.gradeLevel !== undefined ? input.gradeLevel : user.gradeLevel;
+    const mergedHomeroom =
+      input.homeroomTeacherId !== undefined
+        ? input.homeroomTeacherId
+        : user.homeroomTeacherId;
+    await this.validateK12Fields(
+      tenantId,
+      mergedRoles,
+      mergedGradeLevel,
+      mergedHomeroom,
+    );
+
     const updateData: Partial<User> = {};
     if (input.firstName !== undefined) updateData.firstName = input.firstName;
     if (input.lastName !== undefined) updateData.lastName = input.lastName;
     if (input.email !== undefined) updateData.email = input.email;
     if (input.roles !== undefined) updateData.roles = input.roles;
     if (input.status !== undefined) updateData.status = input.status;
+    if (input.gradeLevel !== undefined)
+      updateData.gradeLevel = input.gradeLevel;
+    if (input.homeroomTeacherId !== undefined)
+      updateData.homeroomTeacherId = input.homeroomTeacherId;
 
     await this.usersRepository.update(id, updateData);
     return this.usersRepository.findOneOrFail({ where: { id } });

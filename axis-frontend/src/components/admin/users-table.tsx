@@ -49,6 +49,9 @@ interface AdminUser {
   status: string;
   lastLoginAt: string | null;
   createdAt: string;
+  gradeLevel?: number | null;
+  homeroomTeacherId?: string | null;
+  homeroomTeacher?: { id: string; firstName: string; lastName: string } | null;
 }
 
 interface AdminUsersData {
@@ -86,6 +89,7 @@ export function UsersTable() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [gradeFilter, setGradeFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
@@ -106,13 +110,14 @@ export function UsersTable() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, roleFilter, statusFilter]);
+  }, [debouncedSearch, roleFilter, statusFilter, gradeFilter]);
 
   const filterVariables = {
     filter: {
       search: debouncedSearch || undefined,
       role: roleFilter !== 'all' ? roleFilter : undefined,
       status: statusFilter !== 'all' ? statusFilter : undefined,
+      gradeLevel: gradeFilter !== 'all' ? parseInt(gradeFilter, 10) : undefined,
       page,
       pageSize,
     },
@@ -170,6 +175,29 @@ export function UsersTable() {
           {info.getValue()}
         </Badge>
       ),
+    }),
+    columnHelper.display({
+      id: 'k12',
+      header: 'Grade · Homeroom',
+      cell: ({ row }) => {
+        const u = row.original;
+        if (!u.roles.includes('student') || u.gradeLevel == null) {
+          return <span className="text-xs text-muted-foreground">—</span>;
+        }
+        const homeroom = u.homeroomTeacher
+          ? `${u.homeroomTeacher.firstName} ${u.homeroomTeacher.lastName}`
+          : null;
+        return (
+          <div className="text-sm">
+            <span className="font-medium">Grade {u.gradeLevel}</span>
+            {homeroom && (
+              <span className="block text-xs text-muted-foreground">
+                {homeroom}
+              </span>
+            )}
+          </div>
+        );
+      },
     }),
     columnHelper.accessor('lastLoginAt', {
       header: 'Last Login',
@@ -260,6 +288,19 @@ export function UsersTable() {
               <SelectItem value="inactive">Inactive</SelectItem>
               <SelectItem value="suspended">Suspended</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={gradeFilter} onValueChange={setGradeFilter}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Grade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Grades</SelectItem>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
+                <SelectItem key={g} value={String(g)}>
+                  Grade {g}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

@@ -65,6 +65,7 @@ export class ParentService {
       parentId: input.parentId,
       studentId: input.studentId,
       tenantId,
+      relationship: input.relationship,
     });
     return this.linkRepo.save(link);
   }
