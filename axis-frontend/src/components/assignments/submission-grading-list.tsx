@@ -22,6 +22,10 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ASSIGNMENT_SUBMISSIONS_QUERY } from '@/lib/graphql/queries/assignments';
 import { GRADE_SUBMISSION_MUTATION } from '@/lib/graphql/mutations/assignments';
+import {
+  AttachmentList,
+  type AttachmentItem,
+} from '@/components/uploads/attachment-list';
 
 /**
  * WHY: Separate schema per grading action, not one big form for all submissions.
@@ -54,6 +58,7 @@ interface SubmissionEntry {
   gradedAt?: string;
   gradedBy?: string;
   feedback?: string;
+  attachments?: AttachmentItem[];
   user: SubmissionUser;
 }
 
@@ -205,6 +210,15 @@ function SubmissionRow({
               <div className="rounded-md bg-muted p-3 text-sm whitespace-pre-wrap">
                 {displayText}
               </div>
+            </div>
+          )}
+
+          {submission.attachments && submission.attachments.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">
+                Attachments
+              </p>
+              <AttachmentList attachments={submission.attachments} />
             </div>
           )}
 

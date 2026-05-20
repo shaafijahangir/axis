@@ -14,6 +14,7 @@ import { User } from '../../../database/entities/user.entity';
  */
 export enum UploadContext {
   ASSIGNMENT_SUBMISSION = 'assignment_submission',
+  ASSIGNMENT_INSTRUCTIONS = 'assignment_instructions',
   PROFILE_PICTURE = 'profile_picture',
   COURSE_CONTENT = 'course_content',
   IMPORT_DOCUMENT = 'import_document',

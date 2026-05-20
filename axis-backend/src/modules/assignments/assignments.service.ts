@@ -10,6 +10,11 @@ import {
   EnrollmentStatus,
 } from '../../database/entities/enrollment.entity';
 import { NexusEvents } from '../ai/events/ai-events';
+import { UploadsService } from '../uploads/uploads.service';
+import {
+  FileUpload,
+  UploadContext,
+} from '../uploads/entities/file-upload.entity';
 import {
   CreateAssignmentInput,
   UpdateAssignmentInput,
@@ -31,9 +36,65 @@ export class AssignmentsService {
     private submissionRepo: Repository<Submission>,
     @InjectRepository(Enrollment)
     private enrollmentRepo: Repository<Enrollment>,
+    @InjectRepository(FileUpload)
+    private fileUploadRepo: Repository<FileUpload>,
     private eventEmitter: EventEmitter2,
     private dataSource: DataSource,
+    private uploadsService: UploadsService,
   ) {}
+
+  /**
+   * SPRINT-2: Link confirmed FileUploads to a context entity inside a
+   * transaction. Idempotent: re-running with the same fileIds is a no-op
+   * because attachToContext sets contextId unconditionally.
+   *
+   * Skips files the user did not upload (ForbiddenException from
+   * attachToContext bubbles up). Skips already-attached-elsewhere files
+   * silently to avoid creating cross-context links.
+   */
+  private async linkAttachments(
+    fileIds: string[],
+    context: UploadContext,
+    contextId: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<void> {
+    if (!fileIds.length) return;
+    for (const fileId of fileIds) {
+      await this.uploadsService.attachToContext(
+        fileId,
+        contextId,
+        userId,
+        tenantId,
+      );
+    }
+    // Sanity: ensure all linked files match the expected context. Reject
+    // attempts to pass a SUBMISSION upload as instructions (or vice versa).
+    const linked = await this.fileUploadRepo.find({
+      where: { id: In(fileIds), tenantId, contextId },
+    });
+    const wrongContext = linked.filter((f) => f.context !== context);
+    if (wrongContext.length) {
+      throw new NotFoundException(
+        `One or more files were uploaded with the wrong context — expected ${context}`,
+      );
+    }
+  }
+
+  /**
+   * SPRINT-2: Find attachments for a given context entity. Used by the
+   * GraphQL field resolvers on Submission/Assignment.
+   */
+  async findAttachments(
+    context: UploadContext,
+    contextId: string,
+    tenantId: string,
+  ): Promise<FileUpload[]> {
+    return this.fileUploadRepo.find({
+      where: { context, contextId, tenantId, confirmed: true },
+      order: { createdAt: 'ASC' },
+    });
+  }
 
   // ─── Assignments ────────────────────────────────────────────────────
 
@@ -68,21 +129,36 @@ export class AssignmentsService {
   async create(
     tenantId: string,
     input: CreateAssignmentInput,
+    userId?: string,
   ): Promise<Assignment> {
-    const assignment = this.assignmentRepo.create({
-      ...input,
-      tenantId,
-      dueAt: input.dueAt ? new Date(input.dueAt) : undefined,
-      unlockAt: input.unlockAt ? new Date(input.unlockAt) : undefined,
-      lockAt: input.lockAt ? new Date(input.lockAt) : undefined,
-      rubric: input.rubric
-        ? (JSON.parse(input.rubric) as Record<string, unknown>)
-        : undefined,
-      settings: input.settings
-        ? (JSON.parse(input.settings) as Record<string, unknown>)
-        : undefined,
+    const { fileUploadIds, ...assignmentFields } = input;
+
+    const saved = await this.dataSource.manager.transaction(async (manager) => {
+      const assignment = manager.create(Assignment, {
+        ...assignmentFields,
+        tenantId,
+        dueAt: input.dueAt ? new Date(input.dueAt) : undefined,
+        unlockAt: input.unlockAt ? new Date(input.unlockAt) : undefined,
+        lockAt: input.lockAt ? new Date(input.lockAt) : undefined,
+        rubric: input.rubric
+          ? (JSON.parse(input.rubric) as Record<string, unknown>)
+          : undefined,
+        settings: input.settings
+          ? (JSON.parse(input.settings) as Record<string, unknown>)
+          : undefined,
+      });
+      return manager.save(assignment);
     });
-    const saved = await this.assignmentRepo.save(assignment);
+
+    if (fileUploadIds?.length && userId) {
+      await this.linkAttachments(
+        fileUploadIds,
+        UploadContext.ASSIGNMENT_INSTRUCTIONS,
+        saved.id,
+        userId,
+        tenantId,
+      );
+    }
 
     this.eventEmitter.emit(NexusEvents.ASSIGNMENT_CREATED, {
       assignmentId: saved.id,
@@ -94,7 +170,11 @@ export class AssignmentsService {
     return saved;
   }
 
-  async updateAssignment(input: UpdateAssignmentInput): Promise<Assignment> {
+  async updateAssignment(
+    input: UpdateAssignmentInput,
+    userId?: string,
+    tenantId?: string,
+  ): Promise<Assignment> {
     const assignment = await this.assignmentRepo.findOne({
       where: { id: input.id, sectionId: input.sectionId },
     });
@@ -114,7 +194,31 @@ export class AssignmentsService {
     if (input.pointsPossible !== undefined)
       assignment.pointsPossible = input.pointsPossible;
 
-    return this.assignmentRepo.save(assignment);
+    const saved = await this.assignmentRepo.save(assignment);
+
+    // SPRINT-2: Full-replace semantics on instruction attachments.
+    if (input.fileUploadIds !== undefined && userId && tenantId) {
+      // Unlink any current instruction attachments by clearing their contextId
+      await this.fileUploadRepo.update(
+        {
+          context: UploadContext.ASSIGNMENT_INSTRUCTIONS,
+          contextId: saved.id,
+          tenantId,
+        },
+        { contextId: null },
+      );
+      if (input.fileUploadIds.length) {
+        await this.linkAttachments(
+          input.fileUploadIds,
+          UploadContext.ASSIGNMENT_INSTRUCTIONS,
+          saved.id,
+          userId,
+          tenantId,
+        );
+      }
+    }
+
+    return saved;
   }
 
   async extendDeadlines(input: ExtendDeadlinesInput): Promise<Assignment[]> {
@@ -212,6 +316,19 @@ export class AssignmentsService {
       submittedAt: new Date(),
     });
     const saved = await this.submissionRepo.save(submission);
+
+    // SPRINT-2: Attach uploaded files (PDFs, docs, images) to this submission.
+    // Each attempt has its own attachment set — previous attempts' files
+    // stay linked to those attempts for audit.
+    if (input.fileUploadIds?.length) {
+      await this.linkAttachments(
+        input.fileUploadIds,
+        UploadContext.ASSIGNMENT_SUBMISSION,
+        saved.id,
+        userId,
+        tenantId,
+      );
+    }
 
     this.eventEmitter.emit(NexusEvents.SUBMISSION_CREATED, {
       submissionId: saved.id,

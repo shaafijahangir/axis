@@ -16,6 +16,11 @@ import { SubmissionHistory } from '@/components/assignments/submission-history';
 import { SubmissionGradingList } from '@/components/assignments/submission-grading-list';
 import { QuizBuilder } from '@/components/quiz/quiz-builder';
 import { QuizDelivery } from '@/components/quiz/quiz-delivery';
+import {
+  AttachmentList,
+  type AttachmentItem,
+} from '@/components/uploads/attachment-list';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
 
@@ -32,6 +37,7 @@ interface AssignmentData {
   maxAttempts?: number | null;
   timeLimitMinutes?: number | null;
   displayMode?: string | null;
+  attachments?: AttachmentItem[];
 }
 
 interface SubmissionData {
@@ -123,6 +129,20 @@ export default function AssignmentPage() {
         unlockAt={assignment.unlockAt}
         lockAt={assignment.lockAt}
       />
+
+      {/* SPRINT-2: instructor-supplied instruction files */}
+      {assignment.attachments && assignment.attachments.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">
+              Instructions & Resources
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AttachmentList attachments={assignment.attachments} />
+          </CardContent>
+        </Card>
+      )}
 
       {isGrader ? (
         <>
