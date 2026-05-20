@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { SUBMIT_ASSIGNMENT_MUTATION } from '@/lib/graphql/mutations/assignments';
-import { ATTACH_UPLOAD_MUTATION } from '@/lib/graphql/mutations/uploads';
 import { MY_SUBMISSIONS_QUERY } from '@/lib/graphql/queries/assignments';
 import {
   FileUpload,
@@ -48,7 +47,6 @@ export function SubmissionForm({ assignmentId }: SubmissionFormProps) {
       ],
     },
   );
-  const [attachUpload] = useMutation(ATTACH_UPLOAD_MUTATION);
 
   const handleUploadComplete = (file: UploadedFile) => {
     setUploadedFiles((prev) => [...prev, file]);
@@ -56,30 +54,18 @@ export function SubmissionForm({ assignmentId }: SubmissionFormProps) {
 
   const onSubmit = async (values: SubmissionFormValues) => {
     try {
-      const { data } = await submitAssignment({
+      // SPRINT-2: Atomically attach files via fileUploadIds in the mutation
+      // input — backend calls attachToContext inside the transaction so
+      // the submission + attachments are linked together or not at all.
+      await submitAssignment({
         variables: {
           input: {
             assignmentId,
             content: JSON.stringify({ text: values.text }),
+            fileUploadIds: uploadedFiles.map((f) => f.id),
           },
         },
       });
-
-      const submissionId: string =
-        (data as { submitAssignment?: { id: string } })?.submitAssignment?.id ??
-        '';
-
-      // Link any uploaded files to this submission now that we have an ID.
-      // Fire-and-forget in parallel — submission already succeeded.
-      if (submissionId && uploadedFiles.length > 0) {
-        await Promise.all(
-          uploadedFiles.map((f) =>
-            attachUpload({
-              variables: { input: { fileId: f.id, contextId: submissionId } },
-            }),
-          ),
-        );
-      }
 
       reset();
       setUploadedFiles([]);

@@ -110,16 +110,21 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('input') input: CreateAssignmentInput,
   ): Promise<Assignment> {
-    return this.assignmentsService.create(user.tenantId, input);
+    return this.assignmentsService.create(user.tenantId, input, user.id);
   }
 
   @Mutation(() => Assignment)
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
   async updateAssignment(
+    @CurrentUser() user: User,
     @Args('input') input: UpdateAssignmentInput,
   ): Promise<Assignment> {
-    return this.assignmentsService.updateAssignment(input);
+    return this.assignmentsService.updateAssignment(
+      input,
+      user.id,
+      user.tenantId,
+    );
   }
 
   @Mutation(() => [Assignment])

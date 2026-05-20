@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import {
+  FileUpload,
+  type UploadedFile,
+} from '@/components/uploads/file-upload';
 import {
   Card,
   CardContent,
@@ -63,6 +69,7 @@ export function CreateAssignmentForm({
   courseId,
 }: CreateAssignmentFormProps) {
   const router = useRouter();
+  const [instructionFiles, setInstructionFiles] = useState<UploadedFile[]>([]);
 
   const {
     register,
@@ -101,6 +108,8 @@ export function CreateAssignmentForm({
           dueAt: values.dueAt || undefined,
           unlockAt: values.unlockAt || undefined,
           lockAt: values.lockAt || undefined,
+          // SPRINT-2: instruction files attached atomically with the create
+          fileUploadIds: instructionFiles.map((f) => f.id),
         },
       },
     });
@@ -221,6 +230,24 @@ export function CreateAssignmentForm({
                 {...register('lockAt')}
               />
             </div>
+          </div>
+
+          <Separator />
+
+          {/* SPRINT-2: Instructions file attachments */}
+          <div className="space-y-2">
+            <Label>Instructions / Resources</Label>
+            <p className="text-xs text-muted-foreground">
+              Attach PDFs, slides, or any reference materials students should
+              see for this assignment.
+            </p>
+            <FileUpload
+              context="assignment_instructions"
+              onUploadComplete={(f) =>
+                setInstructionFiles((prev) => [...prev, f])
+              }
+              maxFiles={5}
+            />
           </div>
 
           {/* Error + actions */}

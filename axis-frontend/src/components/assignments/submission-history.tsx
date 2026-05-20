@@ -3,6 +3,10 @@
 import { CheckCircle, Clock, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  AttachmentList,
+  type AttachmentItem,
+} from '@/components/uploads/attachment-list';
 
 interface SubmissionData {
   id: string;
@@ -12,6 +16,7 @@ interface SubmissionData {
   score?: number;
   gradedAt?: string;
   feedback?: string;
+  attachments?: AttachmentItem[];
 }
 
 interface SubmissionHistoryProps {
@@ -82,6 +87,11 @@ export function SubmissionHistory({
                 <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
                   {displayText}
                 </p>
+              )}
+              {sub.attachments && sub.attachments.length > 0 && (
+                <div className="mt-2">
+                  <AttachmentList attachments={sub.attachments} />
+                </div>
               )}
               {sub.feedback && (
                 <div className="mt-2 rounded bg-muted p-2">

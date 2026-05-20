@@ -13,6 +13,7 @@ import {
 
 export type UploadContext =
   | 'assignment_submission'
+  | 'assignment_instructions'
   | 'profile_picture'
   | 'course_content'
   | 'import_document';
@@ -53,6 +54,8 @@ interface PendingFile {
 const DEFAULT_ACCEPT: Record<UploadContext, string> = {
   assignment_submission:
     '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mp3,.wav,.zip',
+  assignment_instructions:
+    '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.webp,.zip',
   profile_picture: '.jpg,.jpeg,.png,.webp,.gif',
   course_content: '.pdf,.jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mp3,.wav,.txt',
   import_document: '.pdf,.txt,.csv,.xlsx',
@@ -60,6 +63,7 @@ const DEFAULT_ACCEPT: Record<UploadContext, string> = {
 
 const MAX_SIZE_LABEL: Record<UploadContext, string> = {
   assignment_submission: '50 MB',
+  assignment_instructions: '50 MB',
   profile_picture: '5 MB',
   course_content: '100 MB',
   import_document: '20 MB',

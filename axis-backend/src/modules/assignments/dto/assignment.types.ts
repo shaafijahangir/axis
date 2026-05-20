@@ -1,5 +1,6 @@
 import { InputType, ObjectType, Field, Float } from '@nestjs/graphql';
 import {
+  IsArray,
   IsDateString,
   IsEnum,
   IsNumber,
@@ -61,6 +62,18 @@ export class CreateAssignmentInput {
   @IsOptional()
   @IsString()
   settings?: string;
+
+  /**
+   * SPRINT-2: IDs of confirmed FileUploads (UploadContext = ASSIGNMENT_INSTRUCTIONS)
+   * to attach as instructions for this assignment. The client uploads via the
+   * existing requestUpload → PUT → confirmUpload flow, then passes the resulting
+   * fileIds here so the service links them via attachToContext().
+   */
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  fileUploadIds?: string[];
 }
 
 @InputType()
@@ -74,6 +87,16 @@ export class CreateSubmissionInput {
   @IsOptional()
   @IsString()
   content?: string;
+
+  /**
+   * SPRINT-2: IDs of confirmed FileUploads (UploadContext = ASSIGNMENT_SUBMISSION)
+   * to attach to this submission attempt.
+   */
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  fileUploadIds?: string[];
 }
 
 @InputType()
@@ -116,6 +139,17 @@ export class UpdateAssignmentInput {
   @IsOptional()
   @IsNumber()
   pointsPossible?: number;
+
+  /**
+   * SPRINT-2: Optional updated instruction file list. When provided, the
+   * service unlinks any current instruction attachments and links these
+   * in their place (full replace semantics). Pass [] to remove all.
+   */
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  fileUploadIds?: string[];
 }
 
 @InputType()

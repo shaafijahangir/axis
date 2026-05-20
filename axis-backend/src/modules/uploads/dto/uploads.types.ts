@@ -38,6 +38,24 @@ export const UPLOAD_CONSTRAINTS: Record<
       'application/zip',
     ],
   },
+  [UploadContext.ASSIGNMENT_INSTRUCTIONS]: {
+    maxSizeBytes: 50 * 1024 * 1024, // 50 MB
+    allowedMimeTypes: [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'text/csv',
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'application/zip',
+    ],
+  },
   [UploadContext.PROFILE_PICTURE]: {
     maxSizeBytes: 5 * 1024 * 1024, // 5 MB
     allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],

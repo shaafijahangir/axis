@@ -1,6 +1,17 @@
 import { gql } from '@apollo/client';
 
+/** SPRINT-2: Reusable fragment for the attachments field on submissions and assignments. */
+const ATTACHMENT_FIELDS = gql`
+  fragment AttachmentFields on FileUpload {
+    id
+    originalName
+    mimeType
+    size
+  }
+`;
+
 export const ASSIGNMENT_QUERY = gql`
+  ${ATTACHMENT_FIELDS}
   query Assignment($id: String!) {
     assignment(id: $id) {
       id
@@ -16,6 +27,9 @@ export const ASSIGNMENT_QUERY = gql`
       maxAttempts
       timeLimitMinutes
       displayMode
+      attachments {
+        ...AttachmentFields
+      }
     }
   }
 `;
@@ -26,6 +40,7 @@ export const ASSIGNMENT_QUERY = gql`
  * Backend already eager-loads user on this query.
  */
 export const ASSIGNMENT_SUBMISSIONS_QUERY = gql`
+  ${ATTACHMENT_FIELDS}
   query AssignmentSubmissions($assignmentId: String!) {
     assignmentSubmissions(assignmentId: $assignmentId) {
       id
@@ -37,6 +52,9 @@ export const ASSIGNMENT_SUBMISSIONS_QUERY = gql`
       gradedAt
       gradedBy
       feedback
+      attachments {
+        ...AttachmentFields
+      }
       user {
         id
         firstName
@@ -48,6 +66,7 @@ export const ASSIGNMENT_SUBMISSIONS_QUERY = gql`
 `;
 
 export const MY_SUBMISSIONS_QUERY = gql`
+  ${ATTACHMENT_FIELDS}
   query MySubmissions($assignmentId: String!) {
     mySubmissions(assignmentId: $assignmentId) {
       id
@@ -58,6 +77,9 @@ export const MY_SUBMISSIONS_QUERY = gql`
       gradedAt
       feedback
       createdAt
+      attachments {
+        ...AttachmentFields
+      }
     }
   }
 `;
