@@ -676,9 +676,10 @@ export default function CatalogImportPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold">Import Catalog</h1>
+          <h1 className="text-2xl font-semibold">Bulk Import</h1>
           <p className="text-sm text-muted-foreground">
-            Bulk import courses, programs, or requirements from CSV
+            Import students, staff, enrollments, courses, programs, or
+            requirements from CSV.
           </p>
         </div>
       </div>
