@@ -12,6 +12,13 @@ export const ADMIN_USERS_QUERY = gql`
         status
         lastLoginAt
         createdAt
+        gradeLevel
+        homeroomTeacherId
+        homeroomTeacher {
+          id
+          firstName
+          lastName
+        }
       }
       totalCount
       page
@@ -31,6 +38,13 @@ export const ADMIN_USER_QUERY = gql`
       status
       lastLoginAt
       createdAt
+      gradeLevel
+      homeroomTeacherId
+      homeroomTeacher {
+        id
+        firstName
+        lastName
+      }
     }
   }
 `;

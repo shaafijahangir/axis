@@ -3,8 +3,12 @@ import {
   IsArray,
   IsEmail,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
+  IsUUID,
+  Max,
+  Min,
   MinLength,
 } from 'class-validator';
 import { User, UserRole, UserStatus } from '../../../database/entities';
@@ -47,6 +51,19 @@ export class AdminCreateUserInput {
   @IsArray()
   @IsEnum(UserRole, { each: true })
   roles: UserRole[];
+
+  // ── SPRINT-3: K-12 student fields ──
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  gradeLevel?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsUUID()
+  homeroomTeacherId?: string;
 }
 
 @InputType()
@@ -75,6 +92,19 @@ export class AdminUpdateUserInput {
   @Field(() => UserStatus, { nullable: true })
   @IsOptional()
   status?: UserStatus;
+
+  // ── SPRINT-3: K-12 student fields. Send null to clear. ──
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  gradeLevel?: number | null;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  homeroomTeacherId?: string | null;
 }
 
 @InputType()
@@ -99,4 +129,12 @@ export class UsersFilterInput {
   @Field(() => Int, { nullable: true })
   @IsOptional()
   pageSize?: number;
+
+  /** SPRINT-3: filter the users directory by K-12 grade level. */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  gradeLevel?: number;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,12 +24,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ADMIN_UPDATE_USER_MUTATION } from '@/lib/graphql/mutations/admin-users';
+import {
+  K12StudentFields,
+  EMPTY_K12_FIELDS,
+  type K12FieldsValue,
+} from './k12-student-fields';
 
 const ROLE_OPTIONS = [
   { value: 'STUDENT', label: 'Student' },
   { value: 'INSTRUCTOR', label: 'Instructor' },
   { value: 'ADMIN', label: 'Admin' },
   { value: 'TA', label: 'TA' },
+  { value: 'PARENT', label: 'Parent' },
 ] as const;
 
 const STATUS_OPTIONS = [
@@ -56,6 +62,9 @@ interface AdminUser {
   lastName: string;
   roles: string[];
   status: string;
+  gradeLevel?: number | null;
+  homeroomTeacherId?: string | null;
+  homeroomTeacher?: { id: string; firstName: string; lastName: string } | null;
 }
 
 interface EditUserDialogProps {
@@ -71,6 +80,8 @@ export function EditUserDialog({
   user,
   onSuccess,
 }: EditUserDialogProps) {
+  const [k12, setK12] = useState<K12FieldsValue>(EMPTY_K12_FIELDS);
+
   const {
     register,
     handleSubmit,
@@ -84,6 +95,9 @@ export function EditUserDialog({
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const selectedRoles = watch('roles');
+  // SPRINT-3: roles can be stored lowercase from the server but the role
+  // chips use uppercase. Compare case-insensitively to be safe.
+  const isStudent = selectedRoles?.some((r) => r.toLowerCase() === 'student');
 
   useEffect(() => {
     if (user) {
@@ -94,12 +108,19 @@ export function EditUserDialog({
         roles: user.roles,
         status: user.status,
       });
+      setK12({
+        gradeLevel: user.gradeLevel ?? null,
+        homeroomTeacherId: user.homeroomTeacherId ?? null,
+        homeroomTeacherName: user.homeroomTeacher
+          ? `${user.homeroomTeacher.firstName} ${user.homeroomTeacher.lastName}`
+          : null,
+      });
     }
   }, [user, reset]);
 
   const [updateUser, { loading }] = useMutation(ADMIN_UPDATE_USER_MUTATION, {
     onCompleted: () => {
-      toast.success('User updated successfully');
+      toast.success('User updated');
       onOpenChange(false);
       onSuccess();
     },
@@ -119,6 +140,10 @@ export function EditUserDialog({
           email: data.email,
           roles: data.roles,
           status: data.status,
+          // SPRINT-3: send null to clear when student role removed; otherwise
+          // pass through whatever the picker has (null = unset, value = set)
+          gradeLevel: isStudent ? k12.gradeLevel : null,
+          homeroomTeacherId: isStudent ? k12.homeroomTeacherId : null,
         },
       },
     });
@@ -211,6 +236,10 @@ export function EditUserDialog({
               <p className="text-xs text-destructive">{errors.roles.message}</p>
             )}
           </div>
+
+          {/* SPRINT-3: K-12 fields only when STUDENT role is selected. */}
+          {isStudent && <K12StudentFields value={k12} onChange={setK12} />}
+
           <div className="flex justify-end gap-2">
             <Button
               type="button"

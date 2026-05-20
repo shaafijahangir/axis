@@ -1,7 +1,8 @@
 import { InputType, ObjectType, Field, Float, Int } from '@nestjs/graphql';
-import { IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { EnrollmentStatus } from '../../../database/entities/enrollment.entity';
 import { ReportCardStatus } from '../../../database/entities/report-card.entity';
+import { ParentRelationship } from '../../../database/entities/parent-student.entity';
 
 @InputType()
 export class LinkStudentInput {
@@ -12,6 +13,11 @@ export class LinkStudentInput {
   @Field()
   @IsUUID()
   studentId: string;
+
+  @Field(() => ParentRelationship, { nullable: true })
+  @IsOptional()
+  @IsEnum(ParentRelationship)
+  relationship?: ParentRelationship;
 }
 
 @ObjectType()

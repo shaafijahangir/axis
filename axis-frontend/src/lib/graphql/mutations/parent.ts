@@ -6,6 +6,7 @@ export const LINK_STUDENT_TO_PARENT_MUTATION = gql`
       id
       parentId
       studentId
+      relationship
     }
   }
 `;

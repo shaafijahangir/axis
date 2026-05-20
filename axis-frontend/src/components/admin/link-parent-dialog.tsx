@@ -16,8 +16,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ADMIN_USERS_QUERY } from '@/lib/graphql/queries/admin-users';
 import { LINK_STUDENT_TO_PARENT_MUTATION } from '@/lib/graphql/mutations/parent';
+
+type RelationshipValue = 'PARENT' | 'GUARDIAN' | 'OTHER';
 
 interface AdminUser {
   id: string;
@@ -42,6 +51,7 @@ export function LinkParentDialog({
 }: Props) {
   const [search, setSearch] = useState('');
   const [selectedParentId, setSelectedParentId] = useState('');
+  const [relationship, setRelationship] = useState<RelationshipValue>('PARENT');
 
   const { data, loading } = useQuery<{
     adminUsers: { users: AdminUser[] };
@@ -65,6 +75,7 @@ export function LinkParentDialog({
         onOpenChange(false);
         setSelectedParentId('');
         setSearch('');
+        setRelationship('PARENT');
         onSuccess();
       },
       onError: (err) => toast.error(err.message),
@@ -78,7 +89,11 @@ export function LinkParentDialog({
     if (!student || !selectedParentId) return;
     linkStudent({
       variables: {
-        input: { parentId: selectedParentId, studentId: student.id },
+        input: {
+          parentId: selectedParentId,
+          studentId: student.id,
+          relationship,
+        },
       },
     });
   };
@@ -95,8 +110,8 @@ export function LinkParentDialog({
             <span className="font-medium text-foreground">
               {student.firstName} {student.lastName}
             </span>
-            . The parent will be able to view this student's grades, classes,
-            and report cards.
+            . The parent will be able to view this student&apos;s grades,
+            classes, and report cards.
           </p>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -150,6 +165,23 @@ export function LinkParentDialog({
                 </button>
               ))
             )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Relationship</Label>
+            <Select
+              value={relationship}
+              onValueChange={(v) => setRelationship(v as RelationshipValue)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PARENT">Parent</SelectItem>
+                <SelectItem value="GUARDIAN">Guardian</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <DialogFooter>

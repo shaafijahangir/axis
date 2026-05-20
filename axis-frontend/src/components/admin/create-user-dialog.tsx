@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,12 +17,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ADMIN_CREATE_USER_MUTATION } from '@/lib/graphql/mutations/admin-users';
+import {
+  K12StudentFields,
+  EMPTY_K12_FIELDS,
+  type K12FieldsValue,
+} from './k12-student-fields';
 
 const ROLE_OPTIONS = [
   { value: 'STUDENT', label: 'Student' },
   { value: 'INSTRUCTOR', label: 'Instructor' },
   { value: 'ADMIN', label: 'Admin' },
   { value: 'TA', label: 'TA' },
+  { value: 'PARENT', label: 'Parent' },
 ] as const;
 
 const createUserSchema = z.object({
@@ -45,6 +52,8 @@ export function CreateUserDialog({
   onOpenChange,
   onSuccess,
 }: CreateUserDialogProps) {
+  const [k12, setK12] = useState<K12FieldsValue>(EMPTY_K12_FIELDS);
+
   const {
     register,
     handleSubmit,
@@ -59,11 +68,14 @@ export function CreateUserDialog({
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const selectedRoles = watch('roles');
+  // SPRINT-3: case-insensitive match — chips use uppercase, server returns lowercase
+  const isStudent = selectedRoles?.some((r) => r.toLowerCase() === 'student');
 
   const [createUser, { loading }] = useMutation(ADMIN_CREATE_USER_MUTATION, {
     onCompleted: () => {
-      toast.success('User created successfully');
+      toast.success('User created');
       reset();
+      setK12(EMPTY_K12_FIELDS);
       onOpenChange(false);
       onSuccess();
     },
@@ -73,7 +85,15 @@ export function CreateUserDialog({
   });
 
   const onSubmit = (data: CreateUserFormValues) => {
-    createUser({ variables: { input: data } });
+    createUser({
+      variables: {
+        input: {
+          ...data,
+          gradeLevel: isStudent ? k12.gradeLevel : undefined,
+          homeroomTeacherId: isStudent ? k12.homeroomTeacherId : undefined,
+        },
+      },
+    });
   };
 
   const toggleRole = (role: string) => {
@@ -152,6 +172,10 @@ export function CreateUserDialog({
               <p className="text-xs text-destructive">{errors.roles.message}</p>
             )}
           </div>
+
+          {/* SPRINT-3: K-12 fields only when STUDENT role is selected. */}
+          {isStudent && <K12StudentFields value={k12} onChange={setK12} />}
+
           <div className="flex justify-end gap-2">
             <Button
               type="button"

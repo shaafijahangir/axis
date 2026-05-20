@@ -21,13 +21,22 @@ export class AnnouncementsResolver {
     return this.announcementsService.findBySectionId(sectionId);
   }
 
-  /** School-wide and grade-level announcements visible to the current user's tenant. */
+  /**
+   * School-wide and grade-level announcements visible to the current user.
+   * SPRINT-3: defaults `grade` to the caller's own gradeLevel so students
+   * automatically see announcements targeted at their grade without the
+   * client having to know its own grade level.
+   */
   @Query(() => [Announcement])
   async schoolAnnouncements(
     @CurrentUser() user: User,
     @Args('grade', { type: () => Int, nullable: true }) grade?: number,
   ): Promise<Announcement[]> {
-    return this.announcementsService.findSchoolWide(user.tenantId, grade);
+    const effectiveGrade = grade ?? user.gradeLevel ?? undefined;
+    return this.announcementsService.findSchoolWide(
+      user.tenantId,
+      effectiveGrade,
+    );
   }
 
   /** All announcements for the tenant — used by admin feed. */
