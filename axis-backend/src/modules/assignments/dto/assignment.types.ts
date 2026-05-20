@@ -151,6 +151,91 @@ export class GradeSubmissionInput {
   feedback?: string;
 }
 
+// ─── Override Grade Input ───────────────────────────────────────────────────
+
+@InputType()
+export class OverrideGradeInput {
+  @Field()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+  sectionId: string;
+
+  @Field()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+  studentId: string;
+
+  @Field()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+  assignmentId: string;
+
+  @Field(() => Float)
+  @IsNumber()
+  score: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  feedback?: string;
+}
+
+// ─── Student Grades Response Types ─────────────────────────────────────────
+
+@ObjectType()
+export class StudentGradeAssignment {
+  @Field()
+  assignmentId: string;
+
+  @Field()
+  assignmentTitle: string;
+
+  @Field(() => String)
+  assignmentType: string;
+
+  @Field(() => Float)
+  pointsPossible: number;
+
+  @Field(() => Float)
+  score: number;
+
+  @Field(() => Float)
+  percentage: number;
+
+  @Field()
+  gradedAt: Date;
+
+  @Field({ nullable: true })
+  feedback?: string;
+}
+
+@ObjectType()
+export class StudentCourseGrades {
+  @Field()
+  sectionId: string;
+
+  @Field()
+  courseId: string;
+
+  @Field()
+  courseCode: string;
+
+  @Field()
+  courseTitle: string;
+
+  @Field({ nullable: true })
+  sectionInstructor?: string;
+
+  @Field(() => Float)
+  totalPointsEarned: number;
+
+  @Field(() => Float)
+  totalPointsPossible: number;
+
+  @Field(() => Float)
+  overallPercentage: number;
+
+  @Field(() => [StudentGradeAssignment])
+  assignments: StudentGradeAssignment[];
+}
+
 // ─── Gradebook Response Types ───────────────────────────────────────────────
 
 @ObjectType()

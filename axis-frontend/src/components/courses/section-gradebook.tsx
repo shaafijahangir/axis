@@ -1,5 +1,10 @@
 'use client';
 
+import { useState, useRef, useCallback } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { toast } from 'sonner';
+import { OVERRIDE_GRADE_MUTATION } from '@/lib/graphql/mutations/assignments';
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface GradebookGrade {
@@ -32,9 +37,11 @@ interface GradebookAssignmentColumn {
 }
 
 interface SectionGradebookProps {
+  sectionId: string;
   assignments: GradebookAssignmentColumn[];
   students: GradebookStudentRow[];
   classAverage: number;
+  onRefetch: () => void;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -50,12 +57,129 @@ function formatType(type: string): string {
   return type.charAt(0).toUpperCase() + type.slice(1);
 }
 
+// ─── Editable Grade Cell ─────────────────────────────────────────────────────
+
+function GradeCell({
+  sectionId,
+  studentId,
+  assignmentId,
+  score,
+  pointsPossible,
+  onRefetch,
+}: {
+  sectionId: string;
+  studentId: string;
+  assignmentId: string;
+  score?: number;
+  pointsPossible: number;
+  onRefetch: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const [overrideGrade] = useMutation(OVERRIDE_GRADE_MUTATION);
+
+  const startEdit = useCallback(() => {
+    setDraft(score != null ? String(score) : '');
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  }, [score]);
+
+  const save = useCallback(async () => {
+    const parsed = parseFloat(draft);
+    if (draft.trim() === '' || isNaN(parsed)) {
+      setEditing(false);
+      return;
+    }
+    if (parsed < 0 || parsed > pointsPossible) {
+      toast.error(`Score must be between 0 and ${pointsPossible}`);
+      return;
+    }
+    if (parsed === score) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await overrideGrade({
+        variables: {
+          input: { sectionId, studentId, assignmentId, score: parsed },
+        },
+      });
+      toast.success('Grade saved');
+      onRefetch();
+    } catch {
+      toast.error('Failed to save grade');
+    } finally {
+      setSaving(false);
+      setEditing(false);
+    }
+  }, [
+    draft,
+    score,
+    pointsPossible,
+    sectionId,
+    studentId,
+    assignmentId,
+    overrideGrade,
+    onRefetch,
+  ]);
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="number"
+        min={0}
+        max={pointsPossible}
+        step="0.5"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') save();
+          if (e.key === 'Escape') setEditing(false);
+        }}
+        className="w-16 rounded border border-primary bg-background px-1 py-0.5 text-center text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-primary"
+        aria-label="Enter grade"
+        disabled={saving}
+        autoFocus
+      />
+    );
+  }
+
+  return (
+    <button
+      onClick={startEdit}
+      className="group relative min-w-[3rem] rounded px-2 py-1 text-center tabular-nums hover:bg-muted/60 focus:outline-none focus:ring-1 focus:ring-ring"
+      title="Click to edit grade"
+      aria-label={
+        score != null
+          ? `Grade: ${score}. Click to edit`
+          : 'No grade. Click to enter'
+      }
+    >
+      {score != null ? (
+        <span className="font-medium">{score}</span>
+      ) : (
+        <span className="text-muted-foreground/40 group-hover:text-muted-foreground">
+          —
+        </span>
+      )}
+    </button>
+  );
+}
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function SectionGradebook({
+  sectionId,
   assignments,
   students,
   classAverage,
+  onRefetch,
 }: SectionGradebookProps) {
   if (assignments.length === 0) {
     return (
@@ -111,25 +235,26 @@ export function SectionGradebook({
                   {student.email}
                 </div>
               </td>
-              {student.grades.map((grade) => (
-                <td
-                  key={grade.assignmentId}
-                  className="px-4 py-3 text-center tabular-nums"
-                >
-                  {grade.score != null ? (
-                    <span className="font-medium">{grade.score}</span>
-                  ) : grade.submittedAt ? (
-                    <span
-                      className="text-muted-foreground"
-                      role="img"
-                      aria-label="Submitted, not yet graded"
-                      title="Submitted, not yet graded"
-                    >
-                      —
-                    </span>
-                  ) : null}
-                </td>
-              ))}
+              {student.grades.map((grade) => {
+                const assignment = assignments.find(
+                  (a) => a.id === grade.assignmentId,
+                );
+                return (
+                  <td
+                    key={grade.assignmentId}
+                    className="px-2 py-1 text-center"
+                  >
+                    <GradeCell
+                      sectionId={sectionId}
+                      studentId={student.studentId}
+                      assignmentId={grade.assignmentId}
+                      score={grade.score}
+                      pointsPossible={assignment?.pointsPossible ?? 100}
+                      onRefetch={onRefetch}
+                    />
+                  </td>
+                );
+              })}
               <td className="px-4 py-3 text-center tabular-nums">
                 <div className="font-medium">
                   {student.totalEarned}/{student.totalPossible}
@@ -193,6 +318,9 @@ export function SectionGradebook({
           </tr>
         </tfoot>
       </table>
+      <p className="px-4 py-2 text-xs text-muted-foreground">
+        Click any grade cell to edit. Press Enter to save, Escape to cancel.
+      </p>
     </div>
   );
 }

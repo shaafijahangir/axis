@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Assignment } from '../../database/entities/assignment.entity';
 import { Submission } from '../../database/entities/submission.entity';
@@ -16,6 +16,9 @@ import {
   ExtendDeadlinesInput,
   CreateSubmissionInput,
   GradeSubmissionInput,
+  OverrideGradeInput,
+  StudentCourseGrades,
+  StudentGradeAssignment,
   SectionGradebook,
 } from './dto/assignment.types';
 
@@ -29,6 +32,7 @@ export class AssignmentsService {
     @InjectRepository(Enrollment)
     private enrollmentRepo: Repository<Enrollment>,
     private eventEmitter: EventEmitter2,
+    private dataSource: DataSource,
   ) {}
 
   // ─── Assignments ────────────────────────────────────────────────────
@@ -467,5 +471,168 @@ export class AssignmentsService {
       students,
       classAverage,
     };
+  }
+
+  // ─── Override Grade ─────────────────────────────────────────────────
+
+  async overrideGrade(
+    graderId: string,
+    tenantId: string,
+    input: OverrideGradeInput,
+  ): Promise<Submission> {
+    return this.dataSource.manager.transaction(async (manager) => {
+      const assignment = await manager.findOne(Assignment, {
+        where: { id: input.assignmentId, sectionId: input.sectionId },
+      });
+      if (!assignment)
+        throw new NotFoundException('Assignment not found in this section');
+
+      // Find or create a stub submission for this student
+      let submission = await manager.findOne(Submission, {
+        where: {
+          assignmentId: input.assignmentId,
+          userId: input.studentId,
+          tenantId,
+        },
+        order: { attempt: 'DESC' },
+      });
+
+      if (!submission) {
+        const count = await manager.count(Submission, {
+          where: { assignmentId: input.assignmentId, userId: input.studentId },
+        });
+        submission = manager.create(Submission, {
+          tenantId,
+          assignmentId: input.assignmentId,
+          userId: input.studentId,
+          attempt: count + 1,
+          submittedAt: new Date(),
+        });
+        submission = await manager.save(Submission, submission);
+      }
+
+      submission.score = input.score;
+      submission.gradedBy = graderId;
+      submission.gradedAt = new Date();
+      if (input.feedback !== undefined) submission.feedback = input.feedback;
+
+      const saved = await manager.save(Submission, submission);
+
+      this.eventEmitter.emit(NexusEvents.GRADE_UPDATED, {
+        submissionId: saved.id,
+        oldScore: null,
+        newScore: input.score,
+        tenantId,
+      });
+
+      return saved;
+    });
+  }
+
+  // ─── Student Grades ─────────────────────────────────────────────────
+
+  async getStudentGrades(
+    userId: string,
+    tenantId: string,
+  ): Promise<StudentCourseGrades[]> {
+    const enrollments = await this.enrollmentRepo
+      .createQueryBuilder('enrollment')
+      .innerJoinAndSelect('enrollment.section', 'section')
+      .innerJoinAndSelect('section.course', 'course')
+      .leftJoinAndSelect('section.instructor', 'instructor')
+      .where('enrollment.userId = :userId', { userId })
+      .andWhere('enrollment.tenantId = :tenantId', { tenantId })
+      .andWhere('enrollment.status = :status', {
+        status: EnrollmentStatus.ACTIVE,
+      })
+      .andWhere('enrollment.role = :role', { role: EnrollmentRole.STUDENT })
+      .getMany();
+
+    const results: StudentCourseGrades[] = [];
+
+    for (const enrollment of enrollments) {
+      const section = enrollment.section;
+      const course = section.course;
+
+      const assignments = await this.findBySectionId(section.id, tenantId);
+
+      if (assignments.length === 0) continue;
+
+      const assignmentIds = assignments.map((a) => a.id);
+
+      // Best (highest-scored, graded) submission per assignment
+      const submissions = await this.submissionRepo.find({
+        where: {
+          assignmentId: In(assignmentIds),
+          userId,
+          tenantId,
+        },
+        order: { attempt: 'DESC' },
+      });
+
+      // assignment id → best graded submission
+      const bestMap = new Map<
+        string,
+        { score: number; gradedAt: Date; feedback?: string }
+      >();
+      for (const sub of submissions) {
+        if (sub.score == null || sub.gradedAt == null) continue;
+        const score = Number(sub.score);
+        const existing = bestMap.get(sub.assignmentId);
+        if (!existing || score > existing.score) {
+          bestMap.set(sub.assignmentId, {
+            score,
+            gradedAt: sub.gradedAt,
+            feedback: sub.feedback ?? undefined,
+          });
+        }
+      }
+
+      const gradedAssignments: StudentGradeAssignment[] = [];
+      let totalEarned = 0;
+      let totalPossible = 0;
+
+      for (const a of assignments) {
+        const best = bestMap.get(a.id);
+        if (!best) continue;
+        const pts = Number(a.pointsPossible);
+        totalEarned += best.score;
+        totalPossible += pts;
+        gradedAssignments.push({
+          assignmentId: a.id,
+          assignmentTitle: a.title,
+          assignmentType: a.type ?? 'assignment',
+          pointsPossible: pts,
+          score: best.score,
+          percentage:
+            pts > 0 ? Math.round((best.score / pts) * 10000) / 100 : 0,
+          gradedAt: best.gradedAt,
+          feedback: best.feedback,
+        });
+      }
+
+      if (gradedAssignments.length === 0) continue;
+
+      const instructorName = section.instructor
+        ? `${section.instructor.firstName} ${section.instructor.lastName}`
+        : undefined;
+
+      results.push({
+        sectionId: section.id,
+        courseId: course.id,
+        courseCode: course.code,
+        courseTitle: course.title,
+        sectionInstructor: instructorName,
+        totalPointsEarned: totalEarned,
+        totalPointsPossible: totalPossible,
+        overallPercentage:
+          totalPossible > 0
+            ? Math.round((totalEarned / totalPossible) * 10000) / 100
+            : 0,
+        assignments: gradedAssignments,
+      });
+    }
+
+    return results;
   }
 }

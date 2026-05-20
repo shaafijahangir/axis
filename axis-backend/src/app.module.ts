@@ -44,6 +44,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { DiscussionsModule } from './modules/discussions/discussions.module';
 import { QuizModule } from './modules/quiz/quiz.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { ReportCardsModule } from './modules/report-cards/report-cards.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -130,6 +132,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     DiscussionsModule,
     QuizModule,
     CalendarModule,
+    AttendanceModule,
+    ReportCardsModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController, HealthController],

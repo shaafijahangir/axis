@@ -20,6 +20,8 @@ export {
 export { Assignment, AssignmentType } from './assignment.entity';
 export { Submission } from './submission.entity';
 export { Announcement, AnnouncementPriority } from './announcement.entity';
+export { Attendance, AttendanceStatus } from './attendance.entity';
+export { ReportCard, ReportCardStatus } from './report-card.entity';
 export {
   DegreeProgram,
   DegreeProgramType,
@@ -40,6 +42,8 @@ import { Enrollment } from './enrollment.entity';
 import { Assignment } from './assignment.entity';
 import { Submission } from './submission.entity';
 import { Announcement } from './announcement.entity';
+import { Attendance } from './attendance.entity';
+import { ReportCard } from './report-card.entity';
 
 // AI entities
 import { AiConversation } from '../../modules/ai/entities/ai-conversation.entity';
@@ -97,6 +101,8 @@ export const entities = [
   Assignment,
   Submission,
   Announcement,
+  Attendance,
+  ReportCard,
   AiConversation,
   AiMessage,
   AiUsageLog,

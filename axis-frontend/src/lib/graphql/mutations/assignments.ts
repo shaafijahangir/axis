@@ -56,3 +56,14 @@ export const EXTEND_DEADLINES_MUTATION = gql`
     }
   }
 `;
+
+export const OVERRIDE_GRADE_MUTATION = gql`
+  mutation OverrideGrade($input: OverrideGradeInput!) {
+    overrideGrade(input: $input) {
+      id
+      score
+      gradedAt
+      feedback
+    }
+  }
+`;

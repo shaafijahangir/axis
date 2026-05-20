@@ -122,8 +122,10 @@ export default function GradebookPage() {
     data: gradebookData,
     loading: gradebookLoading,
     error,
+    refetch: refetchGradebook,
   } = useQuery<GradebookData>(SECTION_GRADEBOOK_QUERY, {
     variables: { sectionId },
+    fetchPolicy: 'cache-and-network',
   });
 
   const section = sectionData?.section;
@@ -191,9 +193,11 @@ export default function GradebookPage() {
           <GradebookSkeleton />
         ) : gradebook ? (
           <SectionGradebook
+            sectionId={sectionId}
             assignments={gradebook.assignments}
             students={gradebook.students}
             classAverage={gradebook.classAverage}
+            onRefetch={() => void refetchGradebook()}
           />
         ) : null}
       </div>

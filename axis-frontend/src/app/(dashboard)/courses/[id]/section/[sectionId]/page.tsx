@@ -4,7 +4,14 @@ import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
-import { BarChart3, Plus, Users, MessageSquare } from 'lucide-react';
+import {
+  BarChart3,
+  Plus,
+  Users,
+  MessageSquare,
+  ClipboardCheck,
+  FileText,
+} from 'lucide-react';
 import {
   SECTION_QUERY,
   MY_ENROLLMENT_FOR_SECTION_QUERY,
@@ -166,6 +173,22 @@ export default function SectionTimelinePage() {
               >
                 <BarChart3 className="mr-1 h-4 w-4" />
                 Gradebook
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link
+                href={`/courses/${courseId}/section/${sectionId}/attendance`}
+              >
+                <ClipboardCheck className="mr-1 h-4 w-4" />
+                Attendance
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link
+                href={`/courses/${courseId}/section/${sectionId}/report-cards`}
+              >
+                <FileText className="mr-1 h-4 w-4" />
+                Report Cards
               </Link>
             </Button>
             <ExtendDeadlineDialog

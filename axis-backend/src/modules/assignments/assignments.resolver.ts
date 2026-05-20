@@ -14,6 +14,8 @@ import {
   ExtendDeadlinesInput,
   CreateSubmissionInput,
   GradeSubmissionInput,
+  OverrideGradeInput,
+  StudentCourseGrades,
   SectionGradebook,
 } from './dto/assignment.types';
 
@@ -94,6 +96,11 @@ export class AssignmentsResolver {
     );
   }
 
+  @Query(() => [StudentCourseGrades])
+  async myGrades(@CurrentUser() user: User): Promise<StudentCourseGrades[]> {
+    return this.assignmentsService.getStudentGrades(user.id, user.tenantId);
+  }
+
   // ─── Mutations ──────────────────────────────────────────────────────
 
   @Mutation(() => Assignment)
@@ -148,5 +155,15 @@ export class AssignmentsResolver {
       user.tenantId,
       input,
     );
+  }
+
+  @Mutation(() => Submission)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.TA, UserRole.ADMIN)
+  async overrideGrade(
+    @CurrentUser() user: User,
+    @Args('input') input: OverrideGradeInput,
+  ): Promise<Submission> {
+    return this.assignmentsService.overrideGrade(user.id, user.tenantId, input);
   }
 }

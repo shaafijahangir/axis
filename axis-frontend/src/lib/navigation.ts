@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   ClipboardList,
   Calendar,
+  FileText,
   type LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
@@ -38,6 +39,7 @@ const studentNav: NavItem[] = [
   { label: 'Courses', href: '/courses', icon: BookOpen },
   { label: 'Schedule', href: '/schedule', icon: Calendar },
   { label: 'Grades', href: '/grades', icon: GraduationCap },
+  { label: 'Report Cards', href: '/report-cards', icon: FileText },
   { label: 'Planner', href: '/planner', icon: Map },
   { label: 'AI', href: '/ai', icon: Sparkles },
   {
