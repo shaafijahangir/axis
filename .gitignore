@@ -96,3 +96,6 @@ schema.gql
 # Claude Code
 .claude/
 prompt.md
+
+# Local archive (stale plans kept on disk only, not in git)
+.archive/
