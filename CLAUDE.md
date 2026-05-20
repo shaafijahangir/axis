@@ -66,38 +66,51 @@ Axis is a multi-tenant AI-native Learning Management System with a NestJS GraphQ
 
 ## Development Commands
 
-### Root (monorepo)
+**This is a pnpm + Turborepo monorepo. Use `pnpm` from the root, never `npm`
+inside a subpackage.** Infra (Postgres / Redis / MinIO) runs in Docker via
+`docker-compose.yml`; app processes run native for fast hot-reload.
+
+### Daily workflow
 ```bash
-npm run dev              # Start both backend + frontend
-npm run dev:backend      # Start only backend
-npm run dev:frontend     # Start only frontend
-npm run lint             # Lint both projects
-npm run build            # Build both projects
-npm run test             # Run all tests
-npm run typecheck        # Type-check both projects
+pnpm setup             # one-time: install + infra:up + seed demo data
+pnpm dev:web           # backend (:3002) + frontend (:3001)  ← most common
+pnpm dev:phone         # backend + Expo mobile
+pnpm dev               # all three (rarely needed)
 ```
 
-### Backend (`axis-backend/`)
+### Infra
 ```bash
-npm run start:dev      # Dev server with watch mode (port 3001)
-npm run build          # Build for production
-npm run lint           # ESLint with auto-fix
-npm run format         # Prettier formatting
-npm run test           # Run Jest unit tests
-npm run test:watch     # Run tests in watch mode
-npm run test:cov       # Tests with coverage report
-npm run test:e2e       # End-to-end tests
+pnpm infra:up          # docker compose up -d postgres redis minio
+pnpm infra:down        # stop containers; volumes persist
+pnpm infra:logs        # tail logs
+pnpm infra:reset       # nuke volumes — clean slate
 ```
 
-### Frontend (`axis-frontend/`)
+### Quality gates
 ```bash
-npm run dev            # Dev server (port 3000)
-npm run build          # Production build
-npm run lint           # ESLint
-npm run format         # Prettier formatting
+pnpm test              # 272 Jest unit/integration tests (backend)
+pnpm test:e2e          # Playwright E2E (requires dev:web running)
+pnpm lint
+pnpm typecheck
+pnpm build
 ```
 
-Both projects require `npm install` in their respective directories. Run `npm install` at the root for monorepo tooling (husky, lint-staged, commitlint). The backend requires a running PostgreSQL instance (see `axis-backend/.env.example` for connection config).
+### Per-package scripts (rarely needed directly)
+- Backend: `pnpm --filter axis-backend <script>` (`start:dev`, `seed`, `migration:generate`, ...)
+- Frontend: `pnpm --filter axis-frontend <script>` (`dev`, `test:e2e:headed`, ...)
+- Mobile: `pnpm --filter axis-mobile <script>` (`android`, `ios`, `web`)
+
+### URLs
+- Frontend: http://localhost:3001
+- Backend: http://localhost:3002/api
+- GraphQL Playground: http://localhost:3002/api/graphql
+- MinIO Console: http://localhost:9001 (login: `axisdev` / `axisdev123`)
+
+### Demo credentials (from `axis-backend/src/database/seed.ts`)
+- Admin: `admin@Axis.demo` / `password123`
+- Instructor: `prof.chen@Axis.demo` / `password123`
+- Student: `student@Axis.demo` / `password123`
+- TA: `ta.jordan@Axis.demo` / `password123`
 
 ## Architecture
 

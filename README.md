@@ -186,40 +186,80 @@ Each institution is scoped by a `tenantId` foreign key on all major entities. Ro
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+ (recommended: 22+)
-- npm 10+
-- PostgreSQL 16+
-- Redis (optional, for caching and queues)
 
-### Installation
+- **Node.js 22+** and **pnpm 9+** (this is a pnpm + Turborepo monorepo)
+- **Docker** (runs Postgres, Redis, MinIO locally)
+
+That's it — no need to install Postgres / Redis / MinIO natively.
+
+### One-Time Setup
 
 ```bash
-# Clone
 git clone <repository-url>
 cd axis
-
-# Frontend
-cd axis-frontend && npm install
-
-# Backend
-cd ../axis-backend && npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your database credentials and API keys
+cp axis-backend/.env.example axis-backend/.env  # then edit (see below)
+pnpm setup   # installs deps, starts infra in docker, seeds demo data
 ```
 
-### Running
+The `pnpm setup` script:
+1. `pnpm install` — workspace deps
+2. `pnpm infra:up` — Postgres (`:5433`) + Redis (`:6379`) + MinIO (`:9000`)
+3. `pnpm --filter axis-backend seed` — populates the demo tenant
+
+### Daily Dev
 
 ```bash
-# Terminal 1 — Backend (http://localhost:3001/api)
-cd axis-backend && npm run start:dev
-
-# Terminal 2 — Frontend (http://localhost:3000)
-cd axis-frontend && npm run dev
+pnpm dev:web      # backend + frontend (most common)
+pnpm dev:phone    # backend + Expo mobile
+pnpm dev          # all three
 ```
 
-GraphQL Playground: http://localhost:3001/api/graphql
+URLs:
+- **Frontend** http://localhost:3001
+- **Backend** http://localhost:3002/api
+- **GraphQL Playground** http://localhost:3002/api/graphql
+- **MinIO Console** http://localhost:9001 (login: `axisdev` / `axisdev123`)
+
+### Demo Credentials (from the seed)
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@Axis.demo` | `password123` |
+| Instructor | `prof.chen@Axis.demo` | `password123` |
+| Student | `student@Axis.demo` | `password123` |
+| TA | `ta.jordan@Axis.demo` | `password123` |
+
+### Infrastructure Management
+
+```bash
+pnpm infra:up      # start docker services (postgres + redis + minio)
+pnpm infra:down    # stop (volumes persist, data survives)
+pnpm infra:logs    # tail logs
+pnpm infra:reset   # nuke volumes — clean slate
+```
+
+### Quality Gates
+
+```bash
+pnpm test          # 272 backend unit/integration tests
+pnpm test:e2e      # Playwright E2E (requires dev:web running)
+pnpm lint
+pnpm typecheck
+pnpm build
+```
+
+### Environment Variables
+
+Critical entries in `axis-backend/.env`:
+
+| Var | Required? | Notes |
+|---|---|---|
+| `DATABASE_*` | yes | Defaults to the docker-compose Postgres on `:5433` |
+| `JWT_SECRET` | yes | 32+ chars; production refuses to boot with the example value |
+| `ANTHROPIC_API_KEY` | for AI features | Study Coach / Feedback Copilot need this |
+| `RESEND_API_KEY` | for emails | Password reset, grade notifications |
+| `EMAIL_FROM` | for emails | Use `Axis <onboarding@resend.dev>` until your domain is verified |
+| `R2_*` | for file uploads | Defaults point at local MinIO. Swap to Cloudflare R2 in prod. |
 
 ---
 
