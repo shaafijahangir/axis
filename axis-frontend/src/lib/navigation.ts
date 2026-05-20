@@ -16,6 +16,7 @@ import {
   Calendar,
   FileText,
   UserCheck,
+  Megaphone,
   type LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
@@ -69,13 +70,14 @@ const adminNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { label: 'Catalog', href: '/admin/catalog', icon: Library },
+  { label: 'People', href: '/people', icon: Users },
+  { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
   { label: 'AI Governance', href: '/admin/ai-governance', icon: Shield },
   {
     label: 'Financial Aid',
     href: '/admin/financial-aid-config',
     icon: AlertTriangle,
   },
-  { label: 'People', href: '/people', icon: Users },
   { label: 'Integrations', href: '/admin/integrations', icon: Link },
   {
     label: 'Enrollment Policy',
