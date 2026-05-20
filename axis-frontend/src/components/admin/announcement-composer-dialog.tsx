@@ -25,10 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CREATE_ANNOUNCEMENT_MUTATION } from '@/lib/graphql/mutations/announcements';
-import {
-  ADMIN_ANNOUNCEMENTS_QUERY,
-  ANNOUNCEMENT_RECIPIENT_COUNT_QUERY,
-} from '@/lib/graphql/queries/announcements';
+import { ANNOUNCEMENT_RECIPIENT_COUNT_QUERY } from '@/lib/graphql/queries/announcements';
 import { ADMIN_SECTIONS_QUERY } from '@/lib/graphql/queries/admin-academics';
 
 /**
@@ -94,7 +91,10 @@ export function AnnouncementComposerDialog({ open, onOpenChange }: Props) {
         onOpenChange(false);
       },
       onError: (err) => toast.error(err.message),
-      refetchQueries: [{ query: ADMIN_ANNOUNCEMENTS_QUERY, variables: {} }],
+      // Refetch by query name so we don't have to know what variables
+      // the calling page is using (scope filter, pagination, etc.).
+      refetchQueries: ['AdminAnnouncements'],
+      awaitRefetchQueries: true,
     },
   );
 

@@ -290,7 +290,10 @@ describe('CoursesService', () => {
       );
     });
 
-    it('should parse JSON schedule', async () => {
+    it('passes the legacy schedule JSON string through unchanged', async () => {
+      // SPRINT-1: the schedule JSONB column is now read-only legacy; the
+      // service no longer parses it. The TypeORM column transformer handles
+      // conversion on the way to/from the DB.
       const schedule = JSON.stringify({ days: ['Mon', 'Wed'], time: '10:00' });
       const input = {
         courseId: 'course-1',
@@ -306,9 +309,7 @@ describe('CoursesService', () => {
       await service.createSection(instructorId, input);
 
       expect(sectionRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          schedule: { days: ['Mon', 'Wed'], time: '10:00' },
-        }),
+        expect.objectContaining({ schedule }),
       );
     });
   });
@@ -820,6 +821,148 @@ describe('CoursesService', () => {
         'enrollment.sectionId = :sectionId',
         { sectionId: 'section-1' },
       );
+    });
+  });
+
+  // ============================================================================
+  // SPRINT-1: schedule validation + structured fields
+  // ============================================================================
+
+  describe('createSection — schedule validation', () => {
+    const buildInput = (overrides: Record<string, unknown> = {}) => ({
+      courseId: 'course-1',
+      termId: 'term-1',
+      ...overrides,
+    });
+
+    it('persists meetingDays + startTime + endTime + room when all set', async () => {
+      const section = createCourseSection({
+        courseId: 'course-1',
+        instructorId,
+      });
+      sectionRepo.create!.mockReturnValue(section);
+      sectionRepo.save!.mockResolvedValue(section);
+      courseRepo.findOne!.mockResolvedValue(createCourse({ tenantId }));
+
+      await service.createSection(
+        instructorId,
+        buildInput({
+          meetingDays: ['MON', 'WED', 'FRI'],
+          startTime: '09:00',
+          endTime: '10:30',
+          room: 'Room 204',
+        }),
+      );
+
+      expect(sectionRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          meetingDays: ['MON', 'WED', 'FRI'],
+          startTime: '09:00',
+          endTime: '10:30',
+          room: 'Room 204',
+        }),
+      );
+    });
+
+    it('accepts a section with no schedule fields at all', async () => {
+      const section = createCourseSection({
+        courseId: 'course-1',
+        instructorId,
+      });
+      sectionRepo.create!.mockReturnValue(section);
+      sectionRepo.save!.mockResolvedValue(section);
+      courseRepo.findOne!.mockResolvedValue(createCourse({ tenantId }));
+
+      await expect(
+        service.createSection(instructorId, buildInput()),
+      ).resolves.toBeDefined();
+    });
+
+    it('rejects partial schedule (meetingDays without times)', async () => {
+      await expect(
+        service.createSection(
+          instructorId,
+          buildInput({ meetingDays: ['MON'] }),
+        ),
+      ).rejects.toThrow(/all be set together/i);
+      expect(sectionRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects partial schedule (times without meetingDays)', async () => {
+      await expect(
+        service.createSection(
+          instructorId,
+          buildInput({ startTime: '09:00', endTime: '10:00' }),
+        ),
+      ).rejects.toThrow(/all be set together/i);
+    });
+
+    it('rejects endTime <= startTime', async () => {
+      await expect(
+        service.createSection(
+          instructorId,
+          buildInput({
+            meetingDays: ['MON'],
+            startTime: '10:00',
+            endTime: '09:00',
+          }),
+        ),
+      ).rejects.toThrow(/endTime must be after startTime/i);
+    });
+
+    it('rejects endTime === startTime', async () => {
+      await expect(
+        service.createSection(
+          instructorId,
+          buildInput({
+            meetingDays: ['MON'],
+            startTime: '09:00',
+            endTime: '09:00',
+          }),
+        ),
+      ).rejects.toThrow(/endTime must be after startTime/i);
+    });
+  });
+
+  describe('updateSection — schedule validation (merged state)', () => {
+    const sectionId = 'section-1';
+
+    it('rejects an update that would yield endTime <= existing startTime', async () => {
+      const existing = createCourseSection({
+        id: sectionId,
+        courseId: 'course-1',
+        meetingDays: ['MON'],
+        startTime: '09:00',
+        endTime: '10:00',
+      });
+      const course = createCourse({ id: 'course-1', tenantId });
+      sectionRepo.findOne!.mockResolvedValue({ ...existing, course });
+
+      await expect(
+        service.updateSection(sectionId, tenantId, { endTime: '08:00' }),
+      ).rejects.toThrow(/endTime must be after startTime/i);
+      expect(sectionRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('accepts a patch that flips both times together', async () => {
+      const existing = createCourseSection({
+        id: sectionId,
+        courseId: 'course-1',
+        meetingDays: ['MON'],
+        startTime: '09:00',
+        endTime: '10:00',
+      });
+      const course = createCourse({ id: 'course-1', tenantId });
+      sectionRepo.findOne!.mockResolvedValue({ ...existing, course });
+      sectionRepo.update!.mockResolvedValue({ affected: 1 });
+      sectionRepo.findOneOrFail!.mockResolvedValue(existing);
+
+      await expect(
+        service.updateSection(sectionId, tenantId, {
+          startTime: '13:00',
+          endTime: '14:30',
+        }),
+      ).resolves.toBeDefined();
     });
   });
 });

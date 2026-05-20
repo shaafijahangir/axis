@@ -1,11 +1,5 @@
 import { InputType, ObjectType, Field } from '@nestjs/graphql';
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { ReportCardStatus } from '../../../database/entities/report-card.entity';
 
 @InputType()

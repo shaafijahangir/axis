@@ -60,6 +60,13 @@ export class UploadsService implements OnModuleInit {
       );
     }
 
+    // SPRINT-7: MinIO (used locally) requires path-style addressing
+    // (http://host:port/bucket/key). Cloudflare R2 and AWS S3 both
+    // support virtual-host style (http://bucket.host/key) and prefer
+    // it. We detect MinIO via the endpoint and toggle accordingly.
+    const isMinio =
+      !!endpoint && /localhost|127\.0\.0\.1|minio/i.test(endpoint);
+
     this.s3 = new S3Client({
       region: region ?? 'auto',
       endpoint: endpoint || undefined,
@@ -67,8 +74,13 @@ export class UploadsService implements OnModuleInit {
         accessKeyId: accessKeyId ?? '',
         secretAccessKey: secretAccessKey ?? '',
       },
-      // Required for Cloudflare R2 — disables path-style S3 url checks
-      forcePathStyle: false,
+      forcePathStyle: isMinio,
+      // AWS SDK v3 adds x-amz-checksum-crc32 to PUTs by default.
+      // MinIO doesn't accept that header and returns 403. R2 accepts
+      // either. We disable per-request checksums so the presigned URL
+      // doesn't include the checksum constraint.
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     });
   }
 
