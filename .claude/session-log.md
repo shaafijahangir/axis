@@ -5,6 +5,98 @@
 
 ---
 
+## Session 50 — LMS Functionality Gap Fixes
+
+**Date:** 2026-05-19
+**Goal:** Fix 5 identified LMS functionality gaps one by one
+**Status:** COMPLETE — all 5 items committed and pushed
+
+### Work Done
+
+**Item 1 — Student attendance on /grades page**
+- `sectionId` field added to `StudentAttendanceSummary` DTO and all 3 return sites in `attendance.service.ts`
+- `MY_ATTENDANCE_SUMMARIES_QUERY` updated to request `sectionId`
+- `/grades/page.tsx` now runs `myAttendanceSummaries` in parallel with `myGrades` and builds `Map<sectionId, AttendanceSummary>`
+- `GradesSummary` component: added `attendanceMap` prop + `AttendanceRow` sub-component rendered below each course card (rate %, class count, per-status badges)
+- Commit: 9bfb489
+
+**Item 2 — User profile page**
+- Created `/profile/page.tsx` — accessible from user-menu dropdown (link already existed, route was missing)
+- Form: editable first/last name, read-only email, role badges, member-since date
+- On save: calls `updateProfile` mutation + updates Zustand store so avatar initials refresh instantly
+- Commit: 494ff3e
+
+**Item 3 — Quiz GQL wiring**
+- No work needed — QuizBuilder, QuizDelivery, GQL files, and backend QuizModule were all already fully wired end-to-end
+
+**Item 4 — In-app notification inbox**
+- Created `/notifications/page.tsx` — paginated notification list (20 per page, load-more)
+- Unread indicator dots, mark-all-read button, formatRelative timestamps, type badges
+- Uses existing `MY_NOTIFICATIONS_QUERY`, `MARK_NOTIFICATION_READ_MUTATION`, `MARK_ALL_NOTIFICATIONS_READ_MUTATION`
+- Complements the existing bell popover with a full history page
+- Commit: ac16821
+
+**Item 5 — Password reset flow**
+- Backend: `resetToken` + `resetTokenExpiry` columns on User entity (nullable, select: false)
+- `ForgotPasswordDto` + `ResetPasswordDto` added to `auth.dto.ts`
+- `forgotPassword()`: generates `crypto.randomBytes(32)` token, stores with 1-hour expiry; returns reset URL (in dev only) to avoid needing email provider
+- `resetPassword()`: validates token + expiry via `addSelect`, hashes new password, clears token
+- `POST /auth/forgot-password` + `POST /auth/reset-password` endpoints added (rate-limited 5/min)
+- Auth module updated: `TypeOrmModule.forFeature([User])` for direct repo injection
+- Frontend: `/forgot-password/page.tsx` — email + institution ID form, shows dev reset URL on success
+- Frontend: `/reset-password/page.tsx` — reads `?token=` from URL, confirm password + validation, auto-redirects to login
+- Login page: "Forgot password?" link added above password field
+- Commit: d92ce91
+
+---
+
+## Session 49 — Grading, Attendance & Report Cards (4 LMS Features)
+
+**Date:** 2026-05-19
+**Goal:** Build gradebook inline editing, myGrades resolver, attendance, and report cards end to end
+**Status:** COMPLETE — committed 4b01b26, pushed to main
+
+### Work Done
+
+**Feature 3 — myGrades resolver**
+- Added `StudentCourseGrades` + `StudentGradeAssignment` ObjectTypes to `assignment.types.ts`
+- `getStudentGrades(userId, tenantId)` in `assignments.service.ts`: iterates active student enrollments, collects best-scored graded submission per assignment, returns per-course summary with running percentage
+- `myGrades` query in `assignments.resolver.ts` — no guard (any authenticated user)
+- Student `/grades` page was already wired to `MY_GRADES_QUERY` — now works end-to-end
+
+**Feature 1 — Inline grade entry in gradebook**
+- Added `OverrideGradeInput` DTO and `overrideGrade` mutation (INSTRUCTOR/TA/ADMIN)
+- `overrideGrade` service: creates stub submission if student hasn't submitted, then grades it; wrapped in transaction
+- Gradebook cells replaced with `<GradeCell>` component: click → inline number input → blur/Enter saves → refetch
+- Escape cancels edit; validation: 0..pointsPossible, toast on error
+- Gradebook page updated: passes `sectionId`, `onRefetch`, `fetchPolicy: cache-and-network`
+
+**Feature 2 — Attendance (full stack)**
+- `attendance.entity.ts`: UNIQUE(sectionId, userId, date), enum PRESENT/ABSENT/LATE/EXCUSED
+- `AttendanceModule` with service + resolver + DTOs
+- `markAttendance` mutation: PostgreSQL upsert (orUpdate on conflict columns)
+- `sectionAttendance(sectionId, date)`: returns full roster with current status (defaults PRESENT for unrecorded)
+- `sectionAttendanceSummaries(sectionId)`: per-student totals for report cards
+- `myAttendanceSummaries`: student sees their own across all sections
+- Teacher UI: `/courses/[id]/section/[sectionId]/attendance` — date picker, P/A/L/E button group per student, running badge counts, Save button (enabled only when dirty)
+- Teacher section page: Attendance + Report Cards buttons added
+
+**Feature 4 — Report Cards (full stack)**
+- `report-card.entity.ts`: UNIQUE(studentId, sectionId, termId), DRAFT/PUBLISHED status, JSONB snapshots for gradeSummary + attendanceSummary
+- `ReportCardsModule` with service + resolver + DTOs
+- `generateReportCards(sectionId)` mutation: upserts DRAFT cards for all active students, snapshots grades + attendance at time of generation (re-generation refreshes DRAFT cards only)
+- `updateReportCard(input)` mutation: edits teacherComment + finalGrade on DRAFT cards
+- `publishReportCards(sectionId)` mutation: bulk DRAFT→PUBLISHED, sets publishedAt
+- `sectionReportCards(sectionId)` query: instructor sees all cards
+- `myReportCards` query: student sees PUBLISHED cards only
+- Teacher UI: `/courses/[id]/section/[sectionId]/report-cards` — generate, inline edit (letter grade + comment), publish all
+- Student UI: `/report-cards` — PUBLISHED cards with grade%, attendance%, teacher comment, print button
+- Report Cards added to student sidebar nav
+
+**Current state:** All 4 features fully implemented, TypeScript clean on both backend and frontend
+
+---
+
 ## Session 48 — Brentwood MVP Sprint (6 Selling Points)
 
 **Date:** 2026-05-19
