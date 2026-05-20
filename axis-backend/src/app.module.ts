@@ -46,6 +46,7 @@ import { QuizModule } from './modules/quiz/quiz.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { ReportCardsModule } from './modules/report-cards/report-cards.module';
+import { ParentModule } from './modules/parent/parent.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -134,6 +135,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     CalendarModule,
     AttendanceModule,
     ReportCardsModule,
+    ParentModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController, HealthController],

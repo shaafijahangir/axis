@@ -15,6 +15,7 @@ import {
   ClipboardList,
   Calendar,
   FileText,
+  UserCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
@@ -85,6 +86,7 @@ const adminNav: NavItem[] = [
 
 const parentNav: NavItem[] = [
   { label: 'Home', href: '/home', icon: Home },
+  { label: 'My Children', href: '/parent', icon: UserCheck },
   {
     label: 'Messages',
     href: '/messages',

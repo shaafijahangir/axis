@@ -1,4 +1,5 @@
 // Entity exports
+export { ParentStudent } from './parent-student.entity';
 export { Tenant, SubscriptionPlan, BillingStatus } from './tenant.entity';
 export {
   FileUpload,
@@ -90,8 +91,12 @@ import { DiscussionReply } from '../../modules/discussions/entities/discussion-r
 // Quiz entities
 import { QuizQuestion } from '../../modules/quiz/entities/quiz-question.entity';
 
+// ParentStudent entity
+import { ParentStudent } from './parent-student.entity';
+
 // Array of entity classes for TypeORM
 export const entities = [
+  ParentStudent,
   Tenant,
   User,
   AcademicTerm,

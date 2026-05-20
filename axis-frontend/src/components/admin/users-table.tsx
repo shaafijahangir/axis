@@ -38,6 +38,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CreateUserDialog } from './create-user-dialog';
 import { EditUserDialog } from './edit-user-dialog';
 import { DeactivateUserDialog } from './deactivate-user-dialog';
+import { LinkParentDialog } from './link-parent-dialog';
 
 interface AdminUser {
   id: string;
@@ -92,6 +93,9 @@ export function UsersTable() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [deactivateUser, setDeactivateUser] = useState<AdminUser | null>(null);
+  const [linkParentTarget, setLinkParentTarget] = useState<AdminUser | null>(
+    null,
+  );
 
   // Debounce search input
   useEffect(() => {
@@ -189,6 +193,13 @@ export function UsersTable() {
             <DropdownMenuItem onClick={() => setEditUser(row.original)}>
               Edit
             </DropdownMenuItem>
+            {row.original.roles.includes('student') && (
+              <DropdownMenuItem
+                onClick={() => setLinkParentTarget(row.original)}
+              >
+                Link Parent
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               onClick={() => setDeactivateUser(row.original)}
               className={
@@ -359,6 +370,12 @@ export function UsersTable() {
         open={!!deactivateUser}
         onOpenChange={(open) => !open && setDeactivateUser(null)}
         user={deactivateUser}
+        onSuccess={handleRefetch}
+      />
+      <LinkParentDialog
+        open={!!linkParentTarget}
+        onOpenChange={(open) => !open && setLinkParentTarget(null)}
+        student={linkParentTarget}
         onSuccess={handleRefetch}
       />
     </div>
