@@ -20,6 +20,7 @@ export const MY_ATTENDANCE_SUMMARIES_QUERY = gql`
   query MyAttendanceSummaries {
     myAttendanceSummaries {
       userId
+      sectionId
       firstName
       lastName
       total

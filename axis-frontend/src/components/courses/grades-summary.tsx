@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Separator } from '@/components/ui/separator';
 
 interface GradedAssignment {
   assignmentId: string;
@@ -35,6 +36,16 @@ interface CourseSectionGrades {
   assignments: GradedAssignment[];
 }
 
+interface AttendanceSummary {
+  sectionId: string;
+  total: number;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  attendanceRate: number;
+}
+
 function percentageColor(pct: number): string {
   if (pct >= 90) return 'text-emerald-600 dark:text-emerald-400';
   if (pct >= 80) return 'text-blue-600 dark:text-blue-400';
@@ -49,10 +60,65 @@ function formatDate(iso: string): string {
   });
 }
 
+function AttendanceRow({ att }: { att: AttendanceSummary }) {
+  if (att.total === 0) return null;
+
+  return (
+    <>
+      <Separator />
+      <div className="px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+        <span className="font-medium text-muted-foreground">Attendance</span>
+        <span
+          className={`font-semibold ${percentageColor(att.attendanceRate)}`}
+        >
+          {att.attendanceRate}%
+        </span>
+        <span className="text-muted-foreground">
+          {att.present + att.late + att.excused}/{att.total} classes
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <Badge
+            variant="outline"
+            className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400"
+          >
+            Present {att.present}
+          </Badge>
+          {att.absent > 0 && (
+            <Badge
+              variant="outline"
+              className="text-xs bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400"
+            >
+              Absent {att.absent}
+            </Badge>
+          )}
+          {att.late > 0 && (
+            <Badge
+              variant="outline"
+              className="text-xs bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400"
+            >
+              Late {att.late}
+            </Badge>
+          )}
+          {att.excused > 0 && (
+            <Badge
+              variant="outline"
+              className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400"
+            >
+              Excused {att.excused}
+            </Badge>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function GradesSummary({
   sections,
+  attendanceMap = new Map(),
 }: {
   sections: CourseSectionGrades[];
+  attendanceMap?: Map<string, AttendanceSummary>;
 }) {
   if (sections.length === 0) {
     return (
@@ -67,84 +133,88 @@ export function GradesSummary({
 
   return (
     <div className="space-y-6">
-      {sections.map((section) => (
-        <Card key={section.sectionId}>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">
-                  {section.courseCode} — {section.courseTitle}
-                </CardTitle>
-                {section.sectionInstructor && (
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {section.sectionInstructor}
-                  </p>
-                )}
+      {sections.map((section) => {
+        const att = attendanceMap.get(section.sectionId);
+        return (
+          <Card key={section.sectionId}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">
+                    {section.courseCode} — {section.courseTitle}
+                  </CardTitle>
+                  {section.sectionInstructor && (
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      {section.sectionInstructor}
+                    </p>
+                  )}
+                </div>
+                <div
+                  className={`text-2xl font-bold ${percentageColor(section.overallPercentage)}`}
+                >
+                  {section.overallPercentage}%
+                </div>
               </div>
-              <div
-                className={`text-2xl font-bold ${percentageColor(section.overallPercentage)}`}
-              >
-                {section.overallPercentage}%
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="px-0 pb-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Assignment</TableHead>
-                  <TableHead className="hidden sm:table-cell">Type</TableHead>
-                  <TableHead className="text-right">Score</TableHead>
-                  <TableHead className="hidden text-right sm:table-cell">
-                    %
-                  </TableHead>
-                  <TableHead className="text-right">Graded</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {section.assignments.map((a) => (
-                  <TableRow key={a.assignmentId}>
-                    <TableCell className="font-medium">
-                      {a.assignmentTitle}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {a.assignmentType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {a.score}/{a.pointsPossible}
+            </CardHeader>
+            <CardContent className="px-0 pb-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Assignment</TableHead>
+                    <TableHead className="hidden sm:table-cell">Type</TableHead>
+                    <TableHead className="text-right">Score</TableHead>
+                    <TableHead className="hidden text-right sm:table-cell">
+                      %
+                    </TableHead>
+                    <TableHead className="text-right">Graded</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {section.assignments.map((a) => (
+                    <TableRow key={a.assignmentId}>
+                      <TableCell className="font-medium">
+                        {a.assignmentTitle}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {a.assignmentType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {a.score}/{a.pointsPossible}
+                      </TableCell>
+                      <TableCell
+                        className={`hidden text-right font-medium sm:table-cell ${percentageColor(a.percentage)}`}
+                      >
+                        {a.percentage}%
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {formatDate(a.gradedAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TableCell className="font-semibold">Total</TableCell>
+                    <TableCell className="hidden sm:table-cell" />
+                    <TableCell className="text-right font-semibold">
+                      {section.totalPointsEarned}/{section.totalPointsPossible}
                     </TableCell>
                     <TableCell
-                      className={`hidden text-right font-medium sm:table-cell ${percentageColor(a.percentage)}`}
+                      className={`hidden text-right font-semibold sm:table-cell ${percentageColor(section.overallPercentage)}`}
                     >
-                      {a.percentage}%
+                      {section.overallPercentage}%
                     </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {formatDate(a.gradedAt)}
-                    </TableCell>
+                    <TableCell />
                   </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell className="font-semibold">Total</TableCell>
-                  <TableCell className="hidden sm:table-cell" />
-                  <TableCell className="text-right font-semibold">
-                    {section.totalPointsEarned}/{section.totalPointsPossible}
-                  </TableCell>
-                  <TableCell
-                    className={`hidden text-right font-semibold sm:table-cell ${percentageColor(section.overallPercentage)}`}
-                  >
-                    {section.overallPercentage}%
-                  </TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </CardContent>
-        </Card>
-      ))}
+                </TableFooter>
+              </Table>
+              {att && <AttendanceRow att={att} />}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

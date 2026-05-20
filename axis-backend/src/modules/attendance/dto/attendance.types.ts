@@ -76,6 +76,9 @@ export class StudentAttendanceSummary {
   userId: string;
 
   @Field()
+  sectionId: string;
+
+  @Field()
   firstName: string;
 
   @Field()

@@ -119,6 +119,7 @@ export class AttendanceService {
 
     return {
       userId,
+      sectionId,
       firstName: '',
       lastName: '',
       total,
@@ -175,6 +176,7 @@ export class AttendanceService {
 
       return {
         userId: e.userId,
+        sectionId,
         firstName: e.user.firstName,
         lastName: e.user.lastName,
         total,
@@ -225,6 +227,7 @@ export class AttendanceService {
 
       summaries.push({
         userId,
+        sectionId: e.sectionId,
         firstName: e.user.firstName,
         lastName: e.user.lastName,
         total,
