@@ -1,3 +1,14 @@
+## Production compose. NOT for daily dev — see docker-compose.yml for that.
+##
+## Usage:
+##   1. Fill in .env.production from .env.production.example
+##   2. Build images: docker compose -f docker-compose.prod.yml build
+##   3. Run migrations: docker compose -f docker-compose.prod.yml \
+##        run --rm backend pnpm --filter axis-backend migration:run
+##   4. Start: docker compose -f docker-compose.prod.yml up -d
+##
+## File storage is external R2 (not MinIO). Configure R2_* in .env.production.
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -47,6 +58,13 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    # SPRINT-7: nginx waits on backend health before routing traffic.
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     build:
@@ -57,7 +75,8 @@ services:
     networks:
       - internal
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   nginx:
@@ -72,8 +91,10 @@ services:
       - internal
       - external
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
     restart: unless-stopped
 
 networks:
