@@ -286,7 +286,7 @@ export class MessagingService {
       this.eventEmitter.emit(MESSAGING_EVENTS.CONVERSATION_CREATED, {
         conversation: saved,
         participantIds: [userId, recipientId],
-      } as ConversationCreatedEvent);
+      });
 
       return saved;
     } catch (err) {
@@ -396,7 +396,7 @@ export class MessagingService {
           conversationId,
           message: savedMessage,
           participantIds,
-        } as MessageSentEvent);
+        });
       }
 
       return savedMessage as DirectMessage;

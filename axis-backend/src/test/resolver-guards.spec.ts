@@ -50,25 +50,31 @@ import { UsersResolver } from '../modules/users/users.resolver';
 const GUARDS = '__guards__';
 const ROLES = 'roles';
 
-function classGuards(target: Function): Function[] {
-  return Reflect.getMetadata(GUARDS, target) ?? [];
+// Generic class constructor — matches any decorated NestJS resolver class.
+type Ctor = new (...args: never[]) => unknown;
+// Generic method on the prototype.
+type Method = (...args: never[]) => unknown;
+
+function classGuards(target: Ctor): Method[] {
+  return (Reflect.getMetadata(GUARDS, target) as Method[]) ?? [];
 }
 
 // NestJS stores method-level decorator metadata on descriptor.value (the
 // function itself), NOT on (prototype, key). Use prototype[method] to get the
 // actual function reference so Reflect.getMetadata finds the right target.
-function methodGuards(target: Function, method: string): Function[] {
-  const fn = (target.prototype as Record<string, Function>)[method];
-  return Reflect.getMetadata(GUARDS, fn) ?? [];
+
+function methodGuards(target: Ctor, method: string): Method[] {
+  const fn = (target.prototype as Record<string, Method>)[method];
+  return (Reflect.getMetadata(GUARDS, fn) as Method[]) ?? [];
 }
 
-function classRoles(target: Function): UserRole[] {
-  return Reflect.getMetadata(ROLES, target) ?? [];
+function classRoles(target: Ctor): UserRole[] {
+  return (Reflect.getMetadata(ROLES, target) as UserRole[]) ?? [];
 }
 
-function methodRoles(target: Function, method: string): UserRole[] {
-  const fn = (target.prototype as Record<string, Function>)[method];
-  return Reflect.getMetadata(ROLES, fn) ?? [];
+function methodRoles(target: Ctor, method: string): UserRole[] {
+  const fn = (target.prototype as Record<string, Method>)[method];
+  return (Reflect.getMetadata(ROLES, fn) as UserRole[]) ?? [];
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────

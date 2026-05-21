@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import {
   Attendance,
   AttendanceStatus,
@@ -204,11 +204,25 @@ export class AttendanceService {
       .andWhere('enrollment.role = :role', { role: EnrollmentRole.STUDENT })
       .getMany();
 
-    const summaries: StudentAttendanceSummary[] = [];
-    for (const e of enrollments) {
-      const records = await this.attendanceRepo.find({
-        where: { userId, sectionId: e.sectionId, tenantId },
-      });
+    if (enrollments.length === 0) return [];
+
+    // Fetch all attendance records for the student across every enrolled
+    // section in ONE query (was N+1 — one query per enrollment).
+    const sectionIds = enrollments.map((e) => e.sectionId);
+    const allRecords = await this.attendanceRepo.find({
+      where: { userId, sectionId: In(sectionIds), tenantId },
+    });
+
+    // Bucket records by section in memory.
+    const bySection = new Map<string, typeof allRecords>();
+    for (const r of allRecords) {
+      const bucket = bySection.get(r.sectionId);
+      if (bucket) bucket.push(r);
+      else bySection.set(r.sectionId, [r]);
+    }
+
+    return enrollments.map((e) => {
+      const records = bySection.get(e.sectionId) ?? [];
       let present = 0,
         absent = 0,
         late = 0,
@@ -225,7 +239,7 @@ export class AttendanceService {
           ? Math.round(((present + late + excused) / total) * 10000) / 100
           : 100;
 
-      summaries.push({
+      return {
         userId,
         sectionId: e.sectionId,
         firstName: e.user.firstName,
@@ -236,8 +250,7 @@ export class AttendanceService {
         late,
         excused,
         attendanceRate,
-      });
-    }
-    return summaries;
+      };
+    });
   }
 }

@@ -107,7 +107,7 @@ export class AiResolver {
 
     const customAgents = await this.customAgentService.findAvailableForUser(
       user.tenantId,
-      user.roles as string[],
+      user.roles,
       enrolledCourseIds,
     );
 

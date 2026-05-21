@@ -34,7 +34,10 @@ export function createAnalyticsTools(
         },
         required: ['assignmentId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
+        // SEC: tenant-scope every read — AI tools run as the authenticated user
+        // and must not return data from other tenants even if a foreign UUID is
+        // passed in the prompt.
         const result = await submissionRepo
           .createQueryBuilder('s')
           .select('COUNT(*)', 'totalSubmissions')
@@ -45,6 +48,7 @@ export function createAnalyticsTools(
           .where('s.assignmentId = :assignmentId', {
             assignmentId: input.assignmentId,
           })
+          .andWhere('s.tenantId = :tenantId', { tenantId: ctx.tenantId })
           .getRawOne<{
             totalSubmissions: string;
             gradedCount: string;
@@ -54,7 +58,10 @@ export function createAnalyticsTools(
           }>();
 
         const assignment = await assignmentRepo.findOne({
-          where: { id: input.assignmentId as string },
+          where: {
+            id: input.assignmentId as string,
+            tenantId: ctx.tenantId,
+          },
         });
 
         return {
@@ -91,17 +98,21 @@ export function createAnalyticsTools(
         },
         required: ['userId', 'sectionId'],
       },
-      handler: async (input, _ctx) => {
-        // Get all assignments for the section
+      handler: async (input, ctx) => {
+        // SEC: tenant-scope both reads — without this an attacker could pass a
+        // foreign sectionId/userId and bleed cross-tenant performance data.
         const assignments = await assignmentRepo.find({
-          where: { sectionId: input.sectionId as string },
+          where: {
+            sectionId: input.sectionId as string,
+            tenantId: ctx.tenantId,
+          },
           order: { dueAt: 'ASC' },
         });
 
-        // Get all submissions for this student in these assignments
         const submissions = await submissionRepo.find({
           where: {
             userId: input.userId as string,
+            tenantId: ctx.tenantId,
           },
         });
 
@@ -165,10 +176,13 @@ export function createAnalyticsTools(
         },
         required: ['sectionId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
+        // SEC: tenant-scope the count — same UUID could otherwise expose head-count
+        // for a section in another tenant.
         const count = await enrollmentRepo.count({
           where: {
             sectionId: input.sectionId as string,
+            tenantId: ctx.tenantId,
             status: EnrollmentStatus.ACTIVE,
           },
         });

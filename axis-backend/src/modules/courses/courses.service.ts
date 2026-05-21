@@ -343,11 +343,7 @@ export class CoursesService {
         const policy = await this.enrollmentPolicyService.getPolicy(tenantId);
         if (policy.waitlistEnabled) {
           // Run policy checks before waitlisting (window, credits, prereqs)
-          await this.enrollmentPolicyService.check(
-            tenantId,
-            userId,
-            section as CourseSection & { course: Course },
-          );
+          await this.enrollmentPolicyService.check(tenantId, userId, section);
           return this.waitlistService.placeOnWaitlist(
             tenantId,
             userId,
@@ -361,11 +357,7 @@ export class CoursesService {
     }
 
     // 5. Tenant enrollment policy checks (window, credit limit, prerequisites)
-    await this.enrollmentPolicyService.check(
-      tenantId,
-      userId,
-      section as CourseSection & { course: Course },
-    );
+    await this.enrollmentPolicyService.check(tenantId, userId, section);
 
     // 6. Create enrollment — active if autoApprove, pending if manual approval required
     const status = section.autoApprove

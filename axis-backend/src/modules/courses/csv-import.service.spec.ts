@@ -37,27 +37,28 @@ describe('CsvImportService — importUsers', () => {
     // Stub the transactional manager so .findOne / .create / .save proxy
     // to in-memory arrays — fast, but exercises the real service logic.
     const txManager = {
-      findOne: jest.fn(
-        async (_entity: unknown, opts: { where: { email: string } }) =>
+      findOne: jest.fn((_entity: unknown, opts: { where: { email: string } }) =>
+        Promise.resolve(
           existingUsers.find((u) => u.email === opts.where.email) ?? null,
+        ),
       ),
       create: jest.fn(
         (_entity: unknown, data: Partial<User>) => ({ ...data }) as User,
       ),
-      save: jest.fn(async (_entity: unknown, data: Partial<User>) => {
+      save: jest.fn((_entity: unknown, data: Partial<User>) => {
         savedUsers.push(data);
         // also mutate existingUsers so a re-run inside the same transaction
         // sees the new record (matches real DB behaviour).
         const idx = existingUsers.findIndex((u) => u.email === data.email);
         if (idx >= 0) existingUsers[idx] = { ...existingUsers[idx], ...data };
         else existingUsers.push(data);
-        return data;
+        return Promise.resolve(data);
       }),
     };
 
     const dataSource = {
-      transaction: jest.fn(async (cb: (m: typeof txManager) => unknown) =>
-        cb(txManager),
+      transaction: jest.fn((cb: (m: typeof txManager) => unknown) =>
+        Promise.resolve(cb(txManager)),
       ),
     };
 

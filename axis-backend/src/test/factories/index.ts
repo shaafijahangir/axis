@@ -239,7 +239,7 @@ export function createTenant(options: TenantFactoryOptions = {}): Tenant {
     settings: options.settings ?? {},
     createdAt: new Date(),
     updatedAt: new Date(),
-  } as Tenant;
+  };
 }
 
 // ============================================================================
@@ -273,7 +273,7 @@ export function createUser(options: UserFactoryOptions = {}): User {
     createdAt: new Date(),
     updatedAt: new Date(),
     tenant: options.tenant,
-  } as User;
+  };
 }
 
 export function createStudent(options: UserFactoryOptions = {}): User {
@@ -314,7 +314,7 @@ export function createAcademicTerm(
     isCurrent: options.isCurrent ?? true,
     createdAt: new Date(),
     updatedAt: new Date(),
-  } as AcademicTerm;
+  };
 }
 
 // ============================================================================
@@ -342,7 +342,7 @@ export function createCourse(options: CourseFactoryOptions = {}): Course {
     status: options.status ?? CourseStatus.ACTIVE,
     createdAt: new Date(),
     updatedAt: new Date(),
-  } as Course;
+  };
 }
 
 // ============================================================================
@@ -421,7 +421,7 @@ export function createEnrollment(
     updatedAt: new Date(),
     user: options.user,
     section: options.section,
-  } as Enrollment;
+  };
 }
 
 // ============================================================================
@@ -463,7 +463,7 @@ export function createAssignment(
     createdAt: new Date(),
     updatedAt: new Date(),
     section: options.section,
-  } as Assignment;
+  };
 }
 
 // ============================================================================
@@ -506,5 +506,5 @@ export function createSubmission(
     updatedAt: new Date(),
     assignment: options.assignment,
     user: options.user,
-  } as Submission;
+  };
 }

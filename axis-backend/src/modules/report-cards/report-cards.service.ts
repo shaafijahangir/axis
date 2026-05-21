@@ -43,7 +43,7 @@ export class ReportCardsService {
     private submissionRepo: Repository<Submission>,
   ) {}
 
-  private async toSummary(card: ReportCard): Promise<ReportCardSummary> {
+  private toSummary(card: ReportCard): ReportCardSummary {
     const section = card.section;
     const course = section?.course;
     const student = card.student;
@@ -297,7 +297,7 @@ export class ReportCardsService {
     }
 
     const saved = await this.reportCardRepo.save(cards);
-    return Promise.all(saved.map((c) => this.toSummary(c)));
+    return saved.map((c) => this.toSummary(c));
   }
 
   async sectionReportCards(
@@ -309,7 +309,7 @@ export class ReportCardsService {
       relations: ['student', 'section', 'section.course', 'term'],
       order: { createdAt: 'DESC' },
     });
-    return Promise.all(cards.map((c) => this.toSummary(c)));
+    return cards.map((c) => this.toSummary(c));
   }
 
   async myReportCards(
@@ -325,6 +325,6 @@ export class ReportCardsService {
       relations: ['student', 'section', 'section.course', 'term'],
       order: { publishedAt: 'DESC' },
     });
-    return Promise.all(cards.map((c) => this.toSummary(c)));
+    return cards.map((c) => this.toSummary(c));
   }
 }

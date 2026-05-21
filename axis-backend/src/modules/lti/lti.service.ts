@@ -140,29 +140,45 @@ export class LtiService {
       where: { tenantId },
       order: { createdAt: 'DESC' },
     });
+    if (platforms.length === 0) return [];
 
-    const infos: LtiPlatformInfo[] = [];
-    for (const platform of platforms) {
-      const deploymentCount = await this.deploymentRepo.count({
-        where: { platformId: platform.id },
-      });
-      const userCount = await this.ltiUserRepo.count({
-        where: { platformId: platform.id },
-      });
+    // Was N+1: one COUNT per platform × 2 (deployments + users). Now 2
+    // GROUP-BY queries regardless of platform count.
+    const platformIds = platforms.map((p) => p.id);
 
-      infos.push({
-        id: platform.id,
-        name: platform.name,
-        issuer: platform.issuer,
-        clientId: platform.clientId,
-        status: platform.status,
-        deploymentCount,
-        userCount,
-        createdAt: platform.createdAt,
-      });
-    }
+    const deploymentRows = await this.deploymentRepo
+      .createQueryBuilder('d')
+      .select('d.platformId', 'platformId')
+      .addSelect('COUNT(*)', 'count')
+      .where('d.platformId IN (:...ids)', { ids: platformIds })
+      .groupBy('d.platformId')
+      .getRawMany<{ platformId: string; count: string }>();
 
-    return infos;
+    const userRows = await this.ltiUserRepo
+      .createQueryBuilder('u')
+      .select('u.platformId', 'platformId')
+      .addSelect('COUNT(*)', 'count')
+      .where('u.platformId IN (:...ids)', { ids: platformIds })
+      .groupBy('u.platformId')
+      .getRawMany<{ platformId: string; count: string }>();
+
+    const deploymentMap = new Map(
+      deploymentRows.map((r) => [r.platformId, parseInt(r.count, 10)]),
+    );
+    const userMap = new Map(
+      userRows.map((r) => [r.platformId, parseInt(r.count, 10)]),
+    );
+
+    return platforms.map((platform) => ({
+      id: platform.id,
+      name: platform.name,
+      issuer: platform.issuer,
+      clientId: platform.clientId,
+      status: platform.status,
+      deploymentCount: deploymentMap.get(platform.id) ?? 0,
+      userCount: userMap.get(platform.id) ?? 0,
+      createdAt: platform.createdAt,
+    }));
   }
 
   // ============================================================

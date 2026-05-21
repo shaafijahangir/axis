@@ -82,9 +82,10 @@ export class CourseSection extends BaseEntity {
     nullable: true,
     transformer: {
       // TS → DB: parse JSON string to object for JSONB storage
-      to: (v: string | null) => (v ? JSON.parse(v) : null),
+      to: (v: string | null): Record<string, unknown> | null =>
+        v ? (JSON.parse(v) as Record<string, unknown>) : null,
       // DB → TS: serialize the JSONB object to a JSON string for GraphQL
-      from: (v: Record<string, unknown> | null) =>
+      from: (v: Record<string, unknown> | null): string | null =>
         v ? JSON.stringify(v) : null,
     },
   })

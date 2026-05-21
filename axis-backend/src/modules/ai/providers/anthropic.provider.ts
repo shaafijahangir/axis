@@ -171,7 +171,7 @@ export class AnthropicProvider implements AiProvider, OnModuleInit {
       return {
         role: msg.role,
         content,
-      } as Anthropic.MessageParam;
+      };
     });
   }
 
@@ -179,7 +179,7 @@ export class AnthropicProvider implements AiProvider, OnModuleInit {
     return {
       name: tool.name,
       description: tool.description,
-      input_schema: tool.inputSchema as Anthropic.Tool.InputSchema,
+      input_schema: tool.inputSchema,
     };
   }
 

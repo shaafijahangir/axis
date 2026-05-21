@@ -59,18 +59,20 @@ describe('AssignmentsService', () => {
     // test's repo-level setup (e.g. `assignmentRepo.create!.mockReturnValue(...)`)
     // continues to apply.
     const txManager = {
-      create: jest.fn((_entity: unknown, value: unknown) =>
-        (assignmentRepo.create as jest.Mock)(value),
-      ),
-      save: jest.fn((_entity: unknown, value: unknown) =>
-        (assignmentRepo.save as jest.Mock)(value),
-      ),
+      create: jest.fn((_entity: unknown, value: unknown): unknown => {
+        const fn = assignmentRepo.create as jest.Mock;
+        return fn(value);
+      }),
+      save: jest.fn((_entity: unknown, value: unknown): unknown => {
+        const fn = assignmentRepo.save as jest.Mock;
+        return fn(value);
+      }),
       findOne: jest.fn(),
     };
     dataSource = {
       manager: {
-        transaction: jest.fn(async (cb: (m: typeof txManager) => unknown) =>
-          cb(txManager),
+        transaction: jest.fn((cb: (m: typeof txManager) => unknown) =>
+          Promise.resolve(cb(txManager)),
         ),
       },
     };
@@ -827,7 +829,7 @@ describe('AssignmentsService', () => {
         getOne: jest
           .fn()
           .mockResolvedValue(createAssignment({ id: assignmentId })),
-      } as never);
+      });
       submissionRepo.count!.mockResolvedValue(0);
     });
 

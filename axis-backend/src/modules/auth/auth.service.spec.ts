@@ -72,7 +72,7 @@ describe('AuthService', () => {
     it('creates a new user and returns an access token', async () => {
       const user = createUser({ tenantId });
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue(user as any);
+      usersService.create.mockResolvedValue(user as unknown as User);
       jwtService.sign.mockReturnValue('jwt-token');
 
       const result = await service.register({
@@ -98,7 +98,7 @@ describe('AuthService', () => {
     it('defaults roles to STUDENT when none provided', async () => {
       const user = createUser({ tenantId });
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue(user as any);
+      usersService.create.mockResolvedValue(user as unknown as User);
       jwtService.sign.mockReturnValue('jwt-token');
 
       await service.register({
@@ -116,7 +116,7 @@ describe('AuthService', () => {
 
     it('throws ConflictException when email already exists', async () => {
       const existing = createUser({ tenantId });
-      usersService.findByEmail.mockResolvedValue(existing as any);
+      usersService.findByEmail.mockResolvedValue(existing as unknown as User);
 
       await expect(
         service.register({
@@ -134,7 +134,7 @@ describe('AuthService', () => {
     it('includes tenantId in the JWT payload', async () => {
       const user = createUser({ tenantId });
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue(user as any);
+      usersService.create.mockResolvedValue(user as unknown as User);
       jwtService.sign.mockReturnValue('jwt-token');
 
       await service.register({
@@ -158,7 +158,7 @@ describe('AuthService', () => {
   describe('validateUser', () => {
     it('returns user data when credentials are valid', async () => {
       const user = createUser({ tenantId });
-      usersService.findByEmail.mockResolvedValue(user as any);
+      usersService.findByEmail.mockResolvedValue(user as unknown as User);
       usersService.validatePassword.mockResolvedValue(true);
 
       const result = await service.validateUser(user.email, 'correct-password');
@@ -181,7 +181,7 @@ describe('AuthService', () => {
 
     it('returns null when password is wrong', async () => {
       const user = createUser({ tenantId });
-      usersService.findByEmail.mockResolvedValue(user as any);
+      usersService.findByEmail.mockResolvedValue(user as unknown as User);
       usersService.validatePassword.mockResolvedValue(false);
 
       const result = await service.validateUser(user.email, 'wrong-password');
@@ -194,7 +194,7 @@ describe('AuthService', () => {
       const noUser = await service.validateUser('none@test.com', 'pass');
 
       const user = createUser({ tenantId });
-      usersService.findByEmail.mockResolvedValue(user as any);
+      usersService.findByEmail.mockResolvedValue(user as unknown as User);
       usersService.validatePassword.mockResolvedValue(false);
       const badPass = await service.validateUser(user.email, 'wrong');
 
@@ -204,7 +204,7 @@ describe('AuthService', () => {
 
     it('includes all required fields for JWT generation', async () => {
       const admin = createAdmin({ tenantId });
-      usersService.findByEmail.mockResolvedValue(admin as any);
+      usersService.findByEmail.mockResolvedValue(admin as unknown as User);
       usersService.validatePassword.mockResolvedValue(true);
 
       const result = await service.validateUser(admin.email, 'pass');
@@ -229,7 +229,7 @@ describe('AuthService', () => {
       const user = createUser({ tenantId });
       jwtService.sign.mockReturnValue('login-token');
 
-      const result = service.login(user as any);
+      const result = service.login(user);
 
       expect(result.accessToken).toBe('login-token');
       expect(result.user).toMatchObject({
@@ -244,7 +244,7 @@ describe('AuthService', () => {
       const user = createAdmin({ tenantId });
       jwtService.sign.mockReturnValue('admin-token');
 
-      service.login(user as any);
+      service.login(user);
 
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: user.id,
@@ -258,7 +258,7 @@ describe('AuthService', () => {
       const user = createUser({ tenantId, passwordHash: 'secret-hash' });
       jwtService.sign.mockReturnValue('token');
 
-      const result = service.login(user as any);
+      const result = service.login(user);
 
       expect(JSON.stringify(result)).not.toContain('secret-hash');
       expect(JSON.stringify(result)).not.toContain('passwordHash');

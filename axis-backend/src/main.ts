@@ -70,8 +70,8 @@ const winstonLogger = WinstonModule.createLogger({
             winston.format.colorize(),
             winston.format.timestamp({ format: 'HH:mm:ss' }),
             winston.format.printf(
-              ({ level, message, timestamp }) =>
-                `${timestamp} ${level}: ${message}`,
+              (info: { level: string; message: unknown; timestamp: string }) =>
+                `${info.timestamp} ${info.level}: ${String(info.message)}`,
             ),
           ),
     }),

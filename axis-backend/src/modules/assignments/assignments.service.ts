@@ -60,14 +60,18 @@ export class AssignmentsService {
     tenantId: string,
   ): Promise<void> {
     if (!fileIds.length) return;
-    for (const fileId of fileIds) {
-      await this.uploadsService.attachToContext(
-        fileId,
-        contextId,
-        userId,
-        tenantId,
-      );
-    }
+    // Parallelise — each attachToContext is an independent (findOne + save)
+    // round trip. Sequential was N×latency for no reason.
+    await Promise.all(
+      fileIds.map((fileId) =>
+        this.uploadsService.attachToContext(
+          fileId,
+          contextId,
+          userId,
+          tenantId,
+        ),
+      ),
+    );
     // Sanity: ensure all linked files match the expected context. Reject
     // attempts to pass a SUBMISSION upload as instructions (or vice versa).
     const linked = await this.fileUploadRepo.find({
