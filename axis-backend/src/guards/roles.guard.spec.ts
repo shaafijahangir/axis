@@ -3,16 +3,17 @@ import { Reflector } from '@nestjs/core';
 import { RolesGuard } from './roles.guard';
 import { UserRole } from '../database/entities';
 
+/**
+ * Build an ExecutionContext mock that returns a request with the given
+ * user roles. `_requiredRoles` is kept on the signature for test
+ * readability — what the resolver requires is part of each test's
+ * intent — but the actual @Roles() lookup is mocked by the outer
+ * reflector in the describe block, not by this helper.
+ */
 function makeHttpContext(
   roles: UserRole[] | undefined,
-  requiredRoles: UserRole[] | undefined,
+  _requiredRoles: UserRole[] | undefined,
 ): ExecutionContext {
-  const reflector = {
-    getAllAndOverride: jest.fn().mockReturnValue(requiredRoles),
-  } as unknown as Reflector;
-
-  const guard = new RolesGuard(reflector);
-
   const mockRequest = { user: roles !== undefined ? { roles } : undefined };
   const context = {
     getType: jest.fn().mockReturnValue('http'),

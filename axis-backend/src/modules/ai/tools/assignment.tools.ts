@@ -33,9 +33,15 @@ export function createAssignmentTools(
         },
         required: ['sectionId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
+        // SEC: tenant-scope every read — AI tools run as the authenticated
+        // user and must not return data from other tenants even if a
+        // foreign UUID is passed in the prompt.
         const assignments = await assignmentRepo.find({
-          where: { sectionId: input.sectionId as string },
+          where: {
+            sectionId: input.sectionId as string,
+            tenantId: ctx.tenantId,
+          },
           order: { dueAt: 'ASC' },
         });
         return assignments.map((a) => ({
@@ -64,9 +70,12 @@ export function createAssignmentTools(
         },
         required: ['assignmentId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
         const assignment = await assignmentRepo.findOne({
-          where: { id: input.assignmentId as string },
+          where: {
+            id: input.assignmentId as string,
+            tenantId: ctx.tenantId,
+          },
         });
         if (!assignment) {
           return { error: 'Assignment not found' };
@@ -105,11 +114,12 @@ export function createAssignmentTools(
         },
         required: ['assignmentId', 'userId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
         const submissions = await submissionRepo.find({
           where: {
             assignmentId: input.assignmentId as string,
             userId: input.userId as string,
+            tenantId: ctx.tenantId,
           },
           order: { attempt: 'DESC' },
         });
@@ -139,9 +149,12 @@ export function createAssignmentTools(
         },
         required: ['assignmentId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
         const submissions = await submissionRepo.find({
-          where: { assignmentId: input.assignmentId as string },
+          where: {
+            assignmentId: input.assignmentId as string,
+            tenantId: ctx.tenantId,
+          },
           relations: ['user'],
           order: { submittedAt: 'DESC' },
         });

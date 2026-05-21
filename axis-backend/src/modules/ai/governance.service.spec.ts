@@ -82,9 +82,7 @@ describe('GovernanceService', () => {
     };
 
     // Mock TenantAiConfig repo to return default config
-    tenantAiConfigRepo.findOne!.mockResolvedValue(
-      defaultTenantConfig as TenantAiConfig,
-    );
+    tenantAiConfigRepo.findOne!.mockResolvedValue(defaultTenantConfig);
 
     // Create real ToolRegistry and register test tools
     toolRegistry = new ToolRegistry();
@@ -212,7 +210,7 @@ describe('GovernanceService', () => {
       tenantAiConfigRepo.findOne!.mockResolvedValue({
         ...defaultTenantConfig,
         enabled: false,
-      } as TenantAiConfig);
+      });
 
       const result = await service.checkToolPermission(
         'get_course',
@@ -231,7 +229,7 @@ describe('GovernanceService', () => {
       tenantAiConfigRepo.findOne!.mockResolvedValue({
         ...defaultTenantConfig,
         toolOverrides: { enroll_student: 'auto' },
-      } as TenantAiConfig);
+      });
       usageLogRepo.count!.mockResolvedValue(0);
       mockBudgetChecks();
 
@@ -248,7 +246,7 @@ describe('GovernanceService', () => {
       tenantAiConfigRepo.findOne!.mockResolvedValue({
         ...defaultTenantConfig,
         toolOverrides: { get_course: 'blocked' },
-      } as TenantAiConfig);
+      });
 
       const result = await service.checkToolPermission(
         'get_course',

@@ -12,6 +12,7 @@ import { User, UserRole } from '../../database/entities/user.entity';
 import { CourseSection } from '../../database/entities/course-section.entity';
 import {
   Enrollment,
+  EnrollmentRole,
   EnrollmentStatus,
 } from '../../database/entities/enrollment.entity';
 import { AcademicTerm } from '../../database/entities/academic-term.entity';
@@ -974,7 +975,7 @@ export class CsvImportService {
             sectionId: data.sectionId,
             tenantId,
             status: EnrollmentStatus.ACTIVE,
-            role: 'student' as any,
+            role: EnrollmentRole.STUDENT,
             enrolledAt: new Date(),
           });
           await manager.save(Enrollment, enrollment);

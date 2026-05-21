@@ -19,7 +19,6 @@ import {
   GraduationPlanResult,
   PlannedCourse,
   PlannedSemester,
-  GraduationPlanConstraintsResult,
   PlanDiff,
   DiffCourse,
   MovedCourse,
@@ -504,7 +503,7 @@ export class GraduationPlannerService {
       profileId: plan.profileId,
       degreeProgramId: plan.degreeProgramId,
       status: plan.status,
-      constraints: plan.constraints as GraduationPlanConstraintsResult,
+      constraints: plan.constraints,
       semesters: (plan.semesters ?? []).map(
         (s): PlannedSemester => ({
           termKey: s.termKey,

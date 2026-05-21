@@ -83,7 +83,7 @@ describe('AnnouncementsService', () => {
       announcementRepo.create!.mockImplementation(
         (v: unknown) => v as Announcement,
       );
-      announcementRepo.save!.mockResolvedValue({} as Announcement);
+      announcementRepo.save!.mockResolvedValue({});
 
       await service.create(authorId, {
         ...baseInput,
@@ -92,8 +92,9 @@ describe('AnnouncementsService', () => {
         targetGrade: 99,
       });
 
-      const created = (announcementRepo.create as jest.Mock).mock
-        .calls[0][0] as {
+      const createMock = announcementRepo.create as jest.Mock;
+      const callArgs = createMock.mock.calls as unknown[][];
+      const created = callArgs[0][0] as {
         sectionId?: string;
         targetGrade?: number;
       };
@@ -105,7 +106,7 @@ describe('AnnouncementsService', () => {
       announcementRepo.create!.mockImplementation(
         (v: unknown) => v as Announcement,
       );
-      announcementRepo.save!.mockResolvedValue({} as Announcement);
+      announcementRepo.save!.mockResolvedValue({});
 
       await service.create(authorId, {
         ...baseInput,
@@ -114,8 +115,9 @@ describe('AnnouncementsService', () => {
         targetGrade: 11, // should be dropped
       });
 
-      const created = (announcementRepo.create as jest.Mock).mock
-        .calls[0][0] as {
+      const createMock = announcementRepo.create as jest.Mock;
+      const callArgs = createMock.mock.calls as unknown[][];
+      const created = callArgs[0][0] as {
         sectionId?: string;
         targetGrade?: number;
       };
@@ -127,15 +129,14 @@ describe('AnnouncementsService', () => {
       announcementRepo.create!.mockImplementation(
         (v: unknown) => v as Announcement,
       );
-      announcementRepo.save!.mockResolvedValue({} as Announcement);
+      announcementRepo.save!.mockResolvedValue({});
 
       await expect(
         service.create(authorId, { ...baseInput, sectionId: 'section-1' }),
       ).resolves.toBeDefined();
-      const created = (announcementRepo.create as jest.Mock).mock
-        .calls[0][0] as {
-        scope: string;
-      };
+      const createMockForSection = announcementRepo.create as jest.Mock;
+      const sectionCallArgs = createMockForSection.mock.calls as unknown[][];
+      const created = sectionCallArgs[0][0] as { scope: string };
       expect(created.scope).toBe(AnnouncementScope.SECTION);
     });
   });

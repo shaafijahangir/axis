@@ -143,7 +143,9 @@ describe('UsersService', () => {
         tenantId,
       });
 
-      const createCall = (repo.create as jest.Mock).mock.calls[0][0];
+      const createMock = repo.create as jest.Mock;
+      const createCallArgs = createMock.mock.calls as unknown[][];
+      const createCall = createCallArgs[0][0] as { passwordHash: string };
       expect(createCall.passwordHash).not.toBe('plaintext-password');
       expect(createCall.passwordHash).toMatch(/^\$2b\$/);
     });
@@ -420,7 +422,12 @@ describe('UsersService', () => {
         homeroomTeacherId: 'teacher-1',
       });
 
-      const createCall = (repo.create as jest.Mock).mock.calls[0][0];
+      const adminCreateMock = repo.create as jest.Mock;
+      const adminCreateCallArgs = adminCreateMock.mock.calls as unknown[][];
+      const createCall = adminCreateCallArgs[0][0] as {
+        gradeLevel?: number;
+        homeroomTeacherId?: string;
+      };
       expect(createCall.gradeLevel).toBe(11);
       expect(createCall.homeroomTeacherId).toBe('teacher-1');
     });
@@ -541,7 +548,8 @@ describe('UsersService', () => {
 
       await service.findAllForTenant(tenantId);
 
-      const calls = (qb.andWhere as jest.Mock).mock.calls;
+      const andWhereMock = qb.andWhere as jest.Mock;
+      const calls = andWhereMock.mock.calls as unknown[][];
       const gradeCalls = calls.filter((c) =>
         String(c[0]).includes('gradeLevel'),
       );

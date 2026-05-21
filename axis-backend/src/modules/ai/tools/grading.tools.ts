@@ -27,9 +27,12 @@ export function createGradingTools(
         },
         required: ['submissionId'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
         const submission = await submissionRepo.findOne({
-          where: { id: input.submissionId as string },
+          where: {
+            id: input.submissionId as string,
+            tenantId: ctx.tenantId,
+          },
           relations: ['assignment', 'user'],
         });
         if (!submission) {
@@ -73,9 +76,12 @@ export function createGradingTools(
         },
         required: ['submissionId', 'feedback'],
       },
-      handler: async (input, _ctx) => {
+      handler: async (input, ctx) => {
         const submission = await submissionRepo.findOne({
-          where: { id: input.submissionId as string },
+          where: {
+            id: input.submissionId as string,
+            tenantId: ctx.tenantId,
+          },
         });
         if (!submission) {
           return { error: 'Submission not found' };
