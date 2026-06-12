@@ -16,7 +16,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { extname } from 'path';
 import { FileUpload, UploadContext } from './entities/file-upload.entity';
 import {
@@ -109,7 +109,7 @@ export class UploadsService implements OnModuleInit {
     }
 
     const ext = extname(input.filename).toLowerCase();
-    const fileId = uuidv4();
+    const fileId = randomUUID();
     // Key structure: {tenantId}/{context}/{userId}/{uuid}{ext}
     // WHY: Tenant isolation at the storage level. CloudFlare R2 bucket policies
     // can restrict by prefix, and keys are unguessable.

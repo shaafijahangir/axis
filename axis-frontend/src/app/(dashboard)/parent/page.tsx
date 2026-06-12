@@ -58,7 +58,8 @@ export default function ParentHomePage() {
               No students linked to your account yet.
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Contact your school administrator to link your child's account.
+              Contact your school administrator to link your child&apos;s
+              account.
             </p>
           </CardContent>
         </Card>

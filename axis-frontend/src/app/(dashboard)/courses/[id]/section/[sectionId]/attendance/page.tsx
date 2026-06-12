@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { ArrowLeft, Check, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
@@ -73,10 +73,11 @@ export default function AttendancePage() {
   const sectionId = params.sectionId as string;
 
   const [date, setDate] = useState(todayIso());
-  const [localStatus, setLocalStatus] = useState<
-    Record<string, AttendanceStatus>
-  >({});
-  const [dirty, setDirty] = useState(false);
+  // Unsaved teacher edits, layered over server state. Derived display state
+  // (localStatus) = server records + overrides — no sync effect needed.
+  const [overrides, setOverrides] = useState<Record<string, AttendanceStatus>>(
+    {},
+  );
 
   const { data: sectionData, loading: sectionLoading } = useQuery<{
     section: SectionData;
@@ -93,20 +94,31 @@ export default function AttendancePage() {
     MARK_ATTENDANCE_MUTATION,
   );
 
-  // Sync server data → local state whenever date or server data changes
-  useEffect(() => {
-    if (!data?.sectionAttendance?.records) return;
+  // Discard unsaved edits when the underlying server snapshot changes
+  // (date switch or refetch). Render-time state adjustment per React docs —
+  // avoids the cascading-render footgun of setState inside an effect.
+  const [syncedData, setSyncedData] = useState(data);
+  if (data !== syncedData) {
+    setSyncedData(data);
+    setOverrides({});
+  }
+
+  const serverStatus = useMemo(() => {
     const map: Record<string, AttendanceStatus> = {};
-    for (const r of data.sectionAttendance.records) {
+    for (const r of data?.sectionAttendance?.records ?? []) {
       map[r.userId] = r.status;
     }
-    setLocalStatus(map);
-    setDirty(false);
+    return map;
   }, [data]);
 
+  const localStatus: Record<string, AttendanceStatus> = {
+    ...serverStatus,
+    ...overrides,
+  };
+  const dirty = Object.keys(overrides).length > 0;
+
   const setStatus = (userId: string, status: AttendanceStatus) => {
-    setLocalStatus((prev) => ({ ...prev, [userId]: status }));
-    setDirty(true);
+    setOverrides((prev) => ({ ...prev, [userId]: status }));
   };
 
   const handleSave = async () => {
@@ -125,7 +137,7 @@ export default function AttendancePage() {
     try {
       await markAttendance({ variables: { input } });
       toast.success('Attendance saved');
-      setDirty(false);
+      setOverrides({});
       void refetch();
     } catch {
       toast.error('Failed to save attendance');
