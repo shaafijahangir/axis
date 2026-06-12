@@ -88,6 +88,15 @@
   - DirectMessage: `conversationId`, `createdAt`
 - **Acceptance:** Every entity has at least a `tenantId` index. Every foreign key used in WHERE clauses has an index. Explain plans show index usage on all common queries.
 
+### SEC-005: Enforce `requiredPermissions` on AI tools (or remove)
+- **Status:** `TODO`
+- **Problem:** Every AI tool declares `requiredPermissions: ['courses.read']` etc., but `GovernanceService.checkToolPermission()` never reads the field. It only checks actionType, rate limits, and budgets. Today the strings are dead weight pretending to be an ACL — exactly the kind of false-security signal that masked the cross-tenant leak SEC fixed in PR #42.
+- **Fix:** Either:
+  - (a) Wire it up. Define `ROLE_PERMISSIONS: Record<UserRole, Set<string>>` (~30 LOC). In `checkToolPermission`, after the actionType check, intersect the user's roles' permissions against `tool.requiredPermissions`. Block if any required permission is missing. Add a unit test per role.
+  - (b) Delete the field from `ToolDefinition` if we genuinely don't want permission-gating.
+- **Recommendation:** (a). The AI surface is the highest-risk place to have permission semantics, and removing them would weaken auditability.
+- **Acceptance:** Either `tool.requiredPermissions` is read by governance and a denial path has test coverage, or the field is removed from the interface and every tool definition.
+
 ---
 
 ## P1 — Data Model & Infrastructure
@@ -238,6 +247,37 @@
   - `.github/workflows/backend-ci.yml`, `.github/workflows/frontend-ci.yml` (replaced by unified ci.yml)
   - `package-lock.json` files (replaced by pnpm-lock.yaml)
 - **Acceptance:** ✓ `pnpm build` runs both projects in parallel. ✓ Cached builds are instant. ✓ 101 tests pass.
+
+### ARCH-007: GraphQL codegen for end-to-end type safety
+- **Status:** `IN_PROGRESS`
+- **Problem:** Frontend re-types every GraphQL response by hand. `useQuery(ADMIN_USERS_QUERY)` returns `any`; field renames in `schema.gql` produce runtime failures the compiler never catches. The backend already emits a 2,257-line `schema.gql` with 222 types — we just don't consume it.
+- **Approach:** `@graphql-codegen/cli` + `@graphql-codegen/client-preset` (the current Apollo Client 4 standard).
+  - `codegen.ts` reads `../axis-backend/src/schema.gql` (local file, no network round-trip).
+  - Scans `axis-frontend/src/**/*.{ts,tsx}` for `gql` / `graphql` template literals.
+  - Emits to `axis-frontend/src/lib/graphql/__generated__/` (gitignored).
+- **Migration path:** Don't bulk-convert. Both styles coexist:
+  ```typescript
+  // Old (still works, but untyped):
+  import { gql } from '@apollo/client';
+  const Q = gql`query Foo { ... }`;
+
+  // New (typed end-to-end):
+  import { graphql } from '@/lib/graphql/__generated__';
+  const Q = graphql(`query Foo { ... }`);
+  const { data } = useQuery(Q); // data is fully typed
+  ```
+- **Acceptance:** `pnpm codegen` produces generated types. At least one query file demonstrates the typed pattern with `useQuery` autocomplete and `npx tsc --noEmit` passing. CI runs `pnpm codegen` and fails if checked-in code diverges from schema (future hardening — not required for this PR).
+
+### ARCH-008: AccessControlService for resource-level authorization
+- **Status:** `TODO`
+- **Problem:** `@Roles()` checks subject's role but not resource ownership. CLAUDE.md prescribes per-resolver `verifyInstructorAccess()` style checks, but today exactly one service does it (`parent.service.ts`). The pattern is invented per-resolver, so it's easy to forget — and forgotten checks are silent bugs.
+- **Fix:** Single `AccessControlService` exposing assertion methods:
+  - `assertInstructorOwnsSection(userId, sectionId, tenantId)`
+  - `assertStudentEnrolledInSection(userId, sectionId, tenantId)`
+  - `assertOwnsSubmission(userId, submissionId, tenantId)`
+  - `assertCanGradeAssignment(userId, assignmentId, tenantId)`
+- Each throws `ForbiddenException` on failure. Resolvers call one assertion before returning resource data. Grep-able, testable, one source of truth.
+- **Acceptance:** Every resolver that returns a resource owned by a specific user (Submission, Assignment, CourseSection content) calls an `assertX` first. The ad-hoc check in `parent.service.ts` is migrated to use the service.
 
 ---
 

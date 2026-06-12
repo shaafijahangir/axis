@@ -66,6 +66,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // ARCH-007: GraphQL codegen output is regenerated on every `pnpm codegen`.
+    // Linting it produces noise about the generator's own /* eslint-disable */
+    // headers; the file is read-only as far as humans are concerned.
+    "src/lib/graphql/__generated__/**",
   ]),
 ]);
 

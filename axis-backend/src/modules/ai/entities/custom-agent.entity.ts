@@ -101,6 +101,7 @@ export class CustomAgent extends TenantScopedEntity {
   @Column()
   createdById: string;
 
+  @Field(() => User, { nullable: true })
   @ManyToOne(() => User)
   @JoinColumn({ name: 'createdById' })
   createdBy: User;
