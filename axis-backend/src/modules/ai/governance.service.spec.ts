@@ -258,6 +258,125 @@ describe('GovernanceService', () => {
     });
   });
 
+  // SEC-005: role-based permission gate
+  describe('requiredPermissions enforcement', () => {
+    const gradingTool: ToolDefinition = {
+      name: 'draft_grade',
+      description: 'Draft a grade for a submission',
+      inputSchema: { type: 'object', properties: {} },
+      handler: jest.fn(),
+      requiredPermissions: ['grading.write'],
+      actionType: 'suggest',
+    };
+
+    const analyticsTool: ToolDefinition = {
+      name: 'get_tenant_analytics',
+      description: 'Tenant-wide analytics',
+      inputSchema: { type: 'object', properties: {} },
+      handler: jest.fn(),
+      requiredPermissions: ['analytics.read'],
+      actionType: 'auto',
+    };
+
+    const openTool: ToolDefinition = {
+      name: 'discover_courses',
+      description: 'Natural language course discovery',
+      inputSchema: { type: 'object', properties: {} },
+      handler: jest.fn(),
+      requiredPermissions: [],
+      actionType: 'auto',
+    };
+
+    beforeEach(() => {
+      toolRegistry.register(gradingTool);
+      toolRegistry.register(analyticsTool);
+      toolRegistry.register(openTool);
+      usageLogRepo.count!.mockResolvedValue(0);
+      mockBudgetChecks();
+    });
+
+    it('should block a student from a grading.write tool', async () => {
+      const result = await service.checkToolPermission('draft_grade', {
+        ...defaultContext,
+        roles: ['student'],
+      });
+
+      expect(result.allowed).toBe(false);
+      expect(result.actionType).toBe('blocked');
+      expect(result.reason).toContain('grading.write');
+      // Denied before rate limit / budget queries run
+      expect(usageLogRepo.count).not.toHaveBeenCalled();
+    });
+
+    it('should block a student from an analytics.read tool', async () => {
+      const result = await service.checkToolPermission('get_tenant_analytics', {
+        ...defaultContext,
+        roles: ['student'],
+      });
+
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('analytics.read');
+    });
+
+    it('should block a parent from any write tool', async () => {
+      const result = await service.checkToolPermission('enroll_student', {
+        ...defaultContext,
+        roles: ['parent'],
+      });
+
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('enrollments.write');
+    });
+
+    it('should allow a TA to use grading.write tools', async () => {
+      const result = await service.checkToolPermission('draft_grade', {
+        ...defaultContext,
+        roles: ['ta'],
+      });
+
+      expect(result.allowed).toBe(true);
+      expect(result.actionType).toBe('suggest');
+    });
+
+    it('should allow an instructor to use analytics.read tools', async () => {
+      const result = await service.checkToolPermission('get_tenant_analytics', {
+        ...defaultContext,
+        roles: ['instructor'],
+      });
+
+      expect(result.allowed).toBe(true);
+    });
+
+    it('should grant the union of permissions for multi-role users', async () => {
+      // student alone lacks grading.write; student+ta has it
+      const result = await service.checkToolPermission('draft_grade', {
+        ...defaultContext,
+        roles: ['student', 'ta'],
+      });
+
+      expect(result.allowed).toBe(true);
+    });
+
+    it('should allow any role to use tools with no required permissions', async () => {
+      const result = await service.checkToolPermission('discover_courses', {
+        ...defaultContext,
+        roles: ['parent'],
+      });
+
+      expect(result.allowed).toBe(true);
+    });
+
+    it('should deny unknown role strings everything (deny-by-default)', async () => {
+      const result = await service.checkToolPermission('get_course', {
+        ...defaultContext,
+        roles: ['superuser'],
+      });
+
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('courses.read');
+    });
+  });
+
   describe('checkRateLimit', () => {
     it('should return true when under rate limit', async () => {
       usageLogRepo.count!.mockResolvedValue(30);
