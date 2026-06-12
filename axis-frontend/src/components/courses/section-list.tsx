@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ENROLL_STUDENT_MUTATION } from '@/lib/graphql/mutations/courses';
+import { ENROLL_IN_SECTION_MUTATION } from '@/lib/graphql/mutations/enrollment';
 import { MY_ENROLLMENTS_QUERY } from '@/lib/graphql/queries/courses';
 
 interface Section {
@@ -38,7 +38,7 @@ export function SectionList({
   sections,
   showEnroll,
 }: SectionListProps) {
-  const [enrollStudent, { loading }] = useMutation(ENROLL_STUDENT_MUTATION, {
+  const [enrollStudent, { loading }] = useMutation(ENROLL_IN_SECTION_MUTATION, {
     refetchQueries: [{ query: MY_ENROLLMENTS_QUERY }],
   });
 

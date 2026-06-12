@@ -28,14 +28,6 @@ export const CREATE_SECTION_MUTATION = gql`
   }
 `;
 
-export const ENROLL_STUDENT_MUTATION = gql`
-  mutation EnrollStudent($sectionId: String!) {
-    enrollStudent(sectionId: $sectionId) {
-      id
-      userId
-      sectionId
-      status
-      enrolledAt
-    }
-  }
-`;
+// Duplicate of ENROLL_IN_SECTION_MUTATION in ./enrollment.ts — kept here removed
+// to avoid two operations named `EnrollInSection` (codegen requires unique
+// operation names). Import from ./enrollment.ts at call sites instead.

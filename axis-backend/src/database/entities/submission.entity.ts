@@ -27,6 +27,10 @@ export class Submission extends TenantScopedEntity {
   @Column()
   userId: string;
 
+  // Exposed to GraphQL so instructor/TA submission-grading views can render the
+  // student's name without a follow-up `user(id:)` query. Always eager-loaded
+  // by the resolver; safe to keep nullable for clients that don't select it.
+  @Field(() => User, { nullable: true })
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })
   user: User;
