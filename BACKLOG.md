@@ -89,7 +89,8 @@
 - **Acceptance:** Every entity has at least a `tenantId` index. Every foreign key used in WHERE clauses has an index. Explain plans show index usage on all common queries.
 
 ### SEC-005: Enforce `requiredPermissions` on AI tools (or remove)
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-06-11 — Option (a). Added `ROLE_PERMISSIONS` map in `tools/role-permissions.ts` (deny-by-default, multi-role union). `checkToolPermission` blocks any call missing a required permission, before rate-limit/budget queries. 8 new unit tests cover per-role denial and grant paths.
 - **Problem:** Every AI tool declares `requiredPermissions: ['courses.read']` etc., but `GovernanceService.checkToolPermission()` never reads the field. It only checks actionType, rate limits, and budgets. Today the strings are dead weight pretending to be an ACL — exactly the kind of false-security signal that masked the cross-tenant leak SEC fixed in PR #42.
 - **Fix:** Either:
   - (a) Wire it up. Define `ROLE_PERMISSIONS: Record<UserRole, Set<string>>` (~30 LOC). In `checkToolPermission`, after the actionType check, intersect the user's roles' permissions against `tool.requiredPermissions`. Block if any required permission is missing. Add a unit test per role.

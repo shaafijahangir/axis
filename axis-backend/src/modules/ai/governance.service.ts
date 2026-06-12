@@ -4,6 +4,7 @@ import { Repository, MoreThan } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { ActionType, AgentContext } from './tools/tool.interface';
 import { ToolRegistry } from './tools/tool-registry';
+import { missingPermissions } from './tools/role-permissions';
 import { AiUsageLog } from './entities/ai-usage-log.entity';
 import { TenantAiConfig } from './entities/tenant-ai-config.entity';
 import {
@@ -92,6 +93,22 @@ export class GovernanceService {
         allowed: false,
         actionType: 'blocked',
         reason: `Tool "${toolName}" is blocked by governance policy`,
+      };
+    }
+
+    // SEC-005: role-based permission gate. The caller's roles must jointly
+    // grant every permission the tool declares. Checked before rate limits
+    // so a denied call never consumes budget queries.
+    const missing = missingPermissions(ctx.roles, tool.requiredPermissions);
+    if (missing.length > 0) {
+      this.logger.warn(
+        `Permission denied: user ${ctx.userId} (roles: ${ctx.roles.join(',')}) ` +
+          `invoked "${toolName}" without [${missing.join(', ')}]`,
+      );
+      return {
+        allowed: false,
+        actionType: 'blocked',
+        reason: `Missing required permission(s): ${missing.join(', ')}`,
       };
     }
 
