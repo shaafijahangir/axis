@@ -50,3 +50,37 @@ export abstract class TenantScopedEntity extends BaseEntity {
   @JoinColumn({ name: 'tenantId' })
   tenant: any;
 }
+
+/**
+ * ARCH-001 (extended): Base for append-only log entities.
+ * WHY: Logs (Ai messages, usage logs, direct messages) are written once and
+ * never updated, so they have `id` + `createdAt` but deliberately NO
+ * `updatedAt`. They still duplicated those two columns; this removes that
+ * duplication without forcing the meaningless `updatedAt` that BaseEntity
+ * mandates. Extend this instead of BaseEntity for write-once records.
+ */
+@ObjectType({ isAbstract: true })
+export abstract class LogEntity {
+  @Field()
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Field()
+  @CreateDateColumn()
+  createdAt: Date;
+}
+
+/**
+ * Tenant-scoped variant of LogEntity (e.g. AiUsageLog): write-once, but
+ * still belongs to a tenant and must be filtered by tenantId.
+ */
+@ObjectType({ isAbstract: true })
+export abstract class TenantScopedLogEntity extends LogEntity {
+  @Field()
+  @Column()
+  tenantId: string;
+
+  @ManyToOne('Tenant')
+  @JoinColumn({ name: 'tenantId' })
+  tenant: any;
+}
