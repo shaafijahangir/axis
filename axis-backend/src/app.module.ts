@@ -48,6 +48,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { ReportCardsModule } from './modules/report-cards/report-cards.module';
 import { ParentModule } from './modules/parent/parent.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { depthLimit } from './graphql/depth-limit.validation';
 
 @Module({
   imports: [
@@ -115,7 +116,14 @@ import { ScheduleModule } from '@nestjs/schedule';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       sortSchema: true,
-      playground: true,
+      // Playground + introspection are dev-only. In production they hand an
+      // attacker the full schema map and an interactive query console.
+      playground: process.env.NODE_ENV !== 'production',
+      introspection: process.env.NODE_ENV !== 'production',
+      // Reject pathologically nested queries during validation, before any
+      // resolver runs (cheap DoS guard). 10 clears the deepest legitimate
+      // query (course → section → enrollment → user → ...) with headroom.
+      validationRules: [depthLimit(10)],
       path: '/api/graphql',
       context: ({ req }: { req: unknown }) => ({ req }),
     }),

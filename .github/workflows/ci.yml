@@ -64,6 +64,15 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
+      # Surface dependency advisories in the CI log. Informational, not a
+      # gate: the tree's high/critical findings are almost all transitive dev
+      # tooling (codegen, expo, react-native devtools) with no server-runtime
+      # path, and a hard gate on those just trains people to disable audits.
+      # Triage real prod-path advisories from this output and bump them
+      # explicitly (as done for `next`).
+      - name: Audit dependencies (informational)
+        run: pnpm audit --audit-level high || true
+
       - name: Test
         run: pnpm test
         env:
@@ -84,14 +93,15 @@ jobs:
 
   # ──────────────────────────────────────────────────────────────────
   # End-to-end tests against a running stack with seeded data.
-  # Runs only on main branch pushes (PRs run unit tests only — fast
-  # feedback). Brings up postgres + redis + a transient MinIO so the
-  # file-upload flow can round-trip.
+  # Runs on PRs and main pushes — catching regressions before merge is
+  # the whole point of E2E. Gated behind `needs: ci` so it only spins up
+  # the full stack once unit tests, lint, typecheck, and build are green.
+  # Brings up postgres + redis + a transient MinIO so the file-upload
+  # flow can round-trip.
   # ──────────────────────────────────────────────────────────────────
   e2e:
     runs-on: ubuntu-latest
     needs: ci
-    if: github.ref == 'refs/heads/main'
 
     services:
       postgres:
