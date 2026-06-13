@@ -202,6 +202,7 @@
   - `TenantScopedEntity`: User, Course, AcademicTerm, Enrollment, Assignment, Submission, Announcement, AiConversation, Conversation
   - Log entities (unchanged - only have createdAt): AiMessage, AiUsageLog, DirectMessage, ConversationParticipant
 - **Acceptance:** No entity directly declares `id`, `createdAt`, or `updatedAt`. All tenant-scoped entities extend `TenantScopedEntity`.
+- **Follow-up (2026-06-13):** Closed the gap where 4 entities still declared raw `id`/`createdAt` columns. Added `LogEntity` (id + createdAt) and `TenantScopedLogEntity` base classes so append-only logs dedup their columns without the meaningless `updatedAt` BaseEntity mandates. Migrated `CourseContent` → `TenantScopedEntity` (it's mutable), `AiMessage` → `LogEntity`, `AiUsageLog` → `TenantScopedLogEntity`. `LtiState` left standalone (its PK is the natural OIDC `state` value, not a generated UUID) with a clarifying comment. Verified `schema.gql` is byte-identical (same exposed field sets; `sortSchema` makes order irrelevant). Also fixed a phantom `express` dependency (imported directly in 8 files, only present transitively via `@nestjs/platform-express`) that broke `node dist/main` — i.e. production start and the E2E CI job.
 
 ### ARCH-002: Global tenant interceptor
 - **Status:** `DONE`

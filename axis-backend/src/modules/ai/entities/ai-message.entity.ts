@@ -1,13 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
+import { LogEntity } from '../../../database/entities/base.entity';
 import { AiConversation } from './ai-conversation.entity';
 
 export enum MessageRole {
@@ -24,11 +17,7 @@ registerEnumType(MessageRole, { name: 'MessageRole' });
 @Entity('ai_messages')
 @Index(['conversationId'])
 @Index(['createdAt'])
-export class AiMessage {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class AiMessage extends LogEntity {
   @Field()
   @Column()
   conversationId: string;
@@ -59,8 +48,4 @@ export class AiMessage {
   @Field()
   @Column({ type: 'int', default: 0 })
   tokenCount: number;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
 }

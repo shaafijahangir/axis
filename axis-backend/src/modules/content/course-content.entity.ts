@@ -1,17 +1,8 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ObjectType, Field, Int } from '@nestjs/graphql';
+import { TenantScopedEntity } from '../../database/entities/base.entity';
 import { CourseSection } from '../../database/entities/course-section.entity';
 import { User } from '../../database/entities/user.entity';
-import { Tenant } from '../../database/entities/tenant.entity';
 
 /**
  * WHY HTML storage: Tiptap outputs HTML natively. No custom serialization
@@ -27,11 +18,7 @@ import { Tenant } from '../../database/entities/tenant.entity';
 @Entity('course_contents')
 @Index(['sectionId'])
 @Index(['tenantId'])
-export class CourseContent {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class CourseContent extends TenantScopedEntity {
   @Field()
   @Column()
   sectionId: string;
@@ -39,14 +26,6 @@ export class CourseContent {
   @ManyToOne(() => CourseSection)
   @JoinColumn({ name: 'sectionId' })
   section: CourseSection;
-
-  @Field()
-  @Column()
-  tenantId: string;
-
-  @ManyToOne(() => Tenant)
-  @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
 
   @Field()
   @Column()
@@ -72,12 +51,4 @@ export class CourseContent {
   @Field(() => Int)
   @Column({ type: 'int', default: 0 })
   position: number;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

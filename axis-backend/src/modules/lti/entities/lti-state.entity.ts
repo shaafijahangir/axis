@@ -21,6 +21,10 @@ import {
  * - State survives server restarts
  * - Works across multiple backend instances
  * - Requires periodic cleanup (delete expired records)
+ *
+ * NOTE: Intentionally does NOT extend BaseEntity/LogEntity. Its primary key
+ * is the random `state` value itself (a natural key central to the CSRF
+ * defense), not a generated UUID, so the shared base classes don't apply.
  */
 @Entity('lti_states')
 @Index(['expiresAt']) // For efficient cleanup of expired states

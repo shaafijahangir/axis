@@ -1,14 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ObjectType, Field } from '@nestjs/graphql';
-import { Tenant } from '../../../database/entities/tenant.entity';
+import { TenantScopedLogEntity } from '../../../database/entities/base.entity';
 import { User } from '../../../database/entities/user.entity';
 import { AiConversation } from './ai-conversation.entity';
 
@@ -17,19 +9,7 @@ import { AiConversation } from './ai-conversation.entity';
 @Index(['tenantId'])
 @Index(['userId'])
 @Index(['createdAt'])
-export class AiUsageLog {
-  @Field()
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Field()
-  @Column()
-  tenantId: string;
-
-  @ManyToOne(() => Tenant)
-  @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
-
+export class AiUsageLog extends TenantScopedLogEntity {
   @Field()
   @Column()
   userId: string;
@@ -65,8 +45,4 @@ export class AiUsageLog {
   @Field()
   @Column({ type: 'varchar' })
   model: string;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
 }
