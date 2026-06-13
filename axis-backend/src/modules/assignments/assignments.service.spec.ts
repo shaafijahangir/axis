@@ -360,15 +360,22 @@ describe('AssignmentsService', () => {
       assignmentRepo.save!.mockImplementation((arr) => Promise.resolve(arr));
 
       const newDueAt = '2026-05-01T23:59:59Z';
-      const result = await service.extendDeadlines({
-        sectionId,
-        assignmentIds: ['a1', 'a2'],
-        newDueAt,
-      });
+      const result = await service.extendDeadlines(
+        {
+          sectionId,
+          assignmentIds: ['a1', 'a2'],
+          newDueAt,
+        },
+        tenantId,
+      );
 
       expect(result).toHaveLength(2);
       expect(result[0].dueAt).toEqual(new Date(newDueAt));
       expect(result[1].dueAt).toEqual(new Date(newDueAt));
+      // ARCH-008: the lookup is now tenant-scoped
+      expect(assignmentRepo.find).toHaveBeenCalledWith({
+        where: expect.objectContaining({ tenantId }),
+      });
     });
 
     it('should throw NotFoundException if any assignment not in section', async () => {
@@ -377,11 +384,14 @@ describe('AssignmentsService', () => {
       assignmentRepo.find!.mockResolvedValue([a1]);
 
       await expect(
-        service.extendDeadlines({
-          sectionId,
-          assignmentIds: ['a1', 'a2'],
-          newDueAt: '2026-05-01T23:59:59Z',
-        }),
+        service.extendDeadlines(
+          {
+            sectionId,
+            assignmentIds: ['a1', 'a2'],
+            newDueAt: '2026-05-01T23:59:59Z',
+          },
+          tenantId,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });

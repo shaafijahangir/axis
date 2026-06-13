@@ -6,6 +6,7 @@ import { RolesGuard } from '../../guards/roles.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { Roles } from '../../decorators/roles.decorator';
 import { ReportCardsService } from './report-cards.service';
+import { AccessControlService } from '../access-control/access-control.service';
 import {
   UpdateReportCardInput,
   ReportCardSummary,
@@ -14,7 +15,10 @@ import {
 @Resolver()
 @UseGuards(JwtAuthGuard)
 export class ReportCardsResolver {
-  constructor(private readonly reportCardsService: ReportCardsService) {}
+  constructor(
+    private readonly reportCardsService: ReportCardsService,
+    private readonly accessControl: AccessControlService,
+  ) {}
 
   @Mutation(() => [ReportCardSummary])
   @UseGuards(RolesGuard)
@@ -23,6 +27,7 @@ export class ReportCardsResolver {
     @CurrentUser() user: User,
     @Args('sectionId') sectionId: string,
   ): Promise<ReportCardSummary[]> {
+    await this.accessControl.assertSectionStaff(user, sectionId, user.tenantId);
     return this.reportCardsService.generateForSection(sectionId, user.tenantId);
   }
 
@@ -33,6 +38,12 @@ export class ReportCardsResolver {
     @CurrentUser() user: User,
     @Args('input') input: UpdateReportCardInput,
   ): Promise<ReportCardSummary> {
+    // Resolve the card's section and verify staff access before editing.
+    const sectionId = await this.reportCardsService.getSectionId(
+      input.id,
+      user.tenantId,
+    );
+    await this.accessControl.assertSectionStaff(user, sectionId, user.tenantId);
     return this.reportCardsService.updateComment(
       input.id,
       user.tenantId,
@@ -47,6 +58,7 @@ export class ReportCardsResolver {
     @CurrentUser() user: User,
     @Args('sectionId') sectionId: string,
   ): Promise<ReportCardSummary[]> {
+    await this.accessControl.assertSectionStaff(user, sectionId, user.tenantId);
     return this.reportCardsService.publishSection(sectionId, user.tenantId);
   }
 
@@ -57,6 +69,7 @@ export class ReportCardsResolver {
     @CurrentUser() user: User,
     @Args('sectionId') sectionId: string,
   ): Promise<ReportCardSummary[]> {
+    await this.accessControl.assertSectionStaff(user, sectionId, user.tenantId);
     return this.reportCardsService.sectionReportCards(sectionId, user.tenantId);
   }
 

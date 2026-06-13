@@ -6,6 +6,7 @@ import { Enrollment } from '../../database/entities/enrollment.entity';
 import { Assignment } from '../../database/entities/assignment.entity';
 import { Submission } from '../../database/entities/submission.entity';
 import { ReportCard } from '../../database/entities/report-card.entity';
+import { AccessControlModule } from '../access-control/access-control.module';
 import { ParentService } from './parent.service';
 import { ParentResolver } from './parent.resolver';
 
@@ -19,6 +20,7 @@ import { ParentResolver } from './parent.resolver';
       Submission,
       ReportCard,
     ]),
+    AccessControlModule,
   ],
   providers: [ParentService, ParentResolver],
   exports: [ParentService],

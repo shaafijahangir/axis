@@ -6,6 +6,7 @@ import { CourseSection } from '../../database/entities/course-section.entity';
 import { Attendance } from '../../database/entities/attendance.entity';
 import { Assignment } from '../../database/entities/assignment.entity';
 import { Submission } from '../../database/entities/submission.entity';
+import { AccessControlModule } from '../access-control/access-control.module';
 import { ReportCardsService } from './report-cards.service';
 import { ReportCardsResolver } from './report-cards.resolver';
 
@@ -19,6 +20,7 @@ import { ReportCardsResolver } from './report-cards.resolver';
       Assignment,
       Submission,
     ]),
+    AccessControlModule,
   ],
   providers: [ReportCardsService, ReportCardsResolver],
   exports: [ReportCardsService],

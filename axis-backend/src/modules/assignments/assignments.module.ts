@@ -6,6 +6,7 @@ import { CourseSection } from '../../database/entities/course-section.entity';
 import { Enrollment } from '../../database/entities/enrollment.entity';
 import { FileUpload } from '../uploads/entities/file-upload.entity';
 import { UploadsModule } from '../uploads/uploads.module';
+import { AccessControlModule } from '../access-control/access-control.module';
 import { AssignmentsService } from './assignments.service';
 import { AssignmentsResolver } from './assignments.resolver';
 import { AssignmentAttachmentsResolver } from './assignment-attachments.resolver';
@@ -21,6 +22,7 @@ import { SubmissionAttachmentsResolver } from './submission-attachments.resolver
       FileUpload,
     ]),
     UploadsModule,
+    AccessControlModule,
   ],
   providers: [
     AssignmentsService,

@@ -8,6 +8,7 @@ import { RolesGuard } from '../../guards/roles.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { Roles } from '../../decorators/roles.decorator';
 import { AssignmentsService } from './assignments.service';
+import { AccessControlService } from '../access-control/access-control.service';
 import {
   CreateAssignmentInput,
   UpdateAssignmentInput,
@@ -22,7 +23,10 @@ import {
 @Resolver()
 @UseGuards(JwtAuthGuard)
 export class AssignmentsResolver {
-  constructor(private readonly assignmentsService: AssignmentsService) {}
+  constructor(
+    private readonly assignmentsService: AssignmentsService,
+    private readonly accessControl: AccessControlService,
+  ) {}
 
   // ─── Assignment Queries ─────────────────────────────────────────────
 
@@ -46,7 +50,8 @@ export class AssignmentsResolver {
 
   /**
    * SEC-002 FIX: Now requires INSTRUCTOR/TA/ADMIN role.
-   * Students cannot see other students' submissions.
+   * ARCH-008: Role check alone is not enough — the caller must be staff of
+   * THIS assignment's section, not just any instructor in the tenant.
    */
   @Query(() => [Submission])
   @UseGuards(RolesGuard)
@@ -55,6 +60,11 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('assignmentId') assignmentId: string,
   ): Promise<Submission[]> {
+    await this.accessControl.assertCanGradeAssignment(
+      user,
+      assignmentId,
+      user.tenantId,
+    );
     return this.assignmentsService.findSubmissionsByAssignment(
       assignmentId,
       user.tenantId,
@@ -78,6 +88,9 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<Submission> {
+    // ARCH-008: owner or section staff only — previously any authenticated
+    // user in the tenant could fetch any submission by id.
+    await this.accessControl.assertCanViewSubmission(user, id, user.tenantId);
     return this.assignmentsService.findSubmissionById(id, user.tenantId);
   }
 
@@ -90,6 +103,7 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('sectionId') sectionId: string,
   ): Promise<SectionGradebook> {
+    await this.accessControl.assertSectionStaff(user, sectionId, user.tenantId);
     return this.assignmentsService.getSectionGradebook(
       sectionId,
       user.tenantId,
@@ -110,6 +124,11 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('input') input: CreateAssignmentInput,
   ): Promise<Assignment> {
+    await this.accessControl.assertSectionStaff(
+      user,
+      input.sectionId,
+      user.tenantId,
+    );
     return this.assignmentsService.create(user.tenantId, input, user.id);
   }
 
@@ -120,6 +139,13 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('input') input: UpdateAssignmentInput,
   ): Promise<Assignment> {
+    // Verify against the assignment's CURRENT section — input.sectionId is
+    // caller-controlled and must not widen access.
+    await this.accessControl.assertCanGradeAssignment(
+      user,
+      input.id,
+      user.tenantId,
+    );
     return this.assignmentsService.updateAssignment(
       input,
       user.id,
@@ -131,9 +157,15 @@ export class AssignmentsResolver {
   @UseGuards(RolesGuard)
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
   async extendDeadlines(
+    @CurrentUser() user: User,
     @Args('input') input: ExtendDeadlinesInput,
   ): Promise<Assignment[]> {
-    return this.assignmentsService.extendDeadlines(input);
+    await this.accessControl.assertSectionStaff(
+      user,
+      input.sectionId,
+      user.tenantId,
+    );
+    return this.assignmentsService.extendDeadlines(input, user.tenantId);
   }
 
   @Mutation(() => Submission)
@@ -155,6 +187,11 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('input') input: GradeSubmissionInput,
   ): Promise<Submission> {
+    await this.accessControl.assertCanGradeSubmission(
+      user,
+      input.submissionId,
+      user.tenantId,
+    );
     return this.assignmentsService.gradeSubmission(
       user.id,
       user.tenantId,
@@ -169,6 +206,13 @@ export class AssignmentsResolver {
     @CurrentUser() user: User,
     @Args('input') input: OverrideGradeInput,
   ): Promise<Submission> {
+    // Verify against the assignment's own section, not the caller-supplied
+    // input.sectionId.
+    await this.accessControl.assertCanGradeAssignment(
+      user,
+      input.assignmentId,
+      user.tenantId,
+    );
     return this.assignmentsService.overrideGrade(user.id, user.tenantId, input);
   }
 }
