@@ -225,10 +225,18 @@ export class AssignmentsService {
     return saved;
   }
 
-  async extendDeadlines(input: ExtendDeadlinesInput): Promise<Assignment[]> {
-    // Validate all assignments belong to the specified section
+  async extendDeadlines(
+    input: ExtendDeadlinesInput,
+    tenantId: string,
+  ): Promise<Assignment[]> {
+    // Validate all assignments belong to the specified section AND tenant —
+    // without the tenant filter this was a cross-tenant write path.
     const assignments = await this.assignmentRepo.find({
-      where: { id: In(input.assignmentIds), sectionId: input.sectionId },
+      where: {
+        id: In(input.assignmentIds),
+        sectionId: input.sectionId,
+        tenantId,
+      },
     });
 
     if (assignments.length !== input.assignmentIds.length) {

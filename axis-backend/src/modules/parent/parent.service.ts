@@ -1,6 +1,5 @@
 import {
   Injectable,
-  ForbiddenException,
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
@@ -26,6 +25,7 @@ import {
   ParentGradeItem,
   ParentReportCard,
 } from './dto/parent.types';
+import { AccessControlService } from '../access-control/access-control.service';
 
 @Injectable()
 export class ParentService {
@@ -42,6 +42,7 @@ export class ParentService {
     private submissionRepo: Repository<Submission>,
     @InjectRepository(ReportCard)
     private reportCardRepo: Repository<ReportCard>,
+    private readonly accessControl: AccessControlService,
   ) {}
 
   async linkStudent(
@@ -110,16 +111,21 @@ export class ParentService {
     });
   }
 
+  /**
+   * ARCH-008: delegates to the shared AccessControlService instead of the
+   * former inline link lookup, so parent/student authorization has one
+   * source of truth alongside the section-staff assertions.
+   */
   private async verifyAccess(
     parentId: string,
     studentId: string,
     tenantId: string,
   ): Promise<void> {
-    const link = await this.linkRepo.findOne({
-      where: { parentId, studentId, tenantId },
-    });
-    if (!link)
-      throw new ForbiddenException('You do not have access to this student');
+    await this.accessControl.assertParentOfStudent(
+      parentId,
+      studentId,
+      tenantId,
+    );
   }
 
   async getStudentEnrollments(

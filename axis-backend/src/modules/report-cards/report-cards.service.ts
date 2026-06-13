@@ -260,6 +260,19 @@ export class ReportCardsService {
     return cards;
   }
 
+  /**
+   * ARCH-008: resolve a report card's owning section so the resolver can
+   * assert staff access before mutating it. Tenant-scoped.
+   */
+  async getSectionId(id: string, tenantId: string): Promise<string> {
+    const card = await this.reportCardRepo.findOne({
+      where: { id, tenantId },
+      select: ['id', 'sectionId'],
+    });
+    if (!card) throw new NotFoundException('Report card not found');
+    return card.sectionId;
+  }
+
   async updateComment(
     id: string,
     tenantId: string,

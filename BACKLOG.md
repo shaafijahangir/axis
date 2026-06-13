@@ -270,7 +270,8 @@
 - **Acceptance:** `pnpm codegen` produces generated types. At least one query file demonstrates the typed pattern with `useQuery` autocomplete and `npx tsc --noEmit` passing. CI runs `pnpm codegen` and fails if checked-in code diverges from schema (future hardening — not required for this PR).
 
 ### ARCH-008: AccessControlService for resource-level authorization
-- **Status:** `TODO`
+- **Status:** `DONE`
+- **Completed:** 2026-06-12 — Created `AccessControlService` + `AccessControlModule` with `assertSectionStaff`, `assertEnrolledInSection`, `assertCanGradeAssignment`, `assertCanGradeSubmission`, `assertCanViewSubmission`, `assertParentOfStudent`. Staff = section instructor OR active TA enrollment OR tenant admin. Wired into assignments (8 resolvers incl. the SEC-002 `assignmentSubmissions` hole), attendance (3), report-cards (4). Migrated `parent.service.ts` ad-hoc check to the service. Closed a cross-tenant write in `extendDeadlines` (no tenant filter). 14 new unit tests; 294 backend tests pass.
 - **Problem:** `@Roles()` checks subject's role but not resource ownership. CLAUDE.md prescribes per-resolver `verifyInstructorAccess()` style checks, but today exactly one service does it (`parent.service.ts`). The pattern is invented per-resolver, so it's easy to forget — and forgotten checks are silent bugs.
 - **Fix:** Single `AccessControlService` exposing assertion methods:
   - `assertInstructorOwnsSection(userId, sectionId, tenantId)`

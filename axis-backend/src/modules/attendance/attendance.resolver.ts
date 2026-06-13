@@ -6,6 +6,7 @@ import { RolesGuard } from '../../guards/roles.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { Roles } from '../../decorators/roles.decorator';
 import { AttendanceService } from './attendance.service';
+import { AccessControlService } from '../access-control/access-control.service';
 import {
   MarkAttendanceInput,
   DayAttendance,
@@ -15,7 +16,10 @@ import {
 @Resolver()
 @UseGuards(JwtAuthGuard)
 export class AttendanceResolver {
-  constructor(private readonly attendanceService: AttendanceService) {}
+  constructor(
+    private readonly attendanceService: AttendanceService,
+    private readonly accessControl: AccessControlService,
+  ) {}
 
   @Mutation(() => DayAttendance)
   @UseGuards(RolesGuard)
@@ -24,6 +28,12 @@ export class AttendanceResolver {
     @CurrentUser() user: User,
     @Args('input') input: MarkAttendanceInput,
   ): Promise<DayAttendance> {
+    // ARCH-008: must be staff of this section, not just any instructor
+    await this.accessControl.assertSectionStaff(
+      user,
+      input.sectionId,
+      user.tenantId,
+    );
     return this.attendanceService.markAttendance(user.tenantId, input);
   }
 
@@ -35,6 +45,7 @@ export class AttendanceResolver {
     @Args('sectionId') sectionId: string,
     @Args('date') date: string,
   ): Promise<DayAttendance> {
+    await this.accessControl.assertSectionStaff(user, sectionId, user.tenantId);
     return this.attendanceService.getSectionAttendance(
       sectionId,
       date,
@@ -49,6 +60,7 @@ export class AttendanceResolver {
     @CurrentUser() user: User,
     @Args('sectionId') sectionId: string,
   ): Promise<StudentAttendanceSummary[]> {
+    await this.accessControl.assertSectionStaff(user, sectionId, user.tenantId);
     return this.attendanceService.getSectionAttendanceSummaries(
       sectionId,
       user.tenantId,

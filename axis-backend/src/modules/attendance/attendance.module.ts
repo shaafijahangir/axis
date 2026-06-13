@@ -2,11 +2,15 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Attendance } from '../../database/entities/attendance.entity';
 import { Enrollment } from '../../database/entities/enrollment.entity';
+import { AccessControlModule } from '../access-control/access-control.module';
 import { AttendanceService } from './attendance.service';
 import { AttendanceResolver } from './attendance.resolver';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Attendance, Enrollment])],
+  imports: [
+    TypeOrmModule.forFeature([Attendance, Enrollment]),
+    AccessControlModule,
+  ],
   providers: [AttendanceService, AttendanceResolver],
   exports: [AttendanceService],
 })
