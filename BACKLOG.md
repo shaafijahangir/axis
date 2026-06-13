@@ -102,6 +102,10 @@
 - **Status:** `DONE`
 - **Completed:** 2026-06-12 — Added a self-contained `depthLimit(10)` validation rule (`src/graphql/depth-limit.validation.ts`) that rejects pathologically nested queries during validation, before any resolver runs (DoS guard). Disabled GraphQL Playground + introspection in production (dev-only). Bumped `next` 16.0.10 → 16.2.5 (GHSA-36qx-fr4f-26g5). CI now runs `pnpm audit` (informational) and E2E on PRs, not just main. 5 new unit tests for the depth rule.
 
+### OPS-001: BullMQ retry for proactive AI reactions
+- **Status:** `DONE`
+- **Completed:** 2026-06-12 — The three AI-triggering event handlers (enrollment welcome, submission feedback, low-grade support) were fire-and-forget `async` methods: a transient Anthropic 429/529/5xx was logged and the reaction silently dropped. Moved the work into `AiReactionsProcessor` (BullMQ `WorkerHost`) on a durable `ai-reactions` queue with `attempts: 3` + exponential backoff. `AiEventListener` is now a thin enqueuer that never blocks/fails the originating action. Processor throws on transient agent failures (→ retry) and swallows on permanent missing-resource conditions (no retry). 9 new unit tests. Audit-only handlers stay synchronous.
+
 ---
 
 ## P1 — Data Model & Infrastructure

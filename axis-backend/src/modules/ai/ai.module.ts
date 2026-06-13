@@ -1,6 +1,7 @@
 import { Module, OnModuleInit, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bullmq';
 import { Repository } from 'typeorm';
 
 // AI entities
@@ -58,8 +59,10 @@ import { CustomAgentResolver } from './custom-agent.resolver';
 // Custom agent service
 import { CustomAgentService } from './custom-agent.service';
 
-// Event listener
+// Event listener + reactions queue/processor
 import { AiEventListener } from './events/ai-event.listener';
+import { AiReactionsProcessor } from './events/ai-reactions.processor';
+import { AI_REACTIONS_QUEUE } from './events/ai-reactions.queue';
 
 // External module imports
 import { CoursesModule } from '../courses/courses.module';
@@ -94,6 +97,9 @@ import { CareerService } from '../planner/career.service';
       Submission,
       Tenant,
     ]),
+    // Durable queue for proactive AI reactions (retry/backoff on Anthropic
+    // transient failures instead of fire-and-forget drops).
+    BullModule.registerQueue({ name: AI_REACTIONS_QUEUE }),
     CoursesModule,
     PlannerModule,
   ],
@@ -117,6 +123,7 @@ import { CareerService } from '../planner/career.service';
     CustomAgentResolver,
     CustomAgentService,
     AiEventListener,
+    AiReactionsProcessor,
   ],
   exports: [
     AI_PROVIDER,
