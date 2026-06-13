@@ -98,6 +98,10 @@
 - **Recommendation:** (a). The AI surface is the highest-risk place to have permission semantics, and removing them would weaken auditability.
 - **Acceptance:** Either `tool.requiredPermissions` is read by governance and a denial path has test coverage, or the field is removed from the interface and every tool definition.
 
+### SEC-006: GraphQL hardening — depth limit + prod introspection lockdown
+- **Status:** `DONE`
+- **Completed:** 2026-06-12 — Added a self-contained `depthLimit(10)` validation rule (`src/graphql/depth-limit.validation.ts`) that rejects pathologically nested queries during validation, before any resolver runs (DoS guard). Disabled GraphQL Playground + introspection in production (dev-only). Bumped `next` 16.0.10 → 16.2.5 (GHSA-36qx-fr4f-26g5). CI now runs `pnpm audit` (informational) and E2E on PRs, not just main. 5 new unit tests for the depth rule.
+
 ---
 
 ## P1 — Data Model & Infrastructure
