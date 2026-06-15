@@ -4,7 +4,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { DataSource, Repository, In } from 'typeorm';
 import {
   ReportCard,
   ReportCardStatus,
@@ -41,6 +41,7 @@ export class ReportCardsService {
     private assignmentRepo: Repository<Assignment>,
     @InjectRepository(Submission)
     private submissionRepo: Repository<Submission>,
+    private dataSource: DataSource,
   ) {}
 
   private toSummary(card: ReportCard): ReportCardSummary {
@@ -147,115 +148,121 @@ export class ReportCardsService {
 
     const cards: ReportCardSummary[] = [];
 
-    for (const enrollment of enrollments) {
-      const userId = enrollment.userId;
+    // WHY a transaction: one section can have dozens of students; saving each
+    // card individually means a mid-loop failure leaves the section half
+    // generated (some students with cards, some without). Wrap the upserts so
+    // a whole section's report cards are persisted all-or-nothing.
+    await this.dataSource.manager.transaction(async (manager) => {
+      for (const enrollment of enrollments) {
+        const userId = enrollment.userId;
 
-      // Grade summary
-      let totalEarned = 0,
-        totalPossible = 0;
-      const assignmentSnapshots: {
-        id: string;
-        title: string;
-        pointsPossible: number;
-        score: number;
-      }[] = [];
-      for (const a of assignments) {
-        const best = bestMap.get(a.id)?.get(userId);
-        const pts = Number(a.pointsPossible);
-        totalPossible += pts;
-        if (best) {
-          totalEarned += best.score;
-          assignmentSnapshots.push({
-            id: a.id,
-            title: a.title,
-            pointsPossible: pts,
-            score: best.score,
-          });
+        // Grade summary
+        let totalEarned = 0,
+          totalPossible = 0;
+        const assignmentSnapshots: {
+          id: string;
+          title: string;
+          pointsPossible: number;
+          score: number;
+        }[] = [];
+        for (const a of assignments) {
+          const best = bestMap.get(a.id)?.get(userId);
+          const pts = Number(a.pointsPossible);
+          totalPossible += pts;
+          if (best) {
+            totalEarned += best.score;
+            assignmentSnapshots.push({
+              id: a.id,
+              title: a.title,
+              pointsPossible: pts,
+              score: best.score,
+            });
+          }
         }
-      }
-      const gradeSummary = {
-        totalEarned,
-        totalPossible,
-        percentage:
-          totalPossible > 0
-            ? Math.round((totalEarned / totalPossible) * 10000) / 100
-            : 0,
-        assignments: assignmentSnapshots,
-      };
+        const gradeSummary = {
+          totalEarned,
+          totalPossible,
+          percentage:
+            totalPossible > 0
+              ? Math.round((totalEarned / totalPossible) * 10000) / 100
+              : 0,
+          assignments: assignmentSnapshots,
+        };
 
-      // Attendance summary
-      const attendRecords = attendanceByStudent.get(userId) ?? [];
-      let present = 0,
-        absent = 0,
-        late = 0,
-        excused = 0;
-      for (const r of attendRecords) {
-        if (r.status === AttendanceStatus.PRESENT) present++;
-        else if (r.status === AttendanceStatus.ABSENT) absent++;
-        else if (r.status === AttendanceStatus.LATE) late++;
-        else if (r.status === AttendanceStatus.EXCUSED) excused++;
-      }
-      const attendanceSummary = {
-        total: attendRecords.length,
-        present,
-        absent,
-        late,
-        excused,
-        attendanceRate:
-          attendRecords.length > 0
-            ? Math.round(
-                ((present + late + excused) / attendRecords.length) * 10000,
-              ) / 100
-            : 100,
-      };
+        // Attendance summary
+        const attendRecords = attendanceByStudent.get(userId) ?? [];
+        let present = 0,
+          absent = 0,
+          late = 0,
+          excused = 0;
+        for (const r of attendRecords) {
+          if (r.status === AttendanceStatus.PRESENT) present++;
+          else if (r.status === AttendanceStatus.ABSENT) absent++;
+          else if (r.status === AttendanceStatus.LATE) late++;
+          else if (r.status === AttendanceStatus.EXCUSED) excused++;
+        }
+        const attendanceSummary = {
+          total: attendRecords.length,
+          present,
+          absent,
+          late,
+          excused,
+          attendanceRate:
+            attendRecords.length > 0
+              ? Math.round(
+                  ((present + late + excused) / attendRecords.length) * 10000,
+                ) / 100
+              : 100,
+        };
 
-      // Upsert report card
-      let card = await this.reportCardRepo.findOne({
-        where: {
-          studentId: userId,
-          sectionId,
-          termId: section.termId,
-          tenantId,
-        },
-      });
-
-      if (!card) {
-        card = this.reportCardRepo.create({
-          tenantId,
-          studentId: userId,
-          sectionId,
-          termId: section.termId,
-          status: ReportCardStatus.DRAFT,
-          gradeSummary,
-          attendanceSummary,
+        // Upsert report card
+        let card = await manager.findOne(ReportCard, {
+          where: {
+            studentId: userId,
+            sectionId,
+            termId: section.termId,
+            tenantId,
+          },
         });
-      } else if (card.status === ReportCardStatus.DRAFT) {
-        card.gradeSummary = gradeSummary;
-        card.attendanceSummary = attendanceSummary;
+
+        if (!card) {
+          card = manager.create(ReportCard, {
+            tenantId,
+            studentId: userId,
+            sectionId,
+            termId: section.termId,
+            status: ReportCardStatus.DRAFT,
+            gradeSummary,
+            attendanceSummary,
+          });
+        } else if (card.status === ReportCardStatus.DRAFT) {
+          card.gradeSummary = gradeSummary;
+          card.attendanceSummary = attendanceSummary;
+        }
+
+        const saved = await manager.save(card);
+
+        cards.push({
+          id: saved.id,
+          studentId: userId,
+          studentFirstName: enrollment.user.firstName,
+          studentLastName: enrollment.user.lastName,
+          studentEmail: enrollment.user.email,
+          sectionId,
+          courseCode: section.course.code,
+          courseTitle: section.course.title,
+          termId: section.termId,
+          termName: section.term.name,
+          status: saved.status,
+          teacherComment: saved.teacherComment ?? undefined,
+          finalGrade: saved.finalGrade ?? undefined,
+          gradeSummary: JSON.stringify(gradeSummary),
+          attendanceSummary: JSON.stringify(attendanceSummary),
+          publishedAt: saved.publishedAt ?? undefined,
+          createdAt: saved.createdAt,
+        });
       }
-
-      const saved = await this.reportCardRepo.save(card);
-
-      cards.push({
-        id: saved.id,
-        studentId: userId,
-        studentFirstName: enrollment.user.firstName,
-        studentLastName: enrollment.user.lastName,
-        studentEmail: enrollment.user.email,
-        sectionId,
-        courseCode: section.course.code,
-        courseTitle: section.course.title,
-        termId: section.termId,
-        termName: section.term.name,
-        status: saved.status,
-        teacherComment: saved.teacherComment ?? undefined,
-        finalGrade: saved.finalGrade ?? undefined,
-        gradeSummary: JSON.stringify(gradeSummary),
-        attendanceSummary: JSON.stringify(attendanceSummary),
-        publishedAt: saved.publishedAt ?? undefined,
-        createdAt: saved.createdAt,
-      });
-    }
+    });
 
     return cards;
   }
