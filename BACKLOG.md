@@ -106,6 +106,18 @@
 - **Status:** `DONE`
 - **Completed:** 2026-06-12 — The three AI-triggering event handlers (enrollment welcome, submission feedback, low-grade support) were fire-and-forget `async` methods: a transient Anthropic 429/529/5xx was logged and the reaction silently dropped. Moved the work into `AiReactionsProcessor` (BullMQ `WorkerHost`) on a durable `ai-reactions` queue with `attempts: 3` + exponential backoff. `AiEventListener` is now a thin enqueuer that never blocks/fails the originating action. Processor throws on transient agent failures (→ retry) and swallows on permanent missing-resource conditions (no retry). 9 new unit tests. Audit-only handlers stay synchronous.
 
+### SEC-007: Clamp page size on all list queries
+- **Status:** `DONE`
+- **Completed:** 2026-06-15 — Four list queries (`users.findAllForTenant`, course catalog, `announcements.findAdminList`, `messaging.getMessages`) read `pageSize`/`limit` straight from client input into `.take()`, so a request for `pageSize: 10_000_000` dumped an entire table in one query (DoS + exfiltration). Added a shared `clampPageSize`/`clampPage` helper (`src/common/pagination.ts`, hard ceiling 100) applied across all four, plus `@Max(100)` on `UsersFilterInput` for a clean API error. 10 unit tests. (PR #50)
+
+### SEC-008: Sanitize rich-text HTML on write
+- **Status:** `DONE`
+- **Completed:** 2026-06-15 — Course content and discussion/reply bodies render via `dangerouslySetInnerHTML`; the GraphQL mutations accept arbitrary `String`, so `<img src=x onerror=...>` could be POSTed straight to the API (bypassing Tiptap), and discussions are student-authored → stored XSS against every tenant viewer. Added `sanitizeRichText` (`src/common/sanitize.ts`, `sanitize-html`, default-deny Tiptap allowlist, strips scripts/event-handlers/`javascript:`/iframes, forces `rel=noopener`) and run every rich-text body through it on create/update in content + discussions services. The server is now the single trust boundary. 9 XSS-vector unit tests. (PR #51)
+
+### OPS-002: Purge R2 objects for orphan uploads + prod API URL guard
+- **Status:** `DONE`
+- **Completed:** 2026-06-15 — The daily orphan-upload cron deleted only the DB row, but a presigned PUT can succeed while the client never confirms (tab closed) → the unconfirmed row has a real R2 object behind it → deleting just the row leaked storage forever. Cleanup now purges the R2 object first (`UploadsService.deleteObjectByKey`) and removes only rows whose object is gone, letting the next run retry transient failures. Also: `next.config.ts` now fails the production build when `NEXT_PUBLIC_API_URL` is unset (every consumer silently falls back to localhost), and added a tracked frontend `.env.example`. 3 unit tests. (PR #52)
+
 ---
 
 ## P1 — Data Model & Infrastructure
@@ -152,6 +164,7 @@
   }
   ```
 - **Acceptance:** Critical multi-step operations in messaging are wrapped in transactions.
+- **2026-06-15 follow-up (PR #53):** Audit pass over every service doing 2+ writes. `report-cards.generateForSection` was upserting one card per enrolled student in a loop with no transaction — a mid-loop failure left the section half generated. Wrapped the per-student upserts in `manager.transaction` (all-or-nothing). Confirmed `discussions.createReply`, `messaging.sendMessage`/`getOrCreateConversation`, and `lti.getOrCreateUser` already use transactions; all other flagged services do a single write per method.
 
 ### DATA-004: Add Apollo Client InMemoryCache type policies
 - **Status:** `DONE`
