@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole, UserStatus } from '../../database/entities';
 import * as bcrypt from 'bcrypt';
+import { clampPage, clampPageSize } from '../../common/pagination';
 import {
   AdminCreateUserInput,
   AdminUpdateUserInput,
@@ -91,8 +92,8 @@ export class UsersService {
     tenantId: string,
     filter?: UsersFilterInput,
   ): Promise<PaginatedUsersResponse> {
-    const page = filter?.page ?? 1;
-    const pageSize = filter?.pageSize ?? 20;
+    const page = clampPage(filter?.page);
+    const pageSize = clampPageSize(filter?.pageSize);
     const offset = (page - 1) * pageSize;
 
     const qb = this.usersRepository

@@ -9,6 +9,7 @@ import { User, UserRole, UserStatus } from '../../database/entities';
 import { Enrollment } from '../../database/entities/enrollment.entity';
 import { CreateAnnouncementInput } from './dto/announcement.types';
 import { TenantContext } from '../../tenant/tenant-context';
+import { clampPage, clampPageSize } from '../../common/pagination';
 
 @Injectable()
 export class AnnouncementsService {
@@ -146,6 +147,8 @@ export class AnnouncementsService {
     page = 1,
     pageSize = 20,
   ): Promise<{ items: Announcement[]; totalCount: number }> {
+    page = clampPage(page);
+    pageSize = clampPageSize(pageSize);
     const qb = this.announcementRepo
       .createQueryBuilder('announcement')
       .leftJoinAndSelect('announcement.author', 'author')
