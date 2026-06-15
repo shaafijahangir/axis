@@ -18,6 +18,7 @@ import {
 } from '../../database/entities/enrollment.entity';
 import { InAppNotificationService } from '../notifications/in-app-notification.service';
 import { NotificationType } from '../notifications/entities/notification.entity';
+import { sanitizeRichText } from '../../common/sanitize';
 
 @Injectable()
 export class DiscussionsService {
@@ -46,7 +47,7 @@ export class DiscussionsService {
       sectionId: input.sectionId,
       authorId,
       title: input.title,
-      body: input.body,
+      body: sanitizeRichText(input.body),
       isPinned: false,
       isLocked: false,
       isAnswered: false,
@@ -84,7 +85,7 @@ export class DiscussionsService {
           discussionId: input.discussionId,
           authorId,
           parentReplyId: input.parentReplyId ?? null,
-          body: input.body,
+          body: sanitizeRichText(input.body),
           isInstructorAnswer: false,
         });
 

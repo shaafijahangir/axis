@@ -1,13 +1,15 @@
 'use client';
 
 /**
- * WHY dangerouslySetInnerHTML: Content is authored by instructors
- * (trusted tenant users) via Tiptap, which outputs sanitised HTML.
- * No user-generated raw HTML is accepted — only Tiptap's output.
+ * WHY dangerouslySetInnerHTML: The `html` here is rich text the backend has
+ * already sanitised on write (see `sanitizeRichText` in the backend
+ * `common/sanitize.ts`). Every mutation that stores a rich-text body runs it
+ * through a default-deny allowlist that strips scripts, event handlers, and
+ * unsafe URL schemes, so the persisted HTML is safe to render directly.
  *
- * TRADEOFF: If we ever accept raw HTML from untrusted sources,
- * we'd need DOMPurify. Not needed now since authoring is gated
- * behind INSTRUCTOR/ADMIN roles.
+ * Do NOT relax this assumption by rendering un-sanitised HTML from any source —
+ * the server is the single trust boundary, including for student-authored
+ * discussion posts.
  */
 interface RichTextViewerProps {
   html: string;

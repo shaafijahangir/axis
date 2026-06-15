@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CourseContent } from './course-content.entity';
 import { CreateContentInput, UpdateContentInput } from './dto/content.types';
+import { sanitizeRichText } from '../../common/sanitize';
 
 @Injectable()
 export class ContentService {
@@ -53,6 +54,7 @@ export class ContentService {
   ): Promise<CourseContent> {
     const content = this.contentRepo.create({
       ...input,
+      body: sanitizeRichText(input.body),
       authorId,
       tenantId,
       publishedAt: null,
@@ -72,7 +74,7 @@ export class ContentService {
     }
 
     if (input.title !== undefined) content.title = input.title;
-    if (input.body !== undefined) content.body = input.body;
+    if (input.body !== undefined) content.body = sanitizeRichText(input.body);
     if (input.position !== undefined) content.position = input.position;
 
     return this.contentRepo.save(content);
