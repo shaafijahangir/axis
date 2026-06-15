@@ -124,10 +124,15 @@ export class UsersFilterInput {
 
   @Field(() => Int, { nullable: true })
   @IsOptional()
+  @IsInt()
+  @Min(1)
   page?: number;
 
   @Field(() => Int, { nullable: true })
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
   pageSize?: number;
 
   /** SPRINT-3: filter the users directory by K-12 grade level. */

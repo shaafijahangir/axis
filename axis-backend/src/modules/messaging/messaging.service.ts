@@ -21,6 +21,7 @@ import {
   PaginatedMessagesResponse,
   ContactUser,
 } from './dto/messaging.types';
+import { clampPageSize } from '../../common/pagination';
 
 // Messaging event types for real-time updates
 export const MESSAGING_EVENTS = {
@@ -310,6 +311,7 @@ export class MessagingService {
   ): Promise<PaginatedMessagesResponse> {
     await this.verifyParticipant(conversationId, userId, tenantId);
 
+    const pageSize = clampPageSize(limit, 50);
     const qb = this.messageRepo
       .createQueryBuilder('msg')
       .leftJoinAndSelect('msg.sender', 'sender')
@@ -325,7 +327,7 @@ export class MessagingService {
 
     const messages = await qb
       .orderBy('msg.createdAt', 'DESC')
-      .take(limit)
+      .take(pageSize)
       .getMany();
 
     // Reverse so oldest is first (chat order)

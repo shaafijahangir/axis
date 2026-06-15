@@ -46,6 +46,7 @@ import {
 import { NexusEvents } from '../ai/events/ai-events';
 import { EnrollmentPolicyService } from './enrollment-policy.service';
 import { WaitlistService } from './waitlist.service';
+import { clampPageSize } from '../../common/pagination';
 
 @Injectable()
 export class CoursesService {
@@ -793,8 +794,8 @@ export class CoursesService {
 
     const items = await qb
       .orderBy('course.code', 'ASC')
-      .skip(filters.offset ?? 0)
-      .take(filters.limit ?? 50)
+      .skip(Math.max(0, filters.offset ?? 0))
+      .take(clampPageSize(filters.limit, 50, 200))
       .getMany();
 
     return { items, total };
