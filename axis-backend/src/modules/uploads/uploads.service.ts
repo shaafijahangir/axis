@@ -277,6 +277,28 @@ export class UploadsService implements OnModuleInit {
   }
 
   /**
+   * Best-effort delete of a single R2 object by key. Used by the orphan
+   * cleanup cron, which already holds the rows and has done its own auth — so
+   * unlike deleteFile() there is no ownership check here. Never throws: a
+   * missing or already-deleted object is fine, and a transient failure is
+   * logged so the next cron run retries (the DB row is only removed by the
+   * caller after this resolves).
+   *
+   * Returns true if the object is gone (deleted or already absent).
+   */
+  async deleteObjectByKey(key: string): Promise<boolean> {
+    try {
+      await this.s3.send(
+        new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+      return true;
+    } catch (err) {
+      this.logger.error(`Failed to delete orphan R2 object ${key}`, err);
+      return false;
+    }
+  }
+
+  /**
    * Verify a file exists in R2 (used for health checks and data integrity).
    * Returns false if the object is missing rather than throwing.
    */
