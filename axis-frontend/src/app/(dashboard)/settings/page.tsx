@@ -17,8 +17,11 @@ import { Separator } from '@/components/ui/separator';
 import { MY_NOTIFICATION_PREFERENCES_QUERY } from '@/lib/graphql/queries/notifications';
 import { UPDATE_NOTIFICATION_PREFERENCES_MUTATION } from '@/lib/graphql/mutations/notifications';
 import { PushSubscriptionToggle } from '@/components/notifications/push-subscription-toggle';
+import { OfficeHoursManager } from '@/components/office-hours/office-hours-manager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAuthStore } from '@/stores/auth.store';
+import { UserRole } from '@/types/auth';
 
 interface NotificationPreferences {
   emailOnGrade: boolean;
@@ -158,6 +161,13 @@ function CalendarCard() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
+  const { user } = useAuthStore();
+  // FEAT-018: instructors define recurring office hours in settings
+  // (shaafilook.md §4 "Define Once, Reuse Always").
+  const isInstructor = user?.roles.some((r) =>
+    [UserRole.INSTRUCTOR, UserRole.ADMIN].includes(r),
+  );
+
   const { data, loading } = useQuery<{
     myNotificationPreferences: NotificationPreferences;
   }>(MY_NOTIFICATION_PREFERENCES_QUERY);
@@ -266,6 +276,8 @@ export default function SettingsPage() {
           <PushSubscriptionToggle />
         </CardContent>
       </Card>
+
+      {isInstructor && <OfficeHoursManager />}
 
       <CalendarCard />
     </div>

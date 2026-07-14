@@ -11,6 +11,8 @@ interface CourseHeaderProps {
   courseTitle: string;
   instructorName?: string;
   location?: string;
+  /** Optional action rendered on the right (e.g. "Book Office Hours"). */
+  action?: React.ReactNode;
 }
 
 export function CourseHeader({
@@ -19,6 +21,7 @@ export function CourseHeader({
   courseTitle,
   instructorName,
   location,
+  action,
 }: CourseHeaderProps) {
   return (
     <div className="sticky top-0 z-10 border-b bg-background/95 px-4 py-4 md:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -39,6 +42,7 @@ export function CourseHeader({
             {location && <span>{location}</span>}
           </div>
         </div>
+        {action && <div className="shrink-0">{action}</div>}
       </div>
     </div>
   );

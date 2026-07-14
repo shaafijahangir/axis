@@ -11,6 +11,7 @@ import { UserRole } from '@/types/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { CalendarOff } from 'lucide-react';
+import { UpcomingBookings } from '@/components/office-hours/upcoming-bookings';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -325,6 +326,7 @@ function StudentSchedule() {
     <>
       <ScheduleGrid sections={sections} />
       <ScheduleLegend sections={sections} />
+      <UpcomingBookings viewer="student" />
     </>
   );
 }
@@ -342,6 +344,7 @@ function InstructorSchedule() {
     <>
       <ScheduleGrid sections={sections} />
       <ScheduleLegend sections={sections} />
+      <UpcomingBookings viewer="instructor" />
     </>
   );
 }
