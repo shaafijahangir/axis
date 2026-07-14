@@ -5,6 +5,29 @@
 
 ---
 
+## Session 53 — Office-Hours Booking Shipped (FEAT-018)
+
+**Date:** 2026-07-14
+**Goal:** Finish FEAT-018 (started in Session 52's worktree agent, interrupted mid-build) — frontend UI, tests, docs, PR.
+**Status:** COMPLETE — PR open on `feat/office-hours-booking`, awaiting Shaafi's review (do NOT merge without approval).
+
+### Work Done
+- **Backend (was ~complete from Session 52, verified + kept):** `office-hours` module — `OfficeHourBlock` + `Booking` entities (tenant-scoped, indexed, instructorId denormalized onto Booking for the hot instructor-dashboard read path), `OfficeHoursService` (block CRUD with own-block authorization, `computeAvailableSlots` with 60-day clamp + past-slot filtering, `bookSlot` in a transaction with pessimistic write lock on the block + in-transaction conflict re-check, `cancelBooking` student-own/instructor-own-block), thin resolver with guards/roles/DTOs, `BOOKING_CREATED`/`BOOKING_CANCELLED` events, AI tools `list_office_hours` (auto) + `book_office_hours` (suggest), hasTable-guarded migration `1784570000000`.
+- **Frontend (this session):**
+  - `src/lib/office-hours.ts` — shared enum/date/time formatting helpers.
+  - `components/office-hours/office-hours-manager.tsx` — instructor card on `/settings`: list weekly blocks, add/edit dialog (day, times, slot length, in-person location vs Zoom URL), pause/resume switch.
+  - `components/office-hours/book-office-hours-dialog.tsx` — student flow on the section course header (new optional `action` slot on `CourseHeader`): pick day → pick slot → confirm with optional topic note; success screen shows room or Zoom link. ≤3 interactions (shaafilook.md §4).
+  - `components/office-hours/upcoming-bookings.tsx` — "Office Hours" section on `/schedule` for both students and instructors, with confirm-guarded cancel.
+- **Tests:** 18 service unit tests (slot computation, tenant scoping, double-book race rejection, lock assertion, cancel authorization, cross-tenant 404s). Full backend suite 348/348 green; monorepo typecheck + lint green.
+- **Docs:** BACKLOG.md FEAT-018 entry (DONE), CLAUDE.md modules list + event types.
+
+### Notes for next session
+- Worktree lacks the gitignored codegen artifacts (`axis-frontend/src/lib/graphql/__generated__/`, `axis-backend/src/schema.gql`) — copied from the main checkout to run typecheck. After merging FEAT-018, restart the backend dev server so `schema.gql` picks up the office-hours types, then re-run `pnpm --filter axis-frontend codegen`.
+- Booking uniqueness is lock + re-check (no partial unique index — schema has none elsewhere); revisit if booking volume ever makes the block-level lock a bottleneck.
+- E2E (Playwright) not written for the booking flow — candidate for the next test sweep.
+
+---
+
 ## Session 52 — Business Foundation + Office-Hours Booking Kickoff
 
 **Date:** 2026-07-13

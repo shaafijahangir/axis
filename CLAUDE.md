@@ -136,7 +136,7 @@ pnpm build
 
 ### Backend (NestJS + GraphQL)
 - **API**: GraphQL at `/api/graphql` (Apollo Server) with auto-generated schema at `src/schema.gql`. REST is used only for auth endpoints (`/api/auth/login`, `/api/auth/register`).
-- **Modules**: Feature-based NestJS modules under `src/modules/` — `auth`, `users`, `courses`, `assignments`, `announcements`, `feed`, `ai`, `messaging`, `content`, `discussions`, `quiz`, `notifications`, `uploads`, `lti`, `planner`, `calendar`. The `tenant` module lives at `src/tenant/`.
+- **Modules**: Feature-based NestJS modules under `src/modules/` — `auth`, `users`, `courses`, `assignments`, `announcements`, `feed`, `ai`, `messaging`, `content`, `discussions`, `quiz`, `notifications`, `uploads`, `lti`, `planner`, `calendar`, `office-hours`. The `tenant` module lives at `src/tenant/`.
 - **Database**: PostgreSQL with TypeORM. ~38 entities: core in `src/database/entities/`, feature entities in their module's `entities/` folder. Migrations via CLI (`migration:generate`); `synchronize: false` since FEAT-007.
 - **Auth**: JWT via Passport.js. `JwtAuthGuard` handles both HTTP and GraphQL contexts. `RolesGuard` checks roles from the `@Roles()` decorator. `@CurrentUser()` extracts the authenticated user from either context type.
 - **User Roles**: `STUDENT`, `INSTRUCTOR`, `ADMIN`, `PARENT`, `TA` — stored as a PostgreSQL enum array on the user entity.
@@ -400,7 +400,7 @@ export class UserLoader {
 - **Governance checks happen before every tool execution**. The `GovernanceService.checkToolPermission()` call is mandatory.
 
 ### Event Types (from `ai-events.ts`)
-`COURSE_CREATED`, `COURSE_UPDATED`, `SECTION_CREATED`, `ENROLLMENT_CREATED`, `ASSIGNMENT_CREATED`, `SUBMISSION_CREATED`, `SUBMISSION_GRADED`, `GRADE_UPDATED`, `AI_CONVERSATION_STARTED`, `AI_TOOL_INVOKED`
+`COURSE_CREATED`, `COURSE_UPDATED`, `SECTION_CREATED`, `ENROLLMENT_CREATED`, `ASSIGNMENT_CREATED`, `SUBMISSION_CREATED`, `SUBMISSION_GRADED`, `GRADE_UPDATED`, `BOOKING_CREATED`, `BOOKING_CANCELLED`, `AI_CONVERSATION_STARTED`, `AI_TOOL_INVOKED`
 
 ---
 
