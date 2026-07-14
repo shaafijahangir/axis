@@ -5,6 +5,61 @@
 
 ---
 
+## Session 52 — Business Foundation + Office-Hours Booking Kickoff
+
+**Date:** 2026-07-13
+**Goal:** Market research → GTM plan, doc/skill infrastructure, office-hours booking feature (FEAT-018).
+**Status:** IN PROGRESS — docs shipped to main; FEAT-018 building in a worktree (PR to stay OPEN for Shaafi's review).
+
+### Work Done
+- **Market research** (web, cited): LMS market ~$34B 2026 (Grand View); Canvas IgniteAI Agent launched Mar 2026, D2L Lumi Learner Mode beta Sept 2026 — "AI in LMS" alone no longer differentiating; open lanes = student-path agents, consolidation, booking, governance, PDF onboarding.
+- **UVic field research** (haiku agent) → `shaafilook.md`: UVic + SFU faculty directories NEVER list office hours; booking today = syllabus PDF + email; fragmentation documented (Brightspace/Ed/Mattermost/Teams/Zoom/prof sites). Office format "ECS 618" → booking schema.
+- **New root docs:** `GTM.md` (market facts, beachhead ladder — private schools first, students-at-UVic wedge second —, CASL-compliant outreach system + cold-email skeleton, BC FIPPA/PIPEDA procurement legal primer, lead-tracker schema; decision: Notion/HubSpot free, do NOT build CRM until 50+ leads).
+- **CLAUDE.md refreshed:** stale facts fixed (38 entities, all modules, httpOnly JWT, migrations on, FEAT-002 wired, agents list); Evidence Rule (facts+citations only); Veteran ed-tech-lawyer persona; EA-style build-mode communication; Living Docs Rule; PR policy changed — **PRs stay open for Shaafi's review** (no auto-merge unless he says so); tech-debt table replaced with history note (status lives in BACKLOG.md only).
+- **MISSION.md:** added flaw #5 (ecosystem scattered across half a dozen tools) + beliefs "One System, Not Seven Tabs" and "Mistakes Are the Curriculum".
+- **New skills:** `.claude/skills/pr-description/` (house PR standard, mirrored in `.github/pull_request_template.md` — upgraded, Learning Notes kept), `.claude/skills/debug-protocol/` (root-cause-first workflow). `.gitignore` now tracks `.claude/skills/` + session log; removed case-duplicate `.github/PULL_REQUEST_TEMPLATE.md` from index (Windows case-insensitivity had two tracked paths for one file).
+- **FEAT-018 office-hours booking:** opus agent building in worktree on `feat/office-hours-booking` (entities OfficeHourBlock + Booking, slot computation, transactional double-book guard, AI tools list/book at auto/suggest tiers, instructor setup UI, student ≤3-tap booking, /schedule integration, migration, tests). PR will follow pr-description skill and STAY OPEN.
+
+### Notes for next session
+- Pending: end-to-end self-test (all 4 roles), Render deploy (Canadian region — see GTM.md §6 FIPPA note), demo tenant with UVic-shaped data, Playwright MCP not installed (Shaafi: `claude mcp add playwright -- npx "@playwright/mcp@latest"`).
+- Outreach: warm-first (UVic engineer contact), CASL rules in GTM.md §4 before ANY cold email.
+
+---
+
+## Session 51 — Best-Practice Hardening Sweep (end-to-end)
+
+**Date:** 2026-06-15
+**Goal:** Work through the remaining best-practice gaps from the repo deep-dive audit, end-to-end, branch+PR+merge per item.
+**Status:** COMPLETE — 5 items shipped (PRs #50–#53), full quality gates green.
+
+### Work Done (this sweep)
+
+**Task 1 — Page-size caps on list queries (SEC-007, PR #50)**
+- Unbounded `.take(pageSize)` let a client request `pageSize: 10_000_000` and dump a whole table (DoS + exfiltration).
+- New shared `src/common/pagination.ts` (`clampPageSize`/`clampPage`, hard ceiling 100); applied to `users.findAllForTenant`, course catalog, `announcements.findAdminList`, `messaging.getMessages`. `@Max(100)` on `UsersFilterInput`. 10 unit tests.
+
+**Task 2 — Rich-text sanitization (SEC-008, PR #51)**
+- Course content + discussion/reply bodies render via `dangerouslySetInnerHTML`; mutations took arbitrary `String` → stored XSS (discussions are student-authored).
+- New `src/common/sanitize.ts` `sanitizeRichText` (sanitize-html, default-deny Tiptap allowlist). Applied on create/update in content + discussions services. Server is now the single trust boundary. 9 XSS-vector tests.
+
+**Task 3 — Orphan upload R2 purge + prod API URL guard (OPS-002, PR #52)**
+- Cleanup cron deleted only the DB row; a confirmed-but-not-acked PUT leaked the R2 object forever. Now purges R2 first (`deleteObjectByKey`), removes only rows whose object is gone (next-run retry). 3 unit tests.
+- `next.config.ts` fails the prod build when `NEXT_PUBLIC_API_URL` is unset; added tracked frontend `.env.example` (+ `!.env.example` gitignore exception).
+
+**Task 4 — Transaction audit (DATA-003 follow-up, PR #53)**
+- `report-cards.generateForSection` upserted one card per student in a loop with no transaction → half-generated sections on mid-loop failure. Wrapped per-student upserts in `manager.transaction`.
+- Confirmed discussions/messaging/lti multi-write paths were already transactional.
+
+**Task 5 — Final sweep**
+- `pnpm --filter axis-backend test` → 330 passed / 19 suites. Monorepo `typecheck`, `lint`, `build` all green (backend + frontend).
+- Updated BACKLOG.md (SEC-007/SEC-008/OPS-002 entries + DATA-003 follow-up) and this log.
+
+### Notes for next session
+- The four security fixes added a `src/common/` dir on the backend (`pagination.ts`, `sanitize.ts`) — the home for cross-cutting helpers going forward.
+- `sanitize-html` only runs on *new* writes; pre-existing rich-text rows in the DB are not retroactively cleaned. If that matters, a one-off backfill migration would be needed.
+
+---
+
 ## Session 50 — LMS Functionality Gap Fixes
 
 **Date:** 2026-05-19

@@ -13,6 +13,8 @@
 4. **`DATA-MODEL.md`** — Entity fields, relationships, JSONB contracts. Read before creating/modifying entities or writing queries.
 5. **`SECURITY.md`** — Auth model, tenant isolation, FERPA. Read before touching auth, tenancy, or user data.
 6. **`TECH_STACK.md`** — Technology decisions with rationale. Read before proposing new dependencies or architectural changes.
+7. **`GTM.md`** — Go-to-market: market facts, positioning, beachhead, outreach rules (CASL), legal primer. Read before any business, outreach, or positioning task.
+8. **`MISSION.md`** + **`shaafilook.md`** — The why (UVic story, fragmentation problem) and the field research. Read before product/UX decisions.
 
 ### Read During Chef Mode (task execution)
 7. **`.claude/session-log.md`** — What was done last session, current state.
@@ -57,6 +59,24 @@ You are a **principal software architect and senior engineer** mentoring a junio
   - **TRADEOFF**: What was traded off and why it's acceptable
 - Write production-quality code. No TODOs, no placeholders, no shortcuts.
 - Ask clarifying questions when requirements are ambiguous rather than guessing.
+
+### Evidence Rule (MANDATORY)
+
+This project is not built on think-and-feel. Every factual claim — market sizes, statistics, "best practice", legal requirements, library behavior — must be **verifiable**: cite a source (URL, doc, spec, code line) or run the code/test that proves it. Never write "recommended", "roughly", or "typically" without the citation behind it. If a claim can't be verified, label it explicitly: *unverified* or *hypothesis*. This applies to docs, PR descriptions, business research, and conversation answers equally.
+
+### Additional Personas
+
+- **Veteran ed-tech lawyer (mentor mode)** — When work touches legal/compliance ground (university procurement, student data privacy, FIPPA/PIPEDA/FERPA, CASL outreach rules, contracts, ToS), switch to a researched, veteran lawyer specialized in ed-tech. Explain like mentoring a first-time founder: the rule, why it exists, what it means for Axis, concretely what to do. Research current law before answering (Evidence Rule applies doubly). Always flag: this is research-backed guidance, not legal advice — name when a real lawyer must review (signing contracts, data processing agreements, incorporation).
+- **Executive-assistant communication (build mode)** — While building, talk like a sharp EA: friendly, a bit playful, but straight to the point. Short updates ("built X, chose Y because Z — ok to continue?"), decisions surfaced as ranked options, no 5-minute walls of text, and no cut corners hidden behind brevity. Explain concepts when Shaafi is learning something new; skip explanation when he's seen it before.
+
+### Living Docs Rule (MANDATORY)
+
+Docs and skills grow with the codebase — every session compounds. After any meaningful change, check whether it invalidates or extends: `CLAUDE.md`, `ARCHITECTURE.md`, `DATA-MODEL.md`, `MISSION.md`, `ROADMAP.md`, `BACKLOG.md`, `GTM.md`, `.claude/session-log.md`, or a skill in `.claude/skills/`. Update in the same commit/PR as the change. A doc that lies about the system is worse than no doc — it caused wrong decisions once already (see Tech Debt History below). When a mistake gets made twice, encode the prevention as a skill or CLAUDE.md rule so it can't happen a third time.
+
+### Project Skills (in `.claude/skills/`)
+
+- **`pr-description`** — house PR title/body standard. Use for every PR. Mirrored by `.github/pull_request_template.md`.
+- **`debug-protocol`** — root-cause-first bug workflow: reproduce → research (online + code) → root cause → fix → regression test → PR.
 
 ---
 
@@ -116,8 +136,8 @@ pnpm build
 
 ### Backend (NestJS + GraphQL)
 - **API**: GraphQL at `/api/graphql` (Apollo Server) with auto-generated schema at `src/schema.gql`. REST is used only for auth endpoints (`/api/auth/login`, `/api/auth/register`).
-- **Modules**: Feature-based NestJS modules under `src/modules/` — `auth`, `users`, `courses`, `assignments`, `announcements`, `feed`, `ai`. The `tenant` module lives at `src/tenant/`.
-- **Database**: PostgreSQL with TypeORM. Entities live in `src/database/entities/` (9 core entities) and `src/modules/ai/entities/` (3 AI entities). Schema sync is on (no migration files yet).
+- **Modules**: Feature-based NestJS modules under `src/modules/` — `auth`, `users`, `courses`, `assignments`, `announcements`, `feed`, `ai`, `messaging`, `content`, `discussions`, `quiz`, `notifications`, `uploads`, `lti`, `planner`, `calendar`. The `tenant` module lives at `src/tenant/`.
+- **Database**: PostgreSQL with TypeORM. ~38 entities: core in `src/database/entities/`, feature entities in their module's `entities/` folder. Migrations via CLI (`migration:generate`); `synchronize: false` since FEAT-007.
 - **Auth**: JWT via Passport.js. `JwtAuthGuard` handles both HTTP and GraphQL contexts. `RolesGuard` checks roles from the `@Roles()` decorator. `@CurrentUser()` extracts the authenticated user from either context type.
 - **User Roles**: `STUDENT`, `INSTRUCTOR`, `ADMIN`, `PARENT`, `TA` — stored as a PostgreSQL enum array on the user entity.
 - **Multi-tenancy**: Tenant entity with domain/subdomain. All major entities have a `tenantId` foreign key.
@@ -127,9 +147,9 @@ pnpm build
 
 ### Frontend (Next.js 16 + App Router)
 - **Route Groups**: `(auth)` for public login/register pages, `(dashboard)` for protected pages. Dashboard routes are role-specific: `/student`, `/instructor`, `/admin`, plus `/courses`.
-- **GraphQL Client**: Apollo Client configured in `src/lib/graphql/client.ts` with auth token from localStorage. Queries and mutations are in `src/lib/graphql/queries/` and `src/lib/graphql/mutations/`.
-- **State**: Zustand store at `src/stores/auth.store.ts` handles auth state with localStorage persistence.
-- **Auth Flow**: REST login/register → JWT stored in Zustand/localStorage → Apollo Client attaches Bearer token → `AuthGuard` component protects dashboard routes.
+- **GraphQL Client**: Apollo Client configured in `src/lib/graphql/client.ts`. Queries and mutations are in `src/lib/graphql/queries/` and `src/lib/graphql/mutations/`.
+- **State**: Zustand store at `src/stores/auth.store.ts` handles auth state.
+- **Auth Flow**: REST login/register → JWT in **httpOnly cookies** (SEC-003; never localStorage) → `AuthGuard` component protects dashboard routes.
 - **UI**: shadcn/ui components (Radix UI) in `src/components/ui/`, Tailwind CSS 4 with CSS variable theming.
 - **Component Organization**: `components/auth/`, `components/layout/` (sidebar, top-nav, user-menu), `components/dashboard/`, `components/courses/`.
 
@@ -212,10 +232,10 @@ Required in `axis-backend/.env`:
 1. Create branch: `git checkout -b feat/ai-chat-ui`
 2. Make commits as you work (multiple commits per branch is fine)
 3. Push branch: `git push -u origin feat/ai-chat-ui`
-4. Create PR: `gh pr create --title "feat: AI Chat UI (FEAT-001)" --body "..."`
-5. **Immediately merge the PR yourself**: `gh pr merge --squash --delete-branch`
-6. Pull main: `git checkout main && git pull origin main`
-7. Continue with the next task (don't leave PRs open and forget about them)
+4. Create PR: `gh pr create --title "feat: AI Chat UI (FEAT-001)" --body "..."` — body follows the **`pr-description` skill** (`.claude/skills/pr-description/SKILL.md`)
+5. **Leave the PR open and tell Shaafi it's ready for review.** Merge only after his approval, or when he explicitly says to auto-merge (e.g. "merge it", "chef it up and merge").
+6. After merge: `git checkout main && git pull origin main`
+7. Track open PRs — remind Shaafi if one sits unreviewed while it blocks the next task
 
 **PR title format:**
 ```
@@ -224,25 +244,7 @@ fix: Security fixes for tenant scoping (SEC-001, SEC-002)
 refactor: Create base entity classes (ARCH-001)
 ```
 
-**PR body format:**
-```markdown
-## Summary
-- Built two-panel AI chat interface
-- Added Study Coach and Feedback Copilot agents
-- Integrated with existing AI backend
-
-## Changes
-- 10 new components in `components/ai/`
-- New `/ai` page
-- Updated navigation
-
-## Testing
-- [ ] Verified build passes
-- [ ] Tested locally with dev server
-
-## Backlog
-Closes FEAT-001
-```
+**PR body format:** follow the `pr-description` skill — Summary (what+why), Context, Changes (grouped by area), Testing (honest gaps included), Impact/Risks, Backlog ref. `.github/pull_request_template.md` pre-fills the structure.
 
 ### Git Auto-Commit (MANDATORY)
 
@@ -252,7 +254,7 @@ Closes FEAT-001
 - After completing any backlog item (P0, P1, P2, P3, or feature)
 - After fixing a bug
 - After implementing a feature
-- After making documentation updates (except `.claude/` which is gitignored)
+- After making documentation updates (`.claude/skills/` and `.claude/session-log.md` are tracked; the rest of `.claude/` is gitignored)
 
 **Commit protocol:**
 1. Run `git status` to see what changed
@@ -273,7 +275,7 @@ Closes FEAT-001
 - Must have scope: `feat(backend):`, `fix(frontend):`, `docs(root):`
 - Body lines max 100 characters
 - Reference backlog ID when applicable
-- End with `Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>`
+- End with `Co-Authored-By: Claude <noreply@anthropic.com>` (any Claude model)
 
 **Example commit flow:**
 ```bash
@@ -281,7 +283,7 @@ git status
 git add axis-frontend/src/components/ai/ axis-frontend/src/app/\(dashboard\)/ai/
 git commit -m "feat(frontend): add AI Chat UI (FEAT-001)
 
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude <noreply@anthropic.com>"
 git push origin main
 ```
 
@@ -387,9 +389,9 @@ export class UserLoader {
 | GovernanceService | `governance.service.ts` | Three-tier permission check (auto/suggest/blocked) + rate limiting + daily token budgets |
 | UsageTrackingService | AI entities | Logs every AI interaction with tenantId, agentType, token counts, estimated USD |
 | ContextService | Context service + JSONB | Snapshots student's academic state at conversation start (anti-hallucination) |
-| ToolRegistry | `tool-registry.ts` | Map-based registry. 16 tools registered on module init. Register/get/execute/toClaudeFormat |
-| AgentRegistry | `ai.module.ts` OnModuleInit | 2 agents defined declaratively: Study Coach (Socratic), Feedback Copilot |
-| AiEventListener | `ai-event.listener.ts` | 4 handler stubs listening to EventEmitter2 events. Currently logging-only (FEAT-002 to wire up). |
+| ToolRegistry | `tool-registry.ts` | Map-based registry (16+ tools incl. graduation-planner + enrollment tools — check the registry for the current set). Register/get/execute/toClaudeFormat |
+| AgentRegistry | `ai.module.ts` OnModuleInit | Built-in agents: Study Coach (Socratic), Feedback Copilot, Course Planner — plus per-tenant custom agents via Agent Builder (FEAT-013, `custom-agent.entity.ts`) |
+| AiEventListener | `ai-event.listener.ts` | Wired event handlers (FEAT-002 done): enrollment → welcome, submission → feedback draft, low grade → support |
 
 ### Rules
 - **Never import `@anthropic-ai/sdk` directly** in feature code. Go through `AiService` or the provider abstraction (ARCH-005).
@@ -402,28 +404,11 @@ export class UserLoader {
 
 ---
 
-## Known Technical Debt
+## Tech Debt History
 
-> Tracked in detail in [BACKLOG.md](./BACKLOG.md). This is the summary reference.
-
-| Issue | Backlog ID | Severity |
-|-------|-----------|----------|
-| JWT in localStorage (XSS vulnerable) | SEC-003 | P0 |
-| No database indexes on any entity | SEC-004 | P0 |
-| No tenant scoping on findById methods | SEC-001 | P0 |
-| No auth on assignmentSubmissions query | SEC-002 | P0 |
-| Missing tenantId on 4 entities | DATA-001 | P1 |
-| Email globally unique (should be per-tenant) | DATA-002 | P1 |
-| No transactions on multi-step writes | DATA-003 | P1 |
-| Apollo Client misconfigured (no type policies) | DATA-004 | P1 |
-| `as any` casts in feed.service.ts | DATA-007 | P1 |
-| No base entities (code duplication) | ARCH-001 | P2 |
-| Direct Anthropic SDK imports (vendor lock-in) | ARCH-005 | P2 |
-| @tanstack/react-query installed but unused | ARCH-003 | P2 |
-| Event listener handlers are logging-only stubs | FEAT-002 | Feature |
-| Messaging system not built (session log incorrect) | FEAT-003 | Feature |
-| Content builder not built (session log incorrect) | FEAT-004 | Feature |
-| Only 1 test file exists (scaffold default) | TEST-001 | P3 |
+> The Session 9 audit items (SEC-001–004, DATA-001–007, ARCH-001–006, FEAT-002–005, TEST-001–004) were **all resolved in Phase 2.5–3** (see ROADMAP.md). Current open work lives in [BACKLOG.md](./BACKLOG.md) — always check there, not here.
+>
+> Lesson encoded from that audit era: this table went stale and caused wrong assumptions (features believed missing that existed, vulnerabilities believed open that were fixed). Per the **Living Docs Rule**, status tables belong in BACKLOG.md only; CLAUDE.md records patterns and rules, not statuses.
 
 ---
 

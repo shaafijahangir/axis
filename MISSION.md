@@ -52,7 +52,7 @@ Axis is the answer to a question no institution bothered to ask: what would it l
 
 ## The Problem
 
-Modern Learning Management Systems have three fundamental flaws:
+Modern Learning Management Systems have five fundamental flaws:
 
 ### 1. They're Built for Administration, Not Learning
 
@@ -71,6 +71,14 @@ A student who's struggling and a student who's breezing through see the exact sa
 ### 4. The Support Systems Around Them Are Broken
 
 Even when institutions offer academic advising, the systems are overwhelmed. Emails go unanswered. Appointments are booked weeks out. Drop-ins are impersonal. Students are left to figure out degree requirements, course sequencing, and graduation timelines on their own.
+
+### 5. The Ecosystem Is Scattered Across Half a Dozen Tools
+
+This is the flaw the creator lived daily. At UVic, one course can span: Brightspace for grades and submissions, a professor's personal website for the actual course content and syllabus, Ed Discussion for Q&A, Mattermost for group chat, Zoom for office hours, and email for booking time with the professor — whose office hours live in a syllabus PDF, if anywhere. (Field research documenting this: [shaafilook.md](./shaafilook.md).)
+
+The LMS isn't the student's home. It's one tab among seven. Every day starts with reconstructing "what matters" from six disconnected sources, and the most human interaction of all — sitting down with your professor — is gated behind email ping-pong because no system owns availability and booking.
+
+Axis's answer is consolidation as a first principle: messaging with professors, group chats with classmates, grades, assignments, course content, office-hours booking, and AI support in **one system with one feed**. And grades aren't the end of the loop — Axis is built toward feedback that shows you *what* you got wrong and helps you learn directly from it, so a returned assignment is the start of learning, not the end. (The mistake-driven learning loop is partially built: rubric feedback and AI Feedback Copilot exist; the full "learn from your mistakes" experience is on the roadmap.)
 
 The technology to solve this exists. The institutions won't adopt it. So we build it ourselves.
 
@@ -99,6 +107,14 @@ The AI Course Planner isn't a nice-to-have feature. It's central to the mission.
 - What happens if they change their major or take a lighter semester
 
 This replaces the advisor who doesn't reply, the appointment that's booked three weeks out, and the drop-in that leaves you more confused than before.
+
+### One System, Not Seven Tabs
+
+Everything a course needs lives in Axis: content, assignments, grades, discussions, messaging with professors and classmates, office-hours booking, AI support. A student should never leave the platform to find a syllabus PDF, email for an appointment, or check a fourth app for group chat. Consolidation isn't a feature list — it's the product.
+
+### Mistakes Are the Curriculum
+
+A grade without understanding is a dead end. When work comes back, Axis's goal is that the student sees *what* went wrong, *why*, and what to do about it — rubric feedback, AI-drafted instructor feedback, and (roadmap) a learning loop that turns each mistake into the next study step.
 
 ### Three Nav Items, Not Thirteen
 
