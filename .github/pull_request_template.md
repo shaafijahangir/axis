@@ -1,25 +1,27 @@
 ## Summary
-<!-- What does this PR do? 1-3 bullet points -->
+<!-- 2-4 sentences: what this PR does and why. Lead with the user-visible outcome, not the code. -->
 
--
+## Context
+<!-- Problem/backlog item this solves. Anything the reviewer must know before reading the diff
+     (design decision, constraint, rejected alternative). -->
 
 ## Changes
-<!-- List the key files/areas changed -->
-
--
-
-## Type
-- [ ] Feature
-- [ ] Bug fix
-- [ ] Refactor
-- [ ] Chore (deps, CI, docs)
+<!-- Grouped by area, not file-by-file -->
+- **Backend**:
+- **Frontend**:
+- **Infra/config**:
 
 ## Testing
-- [ ] Tested locally
-- [ ] Added/updated unit tests
-- [ ] Verified no type errors (`npm run typecheck`)
-- [ ] Verified lint passes (`npm run lint`)
+<!-- What ran (test counts, E2E, manual flows walked), what did NOT run and why — honest gaps
+     beat silence. Include steps for the reviewer to verify locally. -->
+
+## Impact / Risks
+<!-- Migrations? Breaking API changes? New env vars? Security surface? "None" is a valid answer —
+     say it explicitly. -->
+
+## Backlog
+<!-- Closes FEAT-xxx / Refs SEC-xxx -->
 
 ## Learning Notes
-<!-- What did you learn while working on or reviewing this PR? This is for your own growth — write something even if it's small. -->
-
+<!-- What did you learn while working on or reviewing this PR? For your own growth — write
+     something even if it's small. -->

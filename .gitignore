@@ -93,8 +93,10 @@ postgres-data/
 # Auto-generated GraphQL schema (NestJS)
 schema.gql
 
-# Claude Code
-.claude/
+# Claude Code (ignore local state, keep shared skills + session log)
+.claude/*
+!.claude/skills/
+!.claude/session-log.md
 prompt.md
 
 # Local archive (stale plans kept on disk only, not in git)
