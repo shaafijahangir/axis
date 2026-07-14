@@ -47,6 +47,7 @@ import { CalendarModule } from './modules/calendar/calendar.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { ReportCardsModule } from './modules/report-cards/report-cards.module';
 import { ParentModule } from './modules/parent/parent.module';
+import { OfficeHoursModule } from './modules/office-hours/office-hours.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { depthLimit } from './graphql/depth-limit.validation';
 
@@ -150,6 +151,7 @@ import { depthLimit } from './graphql/depth-limit.validation';
     AttendanceModule,
     ReportCardsModule,
     ParentModule,
+    OfficeHoursModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController, HealthController],

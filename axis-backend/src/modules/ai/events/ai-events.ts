@@ -34,6 +34,10 @@ export const NexusEvents = {
   // Grade changes
   GRADE_UPDATED: 'grade.updated',
 
+  // Office-hours booking lifecycle (FEAT-018)
+  BOOKING_CREATED: 'booking.created',
+  BOOKING_CANCELLED: 'booking.cancelled',
+
   // AI-specific events
   AI_CONVERSATION_STARTED: 'ai.conversation.started',
   AI_TOOL_INVOKED: 'ai.tool.invoked',
@@ -109,6 +113,25 @@ export interface GradeUpdatedEvent {
   oldScore: number | null;
   newScore: number;
   tenantId: string;
+}
+
+export interface BookingCreatedEvent {
+  bookingId: string;
+  blockId: string;
+  studentId: string;
+  instructorId: string;
+  tenantId: string;
+  date: string; // "YYYY-MM-DD"
+  startTime: string; // "HH:MM"
+}
+
+export interface BookingCancelledEvent {
+  bookingId: string;
+  studentId: string;
+  instructorId: string;
+  tenantId: string;
+  /** Who triggered the cancellation. */
+  cancelledBy: string;
 }
 
 export interface AiConversationStartedEvent {

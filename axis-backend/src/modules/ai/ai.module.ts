@@ -45,6 +45,7 @@ import { createPlannerTools } from './tools/planner.tools';
 import { createGraduationPlannerTools } from './tools/graduation-planner.tools';
 import { createCourseDiscoveryTools } from './tools/course-discovery.tools';
 import { createCareerTools } from './tools/career.tools';
+import { createOfficeHoursTools } from './tools/office-hours.tools';
 
 // Agent definitions
 import { studyCoachAgent } from './agents/study-coach.agent';
@@ -71,6 +72,8 @@ import { PlannerModule } from '../planner/planner.module';
 import { PlannerService } from '../planner/planner.service';
 import { GraduationPlannerService } from '../planner/graduation-planner.service';
 import { CareerService } from '../planner/career.service';
+import { OfficeHoursModule } from '../office-hours/office-hours.module';
+import { OfficeHoursService } from '../office-hours/office-hours.service';
 
 /**
  * The AI module — core of the AI-native architecture.
@@ -102,6 +105,7 @@ import { CareerService } from '../planner/career.service';
     BullModule.registerQueue({ name: AI_REACTIONS_QUEUE }),
     CoursesModule,
     PlannerModule,
+    OfficeHoursModule,
   ],
   providers: [
     // AI Provider abstraction — Anthropic is the default implementation
@@ -147,6 +151,7 @@ export class AiModule implements OnModuleInit {
     private plannerService: PlannerService,
     private graduationPlannerService: GraduationPlannerService,
     private careerService: CareerService,
+    private officeHoursService: OfficeHoursService,
     @InjectRepository(Assignment)
     private assignmentRepo: Repository<Assignment>,
     @InjectRepository(Submission)
@@ -215,6 +220,11 @@ export class AiModule implements OnModuleInit {
 
     // Career exploration + skill gap tools (GRAD-006)
     this.toolRegistry.registerAll(createCareerTools(this.careerService));
+
+    // Office-hours discovery + booking tools (FEAT-018)
+    this.toolRegistry.registerAll(
+      createOfficeHoursTools(this.officeHoursService),
+    );
   }
 
   private registerAgents(): void {
