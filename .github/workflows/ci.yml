@@ -56,6 +56,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Frontend typecheck/build import from src/lib/graphql/__generated__,
+      # which is gitignored. Regenerate it from the tracked schema snapshot
+      # (axis-backend/src/schema.gql).
+      - name: GraphQL codegen
+        run: pnpm --filter axis-frontend codegen
+
       - name: Lint
         run: pnpm lint
 
@@ -138,6 +144,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: GraphQL codegen
+        run: pnpm --filter axis-frontend codegen
 
       - name: Install Playwright browsers
         run: pnpm --filter axis-frontend exec playwright install --with-deps chromium
