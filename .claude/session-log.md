@@ -5,6 +5,36 @@
 
 ---
 
+## Session 54 — Live E2E Verification + Bug Fixes (FEAT-018 → main)
+
+**Date:** 2026-07-14
+**Goal:** Verify FEAT-018 end-to-end in a live browser (Playwright MCP), fix everything found, merge PR #54 to main (Shaafi: "fix. and make sure works end to end before in main").
+**Status:** COMPLETE — all fixes verified live, PR #54 merged.
+
+### E2E verification (live, browser)
+- Full booking loop as instructor + student: create block (Wed 2–4 PM, ECS 618, 15-min slots) → student books 2:30 PM with topic note → slot excluded from availability → booking on /schedule → **race test** (parallel double-book: one BOOKED, other clean "slot was just booked" error) → cancel → CANCELLED.
+- Postgres `time` values ("14:30:00") render correctly as "2:30 PM".
+
+### Bugs found + fixed (all verified live after fix)
+1. **Apollo cache normalization collision (real bug, subtle):** seed reuses UUIDs across tables — assignment HW1 and announcement "Welcome to CS101!" both have id `70000000-...-001`. `TimelineEntry` (also `FeedItem`, `InstructorFeedItem`) carries `id` + `__typename`, so Apollo normalized two different timeline entries into ONE cache object → announcements rendered twice, **HW1–HW3 silently vanished from the timeline**. Fix: `keyFields: false` on all three projection DTOs in `client.ts`. Lesson: projection DTOs that expose an underlying entity's id must never be normalized.
+2. **Enum case bug:** `sectionTimeline` filter compared `e.type === 'assignment'` but GraphQL serializes enums by NAME (`'ASSIGNMENT'`) → extend-deadline dialog always got an empty assignment list. Case-insensitive now.
+3. **Malformed UUID → 500:** `cancelBooking`/`officeHourBlocks`/`deactivateOfficeHourBlock` leaked raw QueryFailedError. `ParseUUIDPipe` → clean 400.
+4. **Schedule grid duplicate React keys** → stable Fragment/block keys.
+5. **24 legacy duplicate announcement rows** in DB (pre-idempotency seed runs) deleted; current seed already idempotent.
+6. **Landing page said "four flaws"** — added flaw #5 (fragmentation) per MISSION.md.
+
+### Environment lessons (encode these)
+- **Service worker caches JS cache-first** (`public/sw.js`) — in dev, stale bundles survive rebuilds. If a frontend fix "doesn't take", unregister SW + clear caches in DevTools (or `navigator.serviceWorker.getRegistrations()` → unregister).
+- Real DB is **native Windows Postgres on :5433** (`postgres/postgres`, db `axis`), NOT the docker `axis-postgres` container (that one's empty — cleanup candidate). Access: `docker exec axis-postgres psql "postgresql://postgres:postgres@host.docker.internal:5433/axis"`.
+- Playwright MCP synthesized clicks can silently fail on this app; `browser_evaluate` + `el.click()` works.
+- Killing the frontend's process tree can take the backend down too (shared turbo parent) — restart both or use per-package scripts.
+
+### Backlog
+- **FEAT-019 added:** instructor schedule management — unified lectures + office-hours + busy blocks calendar (Shaafi's insight: "you manage the prof's schedule as well").
+- Next: Render deploy (Canadian region per GTM.md §6), two-Postgres cleanup, Playwright E2E for booking flow.
+
+---
+
 ## Session 53 — Office-Hours Booking Shipped (FEAT-018)
 
 **Date:** 2026-07-14

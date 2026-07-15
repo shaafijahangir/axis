@@ -1382,6 +1382,17 @@
     - Both: upcoming bookings section on `/schedule` with cancel
 - **Acceptance:** Instructor defines "Tue 2–4pm, ECS 618, 15-min slots" once. Student books a slot from the course page in ≤3 interactions without email. Double-booking a slot is rejected. Cancelling frees the slot.
 
+### FEAT-019: Instructor Schedule Management (office hours + lectures, one calendar)
+- **Status:** `TODO`
+- **Priority:** HIGH — natural extension of FEAT-018 (Shaafi, 2026-07-15: "you manage the prof's schedule as well — time aside for office hours, time aside from lectures, and whatever else")
+- **Scope:**
+  - Axis already knows an instructor's lecture times (section `meetingDays`/`startTime`/`endTime`) and office-hour blocks (FEAT-018) — unify them:
+  - Instructor `/schedule` shows lectures + office-hour blocks + booked appointments in one weekly grid (students already get this view for their own week)
+  - Conflict detection: creating/updating an office-hour block that overlaps the instructor's own lecture times is rejected (or warned) at creation
+  - "Busy" blocks: instructor can mark arbitrary recurring unavailability (research time, meetings) that suppresses bookable slots without deleting blocks
+  - Later: feeds the AI ("when can I meet Prof Chen?" answers from the full schedule, not just office hours)
+- **Acceptance:** Instructor sees their entire week in one grid. A block that collides with their own lecture cannot be created silently. Slots inside "busy" windows are never offered to students.
+
 ### MOB-001: Responsive Dashboard Layouts
 - **Status:** `DONE`
 - **Priority:** MEDIUM
