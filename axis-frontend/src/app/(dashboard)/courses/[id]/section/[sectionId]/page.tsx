@@ -126,9 +126,10 @@ export default function SectionTimelinePage() {
 
   const section = sectionData?.section;
 
-  // Extract assignment entries for the extend deadline dialog
+  // Extract assignment entries for the extend deadline dialog.
+  // GraphQL serializes enums by name ("ASSIGNMENT"), so compare case-insensitively.
   const assignmentEntries = (timelineData?.sectionTimeline ?? [])
-    .filter((e) => e.type === 'assignment')
+    .filter((e) => e.type.toLowerCase() === 'assignment')
     .map((e) => ({ id: e.id, title: e.title, dueAt: e.dueAt }));
 
   return (

@@ -288,6 +288,11 @@ const PROBLEMS = [
     title: "Support systems that don't work",
     body: "Academic advisors who don't reply. Appointments booked three weeks out. Drop-in sessions that feel rushed. Students left alone wondering if they're even on the right track to graduate.",
   },
+  {
+    n: '05',
+    title: 'A course scattered across half a dozen tools',
+    body: "The LMS for grades, a professor's personal website for the syllabus, a forum app for Q&A, a chat app for group work, email to book office hours. The LMS isn't the student's home — it's one tab among seven.",
+  },
 ];
 
 function Problems() {
@@ -299,7 +304,7 @@ function Problems() {
             The Problem
           </p>
           <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Modern LMSes have four fundamental flaws.
+            Modern LMSes have five fundamental flaws.
           </h2>
           <p className="mt-4 max-w-xl text-muted-foreground leading-relaxed">
             These aren&apos;t minor UX issues. They&apos;re structural failures

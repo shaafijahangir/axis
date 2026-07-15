@@ -83,6 +83,15 @@ const cache = new InMemoryCache({
     // Content
     CourseContent: { keyFields: ['id'] },
 
+    // Projection DTOs — their `id` is the underlying entity's id, and ids
+    // from different tables can collide (e.g. an assignment and an
+    // announcement sharing a UUID). Normalizing them merges distinct
+    // entries into one cache object, duplicating some rows and dropping
+    // others. keyFields: false stores them inline, unnormalized.
+    TimelineEntry: { keyFields: false },
+    FeedItem: { keyFields: false },
+    InstructorFeedItem: { keyFields: false },
+
     // Query-level policies for feeds (replace, don't merge)
     Query: {
       fields: {
