@@ -17,7 +17,8 @@
     "test:e2e": {
       "dependsOn": ["build"],
       "outputs": ["playwright-report/**", "test-results/**"],
-      "cache": false
+      "cache": false,
+      "env": ["E2E_BASE_URL", "E2E_API_URL"]
     },
     "typecheck": {
       "dependsOn": ["^build"],

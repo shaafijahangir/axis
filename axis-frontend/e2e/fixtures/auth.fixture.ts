@@ -24,33 +24,34 @@ interface TestUser {
   role: 'student' | 'instructor' | 'admin';
 }
 
-// Default test users (these should match seeded data in test database)
+// Default test users — MUST match the demo users created by
+// axis-backend/src/database/seed.ts (the CI e2e job seeds exactly that).
 const TEST_USERS = {
   student: {
-    email: process.env.E2E_STUDENT_EMAIL || 'student@test.Axis.local',
-    password: process.env.E2E_STUDENT_PASSWORD || 'TestPass123!',
-    firstName: 'Test',
-    lastName: 'Student',
+    email: process.env.E2E_STUDENT_EMAIL || 'student@Axis.demo',
+    password: process.env.E2E_STUDENT_PASSWORD || 'password123',
+    firstName: 'Alex',
+    lastName: 'Rivera',
     role: 'student' as const,
   },
   instructor: {
-    email: process.env.E2E_INSTRUCTOR_EMAIL || 'instructor@test.Axis.local',
-    password: process.env.E2E_INSTRUCTOR_PASSWORD || 'TestPass123!',
-    firstName: 'Test',
-    lastName: 'Instructor',
+    email: process.env.E2E_INSTRUCTOR_EMAIL || 'prof.chen@Axis.demo',
+    password: process.env.E2E_INSTRUCTOR_PASSWORD || 'password123',
+    firstName: 'Sarah',
+    lastName: 'Chen',
     role: 'instructor' as const,
   },
   admin: {
-    email: process.env.E2E_ADMIN_EMAIL || 'admin@test.Axis.local',
-    password: process.env.E2E_ADMIN_PASSWORD || 'TestPass123!',
-    firstName: 'Test',
-    lastName: 'Admin',
+    email: process.env.E2E_ADMIN_EMAIL || 'admin@Axis.demo',
+    password: process.env.E2E_ADMIN_PASSWORD || 'password123',
+    firstName: 'Marcus',
+    lastName: 'Williams',
     role: 'admin' as const,
   },
 };
 
 // API base URL for direct API calls (seeding, etc.)
-const API_BASE_URL = process.env.E2E_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.E2E_API_URL || 'http://localhost:3002/api';
 
 type AuthFixtures = {
   loginAs: (email: string, password: string) => Promise<void>;

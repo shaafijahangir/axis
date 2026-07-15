@@ -32,7 +32,7 @@ type SeedFixtures = {
   graphql: <T>(query: string, variables?: Record<string, unknown>, token?: string) => Promise<T>;
 };
 
-const API_BASE_URL = process.env.E2E_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.E2E_API_URL || 'http://localhost:3002/api';
 
 export const test = base.extend<SeedFixtures>({
   graphql: async ({ page }, use) => {
