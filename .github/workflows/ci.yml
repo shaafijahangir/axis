@@ -176,6 +176,17 @@ jobs:
       - name: Build projects
         run: pnpm build
 
+      # Schema is migration-managed (synchronize: false since FEAT-007) —
+      # a fresh database needs migrations before seeding.
+      - name: Run migrations
+        run: pnpm --filter axis-backend migration:run
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5433
+          DATABASE_USERNAME: test
+          DATABASE_PASSWORD: test
+          DATABASE_NAME: axis_test
+
       - name: Seed demo data
         run: pnpm --filter axis-backend seed
         env:
