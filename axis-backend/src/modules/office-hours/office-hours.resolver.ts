@@ -1,5 +1,5 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
+import { ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { OfficeHoursService } from './office-hours.service';
 import { OfficeHourBlock } from './entities/office-hour-block.entity';
 import { Booking } from './entities/booking.entity';
@@ -41,7 +41,7 @@ export class OfficeHoursResolver {
   @Query(() => [OfficeHourBlock])
   async officeHourBlocks(
     @CurrentUser() user: User,
-    @Args('instructorId') instructorId: string,
+    @Args('instructorId', ParseUUIDPipe) instructorId: string,
   ): Promise<OfficeHourBlock[]> {
     return this.officeHoursService.listActiveBlocks(
       user.tenantId,
@@ -102,7 +102,7 @@ export class OfficeHoursResolver {
   @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
   async deactivateOfficeHourBlock(
     @CurrentUser() user: User,
-    @Args('id') id: string,
+    @Args('id', ParseUUIDPipe) id: string,
   ): Promise<OfficeHourBlock> {
     return this.officeHoursService.deactivateBlock(user.tenantId, user.id, id);
   }
@@ -124,7 +124,7 @@ export class OfficeHoursResolver {
   @Mutation(() => Booking)
   async cancelBooking(
     @CurrentUser() user: User,
-    @Args('bookingId') bookingId: string,
+    @Args('bookingId', ParseUUIDPipe) bookingId: string,
   ): Promise<Booking> {
     return this.officeHoursService.cancelBooking(
       user.tenantId,
