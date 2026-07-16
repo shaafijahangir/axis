@@ -88,6 +88,9 @@ import { depthLimit } from './graphql/depth-limit.validation';
         migrationsRun: configService.get('database.migrationsRun'),
         migrations: ['dist/database/migrations/*.js'],
         logging: configService.get('database.logging'),
+        ssl: configService.get('database.ssl')
+          ? { rejectUnauthorized: false }
+          : false,
       }),
     }),
     // T3-003: Sentry error tracking (only active when SENTRY_DSN env var is set)

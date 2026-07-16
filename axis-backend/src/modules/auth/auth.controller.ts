@@ -36,11 +36,17 @@ export class AuthController {
 
   private setCookie(res: express.Response, token: string): void {
     const isProduction = this.configService.get('app.nodeEnv') === 'production';
+    // COOKIE_SAMESITE overrides the default for deployments where frontend
+    // and backend are cross-site (see app.config.ts). 'none' requires
+    // Secure, so force it regardless of environment.
+    const sameSite =
+      this.configService.get<'strict' | 'lax' | 'none'>('app.cookieSameSite') ??
+      (isProduction ? 'strict' : 'lax');
 
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      secure: isProduction || sameSite === 'none',
+      sameSite,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
       path: '/',
     });

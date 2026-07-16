@@ -73,6 +73,10 @@ async function seed() {
     entities,
     synchronize: false,
     logging: false,
+    ssl:
+      process.env.DATABASE_SSL === 'true'
+        ? { rejectUnauthorized: false }
+        : false,
   });
 
   await ds.initialize();
