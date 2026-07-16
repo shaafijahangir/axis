@@ -173,8 +173,12 @@ jobs:
           /tmp/mc alias set local http://localhost:9000 axisdev axisdev123
           /tmp/mc mb local/axis || true
 
+      # NEXT_PUBLIC_* vars are inlined into the bundle at BUILD time —
+      # setting them on the `start` step is too late.
       - name: Build projects
         run: pnpm build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3002/api
 
       # Schema is migration-managed (synchronize: false since FEAT-007) —
       # a fresh database needs migrations before seeding.

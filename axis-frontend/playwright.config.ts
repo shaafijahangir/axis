@@ -43,14 +43,18 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
 
-  /* Configure projects for major browsers */
+  /*
+   * Chromium only. CI installs only chromium (single worker; three
+   * browsers would triple an already-long suite), and cross-browser
+   * coverage is better spent as an explicit pre-release pass:
+   *   E2E_ALL_BROWSERS=1 pnpm test:e2e
+   */
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    /* Only run Firefox and WebKit on CI to save time locally */
-    ...(process.env.CI
+    ...(process.env.E2E_ALL_BROWSERS
       ? [
           {
             name: 'firefox',

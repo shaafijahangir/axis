@@ -1,6 +1,6 @@
 import { AuthResponse, LoginCredentials, RegisterData } from '@/types/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
 
 /**
  * WHY: credentials: 'include' is required for the browser to accept

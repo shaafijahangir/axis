@@ -16,7 +16,7 @@ import { useAuthStore } from '@/stores/auth.store';
 const httpLink = createHttpLink({
   uri: process.env.NEXT_PUBLIC_API_URL
     ? `${process.env.NEXT_PUBLIC_API_URL}/graphql`
-    : 'http://localhost:3001/api/graphql',
+    : 'http://localhost:3002/api/graphql',
   credentials: 'include',
 });
 
