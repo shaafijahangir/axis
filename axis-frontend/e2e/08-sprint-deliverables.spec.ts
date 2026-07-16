@@ -109,7 +109,10 @@ test.describe('Sprint 1: Schedule visual grid', () => {
     await loginAs(STUDENT_EMAIL, PASSWORD);
 
     await page.goto('/schedule');
-    await expect(page.getByRole('heading', { name: /schedule/i })).toBeVisible();
+    // `level: 1` disambiguates from empty-state headings like "No schedule set yet".
+    await expect(
+      page.getByRole('heading', { name: /schedule/i, level: 1 }),
+    ).toBeVisible();
 
     // The grid renders day headers MON–FRI. Verify all five present.
     for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']) {
@@ -129,7 +132,10 @@ test.describe('Sprint 1: Schedule visual grid', () => {
     await loginAs(INSTRUCTOR_EMAIL, PASSWORD);
 
     await page.goto('/schedule');
-    await expect(page.getByRole('heading', { name: /schedule/i })).toBeVisible();
+    // `level: 1` disambiguates from empty-state headings like "No schedule set yet".
+    await expect(
+      page.getByRole('heading', { name: /schedule/i, level: 1 }),
+    ).toBeVisible();
   });
 });
 

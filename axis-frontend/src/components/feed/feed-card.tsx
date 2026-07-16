@@ -170,17 +170,16 @@ export function FeedCard({
   );
 
   if (href) {
+    // The Link is the interactive element — the wrapper must NOT be
+    // focusable (no role/tabIndex): a focusable element containing a
+    // focusable element is an axe `nested-interactive` violation.
+    // FEAT-014 engagement tracking rides the Link's own onClick, which
+    // also fires on keyboard activation.
     return (
-      <div
-        ref={visibilityRef}
-        role="button"
-        tabIndex={0}
-        onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') handleClick();
-        }}
-      >
-        <Link href={href}>{content}</Link>
+      <div ref={visibilityRef}>
+        <Link href={href} onClick={handleClick}>
+          {content}
+        </Link>
       </div>
     );
   }

@@ -1393,6 +1393,11 @@
   - Later: feeds the AI ("when can I meet Prof Chen?" answers from the full schedule, not just office hours)
 - **Acceptance:** Instructor sees their entire week in one grid. A block that collides with their own lecture cannot be created silently. Slots inside "busy" windows are never offered to students.
 
+### BUG-014: Student feed deep-links use sectionId in the courseId slot
+- **Status:** `TODO`
+- **Priority:** MEDIUM
+- **Scope:** `feed-card.tsx` builds `href` as `/courses/${sectionId}/section/${sectionId}/assignment/...` — the first path segment should be the course id, but `FeedItem` (backend DTO) doesn't carry `courseId`. Pages still render (queries key off sectionId), but the URL is semantically wrong and the course back-link points at a nonexistent course. Fix: add `courseId` to `FeedItem`/`getStudentFeed`, thread it through the card. Found during e2e triage 2026-07-15 (axe output exposed the URLs).
+
 ### MOB-001: Responsive Dashboard Layouts
 - **Status:** `DONE`
 - **Priority:** MEDIUM

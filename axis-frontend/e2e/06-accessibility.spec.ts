@@ -350,10 +350,13 @@ test.describe('Accessibility: Reduced motion support (WCAG 2.3.3)', () => {
       return duration;
     });
 
-    // In reduced motion mode, our CSS sets animation-duration to 0.01ms
-    expect(
-      spinnerDuration === '0.01ms' || spinnerDuration === '0s',
-    ).toBeTruthy();
+    // In reduced motion mode, our CSS sets animation-duration to 0.01ms.
+    // Parse instead of string-matching: browsers serialize the computed
+    // value in seconds with scientific notation ("1e-05s"), so literal
+    // comparison against "0.01ms" never matches.
+    const value = parseFloat(spinnerDuration);
+    const ms = spinnerDuration.endsWith('ms') ? value : value * 1000;
+    expect(ms).toBeLessThanOrEqual(1);
   });
 });
 
