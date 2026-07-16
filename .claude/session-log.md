@@ -35,8 +35,15 @@ Six root-cause layers, peeled in order (each its own commit):
 - CI e2e job now bakes `NEXT_PUBLIC_API_URL` at BUILD time (NEXT_PUBLIC_* inlined at build, not start).
 - Playwright: chromium-only by default (CI only installs chromium; 480 failures were uninstalled firefox/webkit); `E2E_ALL_BROWSERS=1` for the full pre-release pass.
 
+### Deploy — DONE (2026-07-16)
+- **Live:** https://axis-lms-web.onrender.com (app) / https://axis-lms-api.onrender.com/api (API).
+- First blueprint deploy failed: NODE_ENV=production made pnpm skip devDependencies at BUILD time → `husky: not found` killed install. Fix: `--prod=false` on the install in both buildCommands (render.yaml, commit 5f5a6f3).
+- Managed via Render API (Shaafi's API key, pasted in-session — consider revoking/rotating): pulled logs, watched deploys, fetched Postgres external connection string.
+- Seeded Render Postgres from local via `DATABASE_SSL=true` + external conn (helper env saved at `~/.axis-render-db.env` — contains DB password).
+- Verified live: login 201, cookie `HttpOnly; Secure; SameSite=None`, CORS allow-origin = web URL, authenticated GraphQL returns seeded timeline. ANTHROPIC_API_KEY set by Shaafi at blueprint creation.
+- Free-tier caveats: services sleep after 15 min (first hit ~1 min), free Postgres expires after 30 days (~2026-08-15) — upgrade or re-create before demoing to outsiders.
+
 ### Open threads
-- **Deploy finish:** Shaafi to click New→Blueprint (repo `shaafijahangir/axis`, branch main) OR provide Render API key. Then: verify services, seed Render Postgres (needs `DATABASE_SSL=true` + external connection string), live E2E check, hand over URL. Expected: axis-lms-web.onrender.com / axis-lms-api.onrender.com (names may collide — rename at sync).
 - BUG-014 (backlog): feed hrefs put sectionId in the courseId slot; FeedItem DTO lacks courseId.
 - Playwright MCP tools didn't load into this session (registered + healthy at CLI, session started while it was down) — needs session restart or /mcp reconnect if browser automation wanted.
 
