@@ -5,6 +5,43 @@
 
 ---
 
+## Session 55 — CI Resurrection, FEAT-018 Merged, Render Deploy Prep
+
+**Date:** 2026-07-15
+**Goal:** Get CI truly green, merge PR #54, prep + merge Render deployment (PR #55).
+**Status:** PRs #54 and #55 MERGED, full pipeline green (e2e passing for the first time EVER). Waiting on Shaafi's Render blueprint click (or API key) to finish the deploy.
+
+### CI archaeology — main's CI was dead since 2026-06-15; e2e never ran once
+Six root-cause layers, peeled in order (each its own commit):
+1. `pnpm/action-setup` hard-errors when the workflow pins a version AND package.json has `packageManager` → dropped the pin (killed every run at ~30s since June).
+2. `dotenv` was a phantom dependency (used in seed/typeorm.config, never declared) → declared it.
+3. Frontend typecheck imports gitignored codegen artifacts → `axis-backend/src/schema.gql` now TRACKED as the schema snapshot + codegen step in both CI jobs.
+4. e2e job never ran migrations → 42P01 at seed → migration step added.
+5. e2e suite was broken since birth: ports 3000/3001 vs real 3001/3002, Turbo 2 strict env mode silently stripping `E2E_BASE_URL`/`E2E_API_URL`, fixture creds (`student@test.Axis.local`) that never existed in seed.
+6. **The big one:** turbo's `test:e2e` had `dependsOn: ["build"]` → CI's test step REBUILT `.next` while `next start` served it → stale manifest, async chunk 404s, error boundary everywhere (63/80 failures, all tracing to one 404'd chunk). Removed the dependency; e2e went 63-failed/1.5h → 4-failed/8.8min → green.
+
+### Final four e2e failures (all fixed)
+- seed.ts never wrote SPRINT-1 typed schedule columns (only legacy blob with WRONG keys `days`/`time`) → /schedule empty on every fresh DB (would have shipped a blank schedule to the Render demo). Typed columns now seeded + backfilled on conflict.
+- Test locator `/schedule/i` ambiguous vs "No schedule set yet" h3 → pinned `level: 1`.
+- Real a11y bug: feed cards nested focusable Link inside `div[role=button]` (axe nested-interactive, serious) → Link is the sole interactive element, FEAT-014 tracking on Link's onClick.
+- Reduced-motion test string-matched "0.01ms" but browsers serialize computed duration as "1e-05s" → parse + assert ≤1ms.
+
+### Render deploy prep (PR #55, merged)
+- `render.yaml`: API + web services (free, oregon), free Postgres, key-value for BullMQ, JWT_SECRET generated, ANTHROPIC_API_KEY sync:false.
+- **Render has NO Canadian region** (verified) — demo-only until FIPPA-compliant hosting for real student data (GTM.md §6).
+- `COOKIE_SAMESITE=none` support — *.onrender.com subdomains are cross-site (public suffix list); hard-coded strict would have silently broken login on deploy.
+- `DATABASE_SSL=true` support in app + migration CLI + seed DataSources.
+- Stale defaults fixed: 7 frontend files had API fallback port 3001 (masked by .env.local), backend PORT 3001→3002, FRONTEND_URL 3000→3001.
+- CI e2e job now bakes `NEXT_PUBLIC_API_URL` at BUILD time (NEXT_PUBLIC_* inlined at build, not start).
+- Playwright: chromium-only by default (CI only installs chromium; 480 failures were uninstalled firefox/webkit); `E2E_ALL_BROWSERS=1` for the full pre-release pass.
+
+### Open threads
+- **Deploy finish:** Shaafi to click New→Blueprint (repo `shaafijahangir/axis`, branch main) OR provide Render API key. Then: verify services, seed Render Postgres (needs `DATABASE_SSL=true` + external connection string), live E2E check, hand over URL. Expected: axis-lms-web.onrender.com / axis-lms-api.onrender.com (names may collide — rename at sync).
+- BUG-014 (backlog): feed hrefs put sectionId in the courseId slot; FeedItem DTO lacks courseId.
+- Playwright MCP tools didn't load into this session (registered + healthy at CLI, session started while it was down) — needs session restart or /mcp reconnect if browser automation wanted.
+
+---
+
 ## Session 54 — Live E2E Verification + Bug Fixes (FEAT-018 → main)
 
 **Date:** 2026-07-14
