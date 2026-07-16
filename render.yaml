@@ -1,0 +1,108 @@
+# Render Blueprint — Axis demo deployment
+#
+# WHY oregon: Render offers no Canadian region (oregon/ohio/virginia/
+# frankfurt/singapore as of 2026-07). Oregon is the closest to BC. This is
+# acceptable ONLY while the instance carries fake demo data — real BC
+# student data falls under FIPPA and needs Canadian residency (GTM.md §6),
+# which means a different host (e.g. AWS ca-central-1) before any pilot.
+#
+# WHY COOKIE_SAMESITE=none: frontend and backend live on separate
+# *.onrender.com subdomains. onrender.com is on the Public Suffix List, so
+# the browser treats them as different sites and SameSite=strict cookies
+# are never sent back. See auth.controller.ts.
+#
+# Free-tier caveats (demo-grade, not prod):
+# - Free web services sleep after 15 min idle; first request takes ~1 min.
+# - Free Postgres expires after 30 days unless upgraded.
+
+databases:
+  - name: axis-db
+    plan: free
+    region: oregon
+    databaseName: axis
+    user: axis
+
+services:
+  # ── Redis (BullMQ queues for AI event reactions) ────────────────────────
+  - name: axis-kv
+    type: keyvalue
+    plan: free
+    region: oregon
+    ipAllowList: [] # internal connections only
+
+  # ── Backend: NestJS GraphQL API ─────────────────────────────────────────
+  - name: axis-lms-api
+    type: web
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter axis-backend build
+    startCommand: pnpm --filter axis-backend start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: axis-db
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: axis-db
+          property: port
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: axis-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: axis-db
+          property: password
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: axis-db
+          property: database
+      - key: DATABASE_SSL
+        value: 'true'
+      - key: REDIS_HOST
+        fromService:
+          name: axis-kv
+          type: keyvalue
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: axis-kv
+          type: keyvalue
+          property: port
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://axis-lms-web.onrender.com
+      - key: COOKIE_SAMESITE
+        value: none
+      # Set in the dashboard during blueprint creation (never committed).
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  # ── Frontend: Next.js ───────────────────────────────────────────────────
+  - name: axis-lms-web
+    type: web
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    # Codegen must run before build: the frontend imports from the
+    # gitignored __generated__ dir (schema snapshot is tracked in-repo).
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter axis-frontend codegen && pnpm --filter axis-frontend build
+    startCommand: pnpm --filter axis-frontend start
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      # Inlined into the client bundle at BUILD time (see ci.yml note).
+      - key: NEXT_PUBLIC_API_URL
+        value: https://axis-lms-api.onrender.com/api

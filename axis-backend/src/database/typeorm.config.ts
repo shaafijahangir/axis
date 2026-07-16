@@ -36,6 +36,8 @@ export const dataSourceOptions: DataSourceOptions = {
   // Migrations handle schema changes safely
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
+  ssl:
+    process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
 };
 
 // Export DataSource instance for TypeORM CLI

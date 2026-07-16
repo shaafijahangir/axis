@@ -23,4 +23,8 @@ export default registerAs('database', () => ({
   // Auto-run pending migrations on application startup
   migrationsRun: process.env.DATABASE_MIGRATIONS_RUN !== 'false',
   logging: process.env.NODE_ENV === 'development',
+  // Managed Postgres providers (Render, Neon, RDS, ...) require TLS.
+  // rejectUnauthorized: false because these providers terminate TLS with
+  // certs that aren't in Node's default CA bundle.
+  ssl: process.env.DATABASE_SSL === 'true',
 }));
