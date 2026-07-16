@@ -14,6 +14,10 @@
 # Free-tier caveats (demo-grade, not prod):
 # - Free web services sleep after 15 min idle; first request takes ~1 min.
 # - Free Postgres expires after 30 days unless upgraded.
+#
+# WHY --prod=false on install: NODE_ENV=production (needed at runtime) also
+# applies during build, making pnpm skip devDependencies — which breaks the
+# husky prepare hook and removes the build tooling (nest/next/codegen).
 
 databases:
   - name: axis-db
@@ -37,7 +41,7 @@ services:
     plan: free
     region: oregon
     branch: main
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter axis-backend build
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter axis-backend build
     startCommand: pnpm --filter axis-backend start:prod
     healthCheckPath: /api/health
     envVars:
@@ -96,7 +100,7 @@ services:
     branch: main
     # Codegen must run before build: the frontend imports from the
     # gitignored __generated__ dir (schema snapshot is tracked in-repo).
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter axis-frontend codegen && pnpm --filter axis-frontend build
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter axis-frontend codegen && pnpm --filter axis-frontend build
     startCommand: pnpm --filter axis-frontend start
     envVars:
       - key: NODE_VERSION
