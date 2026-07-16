@@ -5,6 +5,59 @@
 
 ---
 
+## Session 54 — Live E2E Verification + Bug Fixes (FEAT-018 → main)
+
+**Date:** 2026-07-14
+**Goal:** Verify FEAT-018 end-to-end in a live browser (Playwright MCP), fix everything found, merge PR #54 to main (Shaafi: "fix. and make sure works end to end before in main").
+**Status:** COMPLETE — all fixes verified live, PR #54 merged.
+
+### E2E verification (live, browser)
+- Full booking loop as instructor + student: create block (Wed 2–4 PM, ECS 618, 15-min slots) → student books 2:30 PM with topic note → slot excluded from availability → booking on /schedule → **race test** (parallel double-book: one BOOKED, other clean "slot was just booked" error) → cancel → CANCELLED.
+- Postgres `time` values ("14:30:00") render correctly as "2:30 PM".
+
+### Bugs found + fixed (all verified live after fix)
+1. **Apollo cache normalization collision (real bug, subtle):** seed reuses UUIDs across tables — assignment HW1 and announcement "Welcome to CS101!" both have id `70000000-...-001`. `TimelineEntry` (also `FeedItem`, `InstructorFeedItem`) carries `id` + `__typename`, so Apollo normalized two different timeline entries into ONE cache object → announcements rendered twice, **HW1–HW3 silently vanished from the timeline**. Fix: `keyFields: false` on all three projection DTOs in `client.ts`. Lesson: projection DTOs that expose an underlying entity's id must never be normalized.
+2. **Enum case bug:** `sectionTimeline` filter compared `e.type === 'assignment'` but GraphQL serializes enums by NAME (`'ASSIGNMENT'`) → extend-deadline dialog always got an empty assignment list. Case-insensitive now.
+3. **Malformed UUID → 500:** `cancelBooking`/`officeHourBlocks`/`deactivateOfficeHourBlock` leaked raw QueryFailedError. `ParseUUIDPipe` → clean 400.
+4. **Schedule grid duplicate React keys** → stable Fragment/block keys.
+5. **24 legacy duplicate announcement rows** in DB (pre-idempotency seed runs) deleted; current seed already idempotent.
+6. **Landing page said "four flaws"** — added flaw #5 (fragmentation) per MISSION.md.
+
+### Environment lessons (encode these)
+- **Service worker caches JS cache-first** (`public/sw.js`) — in dev, stale bundles survive rebuilds. If a frontend fix "doesn't take", unregister SW + clear caches in DevTools (or `navigator.serviceWorker.getRegistrations()` → unregister).
+- Real DB is **native Windows Postgres on :5433** (`postgres/postgres`, db `axis`), NOT the docker `axis-postgres` container (that one's empty — cleanup candidate). Access: `docker exec axis-postgres psql "postgresql://postgres:postgres@host.docker.internal:5433/axis"`.
+- Playwright MCP synthesized clicks can silently fail on this app; `browser_evaluate` + `el.click()` works.
+- Killing the frontend's process tree can take the backend down too (shared turbo parent) — restart both or use per-package scripts.
+
+### Backlog
+- **FEAT-019 added:** instructor schedule management — unified lectures + office-hours + busy blocks calendar (Shaafi's insight: "you manage the prof's schedule as well").
+- Next: Render deploy (Canadian region per GTM.md §6), two-Postgres cleanup, Playwright E2E for booking flow.
+
+---
+
+## Session 53 — Office-Hours Booking Shipped (FEAT-018)
+
+**Date:** 2026-07-14
+**Goal:** Finish FEAT-018 (started in Session 52's worktree agent, interrupted mid-build) — frontend UI, tests, docs, PR.
+**Status:** COMPLETE — PR open on `feat/office-hours-booking`, awaiting Shaafi's review (do NOT merge without approval).
+
+### Work Done
+- **Backend (was ~complete from Session 52, verified + kept):** `office-hours` module — `OfficeHourBlock` + `Booking` entities (tenant-scoped, indexed, instructorId denormalized onto Booking for the hot instructor-dashboard read path), `OfficeHoursService` (block CRUD with own-block authorization, `computeAvailableSlots` with 60-day clamp + past-slot filtering, `bookSlot` in a transaction with pessimistic write lock on the block + in-transaction conflict re-check, `cancelBooking` student-own/instructor-own-block), thin resolver with guards/roles/DTOs, `BOOKING_CREATED`/`BOOKING_CANCELLED` events, AI tools `list_office_hours` (auto) + `book_office_hours` (suggest), hasTable-guarded migration `1784570000000`.
+- **Frontend (this session):**
+  - `src/lib/office-hours.ts` — shared enum/date/time formatting helpers.
+  - `components/office-hours/office-hours-manager.tsx` — instructor card on `/settings`: list weekly blocks, add/edit dialog (day, times, slot length, in-person location vs Zoom URL), pause/resume switch.
+  - `components/office-hours/book-office-hours-dialog.tsx` — student flow on the section course header (new optional `action` slot on `CourseHeader`): pick day → pick slot → confirm with optional topic note; success screen shows room or Zoom link. ≤3 interactions (shaafilook.md §4).
+  - `components/office-hours/upcoming-bookings.tsx` — "Office Hours" section on `/schedule` for both students and instructors, with confirm-guarded cancel.
+- **Tests:** 18 service unit tests (slot computation, tenant scoping, double-book race rejection, lock assertion, cancel authorization, cross-tenant 404s). Full backend suite 348/348 green; monorepo typecheck + lint green.
+- **Docs:** BACKLOG.md FEAT-018 entry (DONE), CLAUDE.md modules list + event types.
+
+### Notes for next session
+- Worktree lacks the gitignored codegen artifacts (`axis-frontend/src/lib/graphql/__generated__/`, `axis-backend/src/schema.gql`) — copied from the main checkout to run typecheck. After merging FEAT-018, restart the backend dev server so `schema.gql` picks up the office-hours types, then re-run `pnpm --filter axis-frontend codegen`.
+- Booking uniqueness is lock + re-check (no partial unique index — schema has none elsewhere); revisit if booking volume ever makes the block-level lock a bottleneck.
+- E2E (Playwright) not written for the booking flow — candidate for the next test sweep.
+
+---
+
 ## Session 52 — Business Foundation + Office-Hours Booking Kickoff
 
 **Date:** 2026-07-13

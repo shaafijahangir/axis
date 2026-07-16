@@ -47,8 +47,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
@@ -57,6 +55,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # Frontend typecheck/build import from src/lib/graphql/__generated__,
+      # which is gitignored. Regenerate it from the tracked schema snapshot
+      # (axis-backend/src/schema.gql).
+      - name: GraphQL codegen
+        run: pnpm --filter axis-frontend codegen
 
       - name: Lint
         run: pnpm lint
@@ -132,8 +136,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
@@ -142,6 +144,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: GraphQL codegen
+        run: pnpm --filter axis-frontend codegen
 
       - name: Install Playwright browsers
         run: pnpm --filter axis-frontend exec playwright install --with-deps chromium
@@ -168,8 +173,23 @@ jobs:
           /tmp/mc alias set local http://localhost:9000 axisdev axisdev123
           /tmp/mc mb local/axis || true
 
+      # NEXT_PUBLIC_* vars are inlined into the bundle at BUILD time —
+      # setting them on the `start` step is too late.
       - name: Build projects
         run: pnpm build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3002/api
+
+      # Schema is migration-managed (synchronize: false since FEAT-007) —
+      # a fresh database needs migrations before seeding.
+      - name: Run migrations
+        run: pnpm --filter axis-backend migration:run
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5433
+          DATABASE_USERNAME: test
+          DATABASE_PASSWORD: test
+          DATABASE_NAME: axis_test
 
       - name: Seed demo data
         run: pnpm --filter axis-backend seed

@@ -16,7 +16,7 @@ import { useAuthStore } from '@/stores/auth.store';
 const httpLink = createHttpLink({
   uri: process.env.NEXT_PUBLIC_API_URL
     ? `${process.env.NEXT_PUBLIC_API_URL}/graphql`
-    : 'http://localhost:3001/api/graphql',
+    : 'http://localhost:3002/api/graphql',
   credentials: 'include',
 });
 
@@ -82,6 +82,15 @@ const cache = new InMemoryCache({
 
     // Content
     CourseContent: { keyFields: ['id'] },
+
+    // Projection DTOs — their `id` is the underlying entity's id, and ids
+    // from different tables can collide (e.g. an assignment and an
+    // announcement sharing a UUID). Normalizing them merges distinct
+    // entries into one cache object, duplicating some rows and dropping
+    // others. keyFields: false stores them inline, unnormalized.
+    TimelineEntry: { keyFields: false },
+    FeedItem: { keyFields: false },
+    InstructorFeedItem: { keyFields: false },
 
     // Query-level policies for feeds (replace, don't merge)
     Query: {

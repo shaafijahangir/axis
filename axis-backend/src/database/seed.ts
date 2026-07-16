@@ -297,6 +297,10 @@ async function seed() {
 
     // ─── 5. Course Sections (current term) ─────────────────────
     const sections = [
+      // [id, courseId, instructorId, termId, legacyScheduleBlob, location,
+      //  capacity, status, meetingDays, startTime, endTime]
+      // SPRINT-1 typed schedule columns are what /schedule actually renders;
+      // the legacy blob is kept only for backward-compat reads.
       [
         IDS.cs101sec,
         IDS.cs101,
@@ -306,6 +310,9 @@ async function seed() {
         'Science Hall 101',
         35,
         'active',
+        '{Mon,Wed,Fri}',
+        '10:00',
+        '10:50',
       ],
       [
         IDS.math201sec,
@@ -316,6 +323,9 @@ async function seed() {
         'Math Building 204',
         30,
         'active',
+        '{Tue,Thu}',
+        '09:00',
+        '10:15',
       ],
       [
         IDS.eng102sec,
@@ -326,6 +336,9 @@ async function seed() {
         'Humanities 310',
         25,
         'active',
+        '{Mon,Wed}',
+        '14:00',
+        '15:15',
       ],
       [
         IDS.phys150sec,
@@ -336,6 +349,9 @@ async function seed() {
         'Physics Lab 105',
         28,
         'active',
+        '{Mon,Wed,Fri}',
+        '11:00',
+        '11:50',
       ],
       [
         IDS.cs101pastSec,
@@ -346,6 +362,9 @@ async function seed() {
         'Science Hall 101',
         35,
         'completed',
+        '{Mon,Wed,Fri}',
+        '10:00',
+        '10:50',
       ],
     ];
 
@@ -358,12 +377,29 @@ async function seed() {
       loc,
       cap,
       status,
+      meetingDays,
+      startTime,
+      endTime,
     ] of sections) {
       await qr.query(
-        `INSERT INTO course_sections (id, "courseId", "instructorId", "termId", schedule, location, capacity, status, "createdAt", "updatedAt")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-         ON CONFLICT (id) DO UPDATE SET status=$8`,
-        [id, courseId, instrId, termId, sched, loc, cap, status, now, now],
+        `INSERT INTO course_sections (id, "courseId", "instructorId", "termId", schedule, location, capacity, status, "meetingDays", "startTime", "endTime", "createdAt", "updatedAt")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+         ON CONFLICT (id) DO UPDATE SET status=$8, "meetingDays"=$9, "startTime"=$10, "endTime"=$11`,
+        [
+          id,
+          courseId,
+          instrId,
+          termId,
+          sched,
+          loc,
+          cap,
+          status,
+          meetingDays,
+          startTime,
+          endTime,
+          now,
+          now,
+        ],
       );
     }
     console.log('  5 course sections created.');

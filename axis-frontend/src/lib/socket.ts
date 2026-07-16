@@ -11,7 +11,7 @@ let socket: Socket | null = null;
 
 const SOCKET_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') ||
-  'http://localhost:3001';
+  'http://localhost:3002';
 
 /**
  * Get or create the socket connection.

@@ -34,7 +34,7 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.E2E_BASE_URL || 'http://localhost:3001',
 
     /* Collect trace when retrying the failed test */
     trace: 'on-first-retry',
@@ -43,14 +43,18 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
 
-  /* Configure projects for major browsers */
+  /*
+   * Chromium only. CI installs only chromium (single worker; three
+   * browsers would triple an already-long suite), and cross-browser
+   * coverage is better spent as an explicit pre-release pass:
+   *   E2E_ALL_BROWSERS=1 pnpm test:e2e
+   */
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    /* Only run Firefox and WebKit on CI to save time locally */
-    ...(process.env.CI
+    ...(process.env.E2E_ALL_BROWSERS
       ? [
           {
             name: 'firefox',
@@ -69,7 +73,7 @@ export default defineConfig({
     ? undefined // CI will start servers separately
     : {
         command: 'pnpm dev',
-        url: 'http://localhost:3000',
+        url: 'http://localhost:3001',
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,
       },

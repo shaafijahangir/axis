@@ -1,0 +1,2371 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AcademicTerm {
+  createdAt: DateTime!
+  dropDeadline: DateTime
+  endDate: DateTime!
+  enrollmentWindowEnd: DateTime
+  enrollmentWindowStart: DateTime
+  id: String!
+  isCurrent: Boolean!
+  name: String!
+  settings: String
+  startDate: DateTime!
+  tenantId: String!
+  updatedAt: DateTime!
+  withdrawDeadline: DateTime
+}
+
+input AddQuizQuestionInput {
+  assignmentId: String!
+  options: [QuizOptionInput!]
+  points: Float!
+  questionText: String!
+  questionType: QuestionType!
+}
+
+input AdminCreateSectionInput {
+  capacity: Int
+  courseId: String!
+  endTime: String
+  instructorId: String!
+  location: String
+  meetingDays: [String!]
+  room: String
+  schedule: String
+  startTime: String
+  termId: String!
+}
+
+input AdminCreateUserInput {
+  email: String!
+  firstName: String!
+  gradeLevel: Int
+  homeroomTeacherId: String
+  lastName: String!
+  password: String!
+  roles: [UserRole!]!
+}
+
+type AdminDashboard {
+  aiAgentUsage: [AiAgentUsage!]!
+  aiUsageSummary: AiUsageSummary!
+  atRiskStudents: [AtRiskStudent!]!
+  gradeStats: GradeStats!
+  submissionMetrics: SubmissionMetrics!
+  tenantStats: TenantStats!
+  topCourses: [CourseStats!]!
+  userStats: UserStats!
+}
+
+input AdminEnrollInput {
+  role: EnrollmentRole
+  sectionId: String!
+  userId: String!
+}
+
+input AdminUpdateEnrollmentInput {
+  finalGrade: String
+  role: EnrollmentRole
+  status: EnrollmentStatus
+}
+
+input AdminUpdateUserInput {
+  email: String
+  firstName: String
+  gradeLevel: Int
+  homeroomTeacherId: String
+  lastName: String
+  roles: [UserRole!]
+  status: UserStatus
+}
+
+type AgentInfoDto {
+  allowedRoles: [String!]!
+  description: String!
+  displayName: String!
+  type: String!
+}
+
+type AgentResponseDto {
+  conversationId: String!
+  responseText: String!
+  toolsUsed: [String!]!
+  totalInputTokens: Int!
+  totalOutputTokens: Int!
+  turns: Int!
+}
+
+type AiAgentUsage {
+  agentType: String!
+  conversations: Int!
+  costUsd: Float!
+  messages: Int!
+  totalTokens: Int!
+}
+
+type AiConversation {
+  agentType: String!
+  contextSnapshot: String
+  courseId: String
+  createdAt: DateTime!
+  id: String!
+  status: ConversationStatus!
+  tenantId: String!
+  updatedAt: DateTime!
+  userId: String!
+}
+
+type AiMessage {
+  content: String!
+  conversationId: String!
+  createdAt: DateTime!
+  id: String!
+  role: MessageRole!
+  tokenCount: Float!
+  toolCalls: String
+  toolResults: String
+}
+
+type AiUsageSummary {
+  totalConversations: Int!
+  totalCostUsd: Float!
+  totalMessages: Int!
+  totalTokens: Int!
+  uniqueUsers: Int!
+}
+
+type Announcement {
+  author: User!
+  authorId: String!
+  body: String!
+  createdAt: DateTime!
+  id: String!
+  pinned: Boolean!
+  priority: AnnouncementPriority!
+  scope: AnnouncementScope!
+  section: CourseSection
+  sectionId: String
+  targetGrade: Int
+  tenantId: String!
+  title: String!
+  updatedAt: DateTime!
+}
+
+enum AnnouncementPriority {
+  NORMAL
+  URGENT
+}
+
+enum AnnouncementScope {
+  GRADE
+  SCHOOL_WIDE
+  SECTION
+}
+
+type Assignment {
+  attachments: [FileUpload!]!
+  createdAt: DateTime!
+  description: String
+  displayMode: String
+  dueAt: DateTime
+  id: String!
+  lockAt: DateTime
+  maxAttempts: Int
+  moduleId: String
+  pointsPossible: Float!
+  rubric: String
+  sectionId: String!
+  settings: String
+  tenantId: String!
+  timeLimitMinutes: Int
+  title: String!
+  type: AssignmentType!
+  unlockAt: DateTime
+  updatedAt: DateTime!
+}
+
+enum AssignmentType {
+  ASSIGNMENT
+  DISCUSSION
+  EXAM
+  PROJECT
+  QUIZ
+}
+
+type AtRiskStudent {
+  averageScore: Float!
+  email: String!
+  enrolledSections: Int!
+  firstName: String!
+  lastName: String!
+  missedAssignments: Int!
+  userId: String!
+}
+
+input AttachUploadInput {
+  contextId: String!
+  fileId: String!
+}
+
+type AttendanceRecord {
+  firstName: String!
+  id: String!
+  lastName: String!
+  notes: String
+  status: AttendanceStatus!
+  userId: String!
+}
+
+input AttendanceRecordInput {
+  notes: String
+  status: AttendanceStatus!
+  studentId: String!
+}
+
+enum AttendanceStatus {
+  ABSENT
+  EXCUSED
+  LATE
+  PRESENT
+}
+
+type AuditLogEntry {
+  agentType: String!
+  conversationId: String
+  createdAt: DateTime!
+  estimatedCostUsd: Float!
+  id: String!
+  inputTokens: Int!
+  model: String!
+  outputTokens: Int!
+  userEmail: String!
+  userFirstName: String!
+  userId: String!
+  userLastName: String!
+}
+
+input AuditLogFilterInput {
+  agentType: String
+  endDate: DateTime
+  page: Int = 1
+  pageSize: Int = 20
+  startDate: DateTime
+  userId: String
+}
+
+type AuditLogPage {
+  entries: [AuditLogEntry!]!
+  hasMore: Boolean!
+  page: Int!
+  pageSize: Int!
+  totalCount: Int!
+}
+
+type AvailableSlot {
+  blockId: String!
+  date: String!
+  endTime: String!
+  instructorId: String!
+  location: String
+  locationType: OfficeHourLocationType!
+  meetingUrl: String
+  startTime: String!
+}
+
+input AvailableSlotsInput {
+  endDate: String
+  instructorId: String!
+  startDate: String
+}
+
+type AvailableTool {
+  actionType: String!
+  description: String!
+  name: String!
+  requiredPermissions: [String!]!
+}
+
+input BatchCourseItem {
+  category: CourseCategory
+  code: String!
+  corequisiteCodes: [String!]
+  courseLevel: Int
+  credits: Float
+  department: String
+  description: String
+  offeredSemesters: [String!]
+  prerequisiteCodes: [String!]
+  title: String!
+}
+
+enum BillingStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  SUSPENDED
+}
+
+input BookSlotInput {
+  blockId: String!
+  date: String!
+  note: String
+  startTime: String!
+}
+
+type Booking {
+  block: OfficeHourBlock!
+  blockId: String!
+  createdAt: DateTime!
+  date: String!
+  endTime: String!
+  id: String!
+  instructor: User!
+  instructorId: String!
+  note: String
+  startTime: String!
+  status: BookingStatus!
+  student: User!
+  studentId: String!
+  tenantId: String!
+  updatedAt: DateTime!
+}
+
+enum BookingStatus {
+  BOOKED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+input BulkDropInput {
+  enrollmentIds: [String!]!
+}
+
+input BulkEnrollInput {
+  role: EnrollmentRole
+  sectionId: String!
+  userIds: [String!]!
+}
+
+input BulkMoveInput {
+  enrollmentIds: [String!]!
+  targetSectionId: String!
+}
+
+type CareerProfile {
+  category: String!
+  createdAt: DateTime!
+  description: String
+  id: String!
+  isActive: Boolean!
+  medianSalaryMax: Int
+  medianSalaryMin: Int
+  recommendedCourseIds: [String!]!
+  recommendedDegreeIds: [String!]!
+  requiredSkills: [String!]!
+  tenantId: String!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type CareerSkillGap {
+  careerId: String!
+  careerTitle: String!
+  completedCount: Int!
+  courses: [SkillGapCourse!]!
+  inProgressCount: Int!
+  missingCount: Int!
+  readinessPercent: Float!
+}
+
+type CatalogCourse {
+  category: CourseCategory
+  code: String!
+  courseLevel: Int
+  credits: Float
+  department: String
+  description: String
+  id: String!
+  prerequisiteCourseIds: [String!]
+  sections: [CatalogSection!]!
+  title: String!
+}
+
+input CatalogFilterInput {
+  category: CourseCategory
+  courseLevel: Int
+  departmentId: String
+  limit: Int = 50
+  offset: Int = 0
+  search: String
+}
+
+type CatalogInstructor {
+  firstName: String!
+  id: String!
+  lastName: String!
+}
+
+type CatalogPage {
+  items: [Course!]!
+  total: Int!
+}
+
+type CatalogSection {
+  capacity: Int
+  enrolledCount: Int!
+  enrollmentMode: EnrollmentMode!
+  id: String!
+  instructor: CatalogInstructor!
+  location: String
+  schedule: String
+  seatsAvailable: Int
+  termId: String!
+  termName: String!
+}
+
+input ConfirmUploadInput {
+  fileId: String!
+}
+
+type ContactUser {
+  email: String!
+  firstName: String!
+  id: String!
+  lastName: String!
+  relationship: String!
+  roles: [UserRole!]!
+}
+
+input ContinueConversationInput {
+  conversationId: String!
+  message: String!
+}
+
+enum ConversationStatus {
+  ACTIVE
+  ARCHIVED
+  CLOSED
+}
+
+type ConversationWithLatest {
+  createdAt: DateTime!
+  id: String!
+  lastMessage: DirectMessage
+  otherParticipants: [User!]!
+  title: String
+  unreadCount: Int!
+  updatedAt: DateTime!
+}
+
+type Course {
+  category: CourseCategory
+  code: String!
+  corequisiteCourseIds: [String!]
+  courseLevel: Int
+  createdAt: DateTime!
+  credits: Float
+  departmentId: String
+  description: String
+  id: String!
+  offeredSemesters: [String!]
+  prerequisiteCourseIds: [String!]
+  prerequisites: String
+  settings: String
+  tenantId: String!
+  title: String!
+  updatedAt: DateTime!
+}
+
+enum CourseCategory {
+  CORE
+  ELECTIVE
+  GENERAL_EDUCATION
+  LAB
+  SEMINAR
+}
+
+type CourseContent {
+  author: User!
+  authorId: String!
+  body: String!
+  createdAt: DateTime!
+  id: String!
+  position: Int!
+  publishedAt: DateTime
+  sectionId: String!
+  tenantId: String!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type CourseSection {
+  autoApprove: Boolean!
+  capacity: Int
+  course: Course!
+  courseId: String!
+  createdAt: DateTime!
+  endTime: String
+  enrollmentMode: EnrollmentMode!
+  id: String!
+  instructor: User!
+  instructorId: String!
+  inviteCode: String
+  location: String
+  meetingDays: [String!]!
+  room: String
+  schedule: String
+  startTime: String
+  status: SectionStatus!
+  term: AcademicTerm
+  termId: String!
+  updatedAt: DateTime!
+}
+
+type CourseSectionGrades {
+  assignments: [GradedAssignment!]!
+  courseCode: String!
+  courseId: String!
+  courseTitle: String!
+  overallPercentage: Float!
+  sectionId: String!
+  sectionInstructor: String
+  totalPointsEarned: Float!
+  totalPointsPossible: Float!
+}
+
+type CourseStats {
+  averageGrade: Float
+  courseCode: String!
+  courseId: String!
+  courseTitle: String!
+  enrollments: Int!
+  sections: Int!
+}
+
+input CreateAcademicTermInput {
+  endDate: String!
+  isCurrent: Boolean
+  name: String!
+  startDate: String!
+}
+
+input CreateAnnouncementInput {
+  body: String!
+  pinned: Boolean
+  priority: AnnouncementPriority
+  scope: AnnouncementScope
+  sectionId: String
+  targetGrade: Int
+  title: String!
+}
+
+input CreateAssignmentInput {
+  description: String
+  dueAt: String
+  fileUploadIds: [String!]
+  lockAt: String
+  pointsPossible: Float!
+  rubric: String
+  sectionId: String!
+  settings: String
+  title: String!
+  type: String
+  unlockAt: String
+}
+
+input CreateCareerInput {
+  category: String!
+  description: String
+  medianSalaryMax: Int
+  medianSalaryMin: Int
+  recommendedCourseIds: [String!]! = []
+  recommendedDegreeIds: [String!]! = []
+  requiredSkills: [String!]! = []
+  title: String!
+}
+
+input CreateContentInput {
+  body: String!
+  sectionId: String!
+  title: String!
+}
+
+input CreateCourseInput {
+  category: CourseCategory
+  code: String!
+  corequisiteCourseIds: [String!]
+  courseLevel: Int
+  credits: Float
+  departmentId: String
+  description: String
+  offeredSemesters: [String!]
+  prerequisiteCourseIds: [String!]
+  title: String!
+}
+
+input CreateCustomAgentInput {
+  allowedRoles: [String!]
+  courseId: String
+  description: String!
+  displayName: String!
+  maxTurns: Int
+  systemPrompt: String!
+  tools: [String!]!
+}
+
+input CreateDegreeProgramInput {
+  code: String!
+  department: String
+  description: String
+  name: String!
+  requirements: [RequirementGroupInput!]!
+  totalCreditsRequired: Int!
+}
+
+input CreateDiscussionInput {
+  body: String!
+  sectionId: String!
+  title: String!
+}
+
+input CreateDiscussionReplyInput {
+  body: String!
+  discussionId: String!
+  parentReplyId: String
+}
+
+input CreateLtiDeploymentInput {
+  deploymentId: String!
+  label: String
+  platformId: String!
+}
+
+input CreateLtiPlatformInput {
+  authorizationEndpoint: String!
+  clientId: String!
+  issuer: String!
+  jwksEndpoint: String!
+  name: String!
+  tokenEndpoint: String!
+}
+
+input CreateOfficeHourBlockInput {
+  dayOfWeek: OfficeHourDay!
+  endTime: String!
+  location: String
+  locationType: OfficeHourLocationType!
+  meetingUrl: String
+  slotMinutes: Int
+  startTime: String!
+}
+
+input CreateSectionInput {
+  capacity: Float
+  courseId: String!
+  endTime: String
+  location: String
+  meetingDays: [String!]
+  room: String
+  schedule: String
+  startTime: String
+  termId: String!
+}
+
+input CreateStudentProfileInput {
+  completedCourseIds: [String!]
+  degreeProgramId: String!
+  enrollmentYear: Int!
+  expectedGraduationYear: Int
+  userId: String!
+}
+
+input CreateSubmissionInput {
+  assignmentId: String!
+  content: String
+  fileUploadIds: [String!]
+}
+
+input CreateTenantInput {
+  billingStatus: String
+  domain: String!
+  name: String!
+  settings: String
+  subdomain: String!
+  subscriptionPlan: String
+}
+
+type CustomAgent {
+  allowedRoles: [String!]!
+  courseId: String
+  createdAt: DateTime!
+  createdBy: User
+  createdById: String!
+  description: String!
+  displayName: String!
+  id: String!
+  isActive: Boolean!
+  maxTurns: Int!
+  model: String!
+  slug: String!
+  systemPrompt: String!
+  tenantId: String!
+  tools: [String!]!
+  updatedAt: DateTime!
+}
+
+type DailyUsagePoint {
+  costUsd: Float!
+  date: String!
+  requests: Int!
+  tokens: Int!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type DayAttendance {
+  date: String!
+  records: [AttendanceRecord!]!
+}
+
+"""Status of a student degree profile"""
+enum DegreeProfileStatus {
+  ACTIVE
+  GRADUATED
+  ON_LEAVE
+  WITHDRAWN
+}
+
+type DegreeProgram {
+  catalogYear: String
+  code: String!
+  createdAt: DateTime!
+  department: String
+  description: String
+  expectedDurationSemesters: Int
+  id: String!
+  name: String!
+  programType: DegreeProgramType
+
+  """JSON array of requirement groups"""
+  requirements: String!
+  status: DegreeProgramStatus!
+  tenantId: String!
+  totalCreditsRequired: Int!
+  updatedAt: DateTime!
+}
+
+"""Status of a degree program"""
+enum DegreeProgramStatus {
+  ACTIVE
+  ARCHIVED
+  DRAFT
+}
+
+"""Type of degree program (major, minor, certificate, diploma)"""
+enum DegreeProgramType {
+  CERTIFICATE
+  DIPLOMA
+  MAJOR
+  MINOR
+}
+
+type DegreeProgress {
+  creditsRemaining: Int!
+  estimatedSemestersRemaining: Int!
+  overallPercentage: Float!
+  requirementProgress: [RequirementProgress!]!
+  totalCreditsCompleted: Int!
+  totalCreditsRequired: Int!
+}
+
+enum DevicePlatform {
+  ANDROID
+  IOS
+  WEB
+}
+
+type DiffCourse {
+  code: String!
+  courseId: String!
+  termKey: String!
+  title: String!
+}
+
+type DirectMessage {
+  content: String!
+  conversationId: String!
+  createdAt: DateTime!
+  id: String!
+  sender: User!
+  senderId: String!
+}
+
+type Discussion {
+  author: User!
+  authorId: String!
+  body: String!
+  createdAt: DateTime!
+  id: String!
+  isAnswered: Boolean!
+  isLocked: Boolean!
+  isPinned: Boolean!
+  replyCount: Int!
+  sectionId: String!
+  tenantId: String!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type DiscussionReply {
+  author: User!
+  authorId: String!
+  body: String!
+  createdAt: DateTime!
+  discussionId: String!
+  id: String!
+  isInstructorAnswer: Boolean!
+  parentReplyId: String
+  tenantId: String!
+  updatedAt: DateTime!
+}
+
+type DownloadUrl {
+  expiresIn: Int!
+  url: String!
+}
+
+type EligibleCourse {
+  code: String!
+  credits: Float
+  fulfillsRequirement: String!
+  id: String!
+  prerequisitesMet: Boolean!
+  title: String!
+}
+
+enum EngagementEventType {
+  CLICK
+  DISMISS
+  IMPRESSION
+}
+
+type Enrollment {
+  completedAt: DateTime
+  createdAt: DateTime!
+  enrolledAt: DateTime!
+  finalGrade: String
+  id: String!
+  role: EnrollmentRole!
+  section: CourseSection!
+  sectionId: String!
+  status: EnrollmentStatus!
+  tenantId: String!
+  updatedAt: DateTime!
+  user: User!
+  userId: String!
+  waitlistConfirmBy: DateTime
+  waitlistPosition: Int
+}
+
+enum EnrollmentMode {
+  INVITE_ONLY
+  OPEN
+}
+
+type EnrollmentPolicy {
+  creditHourLimitPerTerm: Int
+  enrollmentWindowEnd: String
+  enrollmentWindowStart: String
+  prerequisiteEnforcement: PrerequisiteEnforcement!
+  waitlistAutoPromote: Boolean!
+  waitlistConfirmationHours: Int!
+  waitlistEnabled: Boolean!
+  waitlistMaxSize: Int
+}
+
+enum EnrollmentRole {
+  OBSERVER
+  STUDENT
+  TA
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+  PENDING
+  REJECTED
+  WAITLISTED
+  WITHDRAWN
+}
+
+input ExtendDeadlinesInput {
+  assignmentIds: [String!]!
+  newDueAt: String!
+  sectionId: String!
+}
+
+type ExtractedCourse {
+  category: CourseCategory
+  code: String!
+  confidence: Float!
+  corequisiteCodes: [String!]!
+  courseLevel: Int
+  credits: Float
+  department: String
+  description: String
+  flagged: Boolean!
+  offeredSemesters: [String!]!
+  prerequisiteCodes: [String!]!
+  title: String!
+}
+
+type ExtractedProgram {
+  code: String!
+  confidence: Float!
+  department: String
+  expectedDurationSemesters: Int
+  flagged: Boolean!
+  name: String!
+  programType: DegreeProgramType
+  totalCreditsRequired: Int
+}
+
+type ExtractionFlag {
+  entityCode: String!
+  entityType: String!
+  field: String!
+  message: String!
+}
+
+type ExtractionResult {
+  courses: [ExtractedCourse!]!
+  estimatedCostUsd: Float!
+  flags: [ExtractionFlag!]!
+  inputTokens: Int!
+  outputTokens: Int!
+  programs: [ExtractedProgram!]!
+}
+
+type FeedEngagementStats {
+  avgClickRate: Float!
+  topClickedTypes: [TopClickedType!]!
+  totalClicks: Int!
+  totalDismissals: Int!
+  totalEvents: Int!
+  totalImpressions: Int!
+}
+
+type FeedItem {
+  assignmentId: String
+  body: String
+  courseCode: String!
+  courseTitle: String!
+  dueAt: DateTime
+  id: String!
+  pointsPossible: Float
+  score: Float
+  sectionId: String!
+  subtitle: String
+  timestamp: DateTime!
+  title: String!
+  type: FeedItemType!
+}
+
+enum FeedItemType {
+  ANNOUNCEMENT
+  COURSE_UPDATE
+  DEADLINE
+  ENROLLMENT_UPDATE
+  GRADE_POSTED
+}
+
+type FileUpload {
+  confirmed: Boolean!
+  context: UploadContext!
+  contextId: String
+  createdAt: DateTime!
+  id: String!
+  key: String!
+  mimeType: String!
+  originalName: String!
+  size: Int!
+  tenantId: String!
+  updatedAt: DateTime!
+  uploadedById: String!
+}
+
+input FinancialAidConfigInput {
+  fullTimeThreshold: Int
+  halfTimeThreshold: Int
+  maxTimeframePercent: Int
+}
+
+type FinancialAidConfigResult {
+  fullTimeThreshold: Int
+  halfTimeThreshold: Int
+  maxTimeframePercent: Int
+}
+
+input GenerateGraduationPlanInput {
+  excludedTermKeys: [String!]
+  includeSummer: Boolean
+  maxCreditsPerSemester: Int
+  profileId: String!
+  startTerm: String
+  startYear: Int
+}
+
+"""Action type for AI tool governance"""
+enum GovernanceActionType {
+  AUTO
+  BLOCKED
+  SUGGEST
+}
+
+type GovernanceConfig {
+  currentDayTokensUsed: Float!
+  currentMonthCostUsd: Float!
+  effectiveMaxRequestsPerMinute: Int!
+  effectiveMaxTokensPerDay: Int!
+  enabled: Boolean!
+  monthlyBudgetUsd: Float
+  toolPermissions: [ToolPermission!]!
+  totalToolOverrides: Int!
+}
+
+type GradeDistribution {
+  count: Int!
+  grade: String!
+  percentage: Float!
+}
+
+type GradeStats {
+  averageScore: Float!
+  distribution: [GradeDistribution!]!
+  gradedSubmissions: Int!
+  medianScore: Float
+  totalSubmissions: Int!
+  ungradedSubmissions: Int!
+}
+
+input GradeSubmissionInput {
+  feedback: String
+  score: Float!
+  submissionId: String!
+}
+
+type GradebookAssignmentColumn {
+  averageScore: Float
+  dueAt: DateTime
+  id: String!
+  medianScore: Float
+  pointsPossible: Float!
+  title: String!
+  type: String!
+}
+
+type GradebookGrade {
+  assignmentId: String!
+  gradedAt: DateTime
+  score: Float
+  submissionId: String
+  submittedAt: DateTime
+}
+
+type GradebookStudentRow {
+  email: String!
+  firstName: String!
+  grades: [GradebookGrade!]!
+  lastName: String!
+  percentage: Float!
+  studentId: String!
+  totalEarned: Float!
+  totalPossible: Float!
+}
+
+type GradedAssignment {
+  assignmentId: String!
+  assignmentTitle: String!
+  assignmentType: String!
+  feedback: String
+  gradedAt: DateTime!
+  percentage: Float!
+  pointsPossible: Float!
+  score: Float!
+}
+
+type GraduationPlanConstraintsResult {
+  excludedTermKeys: [String!]!
+  includeSummer: Boolean!
+  maxCreditsPerSemester: Int!
+  startTerm: String!
+  startYear: Int!
+}
+
+type GraduationPlanResult {
+  constraints: GraduationPlanConstraintsResult!
+  createdAt: DateTime!
+  degreeProgramId: String!
+  diff: PlanDiff
+  estimatedGraduationTerm: String!
+  estimatedGraduationYear: Int!
+  estimatedTotalCost: Float
+  id: String!
+  overallCompletionPercentage: Float!
+  profileId: String!
+  semesters: [PlannedSemester!]!
+  status: GraduationPlanStatus!
+  totalCreditsCompleted: Float!
+  totalCreditsPlanned: Float!
+  totalSemesters: Int!
+}
+
+enum GraduationPlanStatus {
+  ACTIVE
+  ARCHIVED
+  DRAFT
+}
+
+type ImportError {
+  field: String!
+  message: String!
+  row: Int!
+}
+
+type ImportResult {
+  errors: [ImportError!]!
+  imported: Int!
+  success: Boolean!
+}
+
+type InstructorFeedItem {
+  assignmentId: String
+  courseCode: String!
+  courseTitle: String!
+  dueAt: DateTime
+  id: String!
+  sectionId: String!
+  subtitle: String
+  timestamp: DateTime!
+  title: String!
+  type: InstructorFeedItemType!
+  ungradedCount: Float
+}
+
+enum InstructorFeedItemType {
+  ANNOUNCEMENT
+  UNGRADED
+  UPCOMING_DEADLINE
+}
+
+type JwkKey {
+  alg: String!
+  e: String!
+  kid: String!
+  kty: String!
+  n: String!
+  use: String!
+}
+
+input LinkLtiContextInput {
+  contextId: String!
+  sectionId: String!
+}
+
+input LinkStudentInput {
+  parentId: String!
+  relationship: ParentRelationship
+  studentId: String!
+}
+
+type LinkedStudent {
+  email: String!
+  firstName: String!
+  id: String!
+  lastName: String!
+  linkId: String!
+}
+
+type LtiContext {
+  contextId: String!
+  contextType: String
+  createdAt: DateTime!
+  deploymentId: String!
+  id: String!
+  isLinked: Boolean!
+  label: String
+  sectionId: String
+  services: String
+  tenantId: String!
+  title: String
+  updatedAt: DateTime!
+}
+
+type LtiDeployment {
+  createdAt: DateTime!
+  deploymentId: String!
+  id: String!
+  isActive: Boolean!
+  label: String
+  platformId: String!
+  services: String
+  tenantId: String!
+  updatedAt: DateTime!
+}
+
+type LtiPlatform {
+  authorizationEndpoint: String!
+  clientId: String!
+  createdAt: DateTime!
+  id: String!
+  issuer: String!
+  jwksEndpoint: String!
+  metadata: String
+  name: String!
+  status: LtiPlatformStatus!
+  tenantId: String!
+  tokenEndpoint: String!
+  updatedAt: DateTime!
+}
+
+type LtiPlatformInfo {
+  clientId: String!
+  createdAt: DateTime!
+  deploymentCount: Float!
+  id: String!
+  issuer: String!
+  name: String!
+  status: LtiPlatformStatus!
+  userCount: Float!
+}
+
+"""Status of an LTI platform registration"""
+enum LtiPlatformStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+type LtiToolConfiguration {
+  clientId: String!
+  deepLinkUrl: String
+  issuer: String!
+  jwksUrl: String!
+  launchUrl: String!
+  oidcLoginUrl: String!
+  scopes: [String!]!
+}
+
+input MarkAttendanceInput {
+  date: String!
+  records: [AttendanceRecordInput!]!
+  sectionId: String!
+}
+
+enum MessageRole {
+  ASSISTANT
+  SYSTEM
+  TOOL_CALL
+  TOOL_RESULT
+  USER
+}
+
+type MovedCourse {
+  code: String!
+  courseId: String!
+  fromTermKey: String!
+  title: String!
+  toTermKey: String!
+}
+
+type Mutation {
+  activateGraduationPlan(planId: String!): GraduationPlanResult!
+  activateUser(id: String!): User!
+  addQuizQuestion(input: AddQuizQuestionInput!): QuizQuestion!
+  adminCreateSection(input: AdminCreateSectionInput!): CourseSection!
+  adminCreateUser(input: AdminCreateUserInput!): User!
+  adminEnroll(input: AdminEnrollInput!): Enrollment!
+  adminForceEnrollmentStatus(enrollmentId: String!, status: EnrollmentStatus!): Enrollment!
+  adminUpdateEnrollment(id: String!, input: AdminUpdateEnrollmentInput!): Enrollment!
+  adminUpdateUser(id: String!, input: AdminUpdateUserInput!): User!
+  approveEnrollment(enrollmentId: String!): Enrollment!
+  attachUpload(input: AttachUploadInput!): FileUpload!
+  batchCreateCourses(courses: [BatchCourseItem!]!): ImportResult!
+  bookOfficeHourSlot(input: BookSlotInput!): Booking!
+  bulkDropEnrollments(input: BulkDropInput!): Int!
+  bulkEnroll(input: BulkEnrollInput!): [Enrollment!]!
+  bulkMoveEnrollments(input: BulkMoveInput!): Int!
+  cancelBooking(bookingId: String!): Booking!
+  cancelWaitlistEntry(enrollmentId: String!): Enrollment!
+  clearFinancialAidConfig: Boolean!
+  clearTuitionConfig: Boolean!
+  confirmUpload(input: ConfirmUploadInput!): FileUpload!
+  confirmWaitlistPromotion(enrollmentId: String!): Enrollment!
+  continueConversation(input: ContinueConversationInput!): AgentResponseDto!
+  createAcademicTerm(input: CreateAcademicTermInput!): AcademicTerm!
+  createAnnouncement(input: CreateAnnouncementInput!): Announcement!
+  createAssignment(input: CreateAssignmentInput!): Assignment!
+  createCareer(input: CreateCareerInput!): CareerProfile!
+  createCatalogCourse(input: CreateCourseInput!): Course!
+  createContent(input: CreateContentInput!): CourseContent!
+  createCourse(input: CreateCourseInput!): Course!
+  createCustomAgent(input: CreateCustomAgentInput!): CustomAgent!
+  createDegreeProgram(input: CreateDegreeProgramInput!): DegreeProgram!
+  createDiscussion(input: CreateDiscussionInput!): Discussion!
+  createLtiDeployment(input: CreateLtiDeploymentInput!): LtiDeployment!
+  createLtiPlatform(input: CreateLtiPlatformInput!): LtiPlatform!
+  createOfficeHourBlock(input: CreateOfficeHourBlockInput!): OfficeHourBlock!
+  createSection(input: CreateSectionInput!): CourseSection!
+  createStudentDegreeProfile(input: CreateStudentProfileInput!): StudentDegreeProfile!
+  createTenant(input: CreateTenantInput!): Tenant!
+  deactivateOfficeHourBlock(id: String!): OfficeHourBlock!
+  deactivateUser(id: String!): User!
+  deleteCareer(id: String!): Boolean!
+  deleteContent(id: String!, sectionId: String!): Boolean!
+  deleteCustomAgent(id: String!): Boolean!
+  deleteFile(fileId: String!): Boolean!
+  deleteLtiPlatform(id: String!): Boolean!
+  deleteQuizQuestion(id: String!): Boolean!
+  dropEnrollment(enrollmentId: String!): Enrollment!
+  enrollInSection(inviteCode: String, sectionId: String!): Enrollment!
+  extendDeadlines(input: ExtendDeadlinesInput!): [Assignment!]!
+  extractCatalogFromDocument(fileBase64: String!, mimeType: String!): ExtractionResult!
+  generateGraduationPlan(input: GenerateGraduationPlanInput!): GraduationPlanResult!
+  generateInviteCode(sectionId: String!): CourseSection!
+  generateReportCards(sectionId: String!): [ReportCardSummary!]!
+  gradeSubmission(input: GradeSubmissionInput!): Submission!
+  importCoursesFromCsv(csvData: String!): ImportResult!
+  importEnrollmentsFromCsv(csvData: String!): ImportResult!
+  importProgramsFromCsv(csvData: String!): ImportResult!
+  importRequirementsFromCsv(csvData: String!): ImportResult!
+  importUsersFromCsv(csvData: String!): ImportResult!
+  linkLtiContext(input: LinkLtiContextInput!): LtiContext!
+  linkStudentToParent(input: LinkStudentInput!): ParentStudent!
+  lockDiscussion(id: String!): Discussion!
+  markAllNotificationsRead: Boolean!
+  markAttendance(input: MarkAttendanceInput!): DayAttendance!
+  markConversationAsRead(conversationId: String!): Boolean!
+  markDiscussionAnswered(id: String!): Discussion!
+  markNotificationRead(id: String!): Notification!
+  markReplyAsAnswer(replyId: String!): DiscussionReply!
+  overrideGrade(input: OverrideGradeInput!): Submission!
+  pinDiscussion(id: String!): Discussion!
+  publishContent(id: String!, sectionId: String!): CourseContent!
+  publishReportCards(sectionId: String!): [ReportCardSummary!]!
+  recordFeedEngagement(input: RecordEngagementInput!): Boolean!
+  recordFeedEngagementBatch(input: RecordEngagementBatchInput!): Boolean!
+  registerDeviceToken(platform: DevicePlatform!, token: String!): Boolean!
+  rejectEnrollment(enrollmentId: String!): Enrollment!
+  removeAcademicTerm(id: String!): Boolean!
+  removeCourse(id: String!): Boolean!
+  removeSection(id: String!): Boolean!
+  reorderQuizQuestions(input: ReorderQuestionsInput!): [QuizQuestion!]!
+  replyToDiscussion(input: CreateDiscussionReplyInput!): DiscussionReply!
+  requestUpload(input: RequestUploadInput!): UploadRequest!
+  resetToolPermission(input: ResetToolPermissionInput!): TenantAiConfig!
+  sendMessage(input: SendMessageInput!): DirectMessage!
+  sendMessageToConversation(input: SendMessageToConversationInput!): DirectMessage!
+  startConversation(input: StartConversationInput!): AgentResponseDto!
+  startQuiz(assignmentId: String!): Submission!
+  submitAssignment(input: CreateSubmissionInput!): Submission!
+  submitQuiz(input: SubmitQuizInput!): Submission!
+  unlinkLtiContext(contextId: String!): LtiContext!
+  unlinkStudentFromParent(parentId: String!, studentId: String!): Boolean!
+  unpublishContent(id: String!, sectionId: String!): CourseContent!
+  updateAcademicTerm(id: String!, input: UpdateAcademicTermInput!): AcademicTerm!
+  updateAiGovernanceConfig(input: UpdateGovernanceConfigInput!): TenantAiConfig!
+  updateAssignment(input: UpdateAssignmentInput!): Assignment!
+  updateCareer(input: UpdateCareerInput!): CareerProfile!
+  updateContent(input: UpdateContentInput!): CourseContent!
+  updateCourse(id: String!, input: UpdateCourseInput!): Course!
+  updateCustomAgent(input: UpdateCustomAgentInput!): CustomAgent!
+  updateDegreeProgram(input: UpdateDegreeProgramInput!): DegreeProgram!
+  updateEnrollmentPolicy(input: UpdateEnrollmentPolicyInput!): EnrollmentPolicy!
+  updateFinancialAidConfig(config: FinancialAidConfigInput!): FinancialAidConfigResult!
+  updateLtiPlatform(input: UpdateLtiPlatformInput!): LtiPlatform!
+  updateNotificationPreferences(input: UpdateNotificationPreferencesInput!): NotificationPreferences!
+  updateOfficeHourBlock(input: UpdateOfficeHourBlockInput!): OfficeHourBlock!
+  updateProfile(input: UpdateUserInput!): User!
+  updateQuizQuestion(id: String!, input: UpdateQuizQuestionInput!): QuizQuestion!
+  updateQuizSettings(input: UpdateQuizSettingsInput!): Assignment!
+  updateReportCard(input: UpdateReportCardInput!): ReportCardSummary!
+  updateSection(id: String!, input: UpdateSectionInput!): CourseSection!
+  updateSectionEnrollmentSettings(autoApprove: Boolean!, mode: EnrollmentMode!, sectionId: String!): CourseSection!
+  updateStudentDegreeProfile(input: UpdateStudentProfileInput!): StudentDegreeProfile!
+  updateToolPermission(input: UpdateToolPermissionInput!): TenantAiConfig!
+  updateTuitionConfig(config: TuitionConfigInput!): TuitionConfigResult!
+  withdrawFromCourse(enrollmentId: String!): Enrollment!
+}
+
+type Notification {
+  body: String!
+  createdAt: DateTime!
+  data: String
+  id: String!
+  read: Boolean!
+  tenantId: String!
+  title: String!
+  type: NotificationType!
+  updatedAt: DateTime!
+  userId: String!
+}
+
+type NotificationPreferences {
+  emailOnAssignment: Boolean
+  emailOnDueReminder: Boolean
+  emailOnEnrollment: Boolean
+  emailOnGrade: Boolean
+  emailOnMessage: Boolean
+}
+
+enum NotificationType {
+  ANNOUNCEMENT
+  ASSIGNMENT_CREATED
+  DISCUSSION_MENTION
+  DISCUSSION_REPLY
+  DUE_DATE_REMINDER
+  ENROLLMENT_CONFIRMED
+  NEW_MESSAGE
+  SUBMISSION_GRADED
+  SYSTEM
+}
+
+type OfficeHourBlock {
+  active: Boolean!
+  createdAt: DateTime!
+  dayOfWeek: OfficeHourDay!
+  endTime: String!
+  id: String!
+  instructor: User!
+  instructorId: String!
+  location: String
+  locationType: OfficeHourLocationType!
+  meetingUrl: String
+  slotMinutes: Int!
+  startTime: String!
+  tenantId: String!
+  updatedAt: DateTime!
+}
+
+enum OfficeHourDay {
+  FRI
+  MON
+  THU
+  TUE
+  WED
+}
+
+enum OfficeHourLocationType {
+  IN_PERSON
+  ZOOM
+}
+
+input OverrideGradeInput {
+  assignmentId: String!
+  feedback: String
+  score: Float!
+  sectionId: String!
+  studentId: String!
+}
+
+type PaginatedAnnouncements {
+  items: [Announcement!]!
+  page: Int!
+  pageSize: Int!
+  totalCount: Int!
+}
+
+type PaginatedMessagesResponse {
+  hasMore: Boolean!
+  messages: [DirectMessage!]!
+  totalCount: Int!
+}
+
+type PaginatedUsersResponse {
+  page: Int!
+  pageSize: Int!
+  totalCount: Int!
+  users: [User!]!
+}
+
+type ParentEnrollmentItem {
+  courseCode: String!
+  courseTitle: String!
+  enrollmentId: String!
+  instructorName: String
+  location: String
+  sectionId: String!
+  status: EnrollmentStatus!
+  termName: String
+}
+
+type ParentGradeItem {
+  assignmentId: String!
+  assignmentTitle: String!
+  courseCode: String!
+  dueAt: DateTime
+  gradedAt: DateTime
+  pointsPossible: Float!
+  score: Float
+}
+
+enum ParentRelationship {
+  GUARDIAN
+  OTHER
+  PARENT
+}
+
+type ParentReportCard {
+  attendanceSummary: String
+  courseCode: String!
+  courseTitle: String!
+  finalGrade: String
+  gradeSummary: String
+  id: String!
+  publishedAt: DateTime
+  status: ReportCardStatus!
+  teacherComment: String
+  termName: String!
+}
+
+type ParentStudent {
+  createdAt: DateTime!
+  id: String!
+  parent: User!
+  parentId: String!
+  relationship: ParentRelationship!
+  student: User!
+  studentId: String!
+  tenantId: String!
+  updatedAt: DateTime!
+}
+
+type PlanDiff {
+  added: [DiffCourse!]!
+  graduationDateChange: String
+  moved: [MovedCourse!]!
+  removed: [DiffCourse!]!
+  semestersAdded: Int!
+  semestersRemoved: Int!
+}
+
+type PlannedCourse {
+  availabilityWarning: String
+  code: String!
+  courseId: String!
+  credits: Float!
+  fulfillsRequirement: String!
+  title: String!
+}
+
+type PlannedSemester {
+  aidStatus: SemesterAidStatus
+  completionPercentage: Float!
+  courses: [PlannedCourse!]!
+  cumulativeCredits: Float!
+  estimatedCost: Float
+  estimatedCumulativeCost: Float
+  term: String!
+  termKey: String!
+  totalCredits: Float!
+  year: Int!
+}
+
+type PrerequisiteCheckResult {
+  allMet: Boolean!
+  courseCode: String!
+  courseId: String!
+  metCount: Int!
+  prerequisites: [PrerequisiteStatus!]!
+  totalRequired: Int!
+}
+
+"""How strictly prerequisite requirements are enforced during enrollment"""
+enum PrerequisiteEnforcement {
+  OFF
+  STRICT
+  WARN
+}
+
+type PrerequisiteStatus {
+  courseCode: String!
+  courseId: String!
+  courseTitle: String!
+  status: PrerequisiteStatusType!
+}
+
+enum PrerequisiteStatusType {
+  COMPLETED
+  IN_PROGRESS
+  MISSING
+}
+
+type Query {
+  academicTerm(id: String!): AcademicTerm!
+  academicTermCount: Int!
+  academicTerms: [AcademicTerm!]!
+  adminAnnouncements(page: Int, pageSize: Int, scope: AnnouncementScope): PaginatedAnnouncements!
+  adminDashboard: AdminDashboard!
+  adminEnrollments(sectionId: String): [Enrollment!]!
+  adminSections: [CourseSection!]!
+  adminUser(id: String!): User!
+  adminUsers(filter: UsersFilterInput): PaginatedUsersResponse!
+  aiAgentUsage: [AiAgentUsage!]!
+  aiAuditLogs(filters: AuditLogFilterInput): AuditLogPage!
+  aiGovernanceConfig: GovernanceConfig!
+  aiMessages(conversationId: String!): [AiMessage!]!
+  aiUsageSummary: AiUsageSummary!
+  aiUsageTrend(days: Int = 30): UsageTrend!
+  allAnnouncements: [Announcement!]!
+  announcementRecipientCount(scope: AnnouncementScope!, sectionId: String, targetGrade: Int): Int!
+  assignment(id: String!): Assignment!
+  assignmentSubmissions(assignmentId: String!): [Submission!]!
+  atRiskStudents(limit: Int! = 10, threshold: Int! = 60): [AtRiskStudent!]!
+  availableAgents: [AgentInfoDto!]!
+  availableOfficeHourSlots(input: AvailableSlotsInput!): [AvailableSlot!]!
+  availableTools: [AvailableTool!]!
+  career(id: String!): CareerProfile!
+  careerCategories: [String!]!
+  careerSkillGap(careerId: String!, profileId: String!): CareerSkillGap!
+  careers(category: String): [CareerProfile!]!
+  catalogCourse(id: String!): Course!
+  catalogCourses(filters: CatalogFilterInput): CatalogPage!
+  content(id: String!): CourseContent!
+  contextFiles(context: UploadContext!, contextId: String!): [FileUpload!]!
+  conversationMessages(conversationId: String!, cursor: String, limit: Int): PaginatedMessagesResponse!
+  course(id: String!): Course!
+
+  """
+  Browse the course catalog. Returns courses with active sections in the current (or specified) term, including live seat counts.
+  """
+  courseCatalog(filters: StudentCatalogFilter): StudentCatalogPage!
+  courseCount: Int!
+  coursePrerequisites(courseId: String!): PrerequisiteCheckResult!
+  courseSections(courseId: String!): [CourseSection!]!
+  courses: [Course!]!
+  currentTerm: AcademicTerm
+  customAgent(id: String!): CustomAgent!
+  customAgents: [CustomAgent!]!
+  degreeProgram(id: String!): DegreeProgram!
+  degreePrograms: [DegreeProgram!]!
+  degreeProgress(profileId: String!): DegreeProgress!
+  departmentList: [String!]!
+  discussion(id: String!): Discussion!
+  discussionReplies(discussionId: String!): [DiscussionReply!]!
+  eligibleCourses(profileId: String!): [EligibleCourse!]!
+  enrollmentCount: Int!
+  enrollmentPolicy: EnrollmentPolicy!
+  feedEngagementStats: FeedEngagementStats!
+  fileDownloadUrl(fileId: String!): DownloadUrl!
+  getFinancialAidConfig: FinancialAidConfigResult
+  getTuitionConfig: TuitionConfigResult
+  gradeStats: GradeStats!
+  hello: String!
+  instructorBookings: [Booking!]!
+  instructorFeed: [InstructorFeedItem!]!
+  ltiDeployments(platformId: String!): [LtiDeployment!]!
+  ltiPlatform(id: String!): LtiPlatform
+  ltiPlatforms: [LtiPlatformInfo!]!
+  ltiToolConfiguration: LtiToolConfiguration!
+  ltiUnlinkedContexts: [LtiContext!]!
+  me: User!
+  myAiConversations: [AiConversation!]!
+  myAttendanceSummaries: [StudentAttendanceSummary!]!
+  myBookings: [Booking!]!
+  myContacts: [ContactUser!]!
+  myConversations: [ConversationWithLatest!]!
+  myDegreeProfiles: [StudentDegreeProfile!]!
+  myEnrollmentForSection(sectionId: String!): Enrollment
+  myEnrollments: [Enrollment!]!
+  myGrades: [CourseSectionGrades!]!
+  myGraduationPlans(profileId: String!): [GraduationPlanResult!]!
+  myLinkedStudents: [LinkedStudent!]!
+  myNotificationPreferences: NotificationPreferences!
+  myNotifications(limit: Int! = 20, offset: Int! = 0): [Notification!]!
+  myOfficeHourBlocks: [OfficeHourBlock!]!
+  myReportCards: [ReportCardSummary!]!
+  mySections: [CourseSection!]!
+  mySubmissions(assignmentId: String!): [Submission!]!
+  officeHourBlocks(instructorId: String!): [OfficeHourBlock!]!
+  parentStudentEnrollments(studentId: String!): [ParentEnrollmentItem!]!
+  parentStudentGrades(studentId: String!): [ParentGradeItem!]!
+  parentStudentReportCards(studentId: String!): [ParentReportCard!]!
+  pendingEnrollments(sectionId: String!): [Enrollment!]!
+  quizQuestions(assignmentId: String!): [QuizQuestion!]!
+  schoolAnnouncements(grade: Int): [Announcement!]!
+  section(id: String!): CourseSection!
+  sectionAnnouncements(sectionId: String!): [Announcement!]!
+  sectionAssignments(sectionId: String!): [Assignment!]!
+  sectionAttendance(date: String!, sectionId: String!): DayAttendance!
+  sectionAttendanceSummaries(sectionId: String!): [StudentAttendanceSummary!]!
+  sectionContents(sectionId: String!): [CourseContent!]!
+  sectionCount: Int!
+  sectionDiscussions(limit: Int, page: Int, sectionId: String!): [Discussion!]!
+  sectionEnrollments(sectionId: String!): [Enrollment!]!
+  sectionGradebook(sectionId: String!): SectionGradebook!
+  sectionReportCards(sectionId: String!): [ReportCardSummary!]!
+  sectionTimeline(sectionId: String!): [TimelineEntry!]!
+  simulateMajorChange(profileId: String!, targetProgramId: String!): DegreeProgress!
+  studentDegreeProfile(id: String!): StudentDegreeProfile!
+  studentFeed: [FeedItem!]!
+  studentQuizQuestions(assignmentId: String!): [QuizQuestion!]!
+  submission(id: String!): Submission!
+  submissionMetrics: SubmissionMetrics!
+  tenant(id: String!): Tenant
+  tenantCount: Float!
+  tenantStats: TenantStats!
+  tenants: [Tenant!]!
+  topCourses(limit: Int! = 10): [CourseStats!]!
+  unreadMessageCount: Int!
+  unreadNotificationCount: Int!
+  userCount: Int!
+  userStats: UserStats!
+  vapidPublicKey: VapidPublicKey!
+  waitlistCount(sectionId: String!): Int!
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  SHORT_ANSWER
+  TRUE_FALSE
+}
+
+input QuizAnswerInput {
+  questionId: String!
+  selectedOption: Int
+  textAnswer: String
+}
+
+type QuizOption {
+  isCorrect: Boolean
+  text: String!
+}
+
+input QuizOptionInput {
+  isCorrect: Boolean!
+  text: String!
+}
+
+type QuizQuestion {
+  assignmentId: String!
+  createdAt: DateTime!
+  id: String!
+  options: [QuizOption!]
+  order: Int!
+  points: Float!
+  questionText: String!
+  questionType: QuestionType!
+  tenantId: String!
+  updatedAt: DateTime!
+}
+
+input RecordEngagementBatchInput {
+  events: [RecordEngagementInput!]!
+}
+
+input RecordEngagementInput {
+  courseCode: String
+  dwellTimeMs: Int
+  eventType: EngagementEventType!
+  feedItemId: String!
+  feedItemType: String!
+  sectionId: String
+}
+
+input ReorderQuestionsInput {
+  assignmentId: String!
+  orderedIds: [String!]!
+}
+
+enum ReportCardStatus {
+  DRAFT
+  PUBLISHED
+}
+
+type ReportCardSummary {
+  attendanceSummary: String
+  courseCode: String!
+  courseTitle: String!
+  createdAt: DateTime!
+  finalGrade: String
+  gradeSummary: String
+  id: String!
+  publishedAt: DateTime
+  sectionId: String!
+  status: ReportCardStatus!
+  studentEmail: String!
+  studentFirstName: String!
+  studentId: String!
+  studentLastName: String!
+  teacherComment: String
+  termId: String!
+  termName: String!
+}
+
+input RequestUploadInput {
+  context: UploadContext!
+  contextId: String
+  filename: String!
+  mimeType: String!
+  size: Int!
+}
+
+input RequirementGroupInput {
+  courseIds: [String!]!
+  creditsRequired: Int!
+  description: String
+  minCoursesRequired: Int!
+  name: String!
+  type: String!
+}
+
+type RequirementProgress {
+  completedCourseIds: [String!]!
+  coursesCompleted: Int!
+  coursesRequired: Int!
+  creditsCompleted: Int!
+  creditsRequired: Int!
+  fulfilled: Boolean!
+  groupName: String!
+  remainingCourseIds: [String!]!
+  type: String!
+}
+
+input ResetToolPermissionInput {
+  toolName: String!
+}
+
+type SectionGradebook {
+  assignments: [GradebookAssignmentColumn!]!
+  classAverage: Float!
+  students: [GradebookStudentRow!]!
+}
+
+enum SectionStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+  DRAFT
+}
+
+type SemesterAidStatus {
+  aidWarning: String
+  isFullTime: Boolean!
+  isHalfTime: Boolean!
+  sapWarning: String
+}
+
+input SendMessageInput {
+  content: String!
+  recipientId: String!
+}
+
+input SendMessageToConversationInput {
+  content: String!
+  conversationId: String!
+}
+
+type SkillGapCourse {
+  code: String!
+  courseId: String!
+  credits: Float!
+  status: String!
+  title: String!
+}
+
+input StartConversationInput {
+  agentType: String!
+  assignmentId: String
+  courseId: String
+  message: String!
+  sectionId: String
+  submissionId: String
+}
+
+type StudentAttendanceSummary {
+  absent: Int!
+  attendanceRate: Float!
+  excused: Int!
+  firstName: String!
+  lastName: String!
+  late: Int!
+  present: Int!
+  sectionId: String!
+  total: Int!
+  userId: String!
+}
+
+input StudentCatalogFilter {
+  category: CourseCategory
+  courseLevel: Int
+  department: String
+  hasSeats: Boolean
+  limit: Int = 20
+  offset: Int = 0
+  search: String
+  termId: String
+}
+
+type StudentCatalogPage {
+  items: [CatalogCourse!]!
+  total: Int!
+}
+
+type StudentCourseGrades {
+  assignments: [StudentGradeAssignment!]!
+  courseCode: String!
+  courseId: String!
+  courseTitle: String!
+  overallPercentage: Float!
+  sectionId: String!
+  sectionInstructor: String
+  totalPointsEarned: Float!
+  totalPointsPossible: Float!
+}
+
+type StudentDegreeProfile {
+  completedCourseIds: [String!]!
+  createdAt: DateTime!
+  currentCourseIds: [String!]!
+  degreeProgram: DegreeProgram!
+  degreeProgramId: String!
+  enrollmentYear: Int!
+  expectedGraduationYear: Int
+  id: String!
+  notes: String
+  status: DegreeProfileStatus!
+  tenantId: String!
+  updatedAt: DateTime!
+  userId: String!
+}
+
+type StudentGradeAssignment {
+  assignmentId: String!
+  assignmentTitle: String!
+  assignmentType: String!
+  feedback: String
+  gradedAt: DateTime!
+  percentage: Float!
+  pointsPossible: Float!
+  score: Float!
+}
+
+type Submission {
+  answers: String
+  assignmentId: String!
+  attachments: [FileUpload!]!
+  attempt: Int!
+  autoScore: Float
+  content: String
+  createdAt: DateTime!
+  feedback: String
+  gradedAt: DateTime
+  gradedBy: String
+  id: String!
+  score: Float
+  startedAt: DateTime
+  submittedAt: DateTime
+  tenantId: String!
+  updatedAt: DateTime!
+  user: User
+  userId: String!
+}
+
+type SubmissionMetrics {
+  avgGradingTurnaroundHours: Float
+  pendingGrading: Int!
+  submissionRate: Float!
+  totalAssignments: Int!
+  totalSubmissions: Int!
+}
+
+input SubmitQuizInput {
+  answers: [QuizAnswerInput!]!
+  submissionId: String!
+}
+
+enum SubscriptionPlan {
+  BASIC
+  ENTERPRISE
+  FREE
+  PROFESSIONAL
+}
+
+type Tenant {
+  billingStatus: BillingStatus
+  createdAt: DateTime!
+  domain: String!
+  id: String!
+  name: String!
+  settings: String
+  subdomain: String!
+  subscriptionPlan: SubscriptionPlan
+  updatedAt: DateTime!
+}
+
+type TenantAiConfig {
+  createdAt: DateTime!
+  enabled: Boolean!
+  id: String!
+  maxRequestsPerMinute: Int
+  maxTokensPerDay: Int
+  monthlyBudgetUsd: Float
+  tenantId: String!
+  updatedAt: DateTime!
+}
+
+type TenantStats {
+  activeEnrollments: Int!
+  activeSections: Int!
+  activeUsers: Int!
+  totalCourses: Int!
+  totalEnrollments: Int!
+  totalUsers: Int!
+}
+
+type TimeSeriesDataPoint {
+  date: String!
+  value: Float!
+}
+
+type TimelineEntry {
+  assignmentType: String
+  authorName: String
+  body: String
+  dueAt: DateTime
+  feedback: String
+  gradedAt: DateTime
+  id: String!
+  isAnswered: Boolean
+  isLocked: Boolean
+  pinned: Boolean!
+  pointsPossible: Float
+  priority: String
+  publishedAt: DateTime
+  replyCount: Int
+  score: Float
+  submittedAt: DateTime
+  timestamp: DateTime!
+  title: String!
+  type: TimelineEntryType!
+}
+
+enum TimelineEntryType {
+  ANNOUNCEMENT
+  ASSIGNMENT
+  CONTENT
+  DISCUSSION
+}
+
+type ToolPermission {
+  defaultActionType: GovernanceActionType!
+  description: String!
+  effectiveActionType: GovernanceActionType!
+  isOverridden: Boolean!
+  requiredPermissions: [String!]!
+  toolName: String!
+}
+
+type TopClickedType {
+  clicks: Int!
+  type: String!
+}
+
+input TuitionConfigInput {
+  fees: [TuitionFeeInput!]
+  flatRateCost: Float
+  flatRateMax: Float
+  flatRateMin: Float
+  perCreditCost: Float
+  summerPerCreditCost: Float
+}
+
+type TuitionConfigResult {
+  fees: [TuitionFeeResult!]
+  flatRateCost: Float
+  flatRateMax: Float
+  flatRateMin: Float
+  perCreditCost: Float
+  summerPerCreditCost: Float
+}
+
+input TuitionFeeInput {
+  amount: Float!
+  name: String!
+  type: String!
+}
+
+type TuitionFeeResult {
+  amount: Float!
+  name: String!
+  type: String!
+}
+
+input UpdateAcademicTermInput {
+  endDate: String
+  isCurrent: Boolean
+  name: String
+  startDate: String
+}
+
+input UpdateAssignmentInput {
+  description: String
+  dueAt: String
+  fileUploadIds: [String!]
+  id: String!
+  lockAt: String
+  pointsPossible: Float
+  sectionId: String!
+  title: String
+  unlockAt: String
+}
+
+input UpdateCareerInput {
+  category: String
+  description: String
+  id: String!
+  isActive: Boolean
+  medianSalaryMax: Int
+  medianSalaryMin: Int
+  recommendedCourseIds: [String!]
+  recommendedDegreeIds: [String!]
+  requiredSkills: [String!]
+  title: String
+}
+
+input UpdateContentInput {
+  body: String
+  id: String!
+  position: Int
+  sectionId: String!
+  title: String
+}
+
+input UpdateCourseInput {
+  category: CourseCategory
+  code: String
+  corequisiteCourseIds: [String!]
+  courseLevel: Int
+  credits: Float
+  departmentId: String
+  description: String
+  offeredSemesters: [String!]
+  prerequisiteCourseIds: [String!]
+  title: String
+}
+
+input UpdateCustomAgentInput {
+  allowedRoles: [String!]
+  courseId: String
+  description: String
+  displayName: String
+  id: String!
+  isActive: Boolean
+  maxTurns: Int
+  systemPrompt: String
+  tools: [String!]
+}
+
+input UpdateDegreeProgramInput {
+  code: String
+  department: String
+  description: String
+  id: String!
+  name: String
+  requirements: [RequirementGroupInput!]
+  status: DegreeProgramStatus
+  totalCreditsRequired: Int
+}
+
+input UpdateEnrollmentPolicyInput {
+  creditHourLimitPerTerm: Int
+  enrollmentWindowEnd: String
+  enrollmentWindowStart: String
+  prerequisiteEnforcement: PrerequisiteEnforcement
+  waitlistAutoPromote: Boolean
+  waitlistConfirmationHours: Int
+  waitlistEnabled: Boolean
+  waitlistMaxSize: Int
+}
+
+input UpdateGovernanceConfigInput {
+  enabled: Boolean
+
+  """Set to null to use global default"""
+  maxRequestsPerMinute: Int
+
+  """Set to null to use global default"""
+  maxTokensPerDay: Int
+
+  """Monthly budget cap in USD. Set to null for unlimited."""
+  monthlyBudgetUsd: Float
+}
+
+input UpdateLtiPlatformInput {
+  authorizationEndpoint: String
+  id: String!
+  jwksEndpoint: String
+  name: String
+  status: LtiPlatformStatus
+  tokenEndpoint: String
+}
+
+input UpdateNotificationPreferencesInput {
+  emailOnAssignment: Boolean
+  emailOnDueReminder: Boolean
+  emailOnEnrollment: Boolean
+  emailOnGrade: Boolean
+  emailOnMessage: Boolean
+}
+
+input UpdateOfficeHourBlockInput {
+  active: Boolean
+  dayOfWeek: OfficeHourDay
+  endTime: String
+  id: String!
+  location: String
+  locationType: OfficeHourLocationType
+  meetingUrl: String
+  slotMinutes: Int
+  startTime: String
+}
+
+input UpdateQuizQuestionInput {
+  id: String!
+  options: [QuizOptionInput!]
+  points: Float
+  questionText: String
+}
+
+input UpdateQuizSettingsInput {
+  assignmentId: String!
+  displayMode: String
+  maxAttempts: Int
+  timeLimitMinutes: Int
+}
+
+input UpdateReportCardInput {
+  finalGrade: String
+  id: String!
+  teacherComment: String
+}
+
+input UpdateSectionInput {
+  capacity: Int
+  endTime: String
+  instructorId: String
+  location: String
+  meetingDays: [String!]
+  room: String
+  schedule: String
+  startTime: String
+  status: SectionStatus
+}
+
+input UpdateStudentProfileInput {
+  completedCourseIds: [String!]
+  currentCourseIds: [String!]
+  expectedGraduationYear: Int
+  id: String!
+  notes: String
+}
+
+input UpdateToolPermissionInput {
+  actionType: GovernanceActionType!
+  toolName: String!
+}
+
+input UpdateUserInput {
+  firstName: String
+  lastName: String
+  preferences: String
+  profile: String
+}
+
+enum UploadContext {
+  ASSIGNMENT_INSTRUCTIONS
+  ASSIGNMENT_SUBMISSION
+  COURSE_CONTENT
+  IMPORT_DOCUMENT
+  PROFILE_PICTURE
+}
+
+type UploadRequest {
+  expiresIn: Int!
+  fileId: String!
+  key: String!
+  uploadUrl: String!
+}
+
+type UsageTrend {
+  dailyUsage: [DailyUsagePoint!]!
+  totalCostUsd: Float!
+  totalRequests: Int!
+  totalTokens: Int!
+}
+
+type User {
+  createdAt: DateTime!
+  email: String!
+  firstName: String!
+  gradeLevel: Int
+  homeroomTeacher: User
+  homeroomTeacherId: String
+  id: String!
+  lastLoginAt: DateTime
+  lastName: String!
+  preferences: String
+  profile: String
+  roles: [UserRole!]!
+  status: UserStatus!
+  tenantId: String!
+  updatedAt: DateTime!
+}
+
+enum UserRole {
+  ADMIN
+  INSTRUCTOR
+  PARENT
+  STUDENT
+  TA
+}
+
+type UserRoleCount {
+  count: Int!
+  role: String!
+}
+
+type UserStats {
+  activeUsers: Int!
+  newUsersThisMonth: Int!
+  roleDistribution: [UserRoleCount!]!
+  totalUsers: Int!
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  SUSPENDED
+}
+
+input UsersFilterInput {
+  gradeLevel: Int
+  page: Int
+  pageSize: Int
+  role: UserRole
+  search: String
+  status: UserStatus
+}
+
+type VapidPublicKey {
+  publicKey: String
+}

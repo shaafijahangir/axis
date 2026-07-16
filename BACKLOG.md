@@ -1364,6 +1364,40 @@
     - Attempt counter: "Attempt 2 of 3"
 - **Acceptance:** Instructor can create a quiz with 10 MCQ questions. Student takes the quiz and sees auto-graded score immediately. Short-answer questions require manual grading. Time limits and attempt limits work.
 
+### FEAT-018: Office-Hours Booking
+- **Status:** `DONE`
+- **Completed:** 2026-07-14
+- **Priority:** HIGH — GTM wedge feature (shaafilook.md: UVic/SFU directories never list office hours; booking today = syllabus PDF + email)
+- **Scope:**
+  - Backend (`src/modules/office-hours/`):
+    - `OfficeHourBlock` entity: instructorId, dayOfWeek (MON–FRI), startTime/endTime, slotMinutes (default 15), locationType (IN_PERSON|ZOOM), location ("ECS 618" style), meetingUrl, active
+    - `Booking` entity: blockId, studentId, instructorId (denormalized for hot read paths), date, startTime/endTime, status (BOOKED|CANCELLED|COMPLETED|NO_SHOW), note
+    - `OfficeHoursService`: block CRUD (own-block authorization), computeAvailableSlots (blocks minus BOOKED, past slots hidden, 60-day range clamp), bookSlot in a transaction with pessimistic block lock + conflict re-check, cancelBooking (owning student/instructor only)
+    - Events: `BOOKING_CREATED` / `BOOKING_CANCELLED` in ai-events.ts
+    - AI tools: `list_office_hours` (auto tier) + `book_office_hours` (suggest tier — real-world commitment)
+    - Migration `1784570000000-OfficeHoursBooking` (hasTable-guarded, BaselineSchema style)
+  - Frontend:
+    - Instructor: Office Hours manager card in `/settings` (add/edit/pause weekly blocks)
+    - Student: "Book Office Hours" in the section course header → ≤3-interaction dialog (day → slot → confirm with optional topic note; success shows room or Zoom link)
+    - Both: upcoming bookings section on `/schedule` with cancel
+- **Acceptance:** Instructor defines "Tue 2–4pm, ECS 618, 15-min slots" once. Student books a slot from the course page in ≤3 interactions without email. Double-booking a slot is rejected. Cancelling frees the slot.
+
+### FEAT-019: Instructor Schedule Management (office hours + lectures, one calendar)
+- **Status:** `TODO`
+- **Priority:** HIGH — natural extension of FEAT-018 (Shaafi, 2026-07-15: "you manage the prof's schedule as well — time aside for office hours, time aside from lectures, and whatever else")
+- **Scope:**
+  - Axis already knows an instructor's lecture times (section `meetingDays`/`startTime`/`endTime`) and office-hour blocks (FEAT-018) — unify them:
+  - Instructor `/schedule` shows lectures + office-hour blocks + booked appointments in one weekly grid (students already get this view for their own week)
+  - Conflict detection: creating/updating an office-hour block that overlaps the instructor's own lecture times is rejected (or warned) at creation
+  - "Busy" blocks: instructor can mark arbitrary recurring unavailability (research time, meetings) that suppresses bookable slots without deleting blocks
+  - Later: feeds the AI ("when can I meet Prof Chen?" answers from the full schedule, not just office hours)
+- **Acceptance:** Instructor sees their entire week in one grid. A block that collides with their own lecture cannot be created silently. Slots inside "busy" windows are never offered to students.
+
+### BUG-014: Student feed deep-links use sectionId in the courseId slot
+- **Status:** `TODO`
+- **Priority:** MEDIUM
+- **Scope:** `feed-card.tsx` builds `href` as `/courses/${sectionId}/section/${sectionId}/assignment/...` — the first path segment should be the course id, but `FeedItem` (backend DTO) doesn't carry `courseId`. Pages still render (queries key off sectionId), but the URL is semantically wrong and the course back-link points at a nonexistent course. Fix: add `courseId` to `FeedItem`/`getStudentFeed`, thread it through the card. Found during e2e triage 2026-07-15 (axe output exposed the URLs).
+
 ### MOB-001: Responsive Dashboard Layouts
 - **Status:** `DONE`
 - **Priority:** MEDIUM

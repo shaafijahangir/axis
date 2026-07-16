@@ -90,8 +90,12 @@ package-lock.json
 # Local postgres data (if using docker)
 postgres-data/
 
-# Auto-generated GraphQL schema (NestJS)
+# Auto-generated GraphQL schema (NestJS).
+# The backend copy IS tracked: it's the schema snapshot that CI codegen
+# (axis-frontend typecheck/build) consumes. The dev server rewrites it on
+# boot, so drift shows up as a diff in PRs.
 schema.gql
+!axis-backend/src/schema.gql
 
 # Claude Code (ignore local state, keep shared skills + session log)
 .claude/*

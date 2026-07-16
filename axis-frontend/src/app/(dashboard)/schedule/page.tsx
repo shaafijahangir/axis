@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import { useQuery } from '@apollo/client/react';
 import Link from 'next/link';
 import {
@@ -11,6 +12,7 @@ import { UserRole } from '@/types/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { CalendarOff } from 'lucide-react';
+import { UpcomingBookings } from '@/components/office-hours/upcoming-bookings';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -220,9 +222,8 @@ function ScheduleGrid({ sections }: { sections: ScheduleSection[] }) {
           const isHour = slot % 2 === 0;
           const labelEntry = SLOT_LABELS.find((l) => l.slot === slot);
           return (
-            <>
+            <Fragment key={`row-${slot}`}>
               <div
-                key={`label-${slot}`}
                 className="text-right pr-2 text-[10px] text-muted-foreground leading-none"
                 style={{ gridRow: slot + 2, gridColumn: 1, paddingTop: 1 }}
               >
@@ -235,7 +236,7 @@ function ScheduleGrid({ sections }: { sections: ScheduleSection[] }) {
                   style={{ gridRow: slot + 2, gridColumn: dIdx + 2 }}
                 />
               ))}
-            </>
+            </Fragment>
           );
         })}
         {/* Course blocks */}
@@ -252,7 +253,7 @@ function ScheduleGrid({ sections }: { sections: ScheduleSection[] }) {
 
           return (
             <Link
-              key={`${block.sectionId}-${block.day}`}
+              key={`${block.sectionId}-${block.day}-${block.startSlot}`}
               href={`/courses/${block.courseId}/section/${block.sectionId}`}
               className={`m-0.5 rounded border overflow-hidden flex flex-col p-1 text-xs hover:opacity-80 transition-opacity ${block.colourClass}`}
               style={{
@@ -325,6 +326,7 @@ function StudentSchedule() {
     <>
       <ScheduleGrid sections={sections} />
       <ScheduleLegend sections={sections} />
+      <UpcomingBookings viewer="student" />
     </>
   );
 }
@@ -342,6 +344,7 @@ function InstructorSchedule() {
     <>
       <ScheduleGrid sections={sections} />
       <ScheduleLegend sections={sections} />
+      <UpcomingBookings viewer="instructor" />
     </>
   );
 }

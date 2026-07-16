@@ -26,6 +26,7 @@ import { ContentEditorDialog } from '@/components/courses/content-editor-dialog'
 import { EnrollmentSettingsPanel } from '@/components/courses/enrollment-settings-panel';
 import { EnrollmentStatusWidget } from '@/components/courses/enrollment-status-widget';
 import { EnrollmentOnboardingChecklist } from '@/components/courses/enrollment-onboarding-checklist';
+import { BookOfficeHoursDialog } from '@/components/office-hours/book-office-hours-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth.store';
@@ -52,7 +53,7 @@ interface SectionData {
     withdrawDeadline?: string | null;
   } | null;
   course: { id: string; code: string; title: string };
-  instructor: { firstName: string; lastName: string };
+  instructor: { id: string; firstName: string; lastName: string };
 }
 
 interface TimelineEntryData {
@@ -125,9 +126,10 @@ export default function SectionTimelinePage() {
 
   const section = sectionData?.section;
 
-  // Extract assignment entries for the extend deadline dialog
+  // Extract assignment entries for the extend deadline dialog.
+  // GraphQL serializes enums by name ("ASSIGNMENT"), so compare case-insensitively.
   const assignmentEntries = (timelineData?.sectionTimeline ?? [])
-    .filter((e) => e.type === 'assignment')
+    .filter((e) => e.type.toLowerCase() === 'assignment')
     .map((e) => ({ id: e.id, title: e.title, dueAt: e.dueAt }));
 
   return (
@@ -144,6 +146,14 @@ export default function SectionTimelinePage() {
           courseTitle={section.course.title}
           instructorName={`${section.instructor.firstName} ${section.instructor.lastName}`}
           location={section.location}
+          action={
+            isStudent ? (
+              <BookOfficeHoursDialog
+                instructorId={section.instructor.id}
+                instructorName={`${section.instructor.firstName} ${section.instructor.lastName}`}
+              />
+            ) : undefined
+          }
         />
       ) : null}
 

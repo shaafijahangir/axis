@@ -31,6 +31,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, ReadonlySet<string>> = {
     'planner.read',
     // GRAD-001/002: students generate and regenerate their own grad plans.
     'planner.write',
+    // FEAT-018: students discover and book office hours (book is governed as
+    // 'suggest' — the AI proposes, the student confirms).
+    'office_hours.read',
+    'office_hours.write',
   ]),
   [UserRole.TA]: new Set([
     'courses.read',
@@ -40,6 +44,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, ReadonlySet<string>> = {
     'planner.read',
     // Feedback Copilot targets TAs — they draft feedback and grades.
     'grading.write',
+    // FEAT-018: TAs book office hours like students.
+    'office_hours.read',
+    'office_hours.write',
   ]),
   [UserRole.INSTRUCTOR]: new Set([
     'courses.read',
@@ -50,6 +57,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, ReadonlySet<string>> = {
     'grading.write',
     'analytics.read',
     'planner.read',
+    // FEAT-018: instructors read office-hours availability (they manage blocks
+    // through GraphQL, not through AI tools).
+    'office_hours.read',
   ]),
   [UserRole.ADMIN]: new Set([
     'courses.read',
@@ -62,6 +72,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, ReadonlySet<string>> = {
     'analytics.read',
     'planner.read',
     'planner.write',
+    'office_hours.read',
   ]),
   [UserRole.PARENT]: new Set([
     // Parents observe; they never write through AI tools.
