@@ -7,9 +7,14 @@
 
 ## Session 56 — FEAT-019 Instructor Schedule Management
 
-**Date:** 2026-07-16
+**Date:** 2026-07-16/17
 **Goal:** Build FEAT-019 (Shaafi's insight: "you manage the prof's schedule as well") on branch `feat/instructor-schedule`.
-**Status:** Built, tested (360 unit + 3 schedule e2e green locally, busy-suppression verified live over GraphQL), PR opened.
+**Status:** MERGED (PR #56, squashed as e43cacd). Render auto-deployed it; Render Postgres re-seeded — live demo shows office hours + busy suppression (verified: Thu slots start 11:00). Then BUG-014 fixed on `fix/feed-deeplinks`.
+
+### Follow-through (2026-07-17)
+- Render re-seed over TLS via `~/.axis-render-db.env`; live API verified (Wed 11:00–11:45 in-person, Thu 11:00/11:20/11:40 Zoom — busy suppression working in prod).
+- **Render API key from the transcript still works — Shaafi must revoke it.**
+- BUG-014: `courseId` added to FeedItem + InstructorFeedItem, populated in both feeds, feed-card href fixed to `/courses/{courseId}/section/{sectionId}/assignment/...`. Regression tests assert courseId ≠ sectionId. Live-verified against seeded dev DB.
 
 ### Backend
 - New `BusyBlock` entity (`busy_blocks`) — recurring weekly unavailability with optional label; reuses `office_hour_blocks_dayofweek_enum` via `enumName` so synchronize and the hand-written migration (`1784592000000`, hasTable-guarded) agree.

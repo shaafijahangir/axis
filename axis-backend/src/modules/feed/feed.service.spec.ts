@@ -124,6 +124,10 @@ describe('FeedService', () => {
       expect(deadlineItem).toBeDefined();
       expect(deadlineItem?.title).toBe('Homework 1');
       expect(deadlineItem?.courseCode).toBe('CS101');
+      // BUG-014: courseId must be the course's id, NOT the sectionId —
+      // the frontend builds /courses/{courseId}/section/{sectionId} from it.
+      expect(deadlineItem?.courseId).toBe(course.id);
+      expect(deadlineItem?.courseId).not.toBe(section.id);
     });
 
     it('should include recent grades in feed', async () => {
@@ -262,6 +266,9 @@ describe('FeedService', () => {
       expect(ungradedItem?.title).toBe('Essay');
       expect(ungradedItem?.ungradedCount).toBe(5);
       expect(ungradedItem?.subtitle).toContain('5 submissions');
+      // BUG-014: courseId is the course's id, not the sectionId.
+      expect(ungradedItem?.courseId).toBe(course.id);
+      expect(ungradedItem?.courseId).not.toBe(section.id);
     });
 
     it('should prioritize ungraded over deadlines', async () => {

@@ -44,6 +44,7 @@ describe('FeedPersonalizationService', () => {
       title: 'Test Item',
       courseCode: 'CS101',
       courseTitle: 'Intro to CS',
+      courseId: 'course-1',
       sectionId: 'section-1',
       timestamp: new Date(),
       ...overrides,

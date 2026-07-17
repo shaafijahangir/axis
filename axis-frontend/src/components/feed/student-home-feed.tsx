@@ -24,6 +24,7 @@ interface FeedItemData {
   body?: string;
   courseCode: string;
   courseTitle: string;
+  courseId: string;
   sectionId: string;
   assignmentId?: string;
   dueAt?: string;
@@ -150,6 +151,7 @@ export function StudentHomeFeed() {
               body={item.body}
               courseCode={item.courseCode}
               courseTitle={item.courseTitle}
+              courseId={item.courseId}
               sectionId={item.sectionId}
               assignmentId={item.assignmentId}
               dueAt={item.dueAt}

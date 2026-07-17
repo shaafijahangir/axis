@@ -43,6 +43,14 @@ export class FeedItem {
   @Field()
   courseTitle: string;
 
+  /**
+   * BUG-014: the course's own id, for building `/courses/{courseId}/section/
+   * {sectionId}/...` deep-links. Before this field existed the frontend put
+   * sectionId in the courseId slot, producing dead course back-links.
+   */
+  @Field()
+  courseId: string;
+
   @Field()
   sectionId: string;
 
@@ -91,6 +99,10 @@ export class InstructorFeedItem {
 
   @Field()
   courseTitle: string;
+
+  /** BUG-014: course id for deep-links (see FeedItem.courseId). */
+  @Field()
+  courseId: string;
 
   @Field()
   sectionId: string;

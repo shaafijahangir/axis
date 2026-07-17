@@ -61,7 +61,11 @@ export class FeedService {
     const sectionMap = new Map(
       enrollments.map((e) => [
         e.sectionId,
-        { code: e.section.course.code, title: e.section.course.title },
+        {
+          id: e.section.course.id,
+          code: e.section.course.code,
+          title: e.section.course.title,
+        },
       ]),
     );
 
@@ -86,6 +90,7 @@ export class FeedService {
           subtitle: `Due ${a.dueAt.toLocaleDateString()}`,
           courseCode: course.code,
           courseTitle: course.title,
+          courseId: course.id,
           sectionId: a.sectionId,
           assignmentId: a.id,
           dueAt: a.dueAt,
@@ -119,6 +124,7 @@ export class FeedService {
           subtitle: `${sub.score}/${sub.assignment.pointsPossible} points`,
           courseCode: course.code,
           courseTitle: course.title,
+          courseId: course.id,
           sectionId: sub.assignment.sectionId,
           assignmentId: sub.assignmentId,
           score: sub.score,
@@ -144,6 +150,7 @@ export class FeedService {
             : undefined,
           courseCode: course.code,
           courseTitle: course.title,
+          courseId: course.id,
           sectionId: ann.sectionId,
           timestamp: ann.createdAt,
         });
@@ -207,6 +214,7 @@ export class FeedService {
         subtitle,
         courseCode: course.code,
         courseTitle: course.title,
+        courseId: course.id,
         sectionId: enrollment.sectionId,
         timestamp: enrollment.updatedAt,
       });
@@ -236,7 +244,7 @@ export class FeedService {
     const sectionMap = new Map(
       sections.map((s) => [
         s.id,
-        { code: s.course.code, title: s.course.title },
+        { id: s.course.id, code: s.course.code, title: s.course.title },
       ]),
     );
 
@@ -273,6 +281,7 @@ export class FeedService {
           subtitle: `${ug.count} submission${Number(ug.count) !== 1 ? 's' : ''} to grade`,
           courseCode: course.code,
           courseTitle: course.title,
+          courseId: course.id,
           sectionId: assignment.sectionId,
           assignmentId: assignment.id,
           ungradedCount: Number(ug.count),
@@ -299,6 +308,7 @@ export class FeedService {
         subtitle: `Due ${a.dueAt.toLocaleDateString()}`,
         courseCode: course.code,
         courseTitle: course.title,
+        courseId: course.id,
         sectionId: a.sectionId,
         assignmentId: a.id,
         dueAt: a.dueAt,
