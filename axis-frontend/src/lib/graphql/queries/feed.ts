@@ -10,6 +10,7 @@ export const STUDENT_FEED_QUERY = gql`
       body
       courseCode
       courseTitle
+      courseId
       sectionId
       assignmentId
       dueAt

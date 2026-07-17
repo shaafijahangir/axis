@@ -22,6 +22,8 @@ interface FeedCardProps {
   body?: string;
   courseCode: string;
   courseTitle: string;
+  /** BUG-014: the course's own id — deep-links need both course and section. */
+  courseId: string;
   sectionId: string;
   assignmentId?: string;
   dueAt?: string;
@@ -80,6 +82,7 @@ export function FeedCard({
   subtitle,
   body,
   courseCode,
+  courseId,
   sectionId,
   assignmentId,
   dueAt,
@@ -95,7 +98,7 @@ export function FeedCard({
 
   const href =
     assignmentId && type !== 'announcement'
-      ? `/courses/${sectionId}/section/${sectionId}/assignment/${assignmentId}`
+      ? `/courses/${courseId}/section/${sectionId}/assignment/${assignmentId}`
       : undefined;
 
   const typeLabel =

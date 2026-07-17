@@ -1394,7 +1394,7 @@
 - **Acceptance:** Instructor sees their entire week in one grid. A block that collides with their own lecture cannot be created silently. Slots inside "busy" windows are never offered to students.
 
 ### BUG-014: Student feed deep-links use sectionId in the courseId slot
-- **Status:** `TODO`
+- **Status:** `DONE` (2026-07-17 — PR fix/feed-deeplinks; `courseId` added to FeedItem AND InstructorFeedItem DTOs (instructor deep-links are the obvious next need), populated from the course relation in both feeds, feed-card href now `/courses/{courseId}/section/{sectionId}/...`. Regression tests assert courseId ≠ sectionId.)
 - **Priority:** MEDIUM
 - **Scope:** `feed-card.tsx` builds `href` as `/courses/${sectionId}/section/${sectionId}/assignment/...` — the first path segment should be the course id, but `FeedItem` (backend DTO) doesn't carry `courseId`. Pages still render (queries key off sectionId), but the URL is semantically wrong and the course back-link points at a nonexistent course. Fix: add `courseId` to `FeedItem`/`getStudentFeed`, thread it through the card. Found during e2e triage 2026-07-15 (axe output exposed the URLs).
 

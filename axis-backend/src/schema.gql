@@ -987,6 +987,7 @@ type FeedItem {
   assignmentId: String
   body: String
   courseCode: String!
+  courseId: String!
   courseTitle: String!
   dueAt: DateTime
   id: String!
@@ -1169,6 +1170,7 @@ type ImportResult {
 type InstructorFeedItem {
   assignmentId: String
   courseCode: String!
+  courseId: String!
   courseTitle: String!
   dueAt: DateTime
   id: String!
