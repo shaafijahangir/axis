@@ -1383,7 +1383,7 @@
 - **Acceptance:** Instructor defines "Tue 2–4pm, ECS 618, 15-min slots" once. Student books a slot from the course page in ≤3 interactions without email. Double-booking a slot is rejected. Cancelling frees the slot.
 
 ### FEAT-019: Instructor Schedule Management (office hours + lectures, one calendar)
-- **Status:** `TODO`
+- **Status:** `DONE` (2026-07-16 — PR feat/instructor-schedule; busy_blocks entity, conflict detection in create/updateOfficeHourBlock, busy-window slot suppression, unified instructor /schedule grid with lectures + office hours + this week's bookings + busy times, BusyBlocksManager card, seeded demo blocks for Prof Chen. Also fixed two latent grid bugs: meetingDays casing mismatch put lecture blocks in the wrong column, and fractional grid-row spans — e.g. a 10:50 end time — are invalid CSS that browsers drop entirely.)
 - **Priority:** HIGH — natural extension of FEAT-018 (Shaafi, 2026-07-15: "you manage the prof's schedule as well — time aside for office hours, time aside from lectures, and whatever else")
 - **Scope:**
   - Axis already knows an instructor's lecture times (section `meetingDays`/`startTime`/`endTime`) and office-hour blocks (FEAT-018) — unify them:

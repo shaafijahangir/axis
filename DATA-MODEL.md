@@ -428,6 +428,54 @@ Supporting entities for LTI 1.3 launch flow, context mapping, OIDC state managem
 
 ---
 
+## Office Hours Entities (FEAT-018/019)
+
+### OfficeHourBlock
+**Table:** `office_hour_blocks` | **Extends:** `TenantScopedEntity`
+
+Recurring weekly availability defined by an instructor; students book slots inside it.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| instructorId | UUID | FK → users |
+| dayOfWeek | enum | mon–fri (`office_hour_blocks_dayofweek_enum`) |
+| startTime / endTime | time | "HH:MM" 24h window |
+| slotMinutes | int | bookable slot length, default 15 |
+| locationType | enum | in_person, zoom |
+| location | varchar(128) | nullable — room for in_person (e.g. "ECS 618") |
+| meetingUrl | varchar(512) | nullable — URL for zoom |
+| active | boolean | soft on/off; paused blocks stop offering slots |
+
+Create/update is **conflict-checked** (FEAT-019): overlaps with the instructor's own lecture times (section `meetingDays`/`startTime`/`endTime`) or their other active blocks are rejected with 409.
+
+### Booking
+**Table:** `bookings` | **Extends:** `TenantScopedEntity`
+
+A dated appointment against a block. `instructorId` is denormalized from the block (hot read path). Uniqueness of the active slot is enforced by a pessimistic lock + re-check in `bookSlot()`, not a DB constraint (cancelled slots must be re-bookable).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| blockId | UUID | FK → office_hour_blocks |
+| studentId / instructorId | UUID | FK → users |
+| date | date | "YYYY-MM-DD" |
+| startTime / endTime | time | slot boundaries |
+| status | enum | booked, cancelled, completed, no_show |
+| note | varchar(500) | nullable — student's topic |
+
+### BusyBlock (FEAT-019)
+**Table:** `busy_blocks` | **Extends:** `TenantScopedEntity`
+
+Recurring weekly unavailability (research time, meetings). Suppresses any overlapping bookable slot in `computeAvailableSlots()` without editing the office-hour blocks themselves. Deliberately NOT conflict-checked — overlapping is its purpose. `dayOfWeek` reuses `office_hour_blocks_dayofweek_enum` (pinned via `enumName`).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| instructorId | UUID | FK → users |
+| dayOfWeek | enum | mon–fri |
+| startTime / endTime | time | unavailable window |
+| label | varchar(128) | nullable — e.g. "Research", "Dept meeting" |
+
+---
+
 ## Index Strategy
 
 Every entity follows this indexing pattern:
