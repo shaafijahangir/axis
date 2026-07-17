@@ -54,6 +54,19 @@ export const AVAILABLE_OFFICE_HOUR_SLOTS_QUERY = gql`
   }
 `;
 
+/** FEAT-019: Current instructor's recurring busy blocks. */
+export const MY_BUSY_BLOCKS_QUERY = gql`
+  query MyBusyBlocks {
+    myBusyBlocks {
+      id
+      dayOfWeek
+      startTime
+      endTime
+      label
+    }
+  }
+`;
+
 /** Current student's upcoming bookings. */
 export const MY_BOOKINGS_QUERY = gql`
   query MyBookings {

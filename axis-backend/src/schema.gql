@@ -355,6 +355,19 @@ input BulkMoveInput {
   targetSectionId: String!
 }
 
+type BusyBlock {
+  createdAt: DateTime!
+  dayOfWeek: OfficeHourDay!
+  endTime: String!
+  id: String!
+  instructor: User!
+  instructorId: String!
+  label: String
+  startTime: String!
+  tenantId: String!
+  updatedAt: DateTime!
+}
+
 type CareerProfile {
   category: String!
   createdAt: DateTime!
@@ -575,6 +588,13 @@ input CreateAssignmentInput {
   title: String!
   type: String
   unlockAt: String
+}
+
+input CreateBusyBlockInput {
+  dayOfWeek: OfficeHourDay!
+  endTime: String!
+  label: String
+  startTime: String!
 }
 
 input CreateCareerInput {
@@ -1313,6 +1333,7 @@ type Mutation {
   createAcademicTerm(input: CreateAcademicTermInput!): AcademicTerm!
   createAnnouncement(input: CreateAnnouncementInput!): Announcement!
   createAssignment(input: CreateAssignmentInput!): Assignment!
+  createBusyBlock(input: CreateBusyBlockInput!): BusyBlock!
   createCareer(input: CreateCareerInput!): CareerProfile!
   createCatalogCourse(input: CreateCourseInput!): Course!
   createContent(input: CreateContentInput!): CourseContent!
@@ -1328,6 +1349,7 @@ type Mutation {
   createTenant(input: CreateTenantInput!): Tenant!
   deactivateOfficeHourBlock(id: String!): OfficeHourBlock!
   deactivateUser(id: String!): User!
+  deleteBusyBlock(id: String!): BusyBlock!
   deleteCareer(id: String!): Boolean!
   deleteContent(id: String!, sectionId: String!): Boolean!
   deleteCustomAgent(id: String!): Boolean!
@@ -1680,6 +1702,7 @@ type Query {
   myAiConversations: [AiConversation!]!
   myAttendanceSummaries: [StudentAttendanceSummary!]!
   myBookings: [Booking!]!
+  myBusyBlocks: [BusyBlock!]!
   myContacts: [ContactUser!]!
   myConversations: [ConversationWithLatest!]!
   myDegreeProfiles: [StudentDegreeProfile!]!

@@ -91,9 +91,10 @@ import { DiscussionReply } from '../../modules/discussions/entities/discussion-r
 // Quiz entities
 import { QuizQuestion } from '../../modules/quiz/entities/quiz-question.entity';
 
-// Office-hours entities (FEAT-018)
+// Office-hours entities (FEAT-018, FEAT-019)
 import { OfficeHourBlock } from '../../modules/office-hours/entities/office-hour-block.entity';
 import { Booking } from '../../modules/office-hours/entities/booking.entity';
+import { BusyBlock } from '../../modules/office-hours/entities/busy-block.entity';
 
 // ParentStudent entity
 import { ParentStudent } from './parent-student.entity';
@@ -139,4 +140,5 @@ export const entities = [
   QuizQuestion,
   OfficeHourBlock,
   Booking,
+  BusyBlock,
 ];

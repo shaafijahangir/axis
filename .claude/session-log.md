@@ -5,6 +5,31 @@
 
 ---
 
+## Session 56 — FEAT-019 Instructor Schedule Management
+
+**Date:** 2026-07-16
+**Goal:** Build FEAT-019 (Shaafi's insight: "you manage the prof's schedule as well") on branch `feat/instructor-schedule`.
+**Status:** Built, tested (360 unit + 3 schedule e2e green locally, busy-suppression verified live over GraphQL), PR opened.
+
+### Backend
+- New `BusyBlock` entity (`busy_blocks`) — recurring weekly unavailability with optional label; reuses `office_hour_blocks_dayofweek_enum` via `enumName` so synchronize and the hand-written migration (`1784592000000`, hasTable-guarded) agree.
+- **Conflict detection**: `createOfficeHourBlock`/`updateOfficeHourBlock` now reject (409) overlaps with the instructor's own lecture times (sections via `course.tenantId` join, DRAFT+ACTIVE only) and their other active office-hour blocks. `meetingDays` casing normalized on first-3-letters ("Mon"/"MONDAY" both match). Update excludes self; skipped when deactivating.
+- **Busy suppression**: `computeAvailableSlots` subtracts busy windows per weekday — suppressed slots are never offered to students.
+- API: `myBusyBlocks` query, `createBusyBlock`/`deleteBusyBlock` mutations (INSTRUCTOR/ADMIN, resource-level ownership checks).
+- 12 new unit tests (conflict cases, casing, boundary-touch allowed, self-exclusion, suppression, busy CRUD auth). 360 total green.
+- Seed: 2 office-hour blocks + 2 busy blocks for Prof Chen; Thu busy 10:00–11:00 deliberately overlaps the Thu Zoom block to demo suppression (students see slots from 11:00 only).
+
+### Frontend
+- Instructor `/schedule` is now the unified week: lectures (course colours) + office-hour blocks (dashed emerald) + this week's booked appointments (solid, student name) + busy times (gray). Legend explains kinds. `OfficeHoursManager` + new `BusyBlocksManager` cards live below the grid.
+- **Two latent grid bugs fixed** (pre-existing, affected students too): (1) seeded `meetingDays` are "Mon"-cased but the grid compared against "MON" — every seeded lecture missed its column; (2) times not on the 30-min grid (e.g. 10:50 end) produced fractional `grid-row: span 1.66` — invalid CSS the browser drops entirely. Slots now normalized + rounded (`toGridDay`, `toSlotRange`).
+- New e2e: instructor schedule shows office hours, busy label, Busy Times card.
+
+### Verified
+- Live API check: Chen's Thu slots = `11:00, 11:20, 11:40` (10:00–11:00 suppressed by "Department meeting" busy block). Conflict rejection covered by unit tests.
+- Local dev DB carries pre-FEAT-019 blocks that overlap lectures (created before the check existed) — historical rows are not retro-deleted, only new/updated blocks are validated.
+
+---
+
 ## Session 55 — CI Resurrection, FEAT-018 Merged, Render Deploy Prep
 
 **Date:** 2026-07-15

@@ -7,12 +7,24 @@ import {
   MY_ENROLLMENTS_QUERY,
   MY_SECTIONS_QUERY,
 } from '@/lib/graphql/queries/courses';
+import {
+  MY_OFFICE_HOUR_BLOCKS_QUERY,
+  MY_BUSY_BLOCKS_QUERY,
+  INSTRUCTOR_BOOKINGS_QUERY,
+} from '@/lib/graphql/queries/office-hours';
 import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { CalendarOff } from 'lucide-react';
 import { UpcomingBookings } from '@/components/office-hours/upcoming-bookings';
+import { OfficeHoursManager } from '@/components/office-hours/office-hours-manager';
+import { BusyBlocksManager } from '@/components/office-hours/busy-blocks-manager';
+import {
+  formatTime12h,
+  normalizeTime,
+  type OfficeHourDay,
+} from '@/lib/office-hours';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -41,9 +53,37 @@ interface EnrollmentItem {
   section: ScheduleSection;
 }
 
+interface OfficeHourBlockItem {
+  id: string;
+  dayOfWeek: OfficeHourDay;
+  startTime: string;
+  endTime: string;
+  locationType: 'IN_PERSON' | 'ZOOM';
+  location: string | null;
+  active: boolean;
+}
+
+interface BusyBlockItem {
+  id: string;
+  dayOfWeek: OfficeHourDay;
+  startTime: string;
+  endTime: string;
+  label: string | null;
+}
+
+interface BookingItem {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+  student: { firstName: string; lastName: string };
+}
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'] as const;
+type GridDay = (typeof DAYS)[number];
 const DAY_LABELS: Record<string, string> = {
   MON: 'Monday',
   TUE: 'Tuesday',
@@ -78,33 +118,55 @@ const COLOURS = [
   'bg-indigo-100 text-indigo-800 border-indigo-200',
 ];
 
+// FEAT-019: non-lecture block styles
+const OFFICE_HOURS_STYLE =
+  'bg-emerald-50 text-emerald-800 border-emerald-300 border-dashed';
+const BUSY_STYLE =
+  'bg-muted/90 text-muted-foreground border-border border-dashed z-10';
+const BOOKING_STYLE = 'bg-emerald-600 text-white border-emerald-700 z-20';
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function timeToSlot(time: string): number {
-  const [h, m] = time.split(':').map(Number);
+  const [h, m] = normalizeTime(time).split(':').map(Number);
   return ((h - GRID_START_HOUR) * 60 + m) / SLOT_MINUTES;
 }
 
-function formatTime(time: string): string {
-  const [h, m] = time.split(':').map(Number);
-  const suffix = h < 12 ? 'AM' : 'PM';
-  const hour = h % 12 || 12;
-  return `${hour}:${String(m).padStart(2, '0')} ${suffix}`;
+/**
+ * Normalize a section meetingDay string to a grid day. Seed/import data
+ * carries mixed casing ("Mon", "MONDAY") — comparing raw strings against the
+ * uppercase DAYS constants silently dropped blocks into the wrong column.
+ */
+function toGridDay(day: string): GridDay | null {
+  const key = day.trim().slice(0, 3).toUpperCase();
+  return (DAYS as readonly string[]).includes(key) ? (key as GridDay) : null;
 }
 
-// ─── Timetable ───────────────────────────────────────────────────────────────
+// ─── Grid blocks ─────────────────────────────────────────────────────────────
 
-interface TimetableBlock {
-  sectionId: string;
-  courseId: string;
-  courseCode: string;
-  courseTitle: string;
-  day: string;
+interface GridBlock {
+  key: string;
+  day: GridDay;
+  /** Integer grid slots — fractional spans are invalid CSS and get dropped. */
   startSlot: number;
   endSlot: number;
-  location: string | null;
-  instructor: string;
-  colourClass: string;
+  className: string;
+  /** Display lines, most important first; later lines hide on short blocks. */
+  lines: string[];
+  tooltip: string;
+  href?: string;
+}
+
+/** Clamp + round a time window to renderable integer slots, or null if off-grid. */
+function toSlotRange(
+  startTime: string,
+  endTime: string,
+): { startSlot: number; endSlot: number } | null {
+  const startSlot = Math.floor(timeToSlot(startTime));
+  const endSlot = Math.ceil(timeToSlot(endTime));
+  if (startSlot < 0 || endSlot > TOTAL_SLOTS || startSlot >= endSlot)
+    return null;
+  return { startSlot, endSlot };
 }
 
 /**
@@ -117,11 +179,10 @@ function readSchedule(section: ScheduleSection): {
   endTime: string | null;
 } {
   if (section.meetingDays?.length && section.startTime && section.endTime) {
-    // Postgres `time` is returned as "HH:MM:SS"; trim to "HH:MM" for slot math
     return {
       meetingDays: section.meetingDays,
-      startTime: section.startTime.slice(0, 5),
-      endTime: section.endTime.slice(0, 5),
+      startTime: normalizeTime(section.startTime),
+      endTime: normalizeTime(section.endTime),
     };
   }
   if (section.schedule) {
@@ -141,43 +202,126 @@ function readSchedule(section: ScheduleSection): {
   return { meetingDays: [], startTime: null, endTime: null };
 }
 
-function buildBlocks(sections: ScheduleSection[]): TimetableBlock[] {
-  const blocks: TimetableBlock[] = [];
+function buildLectureBlocks(sections: ScheduleSection[]): GridBlock[] {
+  const blocks: GridBlock[] = [];
   sections.forEach((section, idx) => {
     const { meetingDays, startTime, endTime } = readSchedule(section);
     if (!meetingDays.length || !startTime || !endTime) return;
 
-    const startSlot = timeToSlot(startTime);
-    const endSlot = timeToSlot(endTime);
-    if (startSlot < 0 || endSlot > TOTAL_SLOTS || startSlot >= endSlot) return;
+    const range = toSlotRange(startTime, endTime);
+    if (!range) return;
 
     const colour = COLOURS[idx % COLOURS.length];
     const displayLocation = section.room ?? section.location;
+    const timeLabel = `${formatTime12h(startTime)}–${formatTime12h(endTime)}`;
     for (const day of meetingDays) {
+      const gridDay = toGridDay(day);
+      if (!gridDay) continue;
       blocks.push({
-        sectionId: section.id,
-        courseId: section.course.id,
-        courseCode: section.course.code,
-        courseTitle: section.course.title,
-        day,
-        startSlot,
-        endSlot,
-        location: displayLocation,
-        instructor: `${section.instructor.firstName} ${section.instructor.lastName}`,
-        colourClass: colour,
+        key: `lecture-${section.id}-${gridDay}`,
+        day: gridDay,
+        ...range,
+        className: colour,
+        lines: [
+          section.course.code,
+          section.course.title,
+          displayLocation ?? '',
+          timeLabel,
+        ],
+        tooltip: `${section.course.code} — ${section.course.title}\n${timeLabel}${displayLocation ? `\n${displayLocation}` : ''}`,
+        href: `/courses/${section.course.id}/section/${section.id}`,
       });
     }
   });
   return blocks;
 }
 
+function buildOfficeHourBlocks(blocks: OfficeHourBlockItem[]): GridBlock[] {
+  return blocks
+    .filter((b) => b.active)
+    .flatMap((b) => {
+      const range = toSlotRange(b.startTime, b.endTime);
+      if (!range) return [];
+      const timeLabel = `${formatTime12h(b.startTime)}–${formatTime12h(b.endTime)}`;
+      const where =
+        b.locationType === 'ZOOM' ? 'Zoom' : (b.location ?? 'In person');
+      return [
+        {
+          key: `oh-${b.id}`,
+          day: b.dayOfWeek as GridDay,
+          ...range,
+          className: OFFICE_HOURS_STYLE,
+          lines: ['Office hours', where, timeLabel],
+          tooltip: `Office hours — ${where}\n${timeLabel}`,
+        },
+      ];
+    });
+}
+
+function buildBusyBlocks(blocks: BusyBlockItem[]): GridBlock[] {
+  return blocks.flatMap((b) => {
+    const range = toSlotRange(b.startTime, b.endTime);
+    if (!range) return [];
+    const timeLabel = `${formatTime12h(b.startTime)}–${formatTime12h(b.endTime)}`;
+    return [
+      {
+        key: `busy-${b.id}`,
+        day: b.dayOfWeek as GridDay,
+        ...range,
+        className: BUSY_STYLE,
+        lines: [b.label ?? 'Busy', timeLabel],
+        tooltip: `${b.label ?? 'Busy'} (unavailable)\n${timeLabel}`,
+      },
+    ];
+  });
+}
+
+/** Monday (local) of the week containing `d`. */
+function mondayOfWeek(d: Date): Date {
+  const monday = new Date(d);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  return monday;
+}
+
+/**
+ * Booked appointments land on the grid only for the *current* week — the grid
+ * is a generic weekly view, bookings are dated one-offs.
+ */
+function buildBookingBlocks(bookings: BookingItem[]): GridBlock[] {
+  const monday = mondayOfWeek(new Date());
+  const friday = new Date(monday);
+  friday.setDate(friday.getDate() + 4);
+
+  return bookings.flatMap((b) => {
+    if (b.status !== 'BOOKED') return [];
+    const [y, m, day] = b.date.split('-').map(Number);
+    const date = new Date(y, m - 1, day);
+    if (date < monday || date > friday) return [];
+    const gridDay = DAYS[(date.getDay() + 6) % 7];
+    if (!gridDay) return [];
+
+    const range = toSlotRange(b.startTime, b.endTime);
+    if (!range) return [];
+    const student = `${b.student.firstName} ${b.student.lastName}`;
+    const timeLabel = `${formatTime12h(b.startTime)}–${formatTime12h(b.endTime)}`;
+    return [
+      {
+        key: `booking-${b.id}`,
+        day: gridDay,
+        ...range,
+        className: BOOKING_STYLE,
+        lines: [student, timeLabel],
+        tooltip: `Booked: ${student}\n${timeLabel}`,
+      },
+    ];
+  });
+}
+
 // ─── Main grid ───────────────────────────────────────────────────────────────
 
-function ScheduleGrid({ sections }: { sections: ScheduleSection[] }) {
-  const blocks = buildBlocks(sections);
-  const hasSchedule = blocks.length > 0;
-
-  if (!hasSchedule) {
+function ScheduleGrid({ blocks }: { blocks: GridBlock[] }) {
+  if (blocks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-16 text-center">
         <CalendarOff
@@ -239,46 +383,53 @@ function ScheduleGrid({ sections }: { sections: ScheduleSection[] }) {
             </Fragment>
           );
         })}
-        {/* Course blocks */}
+        {/* Blocks */}
         {blocks.map((block) => {
-          const dayCol = DAYS.indexOf(block.day as (typeof DAYS)[number]) + 2;
+          const dayCol = DAYS.indexOf(block.day) + 2;
           const rowStart = block.startSlot + 2;
           const rowSpan = block.endSlot - block.startSlot;
-          const startTime = formatTime(
-            `${GRID_START_HOUR + Math.floor(block.startSlot / 2)}:${block.startSlot % 2 === 0 ? '00' : '30'}`,
-          );
-          const endTime = formatTime(
-            `${GRID_START_HOUR + Math.floor(block.endSlot / 2)}:${block.endSlot % 2 === 0 ? '00' : '30'}`,
+          const style = {
+            gridRow: `${rowStart} / span ${rowSpan}`,
+            gridColumn: dayCol,
+          };
+          const className = `m-0.5 rounded border overflow-hidden flex flex-col p-1 text-xs transition-opacity ${block.className}`;
+          // Later lines only fit on taller blocks.
+          const visibleLines = block.lines
+            .filter(Boolean)
+            .slice(0, Math.max(1, rowSpan - 1));
+          const content = (
+            <>
+              <span className="font-semibold truncate">{visibleLines[0]}</span>
+              {visibleLines.slice(1).map((line, i) => (
+                <span
+                  key={i}
+                  className="truncate opacity-80 leading-tight text-[10px]"
+                >
+                  {line}
+                </span>
+              ))}
+            </>
           );
 
-          return (
+          return block.href ? (
             <Link
-              key={`${block.sectionId}-${block.day}-${block.startSlot}`}
-              href={`/courses/${block.courseId}/section/${block.sectionId}`}
-              className={`m-0.5 rounded border overflow-hidden flex flex-col p-1 text-xs hover:opacity-80 transition-opacity ${block.colourClass}`}
-              style={{
-                gridRow: `${rowStart} / span ${rowSpan}`,
-                gridColumn: dayCol,
-              }}
-              title={`${block.courseCode} — ${block.courseTitle}\n${startTime}–${endTime}${block.location ? `\n${block.location}` : ''}`}
+              key={block.key}
+              href={block.href}
+              className={`${className} hover:opacity-80`}
+              style={style}
+              title={block.tooltip}
             >
-              <span className="font-semibold truncate">{block.courseCode}</span>
-              {rowSpan >= 3 && (
-                <span className="truncate opacity-80 leading-tight">
-                  {block.courseTitle}
-                </span>
-              )}
-              {rowSpan >= 4 && block.location && (
-                <span className="truncate opacity-70 leading-tight">
-                  {block.location}
-                </span>
-              )}
-              {rowSpan >= 5 && (
-                <span className="truncate opacity-60 leading-tight text-[10px]">
-                  {startTime}–{endTime}
-                </span>
-              )}
+              {content}
             </Link>
+          ) : (
+            <div
+              key={block.key}
+              className={className}
+              style={style}
+              title={block.tooltip}
+            >
+              {content}
+            </div>
           );
         })}
       </div>
@@ -288,12 +439,17 @@ function ScheduleGrid({ sections }: { sections: ScheduleSection[] }) {
 
 // ─── Legend ──────────────────────────────────────────────────────────────────
 
-function ScheduleLegend({ sections }: { sections: ScheduleSection[] }) {
+function ScheduleLegend({
+  sections,
+  showInstructorKinds,
+}: {
+  sections: ScheduleSection[];
+  showInstructorKinds?: boolean;
+}) {
   const withSchedule = sections.filter((s) => {
     const { meetingDays, startTime, endTime } = readSchedule(s);
     return meetingDays.length > 0 && startTime && endTime;
   });
-  if (!withSchedule.length) return null;
 
   return (
     <div className="flex flex-wrap gap-2 mt-4">
@@ -306,6 +462,19 @@ function ScheduleLegend({ sections }: { sections: ScheduleSection[] }) {
           {section.course.code} — {section.course.title}
         </Badge>
       ))}
+      {showInstructorKinds && (
+        <>
+          <Badge variant="outline" className={`text-xs ${OFFICE_HOURS_STYLE}`}>
+            Office hours
+          </Badge>
+          <Badge variant="outline" className={`text-xs ${BOOKING_STYLE}`}>
+            Booked appointment (this week)
+          </Badge>
+          <Badge variant="outline" className={`text-xs ${BUSY_STYLE}`}>
+            Busy
+          </Badge>
+        </>
+      )}
     </div>
   );
 }
@@ -324,7 +493,7 @@ function StudentSchedule() {
   if (loading) return <Skeleton className="h-64 w-full rounded-lg" />;
   return (
     <>
-      <ScheduleGrid sections={sections} />
+      <ScheduleGrid blocks={buildLectureBlocks(sections)} />
       <ScheduleLegend sections={sections} />
       <UpcomingBookings viewer="student" />
     </>
@@ -333,17 +502,45 @@ function StudentSchedule() {
 
 // ─── Instructor view ──────────────────────────────────────────────────────────
 
+/**
+ * FEAT-019: The instructor's *whole* week in one grid — lectures, office-hour
+ * blocks, this week's booked appointments, and busy windows — plus management
+ * cards for office hours and busy times.
+ */
 function InstructorSchedule() {
-  const { data, loading } = useQuery<{ mySections: ScheduleSection[] }>(
-    MY_SECTIONS_QUERY,
-  );
-  const sections = data?.mySections ?? [];
+  const { data: sectionsData, loading: sectionsLoading } = useQuery<{
+    mySections: ScheduleSection[];
+  }>(MY_SECTIONS_QUERY);
+  const { data: ohData, loading: ohLoading } = useQuery<{
+    myOfficeHourBlocks: OfficeHourBlockItem[];
+  }>(MY_OFFICE_HOUR_BLOCKS_QUERY);
+  const { data: busyData, loading: busyLoading } = useQuery<{
+    myBusyBlocks: BusyBlockItem[];
+  }>(MY_BUSY_BLOCKS_QUERY);
+  const { data: bookingsData, loading: bookingsLoading } = useQuery<{
+    instructorBookings: BookingItem[];
+  }>(INSTRUCTOR_BOOKINGS_QUERY);
 
+  const loading =
+    sectionsLoading || ohLoading || busyLoading || bookingsLoading;
   if (loading) return <Skeleton className="h-64 w-full rounded-lg" />;
+
+  const sections = sectionsData?.mySections ?? [];
+  const blocks = [
+    ...buildLectureBlocks(sections),
+    ...buildOfficeHourBlocks(ohData?.myOfficeHourBlocks ?? []),
+    ...buildBusyBlocks(busyData?.myBusyBlocks ?? []),
+    ...buildBookingBlocks(bookingsData?.instructorBookings ?? []),
+  ];
+
   return (
     <>
-      <ScheduleGrid sections={sections} />
-      <ScheduleLegend sections={sections} />
+      <ScheduleGrid blocks={blocks} />
+      <ScheduleLegend sections={sections} showInstructorKinds />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <OfficeHoursManager />
+        <BusyBlocksManager />
+      </div>
       <UpcomingBookings viewer="instructor" />
     </>
   );
@@ -361,7 +558,11 @@ export default function SchedulePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Schedule</h1>
-        <p className="text-muted-foreground">Your weekly class timetable.</p>
+        <p className="text-muted-foreground">
+          {isStudent
+            ? 'Your weekly class timetable.'
+            : 'Your whole week — lectures, office hours, bookings, and busy time.'}
+        </p>
       </div>
       {isStudent ? <StudentSchedule /> : <InstructorSchedule />}
     </div>
