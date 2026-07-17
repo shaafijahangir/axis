@@ -201,73 +201,75 @@ const LAST_NAMES = [
 
 const INSTRUCTOR_TITLES = ['Prof.', 'Dr.', 'Dr.', 'Dr.'];
 
+// GTM §8.5: UVic-shaped codes/subjects so the bulk demo population reads as
+// the same campus as the core seed. Content is representative, not copied.
 const COURSE_CATALOG = [
   {
-    code: 'CS102',
-    title: 'Introduction to Java Programming',
+    code: 'CSC 115',
+    title: 'Fundamentals of Programming II',
     dept: 'Computer Science',
     credits: 3,
-    desc: 'Object-oriented programming using Java. Topics include classes, inheritance, interfaces, and collections.',
+    desc: 'Object-oriented programming. Topics include classes, inheritance, interfaces, and collections.',
   },
   {
-    code: 'CS210',
-    title: 'Web Development Fundamentals',
+    code: 'CSC 230',
+    title: 'Introduction to Computer Architecture',
     dept: 'Computer Science',
     credits: 3,
-    desc: 'HTML, CSS, JavaScript, and modern front-end frameworks. Build responsive, interactive web applications.',
+    desc: 'Machine-level representation of data, assembly programming, memory hierarchy, and processor organization.',
   },
   {
-    code: 'CS310',
+    code: 'CSC 370',
     title: 'Database Systems',
     dept: 'Computer Science',
     credits: 3,
     desc: 'Relational databases, SQL, normalization, transactions, and introduction to NoSQL systems.',
   },
   {
-    code: 'CS350',
-    title: 'Software Engineering',
-    dept: 'Computer Science',
+    code: 'SENG 265',
+    title: 'Software Development Methods',
+    dept: 'Software Engineering',
     credits: 3,
-    desc: 'Agile methodologies, version control, testing, CI/CD, and collaborative software development.',
+    desc: 'Version control, testing, build tooling, scripting, and collaborative software development practice.',
   },
   {
-    code: 'MATH220',
-    title: 'Linear Algebra',
+    code: 'MATH 110',
+    title: 'Matrix Algebra for Engineers',
     dept: 'Mathematics',
     credits: 3,
-    desc: 'Vector spaces, linear transformations, matrices, eigenvalues, and applications in data science.',
+    desc: 'Vector spaces, linear transformations, matrices, eigenvalues, and applications.',
   },
   {
-    code: 'MATH301',
-    title: 'Probability & Statistics',
-    dept: 'Mathematics',
+    code: 'STAT 260',
+    title: 'Introduction to Probability and Statistics',
+    dept: 'Statistics',
     credits: 3,
     desc: 'Probability theory, distributions, hypothesis testing, and regression analysis.',
   },
   {
-    code: 'BIO110',
-    title: 'Cell Biology',
+    code: 'BIOL 150A',
+    title: 'Modern Biology I',
     dept: 'Biology',
     credits: 4,
     desc: 'Structure and function of cells, molecular biology fundamentals, genetics, and cell signaling.',
   },
   {
-    code: 'CHEM105',
-    title: 'General Chemistry I',
+    code: 'CHEM 101',
+    title: 'Fundamentals of Chemistry I',
     dept: 'Chemistry',
     credits: 4,
     desc: 'Atomic structure, chemical bonding, stoichiometry, thermochemistry, and states of matter.',
   },
   {
-    code: 'ECON101',
+    code: 'ECON 103',
     title: 'Principles of Microeconomics',
     dept: 'Economics',
     credits: 3,
     desc: 'Supply and demand, market structures, consumer behavior, and market failures.',
   },
   {
-    code: 'PSYC100',
-    title: 'Introduction to Psychology',
+    code: 'PSYC 100A',
+    title: 'Introductory Psychology I',
     dept: 'Psychology',
     credits: 3,
     desc: 'Biological bases of behavior, sensation, perception, memory, cognition, and personality.',
@@ -499,13 +501,8 @@ async function seedDemo() {
       '{"days":["Tue","Thu"],"time":"11:00-12:15"}',
       '{"days":["Tue","Thu"],"time":"14:00-15:15"}',
     ];
-    const buildings = [
-      'Science Hall',
-      'Math Building',
-      'Humanities',
-      'Engineering',
-      'Social Sciences',
-    ];
+    // Real UVic building codes (ECS, Clearihue, Elliott, David Turpin, MacLaurin)
+    const buildings = ['ECS', 'CLE', 'ELL', 'DTB', 'MAC'];
 
     for (const course of COURSE_CATALOG) {
       const courseId = courseMap.get(course.code);
