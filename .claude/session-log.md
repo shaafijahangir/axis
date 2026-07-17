@@ -17,6 +17,11 @@
 - Local-DB-only artifacts noticed (not bugs): old seed-demo courses (CS102/BIO110...) and a stray "Fall 2026" isCurrent term from admin-UI testing. Render unaffected (seeded fresh). `isCurrent` now reasserted on every seed.
 - **OUTREACH.md** created: 30-sec pitch, 3 warm message drafts (UVic engineer / known profs / student clubs), CASL rules distilled, conversation log table, 15-min demo walkthrough script. GTM §8 updated (3/4/5 ✅).
 
+### Live self-test, GTM §8.2 (2026-07-17)
+- Playwright walkthrough (scratchpad script, not repo code) of the live Render instance as all 4 roles — 14 pages, screenshots inspected. Zero console errors, zero 5xx, zero error boundaries. Student feed/timetable and admin governance are demo-ready; UVic-shaped data renders everywhere.
+- Login-form note: clicking Sign in before hydration fires a native GET submit (fields reset, URL gains "?"). Script artifact at machine speed — humans type slower than hydration; auth endpoint has no rate limiting (verified: 10 rapid logins, all 201). Not fixed; revisit only if a real user ever reports it.
+- **Bug found + fixed same-day (PR #59):** instructor weekly grid rendered completed past-term sections stacked under current ones (duplicate CSC 110 legend chips). Grid now filters to ACTIVE sections.
+
 ### Follow-through (2026-07-17)
 - Render re-seed over TLS via `~/.axis-render-db.env`; live API verified (Wed 11:00–11:45 in-person, Thu 11:00/11:20/11:40 Zoom — busy suppression working in prod).
 - **Render API key from the transcript still works — Shaafi must revoke it.**

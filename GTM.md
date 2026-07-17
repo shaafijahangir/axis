@@ -120,7 +120,7 @@ Shaafi Jahangir — Founder, Axis
 ## 8. Current Next Actions
 
 1. ✅ Field research → [shaafilook.md](./shaafilook.md)
-2. ⬜ End-to-end self-test of the product (all 4 roles)
+2. ✅ End-to-end self-test, all 4 roles, against the LIVE instance (2026-07-17, Playwright walkthrough of the OUTREACH.md demo path: 14 pages, zero console errors/5xx/error boundaries; one visual bug found and fixed same-day — completed past-term sections rendered on the instructor's weekly grid, PR #59)
 3. ✅ Office-hours booking (FEAT-018, merged 2026-07-16) **+ instructor schedule management** (FEAT-019, merged 2026-07-17: unified week grid, lecture-conflict rejection, busy blocks suppressing slots) — this is now demo point #2's proof
 4. ✅ Deployed 2026-07-16: https://axis-lms-web.onrender.com / https://axis-lms-api.onrender.com/api — Render **oregon** (no Canadian region exists on Render), acceptable for demo data only; real-student-data hosting decision still owed per §6. Free tier: services sleep after 15 min (~1 min cold start — warm it before demos), free Postgres expires ~2026-08-15.
 5. ✅ Demo tenant with UVic-shaped data (2026-07-17: real UVic course codes CSC 110/CSC 225/SENG 265/MATH 100..., ECS/CLE/ELL/DTB buildings, Summer 2026 term, seeded office hours + busy blocks for the booking demo)
