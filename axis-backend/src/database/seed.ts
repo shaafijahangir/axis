@@ -149,7 +149,7 @@ async function seed() {
         'Jordan',
         'Kim',
         '{student,ta}',
-        '{"bio":"CS senior, TA for CS101"}',
+        '{"bio":"CS senior, TA for CSC 110"}',
         '{}',
       ],
       [
@@ -207,13 +207,14 @@ async function seed() {
     await qr.query(
       `INSERT INTO academic_terms (id, "tenantId", name, "startDate", "endDate", "isCurrent", settings, "createdAt", "updatedAt")
        VALUES ($1,$2,$3,$4,$5,true,'{}',$6,$7)
-       ON CONFLICT (id) DO UPDATE SET name=$3`,
+       ON CONFLICT (id) DO UPDATE SET name=$3, "startDate"=$4, "endDate"=$5, "isCurrent"=true`,
       [
         IDS.currentTerm,
         IDS.tenant,
-        'Spring 2026',
-        '2026-01-12',
-        '2026-05-15',
+        // UVic-style term naming; dates span "now" so the demo term is live.
+        'Summer 2026',
+        '2026-05-04',
+        '2026-08-21',
         now,
         now,
       ],
@@ -221,13 +222,13 @@ async function seed() {
     await qr.query(
       `INSERT INTO academic_terms (id, "tenantId", name, "startDate", "endDate", "isCurrent", settings, "createdAt", "updatedAt")
        VALUES ($1,$2,$3,$4,$5,false,'{}',$6,$7)
-       ON CONFLICT (id) DO UPDATE SET name=$3`,
+       ON CONFLICT (id) DO UPDATE SET name=$3, "startDate"=$4, "endDate"=$5, "isCurrent"=false`,
       [
         IDS.pastTerm,
         IDS.tenant,
-        'Fall 2025',
-        '2025-08-25',
-        '2025-12-15',
+        'Spring 2026',
+        '2026-01-05',
+        '2026-04-30',
         now,
         now,
       ],
@@ -235,58 +236,62 @@ async function seed() {
     console.log('  2 academic terms created.');
 
     // ─── 4. Courses ────────────────────────────────────────────
+    // GTM §8.5: demo tenant carries UVic-shaped data — real UVic course codes
+    // and buildings so a UVic contact instantly recognizes the world
+    // (CSC 110 is UVic's Python-based intro course, ECS/CLE/ELL/DTB are real
+    // buildings). Course *content* below is representative, not copied.
     const courses = [
       [
         IDS.cs101,
-        'CS101',
-        'Introduction to Computer Science',
-        'Fundamentals of programming, algorithms, and computational thinking. Uses Python.',
+        'CSC 110',
+        'Fundamentals of Programming I',
+        'Introduction to designing, implementing, and understanding computer programs. Uses Python.',
         3,
         'Computer Science',
       ],
       [
         IDS.math201,
-        'MATH201',
+        'MATH 101',
         'Calculus II',
-        'Integration techniques, series, sequences, and multivariable calculus.',
+        'Integration techniques, series, sequences, and applications of integration.',
         4,
         'Mathematics',
       ],
       [
         IDS.eng102,
-        'ENG102',
-        'Academic Writing',
+        'ATWP 135',
+        'Academic Reading and Writing',
         'Research-based writing, argumentation, and critical analysis of texts.',
         3,
-        'English',
+        'Academic and Technical Writing',
       ],
       [
         IDS.phys150,
-        'PHYS150',
-        'Physics I: Mechanics',
+        'PHYS 110',
+        'Introductory Physics I',
         "Classical mechanics, kinematics, Newton's laws, energy, and momentum.",
         4,
         'Physics',
       ],
       [
         IDS.cs201,
-        'CS201',
-        'Data Structures & Algorithms',
-        'Trees, graphs, sorting, searching, dynamic programming. Prereq: CS101.',
+        'CSC 225',
+        'Algorithms and Data Structures I',
+        'Trees, graphs, sorting, searching, dynamic programming. Prereq: CSC 110.',
         3,
         'Computer Science',
       ],
       [
         IDS.cs301,
-        'CS301',
+        'CSC 360',
         'Operating Systems',
-        'Processes, threads, memory management, file systems. Prereq: CS201.',
+        'Processes, threads, memory management, file systems. Prereq: CSC 225.',
         3,
         'Computer Science',
       ],
       [
         IDS.math101,
-        'MATH101',
+        'MATH 100',
         'Calculus I',
         'Limits, derivatives, and introduction to integration.',
         4,
@@ -298,7 +303,7 @@ async function seed() {
       await qr.query(
         `INSERT INTO courses (id, "tenantId", code, title, description, credits, "departmentId", settings, "createdAt", "updatedAt")
          VALUES ($1,$2,$3,$4,$5,$6,$7,'{}',$8,$9)
-         ON CONFLICT (id) DO UPDATE SET title=$4`,
+         ON CONFLICT (id) DO UPDATE SET code=$3, title=$4, description=$5, "departmentId"=$7`,
         [id, IDS.tenant, code, title, desc, credits, dept, now, now],
       );
     }
@@ -316,7 +321,7 @@ async function seed() {
         IDS.instructor,
         IDS.currentTerm,
         '{"days":["Mon","Wed","Fri"],"time":"10:00-10:50"}',
-        'Science Hall 101',
+        'ECS 123',
         35,
         'active',
         '{Mon,Wed,Fri}',
@@ -329,7 +334,7 @@ async function seed() {
         IDS.instructor2,
         IDS.currentTerm,
         '{"days":["Tue","Thu"],"time":"09:00-10:15"}',
-        'Math Building 204',
+        'CLE A203',
         30,
         'active',
         '{Tue,Thu}',
@@ -342,7 +347,7 @@ async function seed() {
         IDS.instructor,
         IDS.currentTerm,
         '{"days":["Mon","Wed"],"time":"14:00-15:15"}',
-        'Humanities 310',
+        'DTB A102',
         25,
         'active',
         '{Mon,Wed}',
@@ -355,7 +360,7 @@ async function seed() {
         IDS.instructor2,
         IDS.currentTerm,
         '{"days":["Mon","Wed","Fri"],"time":"11:00-11:50"}',
-        'Physics Lab 105',
+        'ELL 061',
         28,
         'active',
         '{Mon,Wed,Fri}',
@@ -368,7 +373,7 @@ async function seed() {
         IDS.instructor,
         IDS.pastTerm,
         '{"days":["Mon","Wed","Fri"],"time":"10:00-10:50"}',
-        'Science Hall 101',
+        'ECS 123',
         35,
         'completed',
         '{Mon,Wed,Fri}',
@@ -393,7 +398,7 @@ async function seed() {
       await qr.query(
         `INSERT INTO course_sections (id, "courseId", "instructorId", "termId", schedule, location, capacity, status, "meetingDays", "startTime", "endTime", "createdAt", "updatedAt")
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-         ON CONFLICT (id) DO UPDATE SET status=$8, "meetingDays"=$9, "startTime"=$10, "endTime"=$11`,
+         ON CONFLICT (id) DO UPDATE SET location=$6, status=$8, "meetingDays"=$9, "startTime"=$10, "endTime"=$11`,
         [
           id,
           courseId,
@@ -420,14 +425,14 @@ async function seed() {
       [IDS.student, IDS.math201sec, 'student', 'active', null],
       [IDS.student, IDS.eng102sec, 'student', 'active', null],
       [IDS.student, IDS.phys150sec, 'student', 'active', null],
-      // Alex completed CS101 last semester
+      // Alex completed CSC 110 last term
       [IDS.student, IDS.cs101pastSec, 'student', 'completed', 'A-'],
-      // Jordan Kim — TA for CS101
+      // Jordan Kim — TA for CSC 110
       [IDS.ta, IDS.cs101sec, 'ta', 'active', null],
-      // Maria Santos — in CS101 and ENG102
+      // Maria Santos — in CSC 110 and ATWP 135
       [IDS.student2, IDS.cs101sec, 'student', 'active', null],
       [IDS.student2, IDS.eng102sec, 'student', 'active', null],
-      // James Thompson — in ENG102 and PHYS150
+      // James Thompson — in ATWP 135 and PHYS 110
       [IDS.student3, IDS.eng102sec, 'student', 'active', null],
       [IDS.student3, IDS.phys150sec, 'student', 'active', null],
     ];
@@ -466,7 +471,7 @@ async function seed() {
 
     const assignmentIds: Record<string, string> = {};
     const assignments = [
-      // CS101
+      // CSC 110
       {
         key: 'cs101_hw1',
         section: IDS.cs101sec,
@@ -527,7 +532,7 @@ async function seed() {
         due: future(45),
         module: null,
       },
-      // MATH201
+      // MATH 101
       {
         key: 'math_hw1',
         section: IDS.math201sec,
@@ -558,7 +563,7 @@ async function seed() {
         due: past(5),
         module: 'Chapter 7',
       },
-      // ENG102
+      // ATWP 135
       {
         key: 'eng_essay1',
         section: IDS.eng102sec,
@@ -589,7 +594,7 @@ async function seed() {
         due: past(2),
         module: 'Unit 1: Rhetoric',
       },
-      // PHYS150
+      // PHYS 110
       {
         key: 'phys_lab1',
         section: IDS.phys150sec,
@@ -766,8 +771,8 @@ async function seed() {
         IDS.ann_cs101_welcome,
         IDS.cs101sec,
         IDS.instructor,
-        'Welcome to CS101!',
-        'Welcome to Introduction to Computer Science! Please review the syllabus on the course page and come to the first class ready to code. Make sure you have Python 3.12+ installed.\n\nOffice hours: Mon/Wed 3-4 PM in Science Hall 205.',
+        'Welcome to CSC 110!',
+        'Welcome to Fundamentals of Programming I! Please review the syllabus on the course page and come to the first class ready to code. Make sure you have Python 3.12+ installed.\n\nMy office hours are bookable right here in Axis — no email needed. In person Wednesdays (ECS 618) or on Zoom Thursdays.',
         'normal',
         false,
         past(30),
@@ -777,7 +782,7 @@ async function seed() {
         IDS.cs101sec,
         IDS.instructor,
         'Midterm Study Guide Posted',
-        'The midterm study guide has been posted under Module 3. It covers all topics from Modules 1-3. I recommend reviewing your homework solutions and the quiz.\n\nReview session: Friday 3-5 PM in Science Hall 101.',
+        'The midterm study guide has been posted under Module 3. It covers all topics from Modules 1-3. I recommend reviewing your homework solutions and the quiz.\n\nReview session: Friday 3-5 PM in ECS 123.',
         'urgent',
         true,
         past(1),
@@ -787,7 +792,7 @@ async function seed() {
         IDS.cs101sec,
         IDS.ta,
         'Extra Office Hours This Week',
-        "I'll be holding extra office hours this week to help with HW3:\n- Tuesday 4-6 PM\n- Thursday 4-6 PM\n\nLocation: CS Lab (Science Hall 015)",
+        "I'll be holding extra office hours this week to help with HW3:\n- Tuesday 4-6 PM\n- Thursday 4-6 PM\n\nLocation: CSC lab (ECS 258)",
         'normal',
         false,
         past(0),
@@ -837,7 +842,7 @@ async function seed() {
       await qr.query(
         `INSERT INTO announcements (id, "tenantId", "sectionId", "authorId", title, body, priority, pinned, "createdAt", "updatedAt")
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-         ON CONFLICT (id) DO NOTHING`,
+         ON CONFLICT (id) DO UPDATE SET title=$5, body=$6`,
         [
           annId,
           IDS.tenant,
@@ -855,8 +860,8 @@ async function seed() {
     console.log(`  ${announcements.length} announcements created.`);
 
     // ─── 9b. Office hours + busy blocks (FEAT-018/019) ─────────
-    // Prof Chen teaches CS101 MWF 10:00–10:50 and ENG102 MW 14:00–15:15, so
-    // these windows deliberately avoid her lectures (the API rejects overlaps).
+    // Prof Chen teaches CSC 110 MWF 10:00–10:50 and ATWP 135 MW 14:00–15:15,
+    // so these windows deliberately avoid her lectures (the API rejects overlaps).
     const officeHourBlocks = [
       // [id, dayOfWeek, startTime, endTime, slotMinutes, locationType, location, meetingUrl]
       [
@@ -967,12 +972,12 @@ async function seed() {
     await qr.query(
       `INSERT INTO degree_programs (id, "tenantId", name, code, department, description, "totalCreditsRequired", requirements, status, "createdAt", "updatedAt")
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-       ON CONFLICT (id) DO UPDATE SET name=$3`,
+       ON CONFLICT (id) DO UPDATE SET name=$3, code=$4, description=$6`,
       [
         IDS.csBS,
         IDS.tenant,
-        'BS Computer Science',
-        'CS-BS',
+        'BSc in Computer Science',
+        'BSC-CSC',
         'Computer Science',
         'Bachelor of Science in Computer Science. Prepares students for careers in software engineering, data science, and systems design.',
         120,
@@ -999,7 +1004,7 @@ async function seed() {
         JSON.stringify([IDS.math101, IDS.cs101]),
         JSON.stringify([IDS.cs101, IDS.math201, IDS.eng102, IDS.phys150]),
         'active',
-        'Strong start. Completed CS101 with A- in Fall 2025. On track for 4-year graduation.',
+        'Strong start. Completed CSC 110 with A- in Spring 2026. On track for 4-year graduation.',
         now,
         now,
       ],

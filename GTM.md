@@ -121,9 +121,9 @@ Shaafi Jahangir — Founder, Axis
 
 1. ✅ Field research → [shaafilook.md](./shaafilook.md)
 2. ⬜ End-to-end self-test of the product (all 4 roles)
-3. ⬜ Office-hours booking feature (FEAT-018 — PR in progress)
-4. ⬜ Deploy (Render; Canadian region decision per §6)
-5. ⬜ Demo tenant with UVic-shaped data
-6. ⬜ Set up lead tracker (Notion/HubSpot free)
+3. ✅ Office-hours booking (FEAT-018, merged 2026-07-16) **+ instructor schedule management** (FEAT-019, merged 2026-07-17: unified week grid, lecture-conflict rejection, busy blocks suppressing slots) — this is now demo point #2's proof
+4. ✅ Deployed 2026-07-16: https://axis-lms-web.onrender.com / https://axis-lms-api.onrender.com/api — Render **oregon** (no Canadian region exists on Render), acceptable for demo data only; real-student-data hosting decision still owed per §6. Free tier: services sleep after 15 min (~1 min cold start — warm it before demos), free Postgres expires ~2026-08-15.
+5. ✅ Demo tenant with UVic-shaped data (2026-07-17: real UVic course codes CSC 110/CSC 225/SENG 265/MATH 100..., ECS/CLE/ELL/DTB buildings, Summer 2026 term, seeded office hours + busy blocks for the booking demo)
+6. ⬜ Set up lead tracker (Notion/HubSpot free) — starter log lives in [OUTREACH.md](./OUTREACH.md) until >10 rows
 7. ⬜ 2–3 min demo video + polish `/`, `/features`, `/about`
-8. ⬜ First 10 warm conversations (start: UVic engineer — "built the thing we discussed, want a look?")
+8. ⬜ First 10 warm conversations — messages drafted in [OUTREACH.md](./OUTREACH.md), start with the UVic engineer

@@ -11,6 +11,12 @@
 **Goal:** Build FEAT-019 (Shaafi's insight: "you manage the prof's schedule as well") on branch `feat/instructor-schedule`.
 **Status:** MERGED (PR #56, squashed as e43cacd). Render auto-deployed it; Render Postgres re-seeded — live demo shows office hours + busy suppression (verified: Thu slots start 11:00). Then BUG-014 fixed on `fix/feed-deeplinks`.
 
+### Demo package (2026-07-17, branch feat/uvic-demo-tenant)
+- Seeds reshaped to UVic-shaped data (GTM §8.5): real UVic codes (CSC 110/115/225/230/360/370, SENG 265, MATH 100/101/110, PHYS 110, ATWP 135, STAT 260...), ECS/CLE/ELL/DTB/MAC buildings, Summer 2026 current term (old seed's "Spring 2026" had already ended — demo looked stale). E2E couples only to user emails/names, so codes were safe to change (verified by grep).
+- **Upsert clauses now update display columns** (courses code/title/desc, sections location, terms name/dates/isCurrent, announcements title/body, degree program) — without this, re-seeding existing DBs (Render!) would keep old strings. Local DB verified: CSC 110 etc. present after re-seed.
+- Local-DB-only artifacts noticed (not bugs): old seed-demo courses (CS102/BIO110...) and a stray "Fall 2026" isCurrent term from admin-UI testing. Render unaffected (seeded fresh). `isCurrent` now reasserted on every seed.
+- **OUTREACH.md** created: 30-sec pitch, 3 warm message drafts (UVic engineer / known profs / student clubs), CASL rules distilled, conversation log table, 15-min demo walkthrough script. GTM §8 updated (3/4/5 ✅).
+
 ### Follow-through (2026-07-17)
 - Render re-seed over TLS via `~/.axis-render-db.env`; live API verified (Wed 11:00–11:45 in-person, Thu 11:00/11:20/11:40 Zoom — busy suppression working in prod).
 - **Render API key from the transcript still works — Shaafi must revoke it.**
