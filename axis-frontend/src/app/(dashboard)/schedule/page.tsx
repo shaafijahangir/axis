@@ -36,6 +36,7 @@ interface LegacyScheduleBlob {
 
 interface ScheduleSection {
   id: string;
+  status?: string;
   location: string | null;
   /** @deprecated SPRINT-1: legacy JSONB; prefer typed fields below */
   schedule: string | null;
@@ -525,7 +526,13 @@ function InstructorSchedule() {
     sectionsLoading || ohLoading || busyLoading || bookingsLoading;
   if (loading) return <Skeleton className="h-64 w-full rounded-lg" />;
 
-  const sections = sectionsData?.mySections ?? [];
+  // mySections includes past-term (completed) sections; the weekly grid is
+  // "this week", so only ACTIVE sections belong on it. Without this filter a
+  // completed section of the same course stacks under the current one and
+  // duplicates the legend entry. (GraphQL enums arrive as names: "ACTIVE".)
+  const sections = (sectionsData?.mySections ?? []).filter(
+    (s) => (s.status ?? '').toUpperCase() === 'ACTIVE',
+  );
   const blocks = [
     ...buildLectureBlocks(sections),
     ...buildOfficeHourBlocks(ohData?.myOfficeHourBlocks ?? []),
