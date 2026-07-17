@@ -15,6 +15,11 @@ import {
   OfficeHourLocationType,
 } from './entities/office-hour-block.entity';
 import { Booking, BookingStatus } from './entities/booking.entity';
+import { BusyBlock } from './entities/busy-block.entity';
+import {
+  CourseSection,
+  SectionStatus,
+} from '../../database/entities/course-section.entity';
 import { NexusEvents } from '../ai/events/ai-events';
 import {
   createMockRepository,
@@ -63,10 +68,26 @@ function makeBlock(overrides: Partial<OfficeHourBlock> = {}): OfficeHourBlock {
   } as unknown as OfficeHourBlock;
 }
 
+/** A lecture section shaped like findSectionsForInstructor's result. */
+function makeSection(overrides: Partial<CourseSection> = {}): CourseSection {
+  return {
+    id: 'section-001',
+    instructorId: 'instructor-001',
+    status: SectionStatus.ACTIVE,
+    meetingDays: ['Mon', 'Wed', 'Fri'],
+    startTime: '10:00:00',
+    endTime: '10:50:00',
+    course: { id: 'course-001', code: 'CSC 101', tenantId: 'tenant-001' },
+    ...overrides,
+  } as unknown as CourseSection;
+}
+
 describe('OfficeHoursService', () => {
   let service: OfficeHoursService;
   let blockRepo: MockRepository<OfficeHourBlock>;
   let bookingRepo: MockRepository<Booking>;
+  let busyRepo: MockRepository<BusyBlock>;
+  let sectionRepo: MockRepository<CourseSection>;
   let txManager: {
     findOne: jest.Mock;
     create: jest.Mock;
@@ -82,6 +103,13 @@ describe('OfficeHoursService', () => {
   beforeEach(async () => {
     blockRepo = createMockRepository<OfficeHourBlock>();
     bookingRepo = createMockRepository<Booking>();
+    busyRepo = createMockRepository<BusyBlock>();
+    sectionRepo = createMockRepository<CourseSection>();
+    // Conflict detection + busy suppression run on every create/update/slot
+    // scan — default them to "no conflicts, no busy time".
+    blockRepo.find!.mockResolvedValue([]);
+    sectionRepo.find!.mockResolvedValue([]);
+    busyRepo.find!.mockResolvedValue([]);
 
     txManager = {
       findOne: jest.fn(),
@@ -105,6 +133,8 @@ describe('OfficeHoursService', () => {
         OfficeHoursService,
         { provide: getRepositoryToken(OfficeHourBlock), useValue: blockRepo },
         { provide: getRepositoryToken(Booking), useValue: bookingRepo },
+        { provide: getRepositoryToken(BusyBlock), useValue: busyRepo },
+        { provide: getRepositoryToken(CourseSection), useValue: sectionRepo },
         { provide: DataSource, useValue: dataSource },
         { provide: EventEmitter2, useValue: eventEmitter },
       ],
@@ -425,6 +455,189 @@ describe('OfficeHoursService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
       expect(blockRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'block-001', tenantId },
+      });
+    });
+  });
+
+  // ─── FEAT-019: schedule conflict detection ──────────────────────────────────
+
+  describe('schedule conflict detection', () => {
+    const zoomInput = {
+      dayOfWeek: OfficeHourDay.MON,
+      startTime: '10:30',
+      endTime: '11:30',
+      locationType: OfficeHourLocationType.ZOOM,
+      meetingUrl: 'https://zoom.us/j/1',
+    };
+
+    it('rejects a block overlapping the instructor lecture time', async () => {
+      // Lecture Mon 10:00–10:50 vs block Mon 10:30–11:30 → overlap.
+      sectionRepo.find!.mockResolvedValue([makeSection()]);
+
+      await expect(
+        service.createBlock(tenantId, instructorId, zoomInput),
+      ).rejects.toBeInstanceOf(ConflictException);
+      await expect(
+        service.createBlock(tenantId, instructorId, zoomInput),
+      ).rejects.toThrow(/CSC 101 lecture \(Mon 10:00–10:50\)/);
+      expect(blockRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('normalizes meetingDays casing before comparing ("MONDAY" still conflicts)', async () => {
+      sectionRepo.find!.mockResolvedValue([
+        makeSection({ meetingDays: ['MONDAY'] }),
+      ]);
+      await expect(
+        service.createBlock(tenantId, instructorId, zoomInput),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('allows a block that only touches the lecture boundary', async () => {
+      sectionRepo.find!.mockResolvedValue([makeSection()]);
+      blockRepo.create!.mockImplementation((v: unknown) => v);
+      blockRepo.save!.mockImplementation((v: unknown) => v);
+
+      // Lecture ends 10:50; block starts exactly then → no overlap.
+      await expect(
+        service.createBlock(tenantId, instructorId, {
+          ...zoomInput,
+          startTime: '10:50',
+          endTime: '11:50',
+        }),
+      ).resolves.toBeDefined();
+    });
+
+    it('ignores lectures on other weekdays', async () => {
+      sectionRepo.find!.mockResolvedValue([
+        makeSection({ meetingDays: ['Tue', 'Thu'] }),
+      ]);
+      blockRepo.create!.mockImplementation((v: unknown) => v);
+      blockRepo.save!.mockImplementation((v: unknown) => v);
+
+      await expect(
+        service.createBlock(tenantId, instructorId, zoomInput),
+      ).resolves.toBeDefined();
+    });
+
+    it('rejects a block overlapping another of the instructor blocks', async () => {
+      // Existing active block Mon 09:00–10:00 (from the default day 'mon').
+      blockRepo.find!.mockResolvedValue([makeBlock()]);
+
+      await expect(
+        service.createBlock(tenantId, instructorId, {
+          ...zoomInput,
+          startTime: '09:30',
+          endTime: '10:30',
+        }),
+      ).rejects.toThrow(/your existing office hours \(Mon 09:00–10:00\)/);
+    });
+
+    it('excludes the block itself when re-checking on update', async () => {
+      const block = makeBlock(); // MON 09:00–10:00
+      blockRepo.findOne!.mockResolvedValue(block);
+      blockRepo.find!.mockResolvedValue([block]); // only itself on that day
+      blockRepo.save!.mockImplementation((v: unknown) => v);
+
+      // Shrinking its own window must not self-collide.
+      await expect(
+        service.updateBlock(tenantId, instructorId, {
+          id: block.id,
+          startTime: '09:00',
+          endTime: '09:30',
+        }),
+      ).resolves.toBeDefined();
+    });
+  });
+
+  // ─── FEAT-019: busy blocks ──────────────────────────────────────────────────
+
+  describe('busy blocks', () => {
+    it('suppresses slots inside a busy window', async () => {
+      const date = nextDateForDay(FUTURE_BASE, OfficeHourDay.MON);
+      blockRepo.find!.mockResolvedValue([makeBlock()]); // MON 09:00–10:00
+      bookingRepo.find!.mockResolvedValue([]);
+      busyRepo.find!.mockResolvedValue([
+        {
+          dayOfWeek: OfficeHourDay.MON,
+          startTime: '09:00:00',
+          endTime: '09:30:00',
+        },
+      ]);
+
+      const slots = await service.computeAvailableSlots(tenantId, {
+        instructorId,
+        startDate: date,
+        endDate: date,
+      });
+
+      expect(slots.map((s) => s.startTime)).toEqual(['09:30', '09:45']);
+    });
+
+    it('ignores busy windows on other weekdays', async () => {
+      const date = nextDateForDay(FUTURE_BASE, OfficeHourDay.MON);
+      blockRepo.find!.mockResolvedValue([makeBlock()]);
+      bookingRepo.find!.mockResolvedValue([]);
+      busyRepo.find!.mockResolvedValue([
+        {
+          dayOfWeek: OfficeHourDay.TUE,
+          startTime: '09:00:00',
+          endTime: '10:00:00',
+        },
+      ]);
+
+      const slots = await service.computeAvailableSlots(tenantId, {
+        instructorId,
+        startDate: date,
+        endDate: date,
+      });
+
+      expect(slots).toHaveLength(4);
+    });
+
+    it('creates a busy block owned by the calling instructor', async () => {
+      busyRepo.create!.mockImplementation((v: unknown) => v);
+      busyRepo.save!.mockImplementation((v: unknown) => v);
+
+      await service.createBusyBlock(tenantId, instructorId, {
+        dayOfWeek: OfficeHourDay.TUE,
+        startTime: '13:00',
+        endTime: '15:00',
+        label: 'Research',
+      });
+
+      expect(busyRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ tenantId, instructorId, label: 'Research' }),
+      );
+    });
+
+    it('rejects a busy window whose end is not after its start', async () => {
+      await expect(
+        service.createBusyBlock(tenantId, instructorId, {
+          dayOfWeek: OfficeHourDay.TUE,
+          startTime: '15:00',
+          endTime: '13:00',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('forbids deleting another instructor busy block', async () => {
+      busyRepo.findOne!.mockResolvedValue({
+        id: 'busy-001',
+        instructorId: 'other-instructor',
+      });
+      await expect(
+        service.deleteBusyBlock(tenantId, instructorId, 'busy-001'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(busyRepo.remove).not.toHaveBeenCalled();
+    });
+
+    it('404s (tenant-scoped) a busy block from another tenant', async () => {
+      busyRepo.findOne!.mockResolvedValue(null);
+      await expect(
+        service.deleteBusyBlock(tenantId, instructorId, 'busy-001'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(busyRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'busy-001', tenantId },
       });
     });
   });

@@ -3,12 +3,14 @@ import { ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { OfficeHoursService } from './office-hours.service';
 import { OfficeHourBlock } from './entities/office-hour-block.entity';
 import { Booking } from './entities/booking.entity';
+import { BusyBlock } from './entities/busy-block.entity';
 import {
   CreateOfficeHourBlockInput,
   UpdateOfficeHourBlockInput,
   AvailableSlotsInput,
   BookSlotInput,
   AvailableSlot,
+  CreateBusyBlockInput,
 } from './dto/office-hours.types';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
@@ -64,6 +66,14 @@ export class OfficeHoursResolver {
     return this.officeHoursService.listMyBookings(user.tenantId, user.id);
   }
 
+  /** The current instructor's busy blocks (FEAT-019). */
+  @Query(() => [BusyBlock])
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async myBusyBlocks(@CurrentUser() user: User): Promise<BusyBlock[]> {
+    return this.officeHoursService.listMyBusyBlocks(user.tenantId, user.id);
+  }
+
   /** The current instructor's upcoming bookings. */
   @Query(() => [Booking])
   @UseGuards(RolesGuard)
@@ -105,6 +115,30 @@ export class OfficeHoursResolver {
     @Args('id', ParseUUIDPipe) id: string,
   ): Promise<OfficeHourBlock> {
     return this.officeHoursService.deactivateBlock(user.tenantId, user.id, id);
+  }
+
+  @Mutation(() => BusyBlock)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async createBusyBlock(
+    @CurrentUser() user: User,
+    @Args('input') input: CreateBusyBlockInput,
+  ): Promise<BusyBlock> {
+    return this.officeHoursService.createBusyBlock(
+      user.tenantId,
+      user.id,
+      input,
+    );
+  }
+
+  @Mutation(() => BusyBlock)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async deleteBusyBlock(
+    @CurrentUser() user: User,
+    @Args('id', ParseUUIDPipe) id: string,
+  ): Promise<BusyBlock> {
+    return this.officeHoursService.deleteBusyBlock(user.tenantId, user.id, id);
   }
 
   @Mutation(() => Booking)

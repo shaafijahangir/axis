@@ -150,6 +150,28 @@ export class BookSlotInput {
   note?: string;
 }
 
+@InputType()
+export class CreateBusyBlockInput {
+  @Field(() => OfficeHourDay)
+  @IsEnum(OfficeHourDay)
+  dayOfWeek: OfficeHourDay;
+
+  @Field()
+  @Matches(TIME_REGEX, { message: 'startTime must be "HH:MM" 24h' })
+  startTime: string;
+
+  @Field()
+  @Matches(TIME_REGEX, { message: 'endTime must be "HH:MM" 24h' })
+  endTime: string;
+
+  /** What the time is blocked for, e.g. "Research", "Dept meeting". */
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  label?: string;
+}
+
 /**
  * A single generated, still-open slot. Computed on the fly from a block minus
  * existing BOOKED bookings — never persisted, so it's an ObjectType, not an entity.

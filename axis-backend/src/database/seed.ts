@@ -59,6 +59,11 @@ const IDS = {
   ann_math201_update: '70000000-0000-0000-0000-000000000004',
   ann_eng102_essay: '70000000-0000-0000-0000-000000000005',
   ann_phys150_lab: '70000000-0000-0000-0000-000000000006',
+  // Office hours + busy blocks (FEAT-018/019) — fixed for idempotent re-seeds
+  oh_chen_wed: '80000000-0000-0000-0000-000000000001',
+  oh_chen_thu: '80000000-0000-0000-0000-000000000002',
+  busy_chen_research: '80000000-0000-0000-0000-000000000003',
+  busy_chen_meeting: '80000000-0000-0000-0000-000000000004',
 };
 
 async function seed() {
@@ -848,6 +853,80 @@ async function seed() {
       );
     }
     console.log(`  ${announcements.length} announcements created.`);
+
+    // ─── 9b. Office hours + busy blocks (FEAT-018/019) ─────────
+    // Prof Chen teaches CS101 MWF 10:00–10:50 and ENG102 MW 14:00–15:15, so
+    // these windows deliberately avoid her lectures (the API rejects overlaps).
+    const officeHourBlocks = [
+      // [id, dayOfWeek, startTime, endTime, slotMinutes, locationType, location, meetingUrl]
+      [
+        IDS.oh_chen_wed,
+        'wed',
+        '11:00',
+        '12:00',
+        15,
+        'in_person',
+        'ECS 618',
+        null,
+      ],
+      [
+        IDS.oh_chen_thu,
+        'thu',
+        '10:00',
+        '12:00',
+        20,
+        'zoom',
+        null,
+        'https://zoom.us/j/5551234567',
+      ],
+    ];
+    for (const [
+      id,
+      day,
+      start,
+      end,
+      slot,
+      locType,
+      loc,
+      url,
+    ] of officeHourBlocks) {
+      await qr.query(
+        `INSERT INTO office_hour_blocks (id, "tenantId", "instructorId", "dayOfWeek", "startTime", "endTime", "slotMinutes", "locationType", location, "meetingUrl", active, "createdAt", "updatedAt")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,true,$11,$12)
+         ON CONFLICT (id) DO UPDATE SET "dayOfWeek"=$4, "startTime"=$5, "endTime"=$6`,
+        [
+          id,
+          IDS.tenant,
+          IDS.instructor,
+          day,
+          start,
+          end,
+          slot,
+          locType,
+          loc,
+          url,
+          now,
+          now,
+        ],
+      );
+    }
+
+    // Busy Thu 10:00–11:00 overlaps the Thursday Zoom block on purpose: it
+    // demonstrates FEAT-019 suppression — students only see slots from 11:00.
+    const busyBlocks = [
+      // [id, dayOfWeek, startTime, endTime, label]
+      [IDS.busy_chen_research, 'tue', '13:00', '15:00', 'Research'],
+      [IDS.busy_chen_meeting, 'thu', '10:00', '11:00', 'Department meeting'],
+    ];
+    for (const [id, day, start, end, label] of busyBlocks) {
+      await qr.query(
+        `INSERT INTO busy_blocks (id, "tenantId", "instructorId", "dayOfWeek", "startTime", "endTime", label, "createdAt", "updatedAt")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+         ON CONFLICT (id) DO UPDATE SET "dayOfWeek"=$4, "startTime"=$5, "endTime"=$6, label=$7`,
+        [id, IDS.tenant, IDS.instructor, day, start, end, label, now, now],
+      );
+    }
+    console.log('  2 office-hour blocks + 2 busy blocks created.');
 
     // ─── 10. Degree Program ────────────────────────────────────
     const csRequirements = JSON.stringify([

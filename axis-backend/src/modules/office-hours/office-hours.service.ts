@@ -6,7 +6,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Between, MoreThanOrEqual } from 'typeorm';
+import { Repository, DataSource, Between, In, MoreThanOrEqual } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   OfficeHourBlock,
@@ -14,13 +14,19 @@ import {
   OfficeHourLocationType,
 } from './entities/office-hour-block.entity';
 import { Booking, BookingStatus } from './entities/booking.entity';
+import { BusyBlock } from './entities/busy-block.entity';
 import {
   CreateOfficeHourBlockInput,
   UpdateOfficeHourBlockInput,
   AvailableSlotsInput,
   BookSlotInput,
   AvailableSlot,
+  CreateBusyBlockInput,
 } from './dto/office-hours.types';
+import {
+  CourseSection,
+  SectionStatus,
+} from '../../database/entities/course-section.entity';
 import { NexusEvents } from '../ai/events/ai-events';
 
 /** Maps an office-hours day enum to JS `getUTCDay()` (0=Sun … 6=Sat). */
@@ -33,6 +39,31 @@ const DAY_INDEX: Record<OfficeHourDay, number> = {
 };
 
 const MAX_RANGE_DAYS = 60; // guard against a caller asking for a year of slots
+
+/**
+ * FEAT-019: Section `meetingDays` is a free text[] seeded/imported with mixed
+ * casing ("Mon", "MON", "Monday"). Normalize on the first three letters so
+ * conflict checks don't silently miss a lecture over a casing mismatch.
+ */
+const DAY_FROM_STRING: Record<string, OfficeHourDay> = {
+  mon: OfficeHourDay.MON,
+  tue: OfficeHourDay.TUE,
+  wed: OfficeHourDay.WED,
+  thu: OfficeHourDay.THU,
+  fri: OfficeHourDay.FRI,
+};
+
+function toOfficeHourDay(day: string): OfficeHourDay | null {
+  return DAY_FROM_STRING[day.trim().slice(0, 3).toLowerCase()] ?? null;
+}
+
+const DAY_DISPLAY: Record<OfficeHourDay, string> = {
+  [OfficeHourDay.MON]: 'Mon',
+  [OfficeHourDay.TUE]: 'Tue',
+  [OfficeHourDay.WED]: 'Wed',
+  [OfficeHourDay.THU]: 'Thu',
+  [OfficeHourDay.FRI]: 'Fri',
+};
 
 // ─── Time / date helpers ─────────────────────────────────────────────────────
 
@@ -75,6 +106,10 @@ export class OfficeHoursService {
     private readonly blockRepo: Repository<OfficeHourBlock>,
     @InjectRepository(Booking)
     private readonly bookingRepo: Repository<Booking>,
+    @InjectRepository(BusyBlock)
+    private readonly busyRepo: Repository<BusyBlock>,
+    @InjectRepository(CourseSection)
+    private readonly sectionRepo: Repository<CourseSection>,
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -89,6 +124,13 @@ export class OfficeHoursService {
     const slotMinutes = input.slotMinutes ?? 15;
     this.validateWindow(input.startTime, input.endTime, slotMinutes);
     this.validateLocation(input.locationType, input.location, input.meetingUrl);
+    await this.assertNoScheduleConflict(
+      tenantId,
+      instructorId,
+      input.dayOfWeek,
+      input.startTime,
+      input.endTime,
+    );
 
     const block = this.blockRepo.create({
       tenantId,
@@ -124,8 +166,23 @@ export class OfficeHoursService {
       input.meetingUrl !== undefined ? input.meetingUrl : block.meetingUrl;
     this.validateLocation(locationType, location, meetingUrl);
 
+    const dayOfWeek = input.dayOfWeek ?? block.dayOfWeek;
+    // Re-check conflicts against the block's *final* day/time; exclude the
+    // block itself so an unrelated field edit doesn't self-collide.
+    const willBeActive = input.active ?? block.active;
+    if (willBeActive) {
+      await this.assertNoScheduleConflict(
+        tenantId,
+        instructorId,
+        dayOfWeek,
+        startTime,
+        endTime,
+        block.id,
+      );
+    }
+
     Object.assign(block, {
-      dayOfWeek: input.dayOfWeek ?? block.dayOfWeek,
+      dayOfWeek,
       startTime,
       endTime,
       slotMinutes,
@@ -202,6 +259,24 @@ export class OfficeHoursService {
     });
     if (blocks.length === 0) return [];
 
+    // FEAT-019: busy windows (recurring weekly unavailability) suppress any
+    // overlapping slot without the instructor editing their blocks.
+    const busyBlocks = await this.busyRepo.find({
+      where: { tenantId, instructorId: input.instructorId },
+    });
+    const busyByDay = new Map<
+      OfficeHourDay,
+      { start: number; end: number }[]
+    >();
+    for (const busy of busyBlocks) {
+      const windows = busyByDay.get(busy.dayOfWeek) ?? [];
+      windows.push({
+        start: timeToMinutes(busy.startTime),
+        end: timeToMinutes(busy.endTime),
+      });
+      busyByDay.set(busy.dayOfWeek, windows);
+    }
+
     // All BOOKED bookings for this instructor in the window → set of taken keys.
     const bookings = await this.bookingRepo.find({
       where: {
@@ -243,6 +318,13 @@ export class OfficeHoursService {
           // Skip past slots (whole past days, and earlier slots today).
           if (dateStr < todayStr) continue;
           if (dateStr === todayStr && start <= nowMinutes) continue;
+
+          // Skip slots inside a busy window (FEAT-019).
+          const slotEnd = start + block.slotMinutes;
+          const busyWindows = busyByDay.get(block.dayOfWeek);
+          if (busyWindows?.some((w) => start < w.end && w.start < slotEnd)) {
+            continue;
+          }
 
           const startTime = minutesToTime(start);
           if (taken.has(`${block.id}|${dateStr}|${startTime}`)) continue;
@@ -420,7 +502,135 @@ export class OfficeHoursService {
     return booking;
   }
 
+  // ─── Busy blocks (FEAT-019) ────────────────────────────────────────────────
+
+  /**
+   * Recurring weekly unavailability. Not conflict-checked on purpose: a busy
+   * block MAY overlap lectures or office hours — that is its job (it suppresses
+   * bookable slots inside the overlap).
+   */
+  async createBusyBlock(
+    tenantId: string,
+    instructorId: string,
+    input: CreateBusyBlockInput,
+  ): Promise<BusyBlock> {
+    if (timeToMinutes(input.startTime) >= timeToMinutes(input.endTime)) {
+      throw new BadRequestException('startTime must be before endTime');
+    }
+    const busy = this.busyRepo.create({
+      tenantId,
+      instructorId,
+      dayOfWeek: input.dayOfWeek,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      label: input.label?.trim() || null,
+    });
+    return this.busyRepo.save(busy);
+  }
+
+  async deleteBusyBlock(
+    tenantId: string,
+    instructorId: string,
+    busyBlockId: string,
+  ): Promise<BusyBlock> {
+    const busy = await this.busyRepo.findOne({
+      where: { id: busyBlockId, tenantId },
+    });
+    if (!busy) throw new NotFoundException('Busy block not found');
+    // Resource-level authorization: instructors manage only their own blocks.
+    if (busy.instructorId !== instructorId) {
+      throw new ForbiddenException('You do not own this busy block');
+    }
+    await this.busyRepo.remove(busy);
+    // remove() clears the id — restore it so the caller (and Apollo cache
+    // eviction on the frontend) still sees which row was deleted.
+    busy.id = busyBlockId;
+    return busy;
+  }
+
+  async listMyBusyBlocks(
+    tenantId: string,
+    instructorId: string,
+  ): Promise<BusyBlock[]> {
+    return this.busyRepo.find({
+      where: { tenantId, instructorId },
+      order: { dayOfWeek: 'ASC', startTime: 'ASC' },
+    });
+  }
+
   // ─── Private helpers ─────────────────────────────────────────────────────
+
+  /**
+   * FEAT-019: Reject an office-hour block that overlaps the instructor's own
+   * schedule — their lecture times (section meetingDays/startTime/endTime) or
+   * another of their active office-hour blocks on the same day.
+   *
+   * WHY reject (not warn): the backlog allows either; a hard ConflictException
+   * is the only option that keeps the API honest for non-UI callers (AI agent
+   * tools create blocks too, and an agent can't render a warning dialog).
+   */
+  private async assertNoScheduleConflict(
+    tenantId: string,
+    instructorId: string,
+    dayOfWeek: OfficeHourDay,
+    startTime: string,
+    endTime: string,
+    excludeBlockId?: string,
+  ): Promise<void> {
+    const start = timeToMinutes(startTime);
+    const end = timeToMinutes(endTime);
+    const conflicts: string[] = [];
+
+    // Lectures: sections this instructor teaches, in any non-finished status.
+    // CourseSection has no tenantId column — tenant scope goes through course.
+    const sections = await this.sectionRepo.find({
+      where: {
+        instructorId,
+        status: In([SectionStatus.DRAFT, SectionStatus.ACTIVE]),
+        course: { tenantId },
+      },
+      relations: ['course'],
+    });
+    for (const section of sections) {
+      if (!section.startTime || !section.endTime) continue;
+      const meetsToday = (section.meetingDays ?? []).some(
+        (d) => toOfficeHourDay(d) === dayOfWeek,
+      );
+      if (!meetsToday) continue;
+
+      const lectureStart = timeToMinutes(section.startTime);
+      const lectureEnd = timeToMinutes(section.endTime);
+      if (start < lectureEnd && lectureStart < end) {
+        conflicts.push(
+          `${section.course.code} lecture (${DAY_DISPLAY[dayOfWeek]} ` +
+            `${normalizeTime(section.startTime)}–${normalizeTime(section.endTime)})`,
+        );
+      }
+    }
+
+    // Other active office-hour blocks on the same day.
+    const blocks = await this.blockRepo.find({
+      where: { tenantId, instructorId, dayOfWeek, active: true },
+    });
+    for (const other of blocks) {
+      if (other.id === excludeBlockId) continue;
+      const otherStart = timeToMinutes(other.startTime);
+      const otherEnd = timeToMinutes(other.endTime);
+      if (start < otherEnd && otherStart < end) {
+        conflicts.push(
+          `your existing office hours (${DAY_DISPLAY[dayOfWeek]} ` +
+            `${normalizeTime(other.startTime)}–${normalizeTime(other.endTime)})`,
+        );
+      }
+    }
+
+    if (conflicts.length > 0) {
+      throw new ConflictException(
+        `This time conflicts with ${conflicts.join(' and ')}. ` +
+          'Pick a different time, or adjust the conflicting block first.',
+      );
+    }
+  }
 
   private async findOwnedBlock(
     blockId: string,
