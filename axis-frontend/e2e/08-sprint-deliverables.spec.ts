@@ -137,6 +137,26 @@ test.describe('Sprint 1: Schedule visual grid', () => {
       page.getByRole('heading', { name: /schedule/i, level: 1 }),
     ).toBeVisible();
   });
+
+  // FEAT-019: instructor /schedule is the unified week — office hours and
+  // busy times render alongside lectures, with management cards below.
+  test('instructor schedule shows office hours and busy times', async ({
+    page,
+    loginAs,
+  }) => {
+    await page.goto('/');
+    await page.context().clearCookies();
+    await page.evaluate(() => localStorage.clear());
+    await loginAs(INSTRUCTOR_EMAIL, PASSWORD);
+
+    await page.goto('/schedule');
+    // Seeded office-hour block (Wed 11:00) appears on the grid and/or legend.
+    await expect(page.getByText(/office hours/i).first()).toBeVisible();
+    // Seeded busy block label ("Research", Tue 13:00–15:00).
+    await expect(page.getByText('Research').first()).toBeVisible();
+    // Management cards are present.
+    await expect(page.getByText('Busy Times')).toBeVisible();
+  });
 });
 
 test.describe('Sprint 5: Bulk import discoverability', () => {
