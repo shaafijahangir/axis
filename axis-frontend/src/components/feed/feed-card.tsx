@@ -2,7 +2,14 @@
 
 import { useCallback } from 'react';
 import Link from 'next/link';
-import { Clock, CheckCircle, Megaphone, Info, UserCheck } from 'lucide-react';
+import {
+  Clock,
+  CheckCircle,
+  Megaphone,
+  Info,
+  UserCheck,
+  CalendarClock,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime } from '@/lib/utils/relative-time';
@@ -13,18 +20,20 @@ type FeedItemType =
   | 'grade_posted'
   | 'announcement'
   | 'course_update'
-  | 'enrollment_update';
+  | 'enrollment_update'
+  | 'appointment';
 
 interface FeedCardProps {
   type: FeedItemType;
   title: string;
   subtitle?: string;
   body?: string;
-  courseCode: string;
-  courseTitle: string;
+  /** FEAT-020: nullable — appointment items are not course-scoped. */
+  courseCode?: string | null;
+  courseTitle?: string | null;
   /** BUG-014: the course's own id — deep-links need both course and section. */
-  courseId: string;
-  sectionId: string;
+  courseId?: string | null;
+  sectionId?: string | null;
   assignmentId?: string;
   dueAt?: string;
   score?: number;
@@ -74,6 +83,11 @@ const typeConfig: Record<
     borderColor: 'border-l-indigo-500',
     iconColor: 'text-indigo-500',
   },
+  appointment: {
+    icon: CalendarClock,
+    borderColor: 'border-l-emerald-500',
+    iconColor: 'text-emerald-500',
+  },
 };
 
 export function FeedCard({
@@ -97,9 +111,11 @@ export function FeedCard({
   const Icon = config.icon;
 
   const href =
-    assignmentId && type !== 'announcement'
-      ? `/courses/${courseId}/section/${sectionId}/assignment/${assignmentId}`
-      : undefined;
+    type === 'appointment'
+      ? '/schedule'
+      : assignmentId && courseId && sectionId && type !== 'announcement'
+        ? `/courses/${courseId}/section/${sectionId}/assignment/${assignmentId}`
+        : undefined;
 
   const typeLabel =
     type === 'deadline'
@@ -110,25 +126,29 @@ export function FeedCard({
           ? 'Announcement'
           : type === 'enrollment_update'
             ? 'Enrollment update'
-            : 'Course update';
+            : type === 'appointment'
+              ? 'Appointment'
+              : 'Course update';
 
-  // FEAT-014: Track impression when card becomes visible
+  // FEAT-014: Track impression when card becomes visible.
+  // Appointments have no course/section — empty strings keep the
+  // engagement-event shape stable.
   const handleVisible = useCallback(() => {
-    onImpression?.(type, id, courseCode, sectionId);
+    onImpression?.(type, id, courseCode ?? '', sectionId ?? '');
   }, [type, id, courseCode, sectionId, onImpression]);
 
   const visibilityRef = useFeedCardVisibility(handleVisible);
 
   // FEAT-014: Track click when card is clicked
   const handleClick = useCallback(() => {
-    onClick?.(type, id, courseCode, sectionId);
+    onClick?.(type, id, courseCode ?? '', sectionId ?? '');
   }, [type, id, courseCode, sectionId, onClick]);
 
   const content = (
     <Card
       className={`border-l-4 ${config.borderColor} transition-shadow hover:shadow-md`}
       role="article"
-      aria-label={`${typeLabel}: ${title} — ${courseCode}`}
+      aria-label={`${typeLabel}: ${title}${courseCode ? ` — ${courseCode}` : ''}`}
     >
       <CardContent className="flex items-start gap-4 p-4">
         <div
@@ -140,10 +160,15 @@ export function FeedCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="shrink-0 text-xs">
-              {courseCode}
+              {courseCode ?? 'Office hours'}
             </Badge>
             {dueAt && type === 'deadline' && (
               <span className="text-xs font-medium text-amber-600">
+                {formatRelativeTime(dueAt)}
+              </span>
+            )}
+            {dueAt && type === 'appointment' && (
+              <span className="text-xs font-medium text-emerald-600">
                 {formatRelativeTime(dueAt)}
               </span>
             )}

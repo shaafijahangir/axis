@@ -41,6 +41,10 @@ const STUDENT_WIDGET_LABELS: Record<
     label: 'Course Updates',
     description: 'New materials and content',
   },
+  appointments: {
+    label: 'Appointments',
+    description: 'Your upcoming office-hours bookings',
+  },
 };
 
 /**

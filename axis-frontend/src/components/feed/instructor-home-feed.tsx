@@ -2,7 +2,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { Clock, ClipboardList, Megaphone } from 'lucide-react';
+import { Clock, ClipboardList, Megaphone, CalendarClock } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { INSTRUCTOR_FEED_QUERY } from '@/lib/graphql/queries/feed';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,9 +25,10 @@ interface InstructorFeedItemData {
   id: string;
   title: string;
   subtitle?: string;
-  courseCode: string;
-  courseTitle: string;
-  sectionId: string;
+  /** FEAT-020: nullable — appointment items are not course-scoped. */
+  courseCode?: string | null;
+  courseTitle?: string | null;
+  sectionId?: string | null;
   assignmentId?: string;
   ungradedCount?: number;
   dueAt?: string;
@@ -52,6 +53,11 @@ const typeConfig: Record<
     icon: Megaphone,
     borderColor: 'border-l-blue-500',
     iconColor: 'text-blue-500',
+  },
+  appointment: {
+    icon: CalendarClock,
+    borderColor: 'border-l-emerald-500',
+    iconColor: 'text-emerald-500',
   },
 };
 
@@ -78,11 +84,16 @@ function InstructorFeedCard({
   const Icon = config.icon;
 
   const handleVisible = useCallback(() => {
-    onImpression(item.type, item.id, item.courseCode, item.sectionId);
+    onImpression(
+      item.type,
+      item.id,
+      item.courseCode ?? '',
+      item.sectionId ?? '',
+    );
   }, [item.type, item.id, item.courseCode, item.sectionId, onImpression]);
 
   const handleClick = useCallback(() => {
-    onClick(item.type, item.id, item.courseCode, item.sectionId);
+    onClick(item.type, item.id, item.courseCode ?? '', item.sectionId ?? '');
   }, [item.type, item.id, item.courseCode, item.sectionId, onClick]);
 
   const visibilityRef = useFeedCardVisibility(handleVisible);
@@ -100,7 +111,7 @@ function InstructorFeedCard({
       <Card
         className={`border-l-4 ${config.borderColor}`}
         role="article"
-        aria-label={`${item.type === 'ungraded' ? 'Needs grading' : item.type === 'upcoming_deadline' ? 'Upcoming deadline' : 'Announcement'}: ${item.title}`}
+        aria-label={`${item.type === 'ungraded' ? 'Needs grading' : item.type === 'upcoming_deadline' ? 'Upcoming deadline' : item.type === 'appointment' ? 'Appointment' : 'Announcement'}: ${item.title}`}
       >
         <CardContent className="flex items-start gap-4 p-4">
           <div
@@ -112,7 +123,7 @@ function InstructorFeedCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-xs">
-                {item.courseCode}
+                {item.courseCode ?? 'Office hours'}
               </Badge>
               {item.ungradedCount != null && (
                 <Badge variant="destructive" className="text-xs">
