@@ -132,7 +132,7 @@ async function seed() {
         'Sarah',
         'Chen',
         '{instructor}',
-        '{"bio":"Associate Professor of Computer Science, specializing in algorithms and data structures","avatar":null}',
+        '{"bio":"Associate Professor of Computer Science, specializing in algorithms and data structures","avatar":null,"title":"Associate Professor","officeLocation":"ECS 618"}',
         '{}',
       ],
       [
@@ -159,7 +159,7 @@ async function seed() {
         'Raj',
         'Patel',
         '{instructor}',
-        '{"bio":"Professor of Mathematics"}',
+        '{"bio":"Professor of Mathematics","title":"Professor","officeLocation":"DTB A445"}',
         '{}',
       ],
       [
@@ -186,7 +186,7 @@ async function seed() {
       await qr.query(
         `INSERT INTO users (id, "tenantId", email, "passwordHash", "firstName", "lastName", roles, profile, preferences, status, "createdAt", "updatedAt")
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'active',$10,$11)
-         ON CONFLICT (id) DO UPDATE SET email=$3, "firstName"=$5, "lastName"=$6`,
+         ON CONFLICT (id) DO UPDATE SET email=$3, "firstName"=$5, "lastName"=$6, profile=$8`,
         [
           id,
           IDS.tenant,

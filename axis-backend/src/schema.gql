@@ -2318,8 +2318,10 @@ input UpdateToolPermissionInput {
 input UpdateUserInput {
   firstName: String
   lastName: String
+  officeLocation: String
   preferences: String
   profile: String
+  title: String
 }
 
 enum UploadContext {
@@ -2354,11 +2356,13 @@ type User {
   id: String!
   lastLoginAt: DateTime
   lastName: String!
+  officeLocation: String
   preferences: String
   profile: String
   roles: [UserRole!]!
   status: UserStatus!
   tenantId: String!
+  title: String
   updatedAt: DateTime!
 }
 
