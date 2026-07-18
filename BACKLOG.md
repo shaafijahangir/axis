@@ -1393,6 +1393,55 @@
   - Later: feeds the AI ("when can I meet Prof Chen?" answers from the full schedule, not just office hours)
 - **Acceptance:** Instructor sees their entire week in one grid. A block that collides with their own lecture cannot be created silently. Slots inside "busy" windows are never offered to students.
 
+### FEAT-020: Bookings in the Home Feed + Appointment Reminders
+- **Status:** `TODO`
+- **Priority:** HIGH — shaafilook.md §4 names the Home Feed the PRIMARY entry point for appointments ("Your meeting with Prof Damian on Wed 2pm in ECS 558", top of feed inside 24h). Today a booking exists only on `/schedule`; the feed — our core positioning claim — doesn't know about it. Also: `BOOKING_CREATED`/`BOOKING_CANCELLED` events currently have ZERO listeners.
+- **Scope:**
+  - New `FeedItemType.APPOINTMENT`: student feed includes upcoming bookings (next 7 days) with prof name, time, location/Zoom link; personalization ranks <24h appointments to the top
+  - Instructor feed mirror: today's/tomorrow's booked appointments with student name + topic note
+  - Notifications: booking confirmation on `BOOKING_CREATED`, cancellation notice on `BOOKING_CANCELLED` (both parties), and scheduled reminders 24h + 1h before the slot (BullMQ delayed jobs — Redis already runs for AI events; cancel the jobs when the booking is cancelled)
+- **Acceptance:** Student books a slot → it appears in their home feed and they get a confirmation notification. 24h/1h reminders fire. Cancelling removes the feed item and schedules no further reminders.
+
+### FEAT-021: Professor Card (course header) + Office Location on Profile
+- **Status:** `TODO`
+- **Priority:** MEDIUM — shaafilook.md §2/§4: the UVic/SFU directory data model is name/title/office/email with NO availability; Axis's prof card is that model PLUS booking. Booking CTA exists on the section page today, but there's no card — no photo, office location, or title.
+- **Scope:**
+  - `officeLocation` (+ optional `title`) on the instructor profile (User.profile JSONB — matches directory format "ECS 618")
+  - Prof card in the course/section header: photo/initials, name, title, office location, email, "Book Office Hours" CTA (existing dialog)
+  - Office-hour block form pre-fills location from the instructor's `officeLocation`
+  - Card shows the recurring blocks summary ("Wed 11–12 ECS 618 · Thu 10–12 Zoom")
+- **Acceptance:** Course header shows the full prof card; a new office-hour block defaults its location to the profile's office; students see availability summary without opening the dialog.
+
+### FEAT-022: Instructor Booking Ops (load insight, no-show, completion)
+- **Status:** `TODO`
+- **Priority:** MEDIUM — shaafilook.md §4 instructor feed: "4/5 slots booked Tue 2-4pm" and no-show tracking. `BookingStatus` already has `no_show`/`completed` — data model done, zero UI.
+- **Scope:**
+  - Per-block utilization on the office-hours manager: booked/total slots for the coming week
+  - Instructor can mark a past booking `completed` or `no_show` (mutation guards: owner only, past slots only)
+  - Auto-complete: past `booked` slots roll to `completed` after N days (cron or lazy on read)
+- **Acceptance:** Instructor sees utilization per block and can mark no-shows; statuses feed future analytics.
+
+### FEAT-023: Post-Meeting Feedback Loop
+- **Status:** `TODO`
+- **Priority:** LOW — shaafilook.md §4: "How was your meeting with Prof Chen?" (student, 1–2 questions) and weekly sentiment rollup for instructors ("4.8/5 on office hours this week" — quality signal, not surveillance). Depends on FEAT-020 (notification prompt) + FEAT-022 (completed status).
+- **Scope:** rating (1–5) + optional comment on completed bookings; feed prompt after completion; instructor weekly aggregate (never per-student scores).
+- **Acceptance:** Student rates a completed meeting from the feed prompt; instructor sees only aggregates.
+
+### FEAT-024: Calendar Artifacts (ICS) for Bookings
+- **Status:** `TODO`
+- **Priority:** LOW — shaafilook.md §4 confirmation includes "calendar invite". Booking confirmation offers a downloadable `.ics` (title, time, location/Zoom URL); email attachment when email notifications exist.
+- **Acceptance:** Booked slot exports a valid .ics that opens in Google/Apple/Outlook calendars.
+
+### FEAT-025: Zoom Auto-Generated Meeting Links
+- **Status:** `TODO`
+- **Priority:** LOW (integration-heavy) — shaafilook.md §4: "Zoom link (auto-generated)". Today instructors paste a static URL. Real per-booking links need a Zoom OAuth app + per-tenant credentials (fits the LTI/integrations pattern). Do not start before a pilot asks for it.
+- **Acceptance:** Block marked "Zoom (auto)" produces a unique meeting link per booking.
+
+### FEAT-026: "By Appointment" Fallback Availability
+- **Status:** `TODO`
+- **Priority:** LOW — shaafilook.md §4: "'By appointment via email' as a fallback option". A block type with no fixed slots: student sends a structured request (proposed times + topic), instructor accepts one → becomes a booking. Keeps the last email workflow inside Axis instead of outside it.
+- **Acceptance:** Prof with no fixed hours still shows a "Request a meeting" path; accepting a request creates a normal booking.
+
 ### BUG-014: Student feed deep-links use sectionId in the courseId slot
 - **Status:** `DONE` (2026-07-17 — PR fix/feed-deeplinks; `courseId` added to FeedItem AND InstructorFeedItem DTOs (instructor deep-links are the obvious next need), populated from the course relation in both feeds, feed-card href now `/courses/{courseId}/section/{sectionId}/...`. Regression tests assert courseId ≠ sectionId.)
 - **Priority:** MEDIUM
