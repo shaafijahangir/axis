@@ -18,6 +18,7 @@ import {
 } from '@/lib/graphql/queries/courses';
 import { SECTION_TIMELINE_QUERY } from '@/lib/graphql/queries/timeline';
 import { CourseHeader } from '@/components/courses/course-header';
+import { ProfCard } from '@/components/courses/prof-card';
 import { TimelineEntryCard } from '@/components/courses/timeline-entry-card';
 import { TimelineSkeleton } from '@/components/courses/timeline-skeleton';
 import { ExtendDeadlineDialog } from '@/components/courses/extend-deadline-dialog';
@@ -53,7 +54,14 @@ interface SectionData {
     withdrawDeadline?: string | null;
   } | null;
   course: { id: string; code: string; title: string };
-  instructor: { id: string; firstName: string; lastName: string };
+  instructor: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    title?: string | null;
+    officeLocation?: string | null;
+  };
 }
 
 interface TimelineEntryData {
@@ -146,18 +154,29 @@ export default function SectionTimelinePage() {
           courseTitle={section.course.title}
           instructorName={`${section.instructor.firstName} ${section.instructor.lastName}`}
           location={section.location}
-          action={
-            isStudent ? (
-              <BookOfficeHoursDialog
-                instructorId={section.instructor.id}
-                instructorName={`${section.instructor.firstName} ${section.instructor.lastName}`}
-              />
-            ) : undefined
-          }
         />
       ) : null}
 
       <div className="space-y-3 px-4 py-4 md:p-6">
+        {/* FEAT-021: prof card — directory model + booking CTA (students) */}
+        {section && (
+          <ProfCard
+            instructorId={section.instructor.id}
+            firstName={section.instructor.firstName}
+            lastName={section.instructor.lastName}
+            email={section.instructor.email}
+            title={section.instructor.title}
+            officeLocation={section.instructor.officeLocation}
+            action={
+              isStudent ? (
+                <BookOfficeHoursDialog
+                  instructorId={section.instructor.id}
+                  instructorName={`${section.instructor.firstName} ${section.instructor.lastName}`}
+                />
+              ) : undefined
+            }
+          />
+        )}
         <div className="flex flex-wrap justify-end gap-2">
           <Button asChild size="sm" variant="outline">
             <Link

@@ -138,6 +138,28 @@ test.describe('Sprint 1: Schedule visual grid', () => {
     ).toBeVisible();
   });
 
+  // FEAT-021: the prof card on a course page carries the UVic directory
+  // model (name, title, office, email) plus the booking CTA.
+  test('course page shows the prof card with directory details', async ({
+    page,
+    loginAs,
+  }) => {
+    await page.goto('/');
+    await page.context().clearCookies();
+    await page.evaluate(() => localStorage.clear());
+    await loginAs(STUDENT_EMAIL, PASSWORD);
+
+    // CSC 110 section (fixed seed ids: course 3...1, section 4...1)
+    await page.goto(
+      '/courses/30000000-0000-0000-0000-000000000001/section/40000000-0000-0000-0000-000000000001',
+    );
+    await expect(page.getByText('Sarah Chen').first()).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.getByText('Associate Professor').first()).toBeVisible();
+    await expect(page.getByText('ECS 618').first()).toBeVisible();
+  });
+
   // FEAT-020: the home feed is the primary surface for appointments — the
   // seeded booking (Alex → Prof Chen, next Wednesday) must appear in it.
   test('student home feed shows the booked appointment', async ({

@@ -10,6 +10,8 @@ export const UPDATE_PROFILE_MUTATION = gql`
       firstName
       lastName
       preferences
+      title
+      officeLocation
     }
   }
 `;

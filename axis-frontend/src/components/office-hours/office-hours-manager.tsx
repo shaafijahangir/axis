@@ -34,6 +34,7 @@ import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MY_OFFICE_HOUR_BLOCKS_QUERY } from '@/lib/graphql/queries/office-hours';
+import { ME_QUERY } from '@/lib/graphql/queries/user';
 import {
   CREATE_OFFICE_HOUR_BLOCK_MUTATION,
   UPDATE_OFFICE_HOUR_BLOCK_MUTATION,
@@ -114,16 +115,21 @@ function BlockFormDialog({
   open,
   onOpenChange,
   editing,
+  defaultLocation,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   /** Block being edited; null = create mode. */
   editing: OfficeHourBlock | null;
+  /** FEAT-021: pre-fill from the instructor's profile officeLocation. */
+  defaultLocation?: string;
 }) {
   // The parent remounts this dialog (via `key`) on every open, so the
   // initializer runs fresh each time — no state-syncing effect needed.
   const [form, setForm] = useState<BlockFormState>(() =>
-    editing ? blockToForm(editing) : EMPTY_FORM,
+    editing
+      ? blockToForm(editing)
+      : { ...EMPTY_FORM, location: defaultLocation ?? '' },
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -326,6 +332,10 @@ export function OfficeHoursManager() {
   const { data, loading } = useQuery<{
     myOfficeHourBlocks: OfficeHourBlock[];
   }>(MY_OFFICE_HOUR_BLOCKS_QUERY);
+  // FEAT-021: profile officeLocation pre-fills new in-person blocks.
+  const { data: meData } = useQuery<{
+    me: { officeLocation?: string | null };
+  }>(ME_QUERY);
 
   const [updateBlock] = useMutation(UPDATE_OFFICE_HOUR_BLOCK_MUTATION, {
     refetchQueries: [{ query: MY_OFFICE_HOUR_BLOCKS_QUERY }],
@@ -446,6 +456,7 @@ export function OfficeHoursManager() {
         open={formOpen}
         onOpenChange={setFormOpen}
         editing={editing}
+        defaultLocation={meData?.me?.officeLocation ?? undefined}
       />
     </Card>
   );

@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ME_QUERY } from '@/lib/graphql/queries/user';
 import { UPDATE_PROFILE_MUTATION } from '@/lib/graphql/mutations/user';
 import { useAuthStore } from '@/stores/auth.store';
+import { UserRole } from '@/types/auth';
 
 interface MeData {
   me: {
@@ -28,6 +29,9 @@ interface MeData {
     firstName: string;
     lastName: string;
     roles: string[];
+    /** FEAT-021: directory fields (instructors). */
+    title?: string | null;
+    officeLocation?: string | null;
     createdAt: string;
   };
 }
@@ -46,11 +50,23 @@ export default function ProfilePage() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // FEAT-021: instructor directory fields
+  const isInstructor = storeUser?.roles.some(
+    (r) => r === UserRole.INSTRUCTOR || r === UserRole.ADMIN,
+  );
+  const [title, setTitle] = useState('');
+  const [officeLocation, setOfficeLocation] = useState('');
+  const [directoryDirty, setDirectoryDirty] = useState(false);
+  const [directorySaving, setDirectorySaving] = useState(false);
+
   useEffect(() => {
     if (data?.me) {
       setFirstName(data.me.firstName);
       setLastName(data.me.lastName);
+      setTitle(data.me.title ?? '');
+      setOfficeLocation(data.me.officeLocation ?? '');
       setDirty(false);
+      setDirectoryDirty(false);
     }
   }, [data?.me]);
 
@@ -83,6 +99,27 @@ export default function ProfilePage() {
       toast.error('Failed to save. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDirectorySave = async () => {
+    if (!directoryDirty) return;
+    setDirectorySaving(true);
+    try {
+      await updateProfile({
+        variables: {
+          input: {
+            title: title.trim(),
+            officeLocation: officeLocation.trim(),
+          },
+        },
+      });
+      toast.success('Directory details updated');
+      setDirectoryDirty(false);
+    } catch {
+      toast.error('Failed to save. Please try again.');
+    } finally {
+      setDirectorySaving(false);
     }
   };
 
@@ -166,6 +203,58 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* FEAT-021: instructor directory details — feeds the prof card that
+          students see on course pages (shaafilook.md §2 data model). */}
+      {isInstructor && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Directory Details</CardTitle>
+            <CardDescription>
+              Shown to students on your course pages, next to your office hours
+              and the booking button.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="dir-title">Title</Label>
+                <Input
+                  id="dir-title"
+                  placeholder="e.g. Associate Professor"
+                  value={title}
+                  maxLength={128}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    setDirectoryDirty(true);
+                  }}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="dir-office">Office location</Label>
+                <Input
+                  id="dir-office"
+                  placeholder="e.g. ECS 618"
+                  value={officeLocation}
+                  maxLength={128}
+                  onChange={(e) => {
+                    setOfficeLocation(e.target.value);
+                    setDirectoryDirty(true);
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                onClick={handleDirectorySave}
+                disabled={!directoryDirty || directorySaving}
+              >
+                {directorySaving ? 'Saving…' : 'Save directory details'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

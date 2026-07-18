@@ -492,6 +492,8 @@ Every entity follows this indexing pattern:
 
 JSONB columns provide flexibility but must have documented contracts. When adding or modifying a JSONB column:
 
+**`users.profile` contract (FEAT-021):** `bio?: string`, `avatar?: string|null`, `gradeLevel?: number`, and the instructor directory fields `title?: string` (e.g. "Associate Professor") and `officeLocation?: string` (building + room, directory format "ECS 618"). `title`/`officeLocation` are exposed as typed GraphQL fields via `@ResolveField` on `UsersResolver` and written via dedicated `updateProfile` inputs that merge into the blob — never read or replace the raw `profile` string from clients.
+
 1. Document the expected shape in this file
 2. Validate input at the service layer (not just DTOs)
 3. Use TypeScript interfaces for the JSONB shape in the entity file
