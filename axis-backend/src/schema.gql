@@ -986,14 +986,15 @@ type FeedEngagementStats {
 type FeedItem {
   assignmentId: String
   body: String
-  courseCode: String!
-  courseId: String!
-  courseTitle: String!
+  courseCode: String
+  courseId: String
+  courseTitle: String
   dueAt: DateTime
   id: String!
+  location: String
   pointsPossible: Float
   score: Float
-  sectionId: String!
+  sectionId: String
   subtitle: String
   timestamp: DateTime!
   title: String!
@@ -1002,6 +1003,7 @@ type FeedItem {
 
 enum FeedItemType {
   ANNOUNCEMENT
+  APPOINTMENT
   COURSE_UPDATE
   DEADLINE
   ENROLLMENT_UPDATE
@@ -1169,12 +1171,13 @@ type ImportResult {
 
 type InstructorFeedItem {
   assignmentId: String
-  courseCode: String!
-  courseId: String!
-  courseTitle: String!
+  courseCode: String
+  courseId: String
+  courseTitle: String
   dueAt: DateTime
   id: String!
-  sectionId: String!
+  location: String
+  sectionId: String
   subtitle: String
   timestamp: DateTime!
   title: String!
@@ -1184,6 +1187,7 @@ type InstructorFeedItem {
 
 enum InstructorFeedItemType {
   ANNOUNCEMENT
+  APPOINTMENT
   UNGRADED
   UPCOMING_DEADLINE
 }
@@ -1453,6 +1457,9 @@ type NotificationPreferences {
 enum NotificationType {
   ANNOUNCEMENT
   ASSIGNMENT_CREATED
+  BOOKING_CANCELLED
+  BOOKING_CONFIRMED
+  BOOKING_REMINDER
   DISCUSSION_MENTION
   DISCUSSION_REPLY
   DUE_DATE_REMINDER

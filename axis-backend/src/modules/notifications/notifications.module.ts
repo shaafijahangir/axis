@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EmailService } from './email.service';
 import { EmailTemplatesService } from './email-templates.service';
 import { NotificationEventListener } from './notification-event.listener';
+import { BookingNotificationListener } from './booking-notification.listener';
+import { BookingReminderService } from './booking-reminder.service';
 import { DueDateReminderService } from './due-date-reminder.service';
 import { NotificationsResolver } from './notifications.resolver';
 import { InAppNotificationService } from './in-app-notification.service';
@@ -14,6 +16,7 @@ import { Submission } from '../../database/entities/submission.entity';
 import { Assignment } from '../../database/entities/assignment.entity';
 import { CourseSection } from '../../database/entities/course-section.entity';
 import { Enrollment } from '../../database/entities/enrollment.entity';
+import { Booking } from '../office-hours/entities/booking.entity';
 
 @Module({
   imports: [
@@ -25,6 +28,7 @@ import { Enrollment } from '../../database/entities/enrollment.entity';
       Enrollment,
       Notification,
       DeviceToken,
+      Booking,
     ]),
   ],
   providers: [
@@ -33,6 +37,8 @@ import { Enrollment } from '../../database/entities/enrollment.entity';
     InAppNotificationService,
     WebPushService,
     NotificationEventListener,
+    BookingNotificationListener,
+    BookingReminderService,
     DueDateReminderService,
     NotificationsResolver,
   ],

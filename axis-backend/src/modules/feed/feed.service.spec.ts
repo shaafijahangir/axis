@@ -16,6 +16,7 @@ import { CourseSection } from '../../database/entities/course-section.entity';
 import { AnnouncementsService } from '../announcements/announcements.service';
 import { ContentService } from '../content/content.service';
 import { DiscussionsService } from '../discussions/discussions.service';
+import { OfficeHoursService } from '../office-hours/office-hours.service';
 import {
   createMockRepository,
   createMockQueryBuilder,
@@ -38,6 +39,10 @@ describe('FeedService', () => {
   let sectionRepo: MockRepository<CourseSection>;
   let announcementsService: Partial<AnnouncementsService>;
   let contentService: Partial<ContentService>;
+  let officeHoursService: {
+    listMyBookings: jest.Mock;
+    listInstructorBookings: jest.Mock;
+  };
 
   // Test data
   const tenantId = 'test-tenant';
@@ -59,6 +64,11 @@ describe('FeedService', () => {
       findBySectionId: jest.fn().mockResolvedValue([]),
     };
 
+    officeHoursService = {
+      listMyBookings: jest.fn().mockResolvedValue([]),
+      listInstructorBookings: jest.fn().mockResolvedValue([]),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FeedService,
@@ -72,6 +82,7 @@ describe('FeedService', () => {
           provide: DiscussionsService,
           useValue: { findBySectionId: jest.fn().mockResolvedValue([]) },
         },
+        { provide: OfficeHoursService, useValue: officeHoursService },
       ],
     }).compile();
 
@@ -219,6 +230,76 @@ describe('FeedService', () => {
       expect(deadlines).toHaveLength(2);
       expect(deadlines.map((d) => d.title)).toContain('Urgent Assignment');
       expect(deadlines.map((d) => d.title)).toContain('Later Assignment');
+    });
+  });
+
+  // ─── FEAT-020: appointments in the feed ─────────────────────────────────
+
+  describe('appointments (FEAT-020)', () => {
+    /** Local "YYYY-MM-DD" for `daysAhead` days from now. */
+    function localDate(daysAhead: number): string {
+      const d = new Date();
+      d.setDate(d.getDate() + daysAhead);
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}-${m}-${day}`;
+    }
+
+    const baseBooking = {
+      id: 'booking-001',
+      startTime: '11:00:00',
+      endTime: '11:15:00',
+      note: 'HW3 question',
+      instructor: { firstName: 'Sarah', lastName: 'Chen' },
+      student: { firstName: 'Alex', lastName: 'Rivera' },
+      block: { locationType: 'in_person', location: 'ECS 618' },
+    };
+
+    it('includes an upcoming booking in the student feed', async () => {
+      enrollmentRepo.find!.mockResolvedValue([]);
+      officeHoursService.listMyBookings.mockResolvedValue([
+        { ...baseBooking, date: localDate(2) },
+      ]);
+
+      const result = await service.getStudentFeed(userId, tenantId);
+
+      const appt = result.find((i) => i.type === FeedItemType.APPOINTMENT);
+      expect(appt).toBeDefined();
+      expect(appt?.title).toBe('Office hours with Prof. Sarah Chen');
+      expect(appt?.location).toBe('ECS 618');
+      // dueAt carries the appointment start so urgency ranking applies.
+      expect(appt?.dueAt).toBeInstanceOf(Date);
+      // Not course-scoped.
+      expect(appt?.courseId).toBeUndefined();
+    });
+
+    it('excludes bookings more than 7 days out (student feed)', async () => {
+      enrollmentRepo.find!.mockResolvedValue([]);
+      officeHoursService.listMyBookings.mockResolvedValue([
+        { ...baseBooking, date: localDate(10) },
+      ]);
+
+      const result = await service.getStudentFeed(userId, tenantId);
+      expect(
+        result.find((i) => i.type === FeedItemType.APPOINTMENT),
+      ).toBeUndefined();
+    });
+
+    it('shows today/tomorrow appointments in the instructor feed with the student name', async () => {
+      sectionRepo.find!.mockResolvedValue([]);
+      officeHoursService.listInstructorBookings.mockResolvedValue([
+        { ...baseBooking, date: localDate(1) },
+        { ...baseBooking, id: 'booking-far', date: localDate(5) }, // outside 48h
+      ]);
+
+      const result = await service.getInstructorFeed(instructorId, tenantId);
+
+      const appts = result.filter(
+        (i) => i.type === InstructorFeedItemType.APPOINTMENT,
+      );
+      expect(appts).toHaveLength(1);
+      expect(appts[0].title).toBe('Alex Rivera — office hours');
+      expect(appts[0].subtitle).toContain('HW3 question');
     });
   });
 

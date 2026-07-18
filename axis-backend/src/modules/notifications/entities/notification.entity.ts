@@ -12,6 +12,10 @@ export enum NotificationType {
   DISCUSSION_REPLY = 'discussion_reply',
   DISCUSSION_MENTION = 'discussion_mention',
   SYSTEM = 'system',
+  // FEAT-020: office-hours booking lifecycle
+  BOOKING_CONFIRMED = 'booking_confirmed',
+  BOOKING_CANCELLED = 'booking_cancelled',
+  BOOKING_REMINDER = 'booking_reminder',
 }
 
 registerEnumType(NotificationType, { name: 'NotificationType' });
