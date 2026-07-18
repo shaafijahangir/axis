@@ -138,6 +138,23 @@ test.describe('Sprint 1: Schedule visual grid', () => {
     ).toBeVisible();
   });
 
+  // FEAT-020: the home feed is the primary surface for appointments — the
+  // seeded booking (Alex → Prof Chen, next Wednesday) must appear in it.
+  test('student home feed shows the booked appointment', async ({
+    page,
+    loginAs,
+  }) => {
+    await page.goto('/');
+    await page.context().clearCookies();
+    await page.evaluate(() => localStorage.clear());
+    await loginAs(STUDENT_EMAIL, PASSWORD);
+
+    await page.goto('/home');
+    await expect(
+      page.getByText(/office hours with prof\. sarah chen/i).first(),
+    ).toBeVisible({ timeout: 15000 });
+  });
+
   // FEAT-019: instructor /schedule is the unified week — office hours and
   // busy times render alongside lectures, with management cards below.
   test('instructor schedule shows office hours and busy times', async ({

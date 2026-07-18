@@ -64,6 +64,7 @@ const IDS = {
   oh_chen_thu: '80000000-0000-0000-0000-000000000002',
   busy_chen_research: '80000000-0000-0000-0000-000000000003',
   busy_chen_meeting: '80000000-0000-0000-0000-000000000004',
+  booking_alex: '80000000-0000-0000-0000-000000000005',
 };
 
 async function seed() {
@@ -931,7 +932,33 @@ async function seed() {
         [id, IDS.tenant, IDS.instructor, day, start, end, label, now, now],
       );
     }
-    console.log('  2 office-hour blocks + 2 busy blocks created.');
+    // FEAT-020: one booked appointment (Alex → Prof Chen, next Wednesday
+    // 11:00) so the home feed and reminders have a real appointment to show.
+    // Date is computed at seed time so the demo never goes stale.
+    const nextWednesday = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + ((3 - d.getDay() + 7) % 7 || 7));
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}-${m}-${day}`;
+    })();
+    await qr.query(
+      `INSERT INTO bookings (id, "tenantId", "blockId", "studentId", "instructorId", date, "startTime", "endTime", status, note, "createdAt", "updatedAt")
+       VALUES ($1,$2,$3,$4,$5,$6,'11:00','11:15','booked',$7,$8,$9)
+       ON CONFLICT (id) DO UPDATE SET date=$6, status='booked'`,
+      [
+        IDS.booking_alex,
+        IDS.tenant,
+        IDS.oh_chen_wed,
+        IDS.student,
+        IDS.instructor,
+        nextWednesday,
+        'Question about HW3 — linked list edge cases',
+        now,
+        now,
+      ],
+    );
+    console.log('  2 office-hour blocks + 2 busy blocks + 1 booking created.');
 
     // ─── 10. Degree Program ────────────────────────────────────
     const csRequirements = JSON.stringify([

@@ -14,7 +14,8 @@ export type StudentWidgetType =
   | 'deadlines'
   | 'grades'
   | 'announcements'
-  | 'courseUpdates';
+  | 'courseUpdates'
+  | 'appointments';
 
 /**
  * Widget types for the instructor feed.
@@ -35,6 +36,7 @@ export interface DashboardPreferences {
     grades?: boolean;
     announcements?: boolean;
     courseUpdates?: boolean;
+    appointments?: boolean;
     // Instructor widgets
     ungraded?: boolean;
     upcomingDeadlines?: boolean;
@@ -57,6 +59,7 @@ const DEFAULT_STUDENT_WIDGETS: Record<StudentWidgetType, boolean> = {
   grades: true,
   announcements: true,
   courseUpdates: true,
+  appointments: true,
 };
 
 const DEFAULT_INSTRUCTOR_WIDGETS: Record<InstructorWidgetType, boolean> = {
@@ -285,6 +288,7 @@ export function studentWidgetToFeedType(widget: StudentWidgetType): string {
     grades: 'GRADE_POSTED',
     announcements: 'ANNOUNCEMENT',
     courseUpdates: 'COURSE_UPDATE',
+    appointments: 'APPOINTMENT',
   };
   return map[widget];
 }
@@ -300,6 +304,7 @@ export function feedTypeToStudentWidget(
     GRADE_POSTED: 'grades',
     ANNOUNCEMENT: 'announcements',
     COURSE_UPDATE: 'courseUpdates',
+    APPOINTMENT: 'appointments',
   };
   return map[feedType] ?? null;
 }

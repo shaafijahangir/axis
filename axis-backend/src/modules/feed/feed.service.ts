@@ -14,6 +14,9 @@ import {
 import { AnnouncementsService } from '../announcements/announcements.service';
 import { ContentService } from '../content/content.service';
 import { DiscussionsService } from '../discussions/discussions.service';
+import { OfficeHoursService } from '../office-hours/office-hours.service';
+import { Booking } from '../office-hours/entities/booking.entity';
+import { OfficeHourLocationType } from '../office-hours/entities/office-hour-block.entity';
 import {
   FeedItem,
   FeedItemType,
@@ -23,6 +26,35 @@ import {
   GradedAssignment,
 } from './dto/feed.types';
 import { TimelineEntry, TimelineEntryType } from './dto/timeline.types';
+
+// ─── FEAT-020: appointment helpers ────────────────────────────────────────
+
+/**
+ * Booking date ("YYYY-MM-DD") + startTime ("HH:MM:SS") → a Date in server
+ * time. Booking times are wall-clock with no timezone column, so this is only
+ * correct when server and campus share a timezone — a known, systemic
+ * limitation of the schedule model (slots are generated the same way).
+ */
+function appointmentStart(booking: Booking): Date {
+  return new Date(`${booking.date}T${booking.startTime.slice(0, 5)}:00`);
+}
+
+/** "Wed, Jul 22 · 11:00 AM" */
+function formatAppointmentTime(start: Date): string {
+  return start.toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function appointmentLocation(booking: Booking): string {
+  return booking.block?.locationType === OfficeHourLocationType.ZOOM
+    ? 'Zoom'
+    : (booking.block?.location ?? 'In person');
+}
 
 /**
  * WHY: Server-side feed aggregation. A single query returns a ranked list
@@ -46,6 +78,7 @@ export class FeedService {
     private announcementsService: AnnouncementsService,
     private contentService: ContentService,
     private discussionsService: DiscussionsService,
+    private officeHoursService: OfficeHoursService,
   ) {}
 
   // ─── Student Feed ─────────────────────────────────────────────────────
@@ -220,6 +253,33 @@ export class FeedService {
       });
     }
 
+    // 6. FEAT-020: upcoming office-hours appointments (next 7 days).
+    // The home feed is the primary surface for appointments (shaafilook.md §4)
+    // — a booked meeting the student can't see coming is a missed meeting.
+    const myBookings = await this.officeHoursService.listMyBookings(
+      _tenantId,
+      userId,
+    );
+    const weekAhead = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    for (const booking of myBookings) {
+      const start = appointmentStart(booking);
+      if (start.getTime() > weekAhead) continue;
+
+      const prof = booking.instructor
+        ? `Prof. ${booking.instructor.firstName} ${booking.instructor.lastName}`
+        : 'your instructor';
+      items.push({
+        type: FeedItemType.APPOINTMENT,
+        id: `appointment-${booking.id}`,
+        title: `Office hours with ${prof}`,
+        subtitle: `${formatAppointmentTime(start)} · ${appointmentLocation(booking)}`,
+        body: booking.note ?? undefined,
+        location: appointmentLocation(booking),
+        dueAt: start,
+        timestamp: start,
+      });
+    }
+
     // FEAT-014: Sorting moved to FeedPersonalizationService.rankFeedItems()
     // which applies ML-based scoring when engagement data exists,
     // or falls back to rule-based urgency ranking for new users.
@@ -232,13 +292,40 @@ export class FeedService {
     userId: string,
     _tenantId: string,
   ): Promise<InstructorFeedItem[]> {
+    const items: InstructorFeedItem[] = [];
+
+    // FEAT-020: today's + tomorrow's booked appointments — independent of
+    // sections (office-hour blocks are instructor-level, not course-level).
+    const bookings = await this.officeHoursService.listInstructorBookings(
+      _tenantId,
+      userId,
+    );
+    const twoDaysAhead = Date.now() + 48 * 60 * 60 * 1000;
+    for (const booking of bookings) {
+      const start = appointmentStart(booking);
+      if (start.getTime() > twoDaysAhead) continue;
+
+      const student = booking.student
+        ? `${booking.student.firstName} ${booking.student.lastName}`
+        : 'A student';
+      items.push({
+        type: InstructorFeedItemType.APPOINTMENT,
+        id: `appointment-${booking.id}`,
+        title: `${student} — office hours`,
+        subtitle: `${formatAppointmentTime(start)} · ${appointmentLocation(booking)}${booking.note ? ` · “${booking.note}”` : ''}`,
+        location: appointmentLocation(booking),
+        dueAt: start,
+        timestamp: start,
+      });
+    }
+
     // 1. Get teaching sections
     const sections = await this.sectionRepo.find({
       where: { instructorId: userId, status: SectionStatus.ACTIVE },
       relations: ['course'],
     });
 
-    if (sections.length === 0) return [];
+    if (sections.length === 0) return items;
 
     const sectionIds = sections.map((s) => s.id);
     const sectionMap = new Map(
@@ -247,8 +334,6 @@ export class FeedService {
         { id: s.course.id, code: s.course.code, title: s.course.title },
       ]),
     );
-
-    const items: InstructorFeedItem[] = [];
 
     // 2. Ungraded submissions per assignment
     const ungradedCounts = await this.submissionRepo

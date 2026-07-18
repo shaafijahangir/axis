@@ -232,6 +232,36 @@ describe('FeedPersonalizationService', () => {
       expect(ranked[0].id).toBe('urgent-deadline');
     });
 
+    it('ranks an appointment starting within 24h at the top (FEAT-020)', () => {
+      const now = Date.now();
+      const items = [
+        makeFeedItem({
+          type: FeedItemType.ANNOUNCEMENT,
+          id: 'announcement-1',
+          timestamp: new Date(now - 60000),
+        }),
+        makeFeedItem({
+          type: FeedItemType.APPOINTMENT,
+          id: 'appointment-soon',
+          courseCode: undefined,
+          courseId: undefined,
+          sectionId: undefined,
+          dueAt: new Date(now + 3 * 60 * 60 * 1000), // in 3 hours
+          timestamp: new Date(now + 3 * 60 * 60 * 1000),
+        }),
+      ];
+
+      const emptyProfile = {
+        typeClickRates: new Map<string, number>(),
+        courseClickRates: new Map<string, number>(),
+        impressedItemIds: new Set<string>(),
+        totalClicks: 0,
+      };
+
+      const ranked = service.rankFeedItems(items, emptyProfile);
+      expect(ranked[0].id).toBe('appointment-soon');
+    });
+
     it('should boost items of types the user clicks more', () => {
       const now = Date.now();
       const items = [

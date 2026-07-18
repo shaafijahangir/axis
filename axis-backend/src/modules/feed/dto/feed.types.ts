@@ -8,6 +8,8 @@ export enum FeedItemType {
   ANNOUNCEMENT = 'announcement',
   COURSE_UPDATE = 'course_update',
   ENROLLMENT_UPDATE = 'enrollment_update',
+  /** FEAT-020: upcoming office-hours booking. `dueAt` = appointment start. */
+  APPOINTMENT = 'appointment',
 }
 
 registerEnumType(FeedItemType, { name: 'FeedItemType' });
@@ -37,28 +39,37 @@ export class FeedItem {
   @Field({ nullable: true })
   body?: string;
 
-  @Field()
-  courseCode: string;
+  /**
+   * FEAT-020: course fields are nullable — APPOINTMENT items belong to an
+   * instructor, not a course. Every other type populates all four.
+   */
+  @Field({ nullable: true })
+  courseCode?: string;
 
-  @Field()
-  courseTitle: string;
+  @Field({ nullable: true })
+  courseTitle?: string;
 
   /**
    * BUG-014: the course's own id, for building `/courses/{courseId}/section/
    * {sectionId}/...` deep-links. Before this field existed the frontend put
    * sectionId in the courseId slot, producing dead course back-links.
    */
-  @Field()
-  courseId: string;
+  @Field({ nullable: true })
+  courseId?: string;
 
-  @Field()
-  sectionId: string;
+  @Field({ nullable: true })
+  sectionId?: string;
 
   @Field({ nullable: true })
   assignmentId?: string;
 
+  /** Deadline for DEADLINE items; appointment start for APPOINTMENT items. */
   @Field({ nullable: true })
   dueAt?: Date;
+
+  /** FEAT-020: where an APPOINTMENT happens — room string or "Zoom". */
+  @Field({ nullable: true })
+  location?: string;
 
   @Field(() => Float, { nullable: true })
   score?: number;
@@ -76,6 +87,8 @@ export enum InstructorFeedItemType {
   UNGRADED = 'ungraded',
   UPCOMING_DEADLINE = 'upcoming_deadline',
   ANNOUNCEMENT = 'announcement',
+  /** FEAT-020: booked office-hours appointment (today/tomorrow). */
+  APPOINTMENT = 'appointment',
 }
 
 registerEnumType(InstructorFeedItemType, { name: 'InstructorFeedItemType' });
@@ -94,18 +107,19 @@ export class InstructorFeedItem {
   @Field({ nullable: true })
   subtitle?: string;
 
-  @Field()
-  courseCode: string;
+  /** FEAT-020: nullable — APPOINTMENT items are not course-scoped. */
+  @Field({ nullable: true })
+  courseCode?: string;
 
-  @Field()
-  courseTitle: string;
+  @Field({ nullable: true })
+  courseTitle?: string;
 
   /** BUG-014: course id for deep-links (see FeedItem.courseId). */
-  @Field()
-  courseId: string;
+  @Field({ nullable: true })
+  courseId?: string;
 
-  @Field()
-  sectionId: string;
+  @Field({ nullable: true })
+  sectionId?: string;
 
   @Field({ nullable: true })
   assignmentId?: string;
@@ -113,8 +127,13 @@ export class InstructorFeedItem {
   @Field({ nullable: true })
   ungradedCount?: number;
 
+  /** Deadline, or appointment start for APPOINTMENT items. */
   @Field({ nullable: true })
   dueAt?: Date;
+
+  /** FEAT-020: where an APPOINTMENT happens — room string or "Zoom". */
+  @Field({ nullable: true })
+  location?: string;
 
   @Field()
   timestamp: Date;

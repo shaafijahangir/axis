@@ -211,7 +211,10 @@ export class FeedPersonalizationService {
   ): number {
     const urgency = this.computeUrgency(item, now);
     const typeAffinity = profile.typeClickRates.get(item.type) ?? 0.5;
-    const courseAffinity = profile.courseClickRates.get(item.courseCode) ?? 0.5;
+    // APPOINTMENT items have no course — neutral affinity (FEAT-020).
+    const courseAffinity = item.courseCode
+      ? (profile.courseClickRates.get(item.courseCode) ?? 0.5)
+      : 0.5;
     const recency = this.computeRecency(item, now);
     const novelty = profile.impressedItemIds.has(item.id) ? 0.3 : 1.0;
 
@@ -227,9 +230,19 @@ export class FeedPersonalizationService {
   /**
    * Urgency score: deadlines within 24h = 1.0, 48h = 0.8, 7d = 0.5.
    * Non-deadline items get a base urgency of 0.3.
+   * FEAT-020: APPOINTMENT items carry their start time in dueAt and get the
+   * same time-proximity urgency — a meeting in 3 hours outranks everything.
    */
+  /** Types whose dueAt is a hard wall-clock moment (deadline / meeting). */
+  private isTimeSensitive(item: FeedItem): boolean {
+    return (
+      item.type === FeedItemType.DEADLINE ||
+      item.type === FeedItemType.APPOINTMENT
+    );
+  }
+
   private computeUrgency(item: FeedItem, now: number): number {
-    if (item.type !== FeedItemType.DEADLINE || !item.dueAt) {
+    if (!this.isTimeSensitive(item) || !item.dueAt) {
       return 0.3;
     }
 
@@ -262,11 +275,11 @@ export class FeedPersonalizationService {
 
     sorted.sort((a, b) => {
       const aUrgent =
-        a.type === FeedItemType.DEADLINE &&
+        this.isTimeSensitive(a) &&
         a.dueAt &&
         a.dueAt.getTime() - now < 48 * 60 * 60 * 1000;
       const bUrgent =
-        b.type === FeedItemType.DEADLINE &&
+        this.isTimeSensitive(b) &&
         b.dueAt &&
         b.dueAt.getTime() - now < 48 * 60 * 60 * 1000;
 

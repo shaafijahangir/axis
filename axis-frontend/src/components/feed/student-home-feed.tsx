@@ -22,10 +22,11 @@ interface FeedItemData {
   title: string;
   subtitle?: string;
   body?: string;
-  courseCode: string;
-  courseTitle: string;
-  courseId: string;
-  sectionId: string;
+  /** FEAT-020: nullable — appointment items are not course-scoped. */
+  courseCode?: string | null;
+  courseTitle?: string | null;
+  courseId?: string | null;
+  sectionId?: string | null;
   assignmentId?: string;
   dueAt?: string;
   score?: number;
@@ -145,6 +146,7 @@ export function StudentHomeFeed() {
                   | 'announcement'
                   | 'course_update'
                   | 'enrollment_update'
+                  | 'appointment'
               }
               title={item.title}
               subtitle={item.subtitle}

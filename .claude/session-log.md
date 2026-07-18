@@ -5,6 +5,25 @@
 
 ---
 
+## Session 57 — FEAT-020: Bookings in the Home Feed + Reminders
+
+**Date:** 2026-07-18
+**Goal:** Make "one feed" true for the booking wedge (shaafilook §4: home feed is the PRIMARY appointment surface) + give BOOKING_* events their first listeners.
+**Status:** Built + tested (370 unit, 5 e2e local), PR opened.
+
+### What shipped
+- `FeedItemType.APPOINTMENT` / `InstructorFeedItemType.APPOINTMENT`: student feed shows bookings ≤7 days ("Office hours with Prof. Sarah Chen · Wed, Jul 22, 11:00 AM · ECS 618"); instructor feed shows today/tomorrow with student name + topic note. Course fields on both feed DTOs became nullable (appointments are instructor-scoped).
+- Ranking: appointment start rides `dueAt`, so the existing urgency model (<24h → 1.0) puts imminent meetings at the top with zero new ranking code — one `isTimeSensitive()` helper.
+- `BookingNotificationListener`: confirmation to both parties on create; cancellation notifies only the non-cancelling party. In-app + web push; email deferred (no provider on Render — honest gap).
+- `BookingReminderService`: hourly cron, disjoint hour-windows [now+1h,+2h) and [now+24h,+25h). WHY not BullMQ delayed jobs: no dedup bookkeeping, and cancels need no job cleanup (status=BOOKED filtered at send time). Migration adds 3 enum values via ADD VALUE IF NOT EXISTS.
+- Seed: demo booking Alex → Chen next Wednesday 11:00 (date computed at seed time — never stale). Widget prefs gained an "Appointments" toggle.
+- New e2e: student home feed shows the seeded appointment.
+
+### Known limitation (recorded in BACKLOG)
+- Booking times are wall-clock, no TZ column; Render runs UTC → reminders fire ~7h early for Pacific users. Systemic schedule-model issue; needs a dedicated TZ pass, not a point fix.
+
+---
+
 ## Session 56 — FEAT-019 Instructor Schedule Management
 
 **Date:** 2026-07-16/17
