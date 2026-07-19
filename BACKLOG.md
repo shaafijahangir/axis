@@ -1403,7 +1403,7 @@
 - **Acceptance:** Student books a slot → it appears in their home feed and they get a confirmation notification. 24h/1h reminders fire. Cancelling removes the feed item and schedules no further reminders.
 
 ### FEAT-021: Professor Card (course header) + Office Location on Profile
-- **Status:** `TODO`
+- **Status:** `DONE` (2026-07-18 — PR feat/prof-card. ProfCard on the section page: initials avatar, name, title, office location, mailto email, live office-hours summary, Book CTA (students) — the UVic/SFU directory model (shaafilook §2) plus the availability those directories never show. `title`/`officeLocation` exposed as User @ResolveFields reading profile JSONB (the raw `profile` String field has no serialization transformer — unreliable over GraphQL); updateProfile gained dedicated inputs that MERGE into the JSONB server-side. Profile page: "Directory Details" card for instructors/admins. Office-hour block form pre-fills location from the profile. Seeded Chen (Associate Professor, ECS 618) + Patel (Professor, DTB A445); users upsert now updates profile.)
 - **Priority:** MEDIUM — shaafilook.md §2/§4: the UVic/SFU directory data model is name/title/office/email with NO availability; Axis's prof card is that model PLUS booking. Booking CTA exists on the section page today, but there's no card — no photo, office location, or title.
 - **Scope:**
   - `officeLocation` (+ optional `title`) on the instructor profile (User.profile JSONB — matches directory format "ECS 618")

@@ -11,6 +11,8 @@ export const ME_QUERY = gql`
       status
       tenantId
       preferences
+      title
+      officeLocation
       createdAt
     }
   }

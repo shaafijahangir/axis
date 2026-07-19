@@ -1,5 +1,5 @@
 import { InputType, Field } from '@nestjs/graphql';
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 @InputType()
 export class UpdateUserInput {
@@ -22,4 +22,22 @@ export class UpdateUserInput {
   @IsOptional()
   @IsString()
   preferences?: string;
+
+  /**
+   * FEAT-021: directory fields, merged into profile JSONB server-side.
+   * Dedicated inputs (not the raw profile string) so callers never have to
+   * read-modify-write the whole JSON blob to change one field.
+   */
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  title?: string;
+
+  /** Building + room, directory format (e.g. "ECS 618"). */
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  officeLocation?: string;
 }

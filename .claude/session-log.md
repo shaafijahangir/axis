@@ -5,6 +5,20 @@
 
 ---
 
+## Session 57b — FEAT-021: Professor Card + Directory Fields
+
+**Date:** 2026-07-18
+**Goal:** The prof card — UVic/SFU directory model (shaafilook §2: name/title/office/email, availability NEVER shown) plus live office hours + Book CTA. Closes the "prof page modeling" thread.
+**Status:** Built + verified (4 new unit tests, prof-card e2e green, live GraphQL check), PR opened.
+
+### Decisions
+- `users.profile` JSONB over GraphQL is a raw String with no transformer → unreliable. `title`/`officeLocation` are `@ResolveField`s on User; `updateProfile` gained dedicated inputs that MERGE server-side (callers never read-modify-write the blob). Contract documented in DATA-MODEL JSONB governance.
+- ProfCard lives in the section page body (header stays slim); Book CTA moved onto the card per shaafilook §4.
+- Office-hour block form pre-fills location from profile officeLocation. Profile page gained a "Directory Details" card (instructors/admins).
+- Seed: Chen = Associate Professor / ECS 618, Patel = Professor / DTB A445; users upsert now updates profile on re-seed.
+
+---
+
 ## Session 57 — FEAT-020: Bookings in the Home Feed + Reminders
 
 **Date:** 2026-07-18

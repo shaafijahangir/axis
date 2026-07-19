@@ -142,6 +142,9 @@ export const SECTION_QUERY = gql`
         id
         firstName
         lastName
+        email
+        title
+        officeLocation
       }
     }
   }
