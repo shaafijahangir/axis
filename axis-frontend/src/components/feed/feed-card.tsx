@@ -163,12 +163,12 @@ export function FeedCard({
               {courseCode ?? 'Office hours'}
             </Badge>
             {dueAt && type === 'DEADLINE' && (
-              <span className="text-xs font-medium text-amber-600">
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
                 {formatRelativeTime(dueAt)}
               </span>
             )}
             {dueAt && type === 'APPOINTMENT' && (
-              <span className="text-xs font-medium text-emerald-600">
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
                 {formatRelativeTime(dueAt)}
               </span>
             )}
