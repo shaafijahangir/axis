@@ -13,18 +13,14 @@
 #
 # Free-tier caveats (demo-grade, not prod):
 # - Free web services sleep after 15 min idle; first request takes ~1 min.
-# - Free Postgres expires after 30 days unless upgraded.
+# - Postgres lives on Neon (free plan, AWS us-west-2 Oregon), not Render:
+#   Render's free Postgres expires after 30 days, and its expiry (~2026-08-15)
+#   took the demo API down. Neon's branch shows "Expires: Never". Neon has no
+#   Canadian region either (checked 2026-10-09) — same demo-data-only caveat.
 #
 # WHY --prod=false on install: NODE_ENV=production (needed at runtime) also
 # applies during build, making pnpm skip devDependencies — which breaks the
 # husky prepare hook and removes the build tooling (nest/next/codegen).
-
-databases:
-  - name: axis-db
-    plan: free
-    region: oregon
-    databaseName: axis
-    user: axis
 
 services:
   # ── Redis (BullMQ queues for AI event reactions) ────────────────────────
@@ -49,26 +45,20 @@ services:
         value: '22'
       - key: NODE_ENV
         value: production
+      # Neon connection — values set in the dashboard, never committed.
+      # Use the DIRECT host (no "-pooler"): migrations run on boot
+      # (migrationsRun) and Neon advises direct connections for schema
+      # migrations (neon.com/docs/connect/connection-pooling).
       - key: DATABASE_HOST
-        fromDatabase:
-          name: axis-db
-          property: host
+        sync: false
       - key: DATABASE_PORT
-        fromDatabase:
-          name: axis-db
-          property: port
+        value: '5432'
       - key: DATABASE_USERNAME
-        fromDatabase:
-          name: axis-db
-          property: user
+        sync: false
       - key: DATABASE_PASSWORD
-        fromDatabase:
-          name: axis-db
-          property: password
+        sync: false
       - key: DATABASE_NAME
-        fromDatabase:
-          name: axis-db
-          property: database
+        sync: false
       - key: DATABASE_SSL
         value: 'true'
       - key: REDIS_HOST
