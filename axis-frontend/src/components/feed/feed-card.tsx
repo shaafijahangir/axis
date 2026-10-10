@@ -16,28 +16,28 @@ import { formatRelativeTime } from '@/lib/utils/relative-time';
 import { useFeedCardVisibility } from '@/hooks/use-feed-engagement';
 
 type FeedItemType =
-  | 'deadline'
-  | 'grade_posted'
-  | 'announcement'
-  | 'course_update'
-  | 'enrollment_update'
-  | 'appointment';
+  | 'DEADLINE'
+  | 'GRADE_POSTED'
+  | 'ANNOUNCEMENT'
+  | 'COURSE_UPDATE'
+  | 'ENROLLMENT_UPDATE'
+  | 'APPOINTMENT';
 
 interface FeedCardProps {
   type: FeedItemType;
   title: string;
-  subtitle?: string;
-  body?: string;
+  subtitle?: string | null;
+  body?: string | null;
   /** FEAT-020: nullable — appointment items are not course-scoped. */
   courseCode?: string | null;
   courseTitle?: string | null;
   /** BUG-014: the course's own id — deep-links need both course and section. */
   courseId?: string | null;
   sectionId?: string | null;
-  assignmentId?: string;
-  dueAt?: string;
-  score?: number;
-  pointsPossible?: number;
+  assignmentId?: string | null;
+  dueAt?: string | null;
+  score?: number | null;
+  pointsPossible?: number | null;
   timestamp: string;
   id: string;
   onImpression?: (
@@ -58,32 +58,32 @@ const typeConfig: Record<
   FeedItemType,
   { icon: typeof Clock; borderColor: string; iconColor: string }
 > = {
-  deadline: {
+  DEADLINE: {
     icon: Clock,
     borderColor: 'border-l-amber-500',
     iconColor: 'text-amber-500',
   },
-  grade_posted: {
+  GRADE_POSTED: {
     icon: CheckCircle,
     borderColor: 'border-l-green-500',
     iconColor: 'text-green-500',
   },
-  announcement: {
+  ANNOUNCEMENT: {
     icon: Megaphone,
     borderColor: 'border-l-blue-500',
     iconColor: 'text-blue-500',
   },
-  course_update: {
+  COURSE_UPDATE: {
     icon: Info,
     borderColor: 'border-l-purple-500',
     iconColor: 'text-purple-500',
   },
-  enrollment_update: {
+  ENROLLMENT_UPDATE: {
     icon: UserCheck,
     borderColor: 'border-l-indigo-500',
     iconColor: 'text-indigo-500',
   },
-  appointment: {
+  APPOINTMENT: {
     icon: CalendarClock,
     borderColor: 'border-l-emerald-500',
     iconColor: 'text-emerald-500',
@@ -107,26 +107,26 @@ export function FeedCard({
   onImpression,
   onClick,
 }: FeedCardProps) {
-  const config = typeConfig[type] ?? typeConfig.course_update;
+  const config = typeConfig[type] ?? typeConfig.COURSE_UPDATE;
   const Icon = config.icon;
 
   const href =
-    type === 'appointment'
+    type === 'APPOINTMENT'
       ? '/schedule'
-      : assignmentId && courseId && sectionId && type !== 'announcement'
+      : assignmentId && courseId && sectionId && type !== 'ANNOUNCEMENT'
         ? `/courses/${courseId}/section/${sectionId}/assignment/${assignmentId}`
         : undefined;
 
   const typeLabel =
-    type === 'deadline'
+    type === 'DEADLINE'
       ? 'Upcoming deadline'
-      : type === 'grade_posted'
+      : type === 'GRADE_POSTED'
         ? 'Grade posted'
-        : type === 'announcement'
+        : type === 'ANNOUNCEMENT'
           ? 'Announcement'
-          : type === 'enrollment_update'
+          : type === 'ENROLLMENT_UPDATE'
             ? 'Enrollment update'
-            : type === 'appointment'
+            : type === 'APPOINTMENT'
               ? 'Appointment'
               : 'Course update';
 
@@ -162,12 +162,12 @@ export function FeedCard({
             <Badge variant="secondary" className="shrink-0 text-xs">
               {courseCode ?? 'Office hours'}
             </Badge>
-            {dueAt && type === 'deadline' && (
+            {dueAt && type === 'DEADLINE' && (
               <span className="text-xs font-medium text-amber-600">
                 {formatRelativeTime(dueAt)}
               </span>
             )}
-            {dueAt && type === 'appointment' && (
+            {dueAt && type === 'APPOINTMENT' && (
               <span className="text-xs font-medium text-emerald-600">
                 {formatRelativeTime(dueAt)}
               </span>
@@ -177,12 +177,12 @@ export function FeedCard({
           {subtitle && (
             <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
           )}
-          {body && type === 'announcement' && (
+          {body && type === 'ANNOUNCEMENT' && (
             <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
               {body}
             </p>
           )}
-          {type === 'grade_posted' &&
+          {type === 'GRADE_POSTED' &&
             score != null &&
             pointsPossible != null && (
               <p className="mt-1 text-sm font-semibold text-green-600">

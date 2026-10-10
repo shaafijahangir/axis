@@ -11,13 +11,6 @@ import { SectionGradebook } from '@/components/courses/section-gradebook';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
-interface SectionData {
-  id: string;
-  location?: string;
-  course: { id: string; code: string; title: string };
-  instructor: { firstName: string; lastName: string };
-}
-
 interface GradebookGrade {
   assignmentId: string;
   submissionId?: string;
@@ -114,9 +107,10 @@ export default function GradebookPage() {
   const courseId = params.id as string;
   const sectionId = params.sectionId as string;
 
-  const { data: sectionData, loading: sectionLoading } = useQuery<{
-    section: SectionData;
-  }>(SECTION_QUERY, { variables: { id: sectionId } });
+  const { data: sectionData, loading: sectionLoading } = useQuery(
+    SECTION_QUERY,
+    { variables: { id: sectionId } },
+  );
 
   const {
     data: gradebookData,

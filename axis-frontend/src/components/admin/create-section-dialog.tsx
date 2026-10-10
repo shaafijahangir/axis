@@ -72,9 +72,7 @@ export function CreateSectionDialog({
     resolver: zodResolver(createSectionSchema),
   });
 
-  const { data: coursesData } = useQuery<{
-    courses: { id: string; code: string; title: string }[];
-  }>(COURSES_QUERY);
+  const { data: coursesData } = useQuery(COURSES_QUERY);
 
   const { data: termsData } = useQuery<{
     academicTerms: { id: string; name: string }[];

@@ -21,59 +21,38 @@ import {
 import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
 
-interface CourseItem {
-  id: string;
-  code: string;
-  title: string;
-  credits?: number;
-  createdAt: string;
-}
-
-interface SectionItem {
-  id: string;
-  course: CourseItem;
-  instructor: { firstName: string; lastName: string };
-}
-
-interface EnrollmentItem {
-  id: string;
-  status: string;
-  enrolledAt: string;
-  section: SectionItem;
-}
-
 type EnrollmentStatus =
-  | 'pending'
-  | 'active'
-  | 'completed'
-  | 'dropped'
-  | 'withdrawn'
-  | 'waitlisted'
-  | 'rejected';
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'DROPPED'
+  | 'WITHDRAWN'
+  | 'WAITLISTED'
+  | 'REJECTED';
 
 const STATUS_BADGE: Record<
   EnrollmentStatus,
   { label: string; className: string }
 > = {
-  active: {
+  ACTIVE: {
     label: 'Active',
     className: 'bg-green-100 text-green-700 border-green-200',
   },
-  pending: {
+  PENDING: {
     label: 'Pending',
     className: 'bg-amber-50 text-amber-700 border-amber-200',
   },
-  completed: {
+  COMPLETED: {
     label: 'Completed',
     className: 'bg-blue-100 text-blue-700 border-blue-200',
   },
-  dropped: { label: 'Dropped', className: '' },
-  withdrawn: { label: 'Withdrawn', className: '' },
-  waitlisted: {
+  DROPPED: { label: 'Dropped', className: '' },
+  WITHDRAWN: { label: 'Withdrawn', className: '' },
+  WAITLISTED: {
     label: 'Waitlisted',
     className: 'bg-blue-50 text-blue-700 border-blue-200',
   },
-  rejected: { label: 'Not approved', className: 'text-destructive' },
+  REJECTED: { label: 'Not approved', className: 'text-destructive' },
 };
 
 function EnrollmentStatusBadge({ status }: { status: EnrollmentStatus }) {
@@ -87,21 +66,19 @@ function EnrollmentStatusBadge({ status }: { status: EnrollmentStatus }) {
 
 /** Student view — their enrolled sections */
 function StudentCoursesView() {
-  const { data, loading } = useQuery<{ myEnrollments: EnrollmentItem[] }>(
-    MY_ENROLLMENTS_QUERY,
-  );
+  const { data, loading } = useQuery(MY_ENROLLMENTS_QUERY);
 
   const enrollments = data?.myEnrollments ?? [];
   // Show active + pending first, then the rest
   const sorted = [...enrollments].sort((a, b) => {
     const order = [
-      'active',
-      'pending',
-      'waitlisted',
-      'completed',
-      'dropped',
-      'withdrawn',
-      'rejected',
+      'ACTIVE',
+      'PENDING',
+      'WAITLISTED',
+      'COMPLETED',
+      'DROPPED',
+      'WITHDRAWN',
+      'REJECTED',
     ];
     return order.indexOf(a.status) - order.indexOf(b.status);
   });
@@ -133,13 +110,13 @@ function StudentCoursesView() {
         <>
           {/* Mobile: card list */}
           <div className="md:hidden space-y-3">
-            {sorted.map((enrollment: EnrollmentItem) => {
+            {sorted.map((enrollment) => {
               const { section } = enrollment;
               const courseUrl = `/courses/${section.course.id}/section/${section.id}`;
               const canOpen =
-                enrollment.status === 'active' ||
-                enrollment.status === 'pending' ||
-                enrollment.status === 'waitlisted';
+                enrollment.status === 'ACTIVE' ||
+                enrollment.status === 'PENDING' ||
+                enrollment.status === 'WAITLISTED';
               return (
                 <Link key={enrollment.id} href={courseUrl} className="block">
                   <div className="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
@@ -187,7 +164,7 @@ function StudentCoursesView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sorted.map((enrollment: EnrollmentItem) => {
+                {sorted.map((enrollment) => {
                   const { section } = enrollment;
                   const courseUrl = `/courses/${section.course.id}/section/${section.id}`;
                   return (
@@ -215,8 +192,8 @@ function StudentCoursesView() {
                         {new Date(enrollment.enrolledAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        {(enrollment.status === 'active' ||
-                          enrollment.status === 'pending') && (
+                        {(enrollment.status === 'ACTIVE' ||
+                          enrollment.status === 'PENDING') && (
                           <Button asChild size="sm" variant="ghost">
                             <Link href={courseUrl}>
                               <BookOpen
@@ -255,7 +232,7 @@ function StudentCoursesView() {
 
 /** Instructor / Admin view — all courses in the tenant */
 function InstructorCoursesView() {
-  const { data, loading } = useQuery<{ courses: CourseItem[] }>(COURSES_QUERY);
+  const { data, loading } = useQuery(COURSES_QUERY);
 
   return (
     <div className="space-y-6">
@@ -290,7 +267,7 @@ function InstructorCoursesView() {
         <>
           {/* Mobile: card list */}
           <div className="md:hidden space-y-3">
-            {data!.courses.map((course: CourseItem) => (
+            {data!.courses.map((course) => (
               <Link
                 key={course.id}
                 href={`/courses/${course.id}`}
@@ -330,7 +307,7 @@ function InstructorCoursesView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data!.courses.map((course: CourseItem) => (
+                {data!.courses.map((course) => (
                   <TableRow key={course.id}>
                     <TableCell>
                       <Link

@@ -10,7 +10,7 @@ interface CourseHeaderProps {
   courseCode: string;
   courseTitle: string;
   instructorName?: string;
-  location?: string;
+  location?: string | null;
   /** Optional action rendered on the right (e.g. "Book Office Hours"). */
   action?: React.ReactNode;
 }

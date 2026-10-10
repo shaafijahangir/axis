@@ -49,13 +49,13 @@ import {
 } from '@/lib/graphql/mutations/enrollment';
 
 type EnrollmentStatus =
-  | 'pending'
-  | 'active'
-  | 'completed'
-  | 'dropped'
-  | 'withdrawn'
-  | 'waitlisted'
-  | 'rejected';
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'DROPPED'
+  | 'WITHDRAWN'
+  | 'WAITLISTED'
+  | 'REJECTED';
 
 interface EnrollmentStatusWidgetProps {
   enrollmentId: string;
@@ -81,14 +81,14 @@ function formatDeadline(iso: string): string {
 
 function StatusBadge({ status }: { status: EnrollmentStatus }) {
   switch (status) {
-    case 'active':
+    case 'ACTIVE':
       return (
         <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
           <CheckCircle2 className="mr-1 h-3 w-3" aria-hidden="true" />
           Enrolled
         </Badge>
       );
-    case 'pending':
+    case 'PENDING':
       return (
         <Badge
           variant="secondary"
@@ -98,23 +98,23 @@ function StatusBadge({ status }: { status: EnrollmentStatus }) {
           Pending approval
         </Badge>
       );
-    case 'dropped':
+    case 'DROPPED':
       return (
         <Badge variant="outline" className="text-muted-foreground">
           <XCircle className="mr-1 h-3 w-3" aria-hidden="true" />
           Dropped
         </Badge>
       );
-    case 'withdrawn':
+    case 'WITHDRAWN':
       return (
         <Badge variant="outline" className="text-muted-foreground">
           <XCircle className="mr-1 h-3 w-3" aria-hidden="true" />
           Withdrawn
         </Badge>
       );
-    case 'rejected':
+    case 'REJECTED':
       return <Badge variant="destructive">Enrollment not approved</Badge>;
-    case 'waitlisted':
+    case 'WAITLISTED':
       return (
         <Badge
           variant="secondary"
@@ -124,7 +124,7 @@ function StatusBadge({ status }: { status: EnrollmentStatus }) {
           Waitlisted
         </Badge>
       );
-    case 'completed':
+    case 'COMPLETED':
       return (
         <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100">
           Completed
@@ -152,8 +152,8 @@ export function EnrollmentStatusWidget({
     DROP_ENROLLMENT_MUTATION,
     {
       onCompleted: () => {
-        setCurrentStatus('dropped');
-        onStatusChange('dropped');
+        setCurrentStatus('DROPPED');
+        onStatusChange('DROPPED');
         setError('');
       },
       onError: (err) => setError(err.message),
@@ -164,8 +164,8 @@ export function EnrollmentStatusWidget({
     WITHDRAW_FROM_COURSE_MUTATION,
     {
       onCompleted: () => {
-        setCurrentStatus('withdrawn');
-        onStatusChange('withdrawn');
+        setCurrentStatus('WITHDRAWN');
+        onStatusChange('WITHDRAWN');
         setError('');
       },
       onError: (err) => setError(err.message),
@@ -176,8 +176,8 @@ export function EnrollmentStatusWidget({
     CONFIRM_WAITLIST_PROMOTION_MUTATION,
     {
       onCompleted: () => {
-        setCurrentStatus('active');
-        onStatusChange('active');
+        setCurrentStatus('ACTIVE');
+        onStatusChange('ACTIVE');
         setError('');
       },
       onError: (err) => setError(err.message),
@@ -188,8 +188,8 @@ export function EnrollmentStatusWidget({
     CANCEL_WAITLIST_ENTRY_MUTATION,
     {
       onCompleted: () => {
-        setCurrentStatus('dropped');
-        onStatusChange('dropped');
+        setCurrentStatus('DROPPED');
+        onStatusChange('DROPPED');
         setError('');
       },
       onError: (err) => setError(err.message),
@@ -201,12 +201,12 @@ export function EnrollmentStatusWidget({
   const withdrawDate = withdrawDeadline ? new Date(withdrawDeadline) : null;
 
   // Determine which action is available for an active enrollment
-  const canDrop = currentStatus === 'active' && (!dropDate || now <= dropDate);
+  const canDrop = currentStatus === 'ACTIVE' && (!dropDate || now <= dropDate);
   const canWithdraw =
-    currentStatus === 'active' &&
+    currentStatus === 'ACTIVE' &&
     !canDrop && // past drop window
     (!withdrawDate || now <= withdrawDate);
-  const isLockedIn = currentStatus === 'active' && !canDrop && !canWithdraw;
+  const isLockedIn = currentStatus === 'ACTIVE' && !canDrop && !canWithdraw;
 
   return (
     <div className="rounded-lg border px-4 py-3">
@@ -314,7 +314,7 @@ export function EnrollmentStatusWidget({
         )}
 
         {/* ENROLL-010: Waitlist actions */}
-        {currentStatus === 'waitlisted' && (
+        {currentStatus === 'WAITLISTED' && (
           <div className="flex items-center gap-2">
             {waitlistConfirmBy && (
               <Button
@@ -364,7 +364,7 @@ export function EnrollmentStatusWidget({
         )}
 
         {/* Re-enroll link for dropped/rejected */}
-        {(currentStatus === 'dropped' || currentStatus === 'rejected') && (
+        {(currentStatus === 'DROPPED' || currentStatus === 'REJECTED') && (
           <Button asChild size="sm" variant="outline">
             <Link href="/courses/catalog">
               <BookOpen className="mr-1 h-4 w-4" aria-hidden="true" />
@@ -375,7 +375,7 @@ export function EnrollmentStatusWidget({
       </div>
 
       {/* ENROLL-010: Waitlist position and confirmation info */}
-      {currentStatus === 'waitlisted' && (
+      {currentStatus === 'WAITLISTED' && (
         <div className="mt-2 space-y-1">
           {waitlistPosition != null && (
             <p className="text-sm text-muted-foreground">
@@ -403,7 +403,7 @@ export function EnrollmentStatusWidget({
       )}
 
       {/* Deadline info for active enrollments */}
-      {currentStatus === 'active' && (dropDate || withdrawDate) && (
+      {currentStatus === 'ACTIVE' && (dropDate || withdrawDate) && (
         <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
           {dropDate && <span>Drop by: {formatDeadline(dropDeadline!)}</span>}
           {withdrawDate && (

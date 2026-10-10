@@ -19,42 +19,31 @@ import {
   useFeedEngagement,
   useFeedCardVisibility,
 } from '@/hooks/use-feed-engagement';
+import type { InstructorFeedQuery } from '@/lib/graphql/__generated__/graphql';
 
-interface InstructorFeedItemData {
-  type: string;
-  id: string;
-  title: string;
-  subtitle?: string;
-  /** FEAT-020: nullable — appointment items are not course-scoped. */
-  courseCode?: string | null;
-  courseTitle?: string | null;
-  sectionId?: string | null;
-  assignmentId?: string;
-  ungradedCount?: number;
-  dueAt?: string;
-  timestamp: string;
-}
+/** Generated from INSTRUCTOR_FEED_QUERY (ARCH-007) — never hand-typed. */
+type InstructorFeedItemData = InstructorFeedQuery['instructorFeed'][number];
 
 const typeConfig: Record<
   string,
   { icon: typeof Clock; borderColor: string; iconColor: string }
 > = {
-  ungraded: {
+  UNGRADED: {
     icon: ClipboardList,
     borderColor: 'border-l-red-500',
     iconColor: 'text-red-500',
   },
-  upcoming_deadline: {
+  UPCOMING_DEADLINE: {
     icon: Clock,
     borderColor: 'border-l-amber-500',
     iconColor: 'text-amber-500',
   },
-  announcement: {
+  ANNOUNCEMENT: {
     icon: Megaphone,
     borderColor: 'border-l-blue-500',
     iconColor: 'text-blue-500',
   },
-  appointment: {
+  APPOINTMENT: {
     icon: CalendarClock,
     borderColor: 'border-l-emerald-500',
     iconColor: 'text-emerald-500',
@@ -80,7 +69,7 @@ function InstructorFeedCard({
     sectionId: string,
   ) => void;
 }) {
-  const config = typeConfig[item.type] ?? typeConfig.upcoming_deadline;
+  const config = typeConfig[item.type] ?? typeConfig.UPCOMING_DEADLINE;
   const Icon = config.icon;
 
   const handleVisible = useCallback(() => {
@@ -111,7 +100,7 @@ function InstructorFeedCard({
       <Card
         className={`border-l-4 ${config.borderColor}`}
         role="article"
-        aria-label={`${item.type === 'ungraded' ? 'Needs grading' : item.type === 'upcoming_deadline' ? 'Upcoming deadline' : item.type === 'appointment' ? 'Appointment' : 'Announcement'}: ${item.title}`}
+        aria-label={`${item.type === 'UNGRADED' ? 'Needs grading' : item.type === 'UPCOMING_DEADLINE' ? 'Upcoming deadline' : item.type === 'APPOINTMENT' ? 'Appointment' : 'Announcement'}: ${item.title}`}
       >
         <CardContent className="flex items-start gap-4 p-4">
           <div
@@ -153,9 +142,9 @@ export function InstructorHomeFeed() {
   const { user } = useAuthStore();
   const { isWidgetEnabled } = useWidgetPreferences();
   const { trackClick, trackImpression } = useFeedEngagement();
-  const { data, loading } = useQuery<{
-    instructorFeed: InstructorFeedItemData[];
-  }>(INSTRUCTOR_FEED_QUERY, { fetchPolicy: 'cache-and-network' });
+  const { data, loading } = useQuery(INSTRUCTOR_FEED_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   // Filter feed items based on widget preferences
   const filteredFeed = useMemo(() => {

@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const MY_ENROLLMENTS_QUERY = gql`
+export const MY_ENROLLMENTS_QUERY = graphql(`
   query MyEnrollments {
     myEnrollments {
       id
@@ -39,9 +39,9 @@ export const MY_ENROLLMENTS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const MY_SECTIONS_QUERY = gql`
+export const MY_SECTIONS_QUERY = graphql(`
   query MySections {
     mySections {
       id
@@ -72,9 +72,9 @@ export const MY_SECTIONS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const COURSES_QUERY = gql`
+export const COURSES_QUERY = graphql(`
   query Courses {
     courses {
       id
@@ -85,9 +85,9 @@ export const COURSES_QUERY = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const COURSE_QUERY = gql`
+export const COURSE_QUERY = graphql(`
   query Course($id: String!) {
     course(id: $id) {
       id
@@ -99,9 +99,9 @@ export const COURSE_QUERY = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const COURSE_SECTIONS_QUERY = gql`
+export const COURSE_SECTIONS_QUERY = graphql(`
   query CourseSections($courseId: String!) {
     courseSections(courseId: $courseId) {
       id
@@ -115,9 +115,9 @@ export const COURSE_SECTIONS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const SECTION_QUERY = gql`
+export const SECTION_QUERY = graphql(`
   query Section($id: String!) {
     section(id: $id) {
       id
@@ -148,9 +148,9 @@ export const SECTION_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const MY_ENROLLMENT_FOR_SECTION_QUERY = gql`
+export const MY_ENROLLMENT_FOR_SECTION_QUERY = graphql(`
   query MyEnrollmentForSection($sectionId: String!) {
     myEnrollmentForSection(sectionId: $sectionId) {
       id
@@ -160,9 +160,9 @@ export const MY_ENROLLMENT_FOR_SECTION_QUERY = gql`
       waitlistConfirmBy
     }
   }
-`;
+`);
 
-export const PENDING_ENROLLMENTS_QUERY = gql`
+export const PENDING_ENROLLMENTS_QUERY = graphql(`
   query PendingEnrollments($sectionId: String!) {
     pendingEnrollments(sectionId: $sectionId) {
       id
@@ -176,9 +176,9 @@ export const PENDING_ENROLLMENTS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const SECTION_ENROLLMENTS_QUERY = gql`
+export const SECTION_ENROLLMENTS_QUERY = graphql(`
   query SectionEnrollments($sectionId: String!) {
     sectionEnrollments(sectionId: $sectionId) {
       id
@@ -193,22 +193,22 @@ export const SECTION_ENROLLMENTS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const COURSE_COUNT_QUERY = gql`
+export const COURSE_COUNT_QUERY = graphql(`
   query CourseCount {
     courseCount
   }
-`;
+`);
 
-export const SECTION_COUNT_QUERY = gql`
+export const SECTION_COUNT_QUERY = graphql(`
   query SectionCount {
     sectionCount
   }
-`;
+`);
 
-export const ENROLLMENT_COUNT_QUERY = gql`
+export const ENROLLMENT_COUNT_QUERY = graphql(`
   query EnrollmentCount {
     enrollmentCount
   }
-`;
+`);

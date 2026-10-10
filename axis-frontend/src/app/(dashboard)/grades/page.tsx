@@ -19,28 +19,7 @@ interface AttendanceSummary {
 }
 
 export default function GradesPage() {
-  const { data, loading, error } = useQuery<{
-    myGrades: {
-      sectionId: string;
-      courseId: string;
-      courseCode: string;
-      courseTitle: string;
-      sectionInstructor?: string;
-      totalPointsEarned: number;
-      totalPointsPossible: number;
-      overallPercentage: number;
-      assignments: {
-        assignmentId: string;
-        assignmentTitle: string;
-        assignmentType: string;
-        pointsPossible: number;
-        score: number;
-        percentage: number;
-        gradedAt: string;
-        feedback?: string;
-      }[];
-    }[];
-  }>(MY_GRADES_QUERY);
+  const { data, loading, error } = useQuery(MY_GRADES_QUERY);
 
   const { data: attendanceData } = useQuery<{
     myAttendanceSummaries: AttendanceSummary[];

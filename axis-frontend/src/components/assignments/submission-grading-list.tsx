@@ -52,14 +52,15 @@ interface SubmissionEntry {
   id: string;
   userId: string;
   attempt: number;
-  content?: string;
-  submittedAt?: string;
-  score?: number;
-  gradedAt?: string;
-  gradedBy?: string;
-  feedback?: string;
+  content?: string | null;
+  submittedAt?: string | null;
+  score?: number | null;
+  gradedAt?: string | null;
+  gradedBy?: string | null;
+  feedback?: string | null;
   attachments?: AttachmentItem[];
-  user: SubmissionUser;
+  /** Nullable in the schema (e.g. a deleted account) — render a placeholder. */
+  user: SubmissionUser | null;
 }
 
 interface SubmissionGradingListProps {
@@ -71,9 +72,9 @@ export function SubmissionGradingList({
   assignmentId,
   pointsPossible,
 }: SubmissionGradingListProps) {
-  const { data, loading } = useQuery<{
-    assignmentSubmissions: SubmissionEntry[];
-  }>(ASSIGNMENT_SUBMISSIONS_QUERY, { variables: { assignmentId } });
+  const { data, loading } = useQuery(ASSIGNMENT_SUBMISSIONS_QUERY, {
+    variables: { assignmentId },
+  });
 
   const submissions = data?.assignmentSubmissions ?? [];
   const gradedCount = submissions.filter((s) => s.gradedAt).length;
@@ -147,7 +148,11 @@ function SubmissionRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const isGraded = submission.gradedAt != null;
-  const { user } = submission;
+  const user = submission.user ?? {
+    firstName: 'Unknown',
+    lastName: 'student',
+    email: '',
+  };
   const initials = `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
 
   // Parse submission content for display
@@ -245,8 +250,8 @@ function InlineGradeForm({
   submissionId: string;
   assignmentId: string;
   pointsPossible: number;
-  currentScore?: number;
-  currentFeedback?: string;
+  currentScore?: number | null;
+  currentFeedback?: string | null;
 }) {
   const {
     register,

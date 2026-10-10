@@ -193,33 +193,15 @@ export default function CourseDetailPage() {
     [UserRole.ADMIN, UserRole.INSTRUCTOR].includes(r),
   );
 
-  interface CourseDetail {
-    id: string;
-    code: string;
-    title: string;
-    description?: string;
-    credits?: number;
-  }
-
-  interface SectionItem {
-    id: string;
-    location?: string;
-    capacity?: number;
-    status: string;
-    instructor?: { id: string; firstName: string; lastName: string };
-  }
-
-  const { data: courseData, loading: courseLoading } = useQuery<{
-    course: CourseDetail;
-  }>(COURSE_QUERY, { variables: { id } });
+  const { data: courseData, loading: courseLoading } = useQuery(COURSE_QUERY, {
+    variables: { id },
+  });
 
   const {
     data: sectionsData,
     loading: sectionsLoading,
     refetch: refetchSections,
-  } = useQuery<{
-    courseSections: SectionItem[];
-  }>(COURSE_SECTIONS_QUERY, { variables: { courseId: id } });
+  } = useQuery(COURSE_SECTIONS_QUERY, { variables: { courseId: id } });
 
   if (courseLoading) {
     return (

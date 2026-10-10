@@ -11,11 +11,11 @@ import {
 interface SubmissionData {
   id: string;
   attempt: number;
-  content?: string;
-  submittedAt?: string;
-  score?: number;
-  gradedAt?: string;
-  feedback?: string;
+  content?: string | null;
+  submittedAt?: string | null;
+  score?: number | null;
+  gradedAt?: string | null;
+  feedback?: string | null;
   attachments?: AttachmentItem[];
 }
 

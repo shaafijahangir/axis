@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const MY_GRADES_QUERY = gql`
+export const MY_GRADES_QUERY = graphql(`
   query MyGrades {
     myGrades {
       sectionId
@@ -23,4 +23,4 @@ export const MY_GRADES_QUERY = gql`
       }
     }
   }
-`;
+`);

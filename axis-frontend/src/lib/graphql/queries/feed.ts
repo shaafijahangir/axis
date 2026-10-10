@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const STUDENT_FEED_QUERY = gql`
+export const STUDENT_FEED_QUERY = graphql(`
   query StudentFeed {
     studentFeed {
       type
@@ -19,9 +19,9 @@ export const STUDENT_FEED_QUERY = gql`
       timestamp
     }
   }
-`;
+`);
 
-export const INSTRUCTOR_FEED_QUERY = gql`
+export const INSTRUCTOR_FEED_QUERY = graphql(`
   query InstructorFeed {
     instructorFeed {
       type
@@ -37,4 +37,4 @@ export const INSTRUCTOR_FEED_QUERY = gql`
       timestamp
     }
   }
-`;
+`);

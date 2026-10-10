@@ -25,13 +25,6 @@ interface AttendanceRecord {
   notes?: string;
 }
 
-interface SectionData {
-  id: string;
-  location?: string;
-  course: { id: string; code: string; title: string };
-  instructor: { firstName: string; lastName: string };
-}
-
 const STATUS_OPTIONS: {
   value: AttendanceStatus;
   label: string;
@@ -79,9 +72,10 @@ export default function AttendancePage() {
     {},
   );
 
-  const { data: sectionData, loading: sectionLoading } = useQuery<{
-    section: SectionData;
-  }>(SECTION_QUERY, { variables: { id: sectionId } });
+  const { data: sectionData, loading: sectionLoading } = useQuery(
+    SECTION_QUERY,
+    { variables: { id: sectionId } },
+  );
 
   const { data, loading, refetch } = useQuery<{
     sectionAttendance: { date: string; records: AttendanceRecord[] };

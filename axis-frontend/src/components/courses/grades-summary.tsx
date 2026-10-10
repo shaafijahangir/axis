@@ -21,7 +21,7 @@ interface GradedAssignment {
   score: number;
   percentage: number;
   gradedAt: string;
-  feedback?: string;
+  feedback?: string | null;
 }
 
 interface CourseSectionGrades {
@@ -29,7 +29,7 @@ interface CourseSectionGrades {
   courseId: string;
   courseCode: string;
   courseTitle: string;
-  sectionInstructor?: string;
+  sectionInstructor?: string | null;
   totalPointsEarned: number;
   totalPointsPossible: number;
   overallPercentage: number;

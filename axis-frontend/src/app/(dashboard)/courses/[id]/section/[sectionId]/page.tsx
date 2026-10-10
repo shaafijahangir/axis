@@ -34,35 +34,13 @@ import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
 
 type EnrollmentStatus =
-  | 'pending'
-  | 'active'
-  | 'completed'
-  | 'dropped'
-  | 'withdrawn'
-  | 'waitlisted'
-  | 'rejected';
-
-interface SectionData {
-  id: string;
-  location?: string;
-  enrollmentMode: 'open' | 'invite_only';
-  inviteCode: string | null;
-  autoApprove: boolean;
-  termId: string;
-  term?: {
-    dropDeadline?: string | null;
-    withdrawDeadline?: string | null;
-  } | null;
-  course: { id: string; code: string; title: string };
-  instructor: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email?: string | null;
-    title?: string | null;
-    officeLocation?: string | null;
-  };
-}
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'DROPPED'
+  | 'WITHDRAWN'
+  | 'WAITLISTED'
+  | 'REJECTED';
 
 interface TimelineEntryData {
   type: string;
@@ -102,19 +80,12 @@ export default function SectionTimelinePage() {
   const [optimisticStatus, setOptimisticStatus] =
     useState<EnrollmentStatus | null>(null);
 
-  const { data: sectionData, loading: sectionLoading } = useQuery<{
-    section: SectionData;
-  }>(SECTION_QUERY, { variables: { id: sectionId } });
+  const { data: sectionData, loading: sectionLoading } = useQuery(
+    SECTION_QUERY,
+    { variables: { id: sectionId } },
+  );
 
-  const { data: enrollmentData } = useQuery<{
-    myEnrollmentForSection: {
-      id: string;
-      status: EnrollmentStatus;
-      enrolledAt: string;
-      waitlistPosition: number | null;
-      waitlistConfirmBy: string | null;
-    } | null;
-  }>(MY_ENROLLMENT_FOR_SECTION_QUERY, {
+  const { data: enrollmentData } = useQuery(MY_ENROLLMENT_FOR_SECTION_QUERY, {
     variables: { sectionId },
     skip: canCreate, // instructors don't need their own enrollment status
   });
@@ -270,7 +241,7 @@ export default function SectionTimelinePage() {
           )}
 
         {/* Onboarding checklist — shown once on first visit for active students */}
-        {isStudent && enrollmentStatus === 'active' && (
+        {isStudent && enrollmentStatus === 'ACTIVE' && (
           <EnrollmentOnboardingChecklist sectionId={sectionId} />
         )}
 

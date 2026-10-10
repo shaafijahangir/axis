@@ -42,22 +42,8 @@ import {
   REJECT_ENROLLMENT_MUTATION,
 } from '@/lib/graphql/mutations/enrollment';
 
-interface PendingUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
-
-interface PendingEnrollment {
-  id: string;
-  status: string;
-  enrolledAt: string;
-  user: PendingUser;
-}
-
 interface SectionSettings {
-  enrollmentMode: 'open' | 'invite_only';
+  enrollmentMode: 'OPEN' | 'INVITE_ONLY';
   inviteCode: string | null;
   autoApprove: boolean;
 }
@@ -77,13 +63,14 @@ export function EnrollmentSettingsPanel({
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Pending enrollments — only fetched when the panel is expanded
-  const { data: pendingData, refetch: refetchPending } = useQuery<{
-    pendingEnrollments: PendingEnrollment[];
-  }>(PENDING_ENROLLMENTS_QUERY, {
-    variables: { sectionId },
-    skip: collapsed,
-    fetchPolicy: 'network-only',
-  });
+  const { data: pendingData, refetch: refetchPending } = useQuery(
+    PENDING_ENROLLMENTS_QUERY,
+    {
+      variables: { sectionId },
+      skip: collapsed,
+      fetchPolicy: 'network-only',
+    },
+  );
 
   const [generateCode, { loading: generating }] = useMutation(
     GENERATE_INVITE_CODE_MUTATION,
@@ -101,7 +88,7 @@ export function EnrollmentSettingsPanel({
         ).generateInviteCode;
         setSettings((prev) => ({
           ...prev,
-          enrollmentMode: s.enrollmentMode as 'open' | 'invite_only',
+          enrollmentMode: s.enrollmentMode as 'OPEN' | 'INVITE_ONLY',
           inviteCode: s.inviteCode,
         }));
       },
@@ -194,7 +181,7 @@ export function EnrollmentSettingsPanel({
               value={settings.enrollmentMode}
               onValueChange={(v) =>
                 handleSaveSettings({
-                  enrollmentMode: v as 'open' | 'invite_only',
+                  enrollmentMode: v as 'OPEN' | 'INVITE_ONLY',
                 })
               }
               disabled={savingSettings}
@@ -203,12 +190,12 @@ export function EnrollmentSettingsPanel({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="invite_only">Invite Only</SelectItem>
+                <SelectItem value="OPEN">Open</SelectItem>
+                <SelectItem value="INVITE_ONLY">Invite Only</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              {settings.enrollmentMode === 'open'
+              {settings.enrollmentMode === 'OPEN'
                 ? 'Any student can self-enroll from the catalog.'
                 : 'Students must enter the invite code to enroll.'}
             </p>
@@ -237,7 +224,7 @@ export function EnrollmentSettingsPanel({
           </div>
 
           {/* Invite code */}
-          {settings.enrollmentMode === 'invite_only' && (
+          {settings.enrollmentMode === 'INVITE_ONLY' && (
             <div className="space-y-2">
               <Label>Invite Code</Label>
               <div className="flex items-center gap-2">

@@ -8,12 +8,12 @@ import { formatRelativeTime } from '@/lib/utils/relative-time';
 
 interface AssignmentDetailProps {
   title: string;
-  description?: string;
+  description?: string | null;
   type: string;
   pointsPossible: number;
-  dueAt?: string;
-  unlockAt?: string;
-  lockAt?: string;
+  dueAt?: string | null;
+  unlockAt?: string | null;
+  lockAt?: string | null;
 }
 
 export function AssignmentDetail({

@@ -16,24 +16,6 @@ import {
 } from '@/hooks/use-widget-preferences';
 import { useFeedEngagement } from '@/hooks/use-feed-engagement';
 
-interface FeedItemData {
-  type: string;
-  id: string;
-  title: string;
-  subtitle?: string;
-  body?: string;
-  /** FEAT-020: nullable — appointment items are not course-scoped. */
-  courseCode?: string | null;
-  courseTitle?: string | null;
-  courseId?: string | null;
-  sectionId?: string | null;
-  assignmentId?: string;
-  dueAt?: string;
-  score?: number;
-  pointsPossible?: number;
-  timestamp: string;
-}
-
 interface SchoolAnnouncement {
   id: string;
   title: string;
@@ -50,10 +32,9 @@ export function StudentHomeFeed() {
   const { user } = useAuthStore();
   const { isWidgetEnabled } = useWidgetPreferences();
   const { trackClick, trackImpression } = useFeedEngagement();
-  const { data, loading } = useQuery<{ studentFeed: FeedItemData[] }>(
-    STUDENT_FEED_QUERY,
-    { fetchPolicy: 'cache-and-network' },
-  );
+  const { data, loading } = useQuery(STUDENT_FEED_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   const gradeLevel = user?.profile?.gradeLevel as number | undefined;
   const { data: schoolAnnouncementsData } = useQuery<{
@@ -139,15 +120,7 @@ export function StudentHomeFeed() {
             <FeedCard
               key={item.id}
               id={item.id}
-              type={
-                item.type as
-                  | 'deadline'
-                  | 'grade_posted'
-                  | 'announcement'
-                  | 'course_update'
-                  | 'enrollment_update'
-                  | 'appointment'
-              }
+              type={item.type}
               title={item.title}
               subtitle={item.subtitle}
               body={item.body}

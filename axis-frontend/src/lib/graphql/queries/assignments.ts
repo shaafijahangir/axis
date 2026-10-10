@@ -1,17 +1,21 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-/** SPRINT-2: Reusable fragment for the attachments field on submissions and assignments. */
-const ATTACHMENT_FIELDS = gql`
+/**
+ * SPRINT-2: Reusable fragment for the attachments field on submissions and
+ * assignments. With the codegen client-preset, operations reference it by
+ * name (`...AttachmentFields`) and the generated document includes it — no
+ * `${}` interpolation (that would defeat the typed `graphql()` overloads).
+ */
+export const ATTACHMENT_FIELDS = graphql(`
   fragment AttachmentFields on FileUpload {
     id
     originalName
     mimeType
     size
   }
-`;
+`);
 
-export const ASSIGNMENT_QUERY = gql`
-  ${ATTACHMENT_FIELDS}
+export const ASSIGNMENT_QUERY = graphql(`
   query Assignment($id: String!) {
     assignment(id: $id) {
       id
@@ -32,15 +36,14 @@ export const ASSIGNMENT_QUERY = gql`
       }
     }
   }
-`;
+`);
 
 /**
  * WHY: Instructor needs to see ALL submissions for an assignment, not just their own.
  * Includes user relation so we can display student name.
  * Backend already eager-loads user on this query.
  */
-export const ASSIGNMENT_SUBMISSIONS_QUERY = gql`
-  ${ATTACHMENT_FIELDS}
+export const ASSIGNMENT_SUBMISSIONS_QUERY = graphql(`
   query AssignmentSubmissions($assignmentId: String!) {
     assignmentSubmissions(assignmentId: $assignmentId) {
       id
@@ -63,10 +66,9 @@ export const ASSIGNMENT_SUBMISSIONS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const MY_SUBMISSIONS_QUERY = gql`
-  ${ATTACHMENT_FIELDS}
+export const MY_SUBMISSIONS_QUERY = graphql(`
   query MySubmissions($assignmentId: String!) {
     mySubmissions(assignmentId: $assignmentId) {
       id
@@ -82,4 +84,4 @@ export const MY_SUBMISSIONS_QUERY = gql`
       }
     }
   }
-`;
+`);
