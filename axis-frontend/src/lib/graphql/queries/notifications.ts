@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const MY_NOTIFICATION_PREFERENCES_QUERY = gql`
+export const MY_NOTIFICATION_PREFERENCES_QUERY = graphql(`
   query MyNotificationPreferences {
     myNotificationPreferences {
       emailOnGrade
@@ -10,9 +10,9 @@ export const MY_NOTIFICATION_PREFERENCES_QUERY = gql`
       emailOnMessage
     }
   }
-`;
+`);
 
-export const MY_NOTIFICATIONS_QUERY = gql`
+export const MY_NOTIFICATIONS_QUERY = graphql(`
   query MyNotifications($limit: Int, $offset: Int) {
     myNotifications(limit: $limit, offset: $offset) {
       id
@@ -24,18 +24,18 @@ export const MY_NOTIFICATIONS_QUERY = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const UNREAD_NOTIFICATION_COUNT_QUERY = gql`
+export const UNREAD_NOTIFICATION_COUNT_QUERY = graphql(`
   query UnreadNotificationCount {
     unreadNotificationCount
   }
-`;
+`);
 
-export const VAPID_PUBLIC_KEY_QUERY = gql`
+export const VAPID_PUBLIC_KEY_QUERY = graphql(`
   query VapidPublicKey {
     vapidPublicKey {
       publicKey
     }
   }
-`;
+`);

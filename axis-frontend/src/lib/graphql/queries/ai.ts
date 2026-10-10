@@ -1,10 +1,10 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
 /**
  * Fetch available AI agents for the current user.
  * Returns agents filtered by the user's roles.
  */
-export const AVAILABLE_AGENTS_QUERY = gql`
+export const AVAILABLE_AGENTS_QUERY = graphql(`
   query AvailableAgents {
     availableAgents {
       type
@@ -13,13 +13,13 @@ export const AVAILABLE_AGENTS_QUERY = gql`
       allowedRoles
     }
   }
-`;
+`);
 
 /**
  * Fetch the user's AI conversations.
  * Returns all conversations ordered by most recent first.
  */
-export const MY_AI_CONVERSATIONS_QUERY = gql`
+export const MY_AI_CONVERSATIONS_QUERY = graphql(`
   query MyAiConversations {
     myAiConversations {
       id
@@ -30,13 +30,13 @@ export const MY_AI_CONVERSATIONS_QUERY = gql`
       updatedAt
     }
   }
-`;
+`);
 
 /**
  * Fetch messages for a specific AI conversation.
  * Returns messages in chronological order (oldest first).
  */
-export const AI_CONVERSATION_MESSAGES_QUERY = gql`
+export const AI_CONVERSATION_MESSAGES_QUERY = graphql(`
   query AiConversationMessages($conversationId: String!) {
     aiMessages(conversationId: $conversationId) {
       id
@@ -49,4 +49,4 @@ export const AI_CONVERSATION_MESSAGES_QUERY = gql`
       createdAt
     }
   }
-`;
+`);

@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-const QUESTION_FIELDS = gql`
+export const QUESTION_FIELDS = graphql(`
   fragment QuestionFields on QuizQuestion {
     id
     assignmentId
@@ -13,9 +13,9 @@ const QUESTION_FIELDS = gql`
     points
     order
   }
-`;
+`);
 
-const STUDENT_QUESTION_FIELDS = gql`
+export const STUDENT_QUESTION_FIELDS = graphql(`
   fragment StudentQuestionFields on QuizQuestion {
     id
     assignmentId
@@ -27,22 +27,20 @@ const STUDENT_QUESTION_FIELDS = gql`
     points
     order
   }
-`;
+`);
 
-export const QUIZ_QUESTIONS_QUERY = gql`
-  ${QUESTION_FIELDS}
+export const QUIZ_QUESTIONS_QUERY = graphql(`
   query QuizQuestions($assignmentId: String!) {
     quizQuestions(assignmentId: $assignmentId) {
       ...QuestionFields
     }
   }
-`;
+`);
 
-export const STUDENT_QUIZ_QUESTIONS_QUERY = gql`
-  ${STUDENT_QUESTION_FIELDS}
+export const STUDENT_QUIZ_QUESTIONS_QUERY = graphql(`
   query StudentQuizQuestions($assignmentId: String!) {
     studentQuizQuestions(assignmentId: $assignmentId) {
       ...StudentQuestionFields
     }
   }
-`;
+`);

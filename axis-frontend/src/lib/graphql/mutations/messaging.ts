@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const SEND_MESSAGE_MUTATION = gql`
+export const SEND_MESSAGE_MUTATION = graphql(`
   mutation SendMessage($input: SendMessageInput!) {
     sendMessage(input: $input) {
       id
@@ -15,9 +15,9 @@ export const SEND_MESSAGE_MUTATION = gql`
       }
     }
   }
-`;
+`);
 
-export const SEND_MESSAGE_TO_CONVERSATION_MUTATION = gql`
+export const SEND_MESSAGE_TO_CONVERSATION_MUTATION = graphql(`
   mutation SendMessageToConversation($input: SendMessageToConversationInput!) {
     sendMessageToConversation(input: $input) {
       id
@@ -31,10 +31,10 @@ export const SEND_MESSAGE_TO_CONVERSATION_MUTATION = gql`
       }
     }
   }
-`;
+`);
 
-export const MARK_AS_READ_MUTATION = gql`
+export const MARK_AS_READ_MUTATION = graphql(`
   mutation MarkConversationAsRead($conversationId: String!) {
     markConversationAsRead(conversationId: $conversationId)
   }
-`;
+`);

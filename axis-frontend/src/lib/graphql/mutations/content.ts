@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const CREATE_CONTENT_MUTATION = gql`
+export const CREATE_CONTENT_MUTATION = graphql(`
   mutation CreateContent($input: CreateContentInput!) {
     createContent(input: $input) {
       id
@@ -11,9 +11,9 @@ export const CREATE_CONTENT_MUTATION = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const UPDATE_CONTENT_MUTATION = gql`
+export const UPDATE_CONTENT_MUTATION = graphql(`
   mutation UpdateContent($input: UpdateContentInput!) {
     updateContent(input: $input) {
       id
@@ -24,28 +24,28 @@ export const UPDATE_CONTENT_MUTATION = gql`
       updatedAt
     }
   }
-`;
+`);
 
-export const PUBLISH_CONTENT_MUTATION = gql`
+export const PUBLISH_CONTENT_MUTATION = graphql(`
   mutation PublishContent($id: String!, $sectionId: String!) {
     publishContent(id: $id, sectionId: $sectionId) {
       id
       publishedAt
     }
   }
-`;
+`);
 
-export const UNPUBLISH_CONTENT_MUTATION = gql`
+export const UNPUBLISH_CONTENT_MUTATION = graphql(`
   mutation UnpublishContent($id: String!, $sectionId: String!) {
     unpublishContent(id: $id, sectionId: $sectionId) {
       id
       publishedAt
     }
   }
-`;
+`);
 
-export const DELETE_CONTENT_MUTATION = gql`
+export const DELETE_CONTENT_MUTATION = graphql(`
   mutation DeleteContent($id: String!, $sectionId: String!) {
     deleteContent(id: $id, sectionId: $sectionId)
   }
-`;
+`);

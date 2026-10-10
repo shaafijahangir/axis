@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const ADD_QUIZ_QUESTION_MUTATION = gql`
+export const ADD_QUIZ_QUESTION_MUTATION = graphql(`
   mutation AddQuizQuestion($input: AddQuizQuestionInput!) {
     addQuizQuestion(input: $input) {
       id
@@ -14,9 +14,9 @@ export const ADD_QUIZ_QUESTION_MUTATION = gql`
       order
     }
   }
-`;
+`);
 
-export const UPDATE_QUIZ_QUESTION_MUTATION = gql`
+export const UPDATE_QUIZ_QUESTION_MUTATION = graphql(`
   mutation UpdateQuizQuestion($id: String!, $input: UpdateQuizQuestionInput!) {
     updateQuizQuestion(id: $id, input: $input) {
       id
@@ -28,24 +28,24 @@ export const UPDATE_QUIZ_QUESTION_MUTATION = gql`
       points
     }
   }
-`;
+`);
 
-export const DELETE_QUIZ_QUESTION_MUTATION = gql`
+export const DELETE_QUIZ_QUESTION_MUTATION = graphql(`
   mutation DeleteQuizQuestion($id: String!) {
     deleteQuizQuestion(id: $id)
   }
-`;
+`);
 
-export const REORDER_QUIZ_QUESTIONS_MUTATION = gql`
+export const REORDER_QUIZ_QUESTIONS_MUTATION = graphql(`
   mutation ReorderQuizQuestions($input: ReorderQuestionsInput!) {
     reorderQuizQuestions(input: $input) {
       id
       order
     }
   }
-`;
+`);
 
-export const UPDATE_QUIZ_SETTINGS_MUTATION = gql`
+export const UPDATE_QUIZ_SETTINGS_MUTATION = graphql(`
   mutation UpdateQuizSettings($input: UpdateQuizSettingsInput!) {
     updateQuizSettings(input: $input) {
       id
@@ -54,9 +54,9 @@ export const UPDATE_QUIZ_SETTINGS_MUTATION = gql`
       displayMode
     }
   }
-`;
+`);
 
-export const START_QUIZ_MUTATION = gql`
+export const START_QUIZ_MUTATION = graphql(`
   mutation StartQuiz($assignmentId: String!) {
     startQuiz(assignmentId: $assignmentId) {
       id
@@ -64,9 +64,9 @@ export const START_QUIZ_MUTATION = gql`
       attempt
     }
   }
-`;
+`);
 
-export const SUBMIT_QUIZ_MUTATION = gql`
+export const SUBMIT_QUIZ_MUTATION = graphql(`
   mutation SubmitQuiz($input: SubmitQuizInput!) {
     submitQuiz(input: $input) {
       id
@@ -78,4 +78,4 @@ export const SUBMIT_QUIZ_MUTATION = gql`
       answers
     }
   }
-`;
+`);
