@@ -47,3 +47,25 @@ export function formatDateLong(date: string): string {
     day: 'numeric',
   });
 }
+
+/** FEAT-024: download filename for a booking's invite — "office-hours-2026-10-14.ics". */
+export function icsFilename(date: string): string {
+  return `office-hours-${date}.ics`;
+}
+
+/**
+ * FEAT-024: Save ICS text as a file. Browser-only (Blob + object URL).
+ * WHY a Blob, not a data: URL: no length limit and the CRLFs survive intact.
+ */
+export function downloadIcs(ics: string, filename: string): void {
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  // Revoke on the next tick so the click's navigation has started.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}

@@ -1428,7 +1428,7 @@
 - **Acceptance:** Student rates a completed meeting from the feed prompt; instructor sees only aggregates.
 
 ### FEAT-024: Calendar Artifacts (ICS) for Bookings
-- **Status:** `TODO`
+- **Status:** `DONE` (2026-10-10 — PR feat/booking-ics. GraphQL `bookingCalendarInvite(bookingId)` returns RFC 5545 .ics text from a pure generator (`office-hours/booking-ics.ts`, no dependency): UTC DTSTART/DTEND from the tenant timezone, stable UID `booking-<id>@axis`, cancelled → STATUS:CANCELLED/SEQUENCE:1. Only the booking's student or instructor may export; tenant-scoped. "Add to calendar" on /schedule bookings (both viewers) and the booking success dialog downloads `office-hours-YYYY-MM-DD.ics`. Email attachment deferred until email notifications exist (use METHOD:REQUEST/CANCEL + ORGANIZER/ATTENDEE there).)
 - **Priority:** LOW — shaafilook.md §4 confirmation includes "calendar invite". Booking confirmation offers a downloadable `.ics` (title, time, location/Zoom URL); email attachment when email notifications exist.
 - **Acceptance:** Booked slot exports a valid .ics that opens in Google/Apple/Outlook calendars.
 

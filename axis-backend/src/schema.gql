@@ -1676,6 +1676,7 @@ type Query {
   availableAgents: [AgentInfoDto!]!
   availableOfficeHourSlots(input: AvailableSlotsInput!): [AvailableSlot!]!
   availableTools: [AvailableTool!]!
+  bookingCalendarInvite(bookingId: String!): String!
   career(id: String!): CareerProfile!
   careerCategories: [String!]!
   careerSkillGap(careerId: String!, profileId: String!): CareerSkillGap!

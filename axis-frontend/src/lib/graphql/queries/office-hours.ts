@@ -130,6 +130,13 @@ export const MY_OFFICE_HOUR_UTILIZATION_QUERY = gql`
   }
 `;
 
+/** FEAT-024: RFC 5545 .ics text for a booking (its student or instructor). */
+export const BOOKING_CALENDAR_INVITE_QUERY = gql`
+  query BookingCalendarInvite($bookingId: String!) {
+    bookingCalendarInvite(bookingId: $bookingId)
+  }
+`;
+
 /** FEAT-022: instructor's ended meetings from the last two weeks. */
 export const RECENT_INSTRUCTOR_BOOKINGS_QUERY = gql`
   query RecentInstructorBookings {

@@ -19,6 +19,15 @@
 - **PR #64 refactor/graphql-codegen-typed:** ARCH-007 step 2. Typed queries exposed **BUG-015**: the API returns enum NAMES (`QUIZ`, `ACTIVE`, `DEADLINE`) but components compared lowercase. On the live demo every home-feed card said "Course update", the quiz UI never rendered, Enroll was always disabled. Core screens fixed; remaining files listed in BACKLOG.
 - **PR #65 fix/minio-image:** CI e2e broken on every PR — minio/minio removed from Docker Hub, dl.min.io mc returns 410. Switched CI to cgr.dev/chainguard images.
 
+### Fan-out round 2 (2026-10-10)
+- 5 parallel agents. **FEAT-024 (.ics export) shipped** (#66, merged, CI green).
+- The other 4 hit the account usage limit mid-run. Work saved as local branches in `.claude/worktrees/agent-*` (NOT pushed, NOT reviewed):
+  - `fix/student-enum-case` — 2 real commits (planner/catalog/parent codegen + enum case), unverified.
+  - `fix/comms-enum-case` — 2 real commits + 1 WIP (comms/quiz codegen + enum case), unverified.
+  - `fix/admin-enum-case` — WIP only (40 files), unverified.
+  - `fix/login-hydration` — WIP only (4 files), root cause not confirmed.
+  Resume each: typecheck, drive pages, then PR.
+
 ### Lessons encoded
 - **BC is on permanent UTC-7 since 2026** (no fall-back on Nov 1; tzdata 2026b+). CI's Node has it, the local Node (tzdata 2025b) does not, so Vancouver-in-November tests disagree between machines. Never hardcode offsets; test DST with America/New_York.
 - **Python on Windows writes CRLF** in text mode. Use `newline=''` when scripting edits, or prettier/lint-staged will churn whole files.
