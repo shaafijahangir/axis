@@ -14,18 +14,23 @@ import {
   createMockRepository,
   MockRepository,
 } from '../../test/mocks/repository.mock';
+import { TenantService } from '../../tenant/tenant.service';
+import { zonedNow } from '../../tenant/tenant-time';
 
-/** Local "YYYY-MM-DD" for `hoursAhead` hours from now. */
+const CAMPUS_TZ = 'America/Vancouver';
+
+/** Campus wall-clock date/time `hoursAhead` hours from now. */
 function localDateHoursAhead(hoursAhead: number): {
   date: string;
   time: string;
 } {
-  const d = new Date(Date.now() + hoursAhead * 60 * 60 * 1000);
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return { date: `${d.getFullYear()}-${m}-${day}`, time: `${hh}:${mm}:00` };
+  const { date, minutes } = zonedNow(
+    CAMPUS_TZ,
+    Date.now() + hoursAhead * 60 * 60 * 1000,
+  );
+  const hh = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const mm = String(minutes % 60).padStart(2, '0');
+  return { date, time: `${hh}:${mm}:00` };
 }
 
 function makeBooking(overrides: Partial<Booking> = {}): Booking {
@@ -66,6 +71,14 @@ describe('Booking notifications (FEAT-020)', () => {
         { provide: WebPushService, useValue: webPush },
         { provide: ConfigService, useValue: { get: jest.fn() } },
         { provide: getRepositoryToken(Booking), useValue: bookingRepo },
+        {
+          provide: TenantService,
+          useValue: {
+            getTimezones: jest.fn((ids: string[]) =>
+              Promise.resolve(new Map(ids.map((id) => [id, CAMPUS_TZ]))),
+            ),
+          },
+        },
       ],
     }).compile();
 
@@ -166,6 +179,55 @@ describe('Booking notifications (FEAT-020)', () => {
       expect(reminderCalls).toHaveLength(1);
       expect(reminderCalls[0][0].userId).toBe('student-001');
       expect(reminderCalls[0][0].title).toBe('Office hours tomorrow');
+    });
+
+    it('reads booking times on the campus clock, not the server clock', async () => {
+      // 17:00 UTC = 10:00 PDT. An 11:00 PT booking is due in the 1h window
+      // [18:00Z, 19:00Z). The old server-local parse put it at 11:00 UTC
+      // (04:00 PT) on a UTC server, firing the reminder ~7h early.
+      jest.useFakeTimers({ now: new Date('2026-10-14T17:00:00Z') });
+      try {
+        bookingRepo.find!.mockResolvedValue([
+          makeBooking({
+            date: '2026-10-14',
+            startTime: '11:00:00',
+          } as Partial<Booking>),
+        ]);
+
+        await reminder.sendReminders();
+
+        const calls = inApp.create.mock.calls as [
+          {
+            type: NotificationType;
+            userId: string;
+            title: string;
+            body: string;
+          },
+        ][];
+        const student = calls.find(([a]) => a.userId === 'student-001');
+        expect(student?.[0].title).toBe('Office hours in about an hour');
+        expect(student?.[0].body).toContain('11:00 AM');
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('does not remind at the server-clock time of a campus booking', async () => {
+      // 10:00 UTC (03:00 PDT): naive parsing saw 11:00 as "in an hour".
+      jest.useFakeTimers({ now: new Date('2026-10-14T10:00:00Z') });
+      try {
+        bookingRepo.find!.mockResolvedValue([
+          makeBooking({
+            date: '2026-10-14',
+            startTime: '11:00:00',
+          } as Partial<Booking>),
+        ]);
+
+        await reminder.sendReminders();
+        expect(inApp.create).not.toHaveBeenCalled();
+      } finally {
+        jest.useRealTimers();
+      }
     });
 
     it('sends nothing when no bookings fall in a window', async () => {

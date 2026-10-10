@@ -84,7 +84,7 @@ Conversation (1)
 | name | varchar | unique | Institution name |
 | domain | varchar | unique | e.g., `university.edu` |
 | subdomain | varchar | unique | e.g., `university` |
-| settings | JSONB | nullable | Tenant-wide configuration |
+| settings | JSONB | nullable | Tenant-wide configuration. Known keys: `enrollmentPolicy`, `timezone` (IANA, e.g. `America/Vancouver`; default when unset/invalid). Schedule times (office hours, bookings, sections) are wall-clock in this zone — convert via `tenant/tenant-time.ts`, never `new Date('YYYY-MM-DDTHH:MM')` |
 | subscriptionPlan | enum | default: FREE | FREE, BASIC, PROFESSIONAL, ENTERPRISE |
 | billingStatus | enum | default: ACTIVE | ACTIVE, PAST_DUE, SUSPENDED, CANCELLED |
 

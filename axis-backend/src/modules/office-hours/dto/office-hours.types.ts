@@ -1,4 +1,10 @@
-import { InputType, ObjectType, Field, Int } from '@nestjs/graphql';
+import {
+  InputType,
+  ObjectType,
+  Field,
+  Int,
+  registerEnumType,
+} from '@nestjs/graphql';
 import {
   IsBoolean,
   IsEnum,
@@ -204,4 +210,29 @@ export class AvailableSlot {
 
   @Field(() => String, { nullable: true })
   meetingUrl: string | null;
+}
+
+/** FEAT-022: outcomes an instructor can record on a past booking. */
+export enum BookingOutcome {
+  COMPLETED = 'completed',
+  NO_SHOW = 'no_show',
+}
+
+registerEnumType(BookingOutcome, { name: 'BookingOutcome' });
+
+/**
+ * FEAT-022: booked vs total slots for one block over the coming week.
+ * Computed, never persisted. `totalSlots` excludes busy-suppressed and
+ * already-past slots, so it is what students could actually have booked.
+ */
+@ObjectType()
+export class OfficeHourBlockUtilization {
+  @Field()
+  blockId: string;
+
+  @Field(() => Int)
+  bookedSlots: number;
+
+  @Field(() => Int)
+  totalSlots: number;
 }

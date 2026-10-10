@@ -20,6 +20,7 @@ import { CalendarOff } from 'lucide-react';
 import { UpcomingBookings } from '@/components/office-hours/upcoming-bookings';
 import { OfficeHoursManager } from '@/components/office-hours/office-hours-manager';
 import { BusyBlocksManager } from '@/components/office-hours/busy-blocks-manager';
+import { RecentMeetings } from '@/components/office-hours/recent-meetings';
 import {
   formatTime12h,
   normalizeTime,
@@ -549,6 +550,7 @@ function InstructorSchedule() {
         <BusyBlocksManager />
       </div>
       <UpcomingBookings viewer="instructor" />
+      <RecentMeetings />
     </>
   );
 }

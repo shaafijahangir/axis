@@ -11,6 +11,13 @@ import {
   BookingStatus,
 } from '../office-hours/entities/booking.entity';
 import { OfficeHourLocationType } from '../office-hours/entities/office-hour-block.entity';
+import { TenantService } from '../../tenant/tenant.service';
+import {
+  DEFAULT_TENANT_TIMEZONE,
+  formatInZone,
+  wallClockToInstant,
+  zonedDateString,
+} from '../../tenant/tenant-time';
 
 function appUrl(configService: ConfigService, path: string): string {
   const base =
@@ -18,18 +25,11 @@ function appUrl(configService: ConfigService, path: string): string {
   return `${base}${path}`;
 }
 
-/** Booking wall-clock start as a server-local Date (same caveat as slots). */
-function bookingStart(booking: Booking): Date {
-  return new Date(`${booking.date}T${booking.startTime.slice(0, 5)}:00`);
-}
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Server-LOCAL "YYYY-MM-DD" — matches how bookingStart() parses dates.
- * (toISOString would give the UTC date, off by one near midnight.) */
-function localDateString(t: number): string {
-  const d = new Date(t);
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${m}-${day}`;
+/** Booking wall-clock start, read in the tenant's campus timezone. */
+function bookingStart(booking: Booking, tz: string): Date {
+  return wallClockToInstant(booking.date, booking.startTime, tz);
 }
 
 function bookingLocation(booking: Booking): string {
@@ -56,6 +56,7 @@ export class BookingReminderService {
     private inAppService: InAppNotificationService,
     private webPushService: WebPushService,
     private configService: ConfigService,
+    private tenantService: TenantService,
     @InjectRepository(Booking)
     private bookingRepo: Repository<Booking>,
   ) {}
@@ -81,20 +82,29 @@ export class BookingReminderService {
     const windowStart = now + hoursAhead * 60 * 60 * 1000;
     const windowEnd = windowStart + 60 * 60 * 1000;
 
-    // Candidate rows by date (1-2 calendar days), exact filter on start below.
-    const dates = [localDateString(windowStart), localDateString(windowEnd)];
+    // Candidate rows by date, exact filter on start below. Tenants span
+    // timezones (UTC-12..+14), so the campus date of the window can be the UTC
+    // date ±1 — fetch all three, then filter on the real instant per tenant.
+    const dates = [-DAY_MS, 0, DAY_MS].map((d) =>
+      zonedDateString(windowStart + d, 'UTC'),
+    );
     const candidates = await this.bookingRepo.find({
-      where: { status: BookingStatus.BOOKED, date: In([...new Set(dates)]) },
+      where: { status: BookingStatus.BOOKED, date: In(dates) },
       relations: ['block', 'instructor', 'student'],
     });
+    const tzByTenant = await this.tenantService.getTimezones(
+      candidates.map((b) => b.tenantId),
+    );
 
     const due = candidates.filter((b) => {
-      const t = bookingStart(b).getTime();
+      const tz = tzByTenant.get(b.tenantId) ?? DEFAULT_TENANT_TIMEZONE;
+      const t = bookingStart(b, tz).getTime();
       return t >= windowStart && t < windowEnd;
     });
 
     for (const booking of due) {
-      const time = bookingStart(booking).toLocaleTimeString('en-US', {
+      const tz = tzByTenant.get(booking.tenantId) ?? DEFAULT_TENANT_TIMEZONE;
+      const time = formatInZone(bookingStart(booking, tz), tz, {
         hour: 'numeric',
         minute: '2-digit',
       });

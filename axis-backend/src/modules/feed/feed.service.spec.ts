@@ -16,6 +16,7 @@ import { CourseSection } from '../../database/entities/course-section.entity';
 import { AnnouncementsService } from '../announcements/announcements.service';
 import { ContentService } from '../content/content.service';
 import { DiscussionsService } from '../discussions/discussions.service';
+import { TenantService } from '../../tenant/tenant.service';
 import { OfficeHoursService } from '../office-hours/office-hours.service';
 import {
   createMockRepository,
@@ -83,6 +84,12 @@ describe('FeedService', () => {
           useValue: { findBySectionId: jest.fn().mockResolvedValue([]) },
         },
         { provide: OfficeHoursService, useValue: officeHoursService },
+        {
+          provide: TenantService,
+          useValue: {
+            getTimezone: jest.fn().mockResolvedValue('America/Vancouver'),
+          },
+        },
       ],
     }).compile();
 

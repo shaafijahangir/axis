@@ -33,7 +33,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { MY_OFFICE_HOUR_BLOCKS_QUERY } from '@/lib/graphql/queries/office-hours';
+import {
+  MY_OFFICE_HOUR_BLOCKS_QUERY,
+  MY_OFFICE_HOUR_UTILIZATION_QUERY,
+} from '@/lib/graphql/queries/office-hours';
 import { ME_QUERY } from '@/lib/graphql/queries/user';
 import {
   CREATE_OFFICE_HOUR_BLOCK_MUTATION,
@@ -63,7 +66,35 @@ interface OfficeHourBlock {
   active: boolean;
 }
 
+/** FEAT-022: booked/total slots for a block over the coming week. */
+interface BlockUtilization {
+  blockId: string;
+  bookedSlots: number;
+  totalSlots: number;
+}
+
 const SLOT_LENGTHS = [10, 15, 20, 30, 45, 60] as const;
+
+/**
+ * "3/4 booked this week". Full blocks get the secondary emphasis so a prof
+ * can spot demand at a glance (shaafilook.md §4: "4/5 slots booked Tue 2-4pm").
+ */
+function UtilizationBadge({ usage }: { usage?: BlockUtilization }) {
+  if (!usage) return null;
+  if (usage.totalSlots === 0) {
+    return <span>No slots left this week</span>;
+  }
+  const full = usage.bookedSlots >= usage.totalSlots;
+  return (
+    <Badge
+      variant={full ? 'secondary' : 'outline'}
+      className="text-xs"
+      aria-label={`${usage.bookedSlots} of ${usage.totalSlots} slots booked this week`}
+    >
+      {usage.bookedSlots}/{usage.totalSlots} booked this week
+    </Badge>
+  );
+}
 
 // ─── Block form (create + edit) ──────────────────────────────────────────────
 
@@ -337,12 +368,22 @@ export function OfficeHoursManager() {
     me: { officeLocation?: string | null };
   }>(ME_QUERY);
 
+  const { data: utilData } = useQuery<{
+    myOfficeHourUtilization: BlockUtilization[];
+  }>(MY_OFFICE_HOUR_UTILIZATION_QUERY);
+
   const [updateBlock] = useMutation(UPDATE_OFFICE_HOUR_BLOCK_MUTATION, {
-    refetchQueries: [{ query: MY_OFFICE_HOUR_BLOCKS_QUERY }],
+    refetchQueries: [
+      { query: MY_OFFICE_HOUR_BLOCKS_QUERY },
+      { query: MY_OFFICE_HOUR_UTILIZATION_QUERY },
+    ],
     onError: (err) => toast.error(err.message),
   });
 
   const blocks = data?.myOfficeHourBlocks ?? [];
+  const utilization = new Map(
+    (utilData?.myOfficeHourUtilization ?? []).map((u) => [u.blockId, u]),
+  );
 
   const handleToggleActive = (block: OfficeHourBlock, active: boolean) => {
     void updateBlock({
@@ -419,6 +460,9 @@ export function OfficeHoursManager() {
                         <Badge variant="outline" className="text-xs">
                           Paused
                         </Badge>
+                      )}
+                      {block.active && (
+                        <UtilizationBadge usage={utilization.get(block.id)} />
                       )}
                     </div>
                   </div>

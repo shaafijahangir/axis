@@ -21,6 +21,9 @@ import {
   SectionStatus,
 } from '../../database/entities/course-section.entity';
 import { NexusEvents } from '../ai/events/ai-events';
+import { BookingOutcome } from './dto/office-hours.types';
+import { LessThan } from 'typeorm';
+import { TenantService } from '../../tenant/tenant.service';
 import {
   createMockRepository,
   MockRepository,
@@ -137,6 +140,12 @@ describe('OfficeHoursService', () => {
         { provide: getRepositoryToken(CourseSection), useValue: sectionRepo },
         { provide: DataSource, useValue: dataSource },
         { provide: EventEmitter2, useValue: eventEmitter },
+        {
+          provide: TenantService,
+          useValue: {
+            getTimezone: jest.fn().mockResolvedValue('America/Vancouver'),
+          },
+        },
       ],
     }).compile();
 
@@ -639,6 +648,147 @@ describe('OfficeHoursService', () => {
       expect(busyRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'busy-001', tenantId },
       });
+    });
+  });
+
+  // ─── FEAT-022: instructor booking ops ─────────────────────────────────────
+
+  describe('booking ops (FEAT-022)', () => {
+    // Wed 2026-10-14, 17:00 UTC = 10:00 on the campus clock (PDT).
+    beforeEach(() => {
+      jest.useFakeTimers({ now: new Date('2026-10-14T17:00:00Z') });
+    });
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    function makeBooking(overrides: Partial<Booking> = {}): Booking {
+      return {
+        id: 'booking-001',
+        tenantId,
+        blockId: 'block-001',
+        studentId,
+        instructorId,
+        date: '2026-10-13',
+        startTime: '11:00:00',
+        endTime: '11:15:00',
+        status: BookingStatus.BOOKED,
+        note: null,
+        ...overrides,
+      } as unknown as Booking;
+    }
+
+    it('reports booked vs total slots for the coming week', async () => {
+      // Wed 11:00–12:00, 15-min slots → 4 slots on Wed Oct 14 (only Wed in
+      // the Oct 14–20 window). One is booked.
+      blockRepo.find!.mockResolvedValue([
+        makeBlock({
+          dayOfWeek: OfficeHourDay.WED,
+          startTime: '11:00:00',
+          endTime: '12:00:00',
+        }),
+      ]);
+      bookingRepo.find!.mockResolvedValue([
+        makeBooking({ date: '2026-10-14', startTime: '11:00:00' }),
+      ]);
+
+      const result = await service.blockUtilization(tenantId, instructorId);
+
+      expect(result).toEqual([
+        { blockId: 'block-001', bookedSlots: 1, totalSlots: 4 },
+      ]);
+    });
+
+    it('marks an ended meeting as no-show', async () => {
+      const booking = makeBooking();
+      bookingRepo.findOne!.mockResolvedValue(booking);
+      bookingRepo.save!.mockImplementation((b: Booking) => Promise.resolve(b));
+
+      await service.markBookingOutcome(
+        tenantId,
+        instructorId,
+        booking.id,
+        BookingOutcome.NO_SHOW,
+      );
+
+      expect(bookingRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: BookingStatus.NO_SHOW }),
+      );
+      expect(bookingRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: booking.id, tenantId } }),
+      );
+    });
+
+    it("forbids marking another instructor's meeting", async () => {
+      bookingRepo.findOne!.mockResolvedValue(
+        makeBooking({ instructorId: 'other-instructor' }),
+      );
+      await expect(
+        service.markBookingOutcome(
+          tenantId,
+          instructorId,
+          'booking-001',
+          BookingOutcome.COMPLETED,
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(bookingRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects an outcome before the meeting has ended', async () => {
+      // Today 11:00 on the campus clock; it is 10:00 now.
+      bookingRepo.findOne!.mockResolvedValue(
+        makeBooking({ date: '2026-10-14' }),
+      );
+      await expect(
+        service.markBookingOutcome(
+          tenantId,
+          instructorId,
+          'booking-001',
+          BookingOutcome.NO_SHOW,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects an outcome on a cancelled booking', async () => {
+      bookingRepo.findOne!.mockResolvedValue(
+        makeBooking({ status: BookingStatus.CANCELLED }),
+      );
+      await expect(
+        service.markBookingOutcome(
+          tenantId,
+          instructorId,
+          'booking-001',
+          BookingOutcome.COMPLETED,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('lists only meetings that have already ended', async () => {
+      bookingRepo.find!.mockResolvedValue([
+        makeBooking({ id: 'today-later', date: '2026-10-14' }),
+        makeBooking({ id: 'yesterday', date: '2026-10-13' }),
+      ]);
+
+      const result = await service.listRecentInstructorBookings(
+        tenantId,
+        instructorId,
+      );
+
+      expect(result.map((b) => b.id)).toEqual(['yesterday']);
+    });
+
+    it('auto-completes BOOKED meetings older than the grace period', async () => {
+      bookingRepo.update!.mockResolvedValue({ affected: 2 });
+
+      const affected = await service.autoCompletePastBookings(
+        new Date('2026-10-14T03:15:00Z'),
+      );
+
+      expect(affected).toBe(2);
+      expect(bookingRepo.update).toHaveBeenCalledWith(
+        { status: BookingStatus.BOOKED, date: LessThan('2026-10-11') },
+        { status: BookingStatus.COMPLETED },
+      );
     });
   });
 });

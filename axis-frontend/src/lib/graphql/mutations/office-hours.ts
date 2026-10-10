@@ -97,3 +97,13 @@ export const CANCEL_BOOKING_MUTATION = gql`
     }
   }
 `;
+
+/** FEAT-022: record a past meeting as completed or no-show. */
+export const MARK_BOOKING_OUTCOME_MUTATION = gql`
+  mutation MarkBookingOutcome($bookingId: String!, $outcome: BookingOutcome!) {
+    markBookingOutcome(bookingId: $bookingId, outcome: $outcome) {
+      id
+      status
+    }
+  }
+`;
