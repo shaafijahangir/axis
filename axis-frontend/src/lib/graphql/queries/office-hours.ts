@@ -118,3 +118,33 @@ export const INSTRUCTOR_BOOKINGS_QUERY = gql`
     }
   }
 `;
+
+/** FEAT-022: booked/total slots per active block for the coming week. */
+export const MY_OFFICE_HOUR_UTILIZATION_QUERY = gql`
+  query MyOfficeHourUtilization {
+    myOfficeHourUtilization {
+      blockId
+      bookedSlots
+      totalSlots
+    }
+  }
+`;
+
+/** FEAT-022: instructor's ended meetings from the last two weeks. */
+export const RECENT_INSTRUCTOR_BOOKINGS_QUERY = gql`
+  query RecentInstructorBookings {
+    recentInstructorBookings {
+      id
+      date
+      startTime
+      endTime
+      status
+      note
+      student {
+        id
+        firstName
+        lastName
+      }
+    }
+  }
+`;

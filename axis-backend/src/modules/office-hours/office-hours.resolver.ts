@@ -11,6 +11,8 @@ import {
   BookSlotInput,
   AvailableSlot,
   CreateBusyBlockInput,
+  BookingOutcome,
+  OfficeHourBlockUtilization,
 } from './dto/office-hours.types';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
@@ -85,7 +87,47 @@ export class OfficeHoursResolver {
     );
   }
 
+  /** FEAT-022: booked/total slots per active block, coming week. */
+  @Query(() => [OfficeHourBlockUtilization])
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async myOfficeHourUtilization(
+    @CurrentUser() user: User,
+  ): Promise<OfficeHourBlockUtilization[]> {
+    return this.officeHoursService.blockUtilization(user.tenantId, user.id);
+  }
+
+  /** FEAT-022: the instructor's ended meetings from the last two weeks. */
+  @Query(() => [Booking])
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async recentInstructorBookings(
+    @CurrentUser() user: User,
+  ): Promise<Booking[]> {
+    return this.officeHoursService.listRecentInstructorBookings(
+      user.tenantId,
+      user.id,
+    );
+  }
+
   // ─── Mutations ───────────────────────────────────────────────────────────
+
+  /** FEAT-022: mark a past meeting completed or no-show (owner only). */
+  @Mutation(() => Booking)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async markBookingOutcome(
+    @CurrentUser() user: User,
+    @Args('bookingId', ParseUUIDPipe) bookingId: string,
+    @Args('outcome', { type: () => BookingOutcome }) outcome: BookingOutcome,
+  ): Promise<Booking> {
+    return this.officeHoursService.markBookingOutcome(
+      user.tenantId,
+      user.id,
+      bookingId,
+      outcome,
+    );
+  }
 
   @Mutation(() => OfficeHourBlock)
   @UseGuards(RolesGuard)

@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { DEFAULT_TENANT_TIMEZONE, isValidTimeZone } from './tenant-time';
 import {
   Tenant,
   SubscriptionPlan,
@@ -51,6 +56,57 @@ export class TenantService {
 
   async count(): Promise<number> {
     return await this.tenantRepository.count();
+  }
+
+  /**
+   * The tenant's IANA timezone (`settings.timezone`), used to interpret
+   * wall-clock schedule times. Falls back to DEFAULT_TENANT_TIMEZONE when
+   * unset, invalid, or the tenant row is missing — a scheduling read must
+   * never fail on configuration.
+   *
+   * WHY JSONB not a column: same call as enrollmentPolicy — a per-tenant
+   * singleton the existing `settings` column already holds; no migration.
+   */
+  async getTimezone(tenantId: string): Promise<string> {
+    const tenant = await this.tenantRepository.findOne({
+      where: { id: tenantId },
+    });
+    const tz: unknown = tenant?.settings?.timezone;
+    return isValidTimeZone(tz) ? tz : DEFAULT_TENANT_TIMEZONE;
+  }
+
+  /** Batch form of getTimezone() for cross-tenant jobs (reminder cron). */
+  async getTimezones(tenantIds: string[]): Promise<Map<string, string>> {
+    const unique = [...new Set(tenantIds)];
+    const result = new Map<string, string>(
+      unique.map((id) => [id, DEFAULT_TENANT_TIMEZONE]),
+    );
+    if (unique.length === 0) return result;
+    const tenants = await this.tenantRepository.find({
+      where: { id: In(unique) },
+    });
+    for (const tenant of tenants) {
+      const tz: unknown = tenant.settings?.timezone;
+      if (isValidTimeZone(tz)) result.set(tenant.id, tz);
+    }
+    return result;
+  }
+
+  /** Admin: set the tenant's IANA timezone (validated against ICU). */
+  async updateTimezone(tenantId: string, timezone: string): Promise<string> {
+    const requested = timezone;
+    if (!isValidTimeZone(timezone)) {
+      throw new BadRequestException(
+        `"${requested}" is not a valid IANA timezone (e.g. "America/Vancouver")`,
+      );
+    }
+    const tenant = await this.tenantRepository.findOne({
+      where: { id: tenantId },
+    });
+    if (!tenant) throw new NotFoundException('Tenant not found');
+    tenant.settings = { ...(tenant.settings ?? {}), timezone };
+    await this.tenantRepository.save(tenant);
+    return timezone;
   }
 
   /**
