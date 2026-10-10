@@ -272,7 +272,7 @@
 - **Acceptance:** ✓ `pnpm build` runs both projects in parallel. ✓ Cached builds are instant. ✓ 101 tests pass.
 
 ### ARCH-007: GraphQL codegen for end-to-end type safety
-- **Status:** `IN_PROGRESS`
+- **Status:** `IN_PROGRESS` (2026-10-10 — PR refactor/graphql-codegen-typed: feed, courses, assignments, grades queries migrated to typed `graphql()`; 22 call sites lost their hand-written generics. CI already runs `pnpm codegen`, which validates every operation (gql or graphql) against `schema.gql`. Migration exposed BUG-015 below. Remaining: the other ~25 query/mutation files.)
 - **Problem:** Frontend re-types every GraphQL response by hand. `useQuery(ADMIN_USERS_QUERY)` returns `any`; field renames in `schema.gql` produce runtime failures the compiler never catches. The backend already emits a 2,257-line `schema.gql` with 222 types — we just don't consume it.
 - **Approach:** `@graphql-codegen/cli` + `@graphql-codegen/client-preset` (the current Apollo Client 4 standard).
   - `codegen.ts` reads `../axis-backend/src/schema.gql` (local file, no network round-trip).
@@ -1441,6 +1441,12 @@
 - **Status:** `TODO`
 - **Priority:** LOW — shaafilook.md §4: "'By appointment via email' as a fallback option". A block type with no fixed slots: student sends a structured request (proposed times + topic), instructor accepts one → becomes a booking. Keeps the last email workflow inside Axis instead of outside it.
 - **Acceptance:** Prof with no fixed hours still shows a "Request a meeting" path; accepting a request creates a normal booking.
+
+### BUG-015: Frontend compares GraphQL enums in lowercase
+- **Status:** `IN_PROGRESS` (core screens fixed in the ARCH-007 PR: home feeds, quiz/exam pages, section enrollment widget, /courses, course detail Enroll, roster, enrollment settings)
+- **Priority:** HIGH — the API returns enum NAMES (`QUIZ`, `ACTIVE`, `DEADLINE`, `OPEN`), not stored values. Components written against lowercase silently mis-rendered: every home-feed card showed as "Course update", quiz builder / Start Quiz never appeared, Enroll was always disabled.
+- **Rule:** never hand-type an enum union — import it from `@/lib/graphql/__generated__/graphql`, and the compiler rejects the wrong case.
+- **Remaining:** lowercase enum literals still in files not yet on typed queries (grep `'(active|pending|student|open|...)'`): admin dialogs (enroll-user, bulk-enroll, edit-section, users-table…), courses/catalog, planner pages, parent classes. Audit each as its queries migrate (ARCH-007).
 
 ### BUG-014: Student feed deep-links use sectionId in the courseId slot
 - **Status:** `DONE` (2026-07-17 — PR fix/feed-deeplinks; `courseId` added to FeedItem AND InstructorFeedItem DTOs (instructor deep-links are the obvious next need), populated from the course relation in both feeds, feed-card href now `/courses/{courseId}/section/{sectionId}/...`. Regression tests assert courseId ≠ sectionId.)
