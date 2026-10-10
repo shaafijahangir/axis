@@ -8,17 +8,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore, getRoleDashboardPath } from '@/stores/auth.store';
+import { useHydrated } from '@/components/auth/use-hydrated';
 
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const hydrated = useHydrated();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // WHY: read the values from the DOM at submit time instead of mirroring
+    // them in state. Text typed before hydration never fires onChange, so a
+    // controlled `useState('')` would keep '' while the field visibly holds
+    // the email, and the login would go out empty.
+    const form = new FormData(e.currentTarget);
+    const email = String(form.get('email') ?? '');
+    const password = String(form.get('password') ?? '');
     setError('');
     setIsLoading(true);
 
@@ -43,7 +50,15 @@ export default function LoginPage() {
           <p className="mt-2 text-muted-foreground">Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        {/*
+          method="post": if a native submit ever slips through (no JS), the
+          credentials go in a request body, never into the URL / history.
+        */}
+        <form
+          method="post"
+          onSubmit={handleSubmit}
+          className="mt-8 space-y-6"
+        >
           {error && (
             <div
               id="login-error"
@@ -59,11 +74,10 @@ export default function LoginPage() {
               <Label htmlFor="email">Email address</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 required
                 autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 placeholder="student@example.com"
                 disabled={isLoading}
                 aria-describedby={error ? 'login-error' : undefined}
@@ -82,11 +96,10 @@ export default function LoginPage() {
               </div>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 required
                 autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 disabled={isLoading}
                 aria-describedby={error ? 'login-error' : undefined}
@@ -94,7 +107,12 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          {/* Disabled until hydrated: before that, onSubmit is not attached. */}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={!hydrated || isLoading}
+          >
             {isLoading ? 'Signing in...' : 'Sign in'}
           </Button>
 
