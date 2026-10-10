@@ -22,6 +22,16 @@ import { LocalAuthGuard } from '../../guards/local-auth.guard';
 import { User } from '../../database/entities/user.entity';
 
 /**
+ * Logins/registrations per IP per minute. Default 10 (brute-force guard).
+ * WHY configurable: the CI e2e suite logs in from one IP every ~0.5s, so the
+ * 11th login in a minute got 429 and that test's login timed out — the
+ * "7 flaky tests" on every run. CI raises it via AUTH_RATE_LIMIT; production
+ * keeps the default. Read at module load (decorator arguments are static);
+ * CI sets it in the process environment, so it is present at import time.
+ */
+const AUTH_RATE_LIMIT = Number(process.env.AUTH_RATE_LIMIT) || 10;
+
+/**
  * PATTERN: Cookie configuration for secure JWT storage.
  * WHY: httpOnly prevents XSS, Secure ensures HTTPS-only, SameSite prevents CSRF.
  */
@@ -56,7 +66,7 @@ export class AuthController {
     res.clearCookie(COOKIE_NAME, { path: '/' });
   }
 
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Throttle({ default: { ttl: 60000, limit: AUTH_RATE_LIMIT } })
   @Post('register')
   async register(
     @Body() registerDto: RegisterDto,
@@ -67,7 +77,7 @@ export class AuthController {
     return result;
   }
 
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Throttle({ default: { ttl: 60000, limit: AUTH_RATE_LIMIT } })
   @UseGuards(LocalAuthGuard)
   @Post('login')
   login(

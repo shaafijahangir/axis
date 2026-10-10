@@ -218,6 +218,9 @@ jobs:
           REDIS_PORT: 6379
           JWT_SECRET: ci-test-secret-do-not-use-in-prod-ci-test-secret-do-not-use-1234
           FRONTEND_URL: http://localhost:3001
+          # The suite logs in ~80 times from one IP; the default 10/min login
+          # throttle made every 11th login 429 (the recurring "7 flaky").
+          AUTH_RATE_LIMIT: '1000'
           R2_ENDPOINT: http://localhost:9000
           R2_ACCESS_KEY_ID: axisdev
           R2_SECRET_ACCESS_KEY: axisdev123
