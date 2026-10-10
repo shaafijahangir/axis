@@ -333,6 +333,11 @@ type Booking {
   updatedAt: DateTime!
 }
 
+enum BookingOutcome {
+  COMPLETED
+  NO_SHOW
+}
+
 enum BookingStatus {
   BOOKED
   CANCELLED
@@ -1380,6 +1385,7 @@ type Mutation {
   lockDiscussion(id: String!): Discussion!
   markAllNotificationsRead: Boolean!
   markAttendance(input: MarkAttendanceInput!): DayAttendance!
+  markBookingOutcome(bookingId: String!, outcome: BookingOutcome!): Booking!
   markConversationAsRead(conversationId: String!): Boolean!
   markDiscussionAnswered(id: String!): Discussion!
   markNotificationRead(id: String!): Notification!
@@ -1428,6 +1434,7 @@ type Mutation {
   updateSection(id: String!, input: UpdateSectionInput!): CourseSection!
   updateSectionEnrollmentSettings(autoApprove: Boolean!, mode: EnrollmentMode!, sectionId: String!): CourseSection!
   updateStudentDegreeProfile(input: UpdateStudentProfileInput!): StudentDegreeProfile!
+  updateTenantTimezone(timezone: String!): String!
   updateToolPermission(input: UpdateToolPermissionInput!): TenantAiConfig!
   updateTuitionConfig(config: TuitionConfigInput!): TuitionConfigResult!
   withdrawFromCourse(enrollmentId: String!): Enrollment!
@@ -1484,6 +1491,12 @@ type OfficeHourBlock {
   startTime: String!
   tenantId: String!
   updatedAt: DateTime!
+}
+
+type OfficeHourBlockUtilization {
+  blockId: String!
+  bookedSlots: Int!
+  totalSlots: Int!
 }
 
 enum OfficeHourDay {
@@ -1723,6 +1736,7 @@ type Query {
   myNotificationPreferences: NotificationPreferences!
   myNotifications(limit: Int! = 20, offset: Int! = 0): [Notification!]!
   myOfficeHourBlocks: [OfficeHourBlock!]!
+  myOfficeHourUtilization: [OfficeHourBlockUtilization!]!
   myReportCards: [ReportCardSummary!]!
   mySections: [CourseSection!]!
   mySubmissions(assignmentId: String!): [Submission!]!
@@ -1732,6 +1746,7 @@ type Query {
   parentStudentReportCards(studentId: String!): [ParentReportCard!]!
   pendingEnrollments(sectionId: String!): [Enrollment!]!
   quizQuestions(assignmentId: String!): [QuizQuestion!]!
+  recentInstructorBookings: [Booking!]!
   schoolAnnouncements(grade: Int): [Announcement!]!
   section(id: String!): CourseSection!
   sectionAnnouncements(sectionId: String!): [Announcement!]!
@@ -1754,6 +1769,7 @@ type Query {
   tenant(id: String!): Tenant
   tenantCount: Float!
   tenantStats: TenantStats!
+  tenantTimezone: String!
   tenants: [Tenant!]!
   topCourses(limit: Int! = 10): [CourseStats!]!
   unreadMessageCount: Int!

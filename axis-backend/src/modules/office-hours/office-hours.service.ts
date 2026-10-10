@@ -6,7 +6,15 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Between, In, MoreThanOrEqual } from 'typeorm';
+import {
+  Repository,
+  DataSource,
+  Between,
+  In,
+  LessThan,
+  MoreThanOrEqual,
+} from 'typeorm';
+import { Cron } from '@nestjs/schedule';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   OfficeHourBlock,
@@ -22,6 +30,8 @@ import {
   BookSlotInput,
   AvailableSlot,
   CreateBusyBlockInput,
+  BookingOutcome,
+  OfficeHourBlockUtilization,
 } from './dto/office-hours.types';
 import {
   CourseSection,
@@ -47,6 +57,15 @@ const DAY_INDEX: Record<OfficeHourDay, number> = {
 };
 
 const MAX_RANGE_DAYS = 60; // guard against a caller asking for a year of slots
+
+/** FEAT-022: how far back the instructor's "recent meetings" list looks. */
+const RECENT_BOOKING_DAYS = 14;
+
+/**
+ * FEAT-022: grace period before a past BOOKED meeting auto-completes. Gives the
+ * instructor a few days to mark a no-show before the default outcome lands.
+ */
+const AUTO_COMPLETE_AFTER_DAYS = 3;
 
 /**
  * FEAT-019: Section `meetingDays` is a free text[] seeded/imported with mixed
@@ -105,6 +124,17 @@ function addDays(d: Date, n: number): Date {
   const copy = new Date(d);
   copy.setUTCDate(copy.getUTCDate() + n);
   return copy;
+}
+
+/** True once a booking's end time has passed on the campus clock. */
+function hasEnded(
+  booking: Pick<Booking, 'date' | 'endTime'>,
+  now: { date: string; minutes: number },
+): boolean {
+  return (
+    booking.date < now.date ||
+    (booking.date === now.date && timeToMinutes(booking.endTime) <= now.minutes)
+  );
 }
 
 @Injectable()
@@ -524,6 +554,144 @@ export class OfficeHoursService {
     });
     if (!booking) throw new NotFoundException('Booking not found');
     return booking;
+  }
+
+  // ─── Instructor booking ops (FEAT-022) ─────────────────────────────────────
+
+  /**
+   * Booked vs total slots per active block for the coming week (campus today
+   * + 6 days). Total = still-open slots + booked slots that haven't started,
+   * so busy-suppressed and already-past slots never count as capacity.
+   */
+  async blockUtilization(
+    tenantId: string,
+    instructorId: string,
+  ): Promise<OfficeHourBlockUtilization[]> {
+    const now = await this.campusNow(tenantId);
+    const endDate = formatDate(addDays(parseDate(now.date), 6));
+
+    const blocks = await this.blockRepo.find({
+      where: { tenantId, instructorId, active: true },
+      order: { dayOfWeek: 'ASC', startTime: 'ASC' },
+    });
+    const open = await this.computeAvailableSlots(tenantId, {
+      instructorId,
+      startDate: now.date,
+      endDate,
+    });
+    const booked = await this.bookingRepo.find({
+      where: {
+        tenantId,
+        instructorId,
+        status: BookingStatus.BOOKED,
+        date: Between(now.date, endDate),
+      },
+    });
+
+    const openByBlock = new Map<string, number>();
+    for (const slot of open) {
+      openByBlock.set(slot.blockId, (openByBlock.get(slot.blockId) ?? 0) + 1);
+    }
+    const bookedByBlock = new Map<string, number>();
+    for (const b of booked) {
+      const started =
+        b.date === now.date && timeToMinutes(b.startTime) <= now.minutes;
+      if (started) continue;
+      bookedByBlock.set(b.blockId, (bookedByBlock.get(b.blockId) ?? 0) + 1);
+    }
+
+    return blocks.map((block) => {
+      const bookedSlots = bookedByBlock.get(block.id) ?? 0;
+      return {
+        blockId: block.id,
+        bookedSlots,
+        totalSlots: bookedSlots + (openByBlock.get(block.id) ?? 0),
+      };
+    });
+  }
+
+  /**
+   * Meetings from the last RECENT_BOOKING_DAYS that have already ended — the
+   * list an instructor marks completed / no-show from. Newest first.
+   */
+  async listRecentInstructorBookings(
+    tenantId: string,
+    instructorId: string,
+  ): Promise<Booking[]> {
+    const now = await this.campusNow(tenantId);
+    const since = formatDate(
+      addDays(parseDate(now.date), -RECENT_BOOKING_DAYS),
+    );
+    const bookings = await this.bookingRepo.find({
+      where: {
+        tenantId,
+        instructorId,
+        status: In([
+          BookingStatus.BOOKED,
+          BookingStatus.COMPLETED,
+          BookingStatus.NO_SHOW,
+        ]),
+        date: Between(since, now.date),
+      },
+      relations: ['block', 'student'],
+      order: { date: 'DESC', startTime: 'DESC' },
+    });
+    return bookings.filter((b) => hasEnded(b, now));
+  }
+
+  /**
+   * Record how a past meeting went. Only the owning instructor, only once the
+   * slot has ended, never on a cancelled booking. Re-marking (completed <->
+   * no-show) is allowed so instructors can fix a mis-click.
+   */
+  async markBookingOutcome(
+    tenantId: string,
+    instructorId: string,
+    bookingId: string,
+    outcome: BookingOutcome,
+  ): Promise<Booking> {
+    const booking = await this.bookingRepo.findOne({
+      where: { id: bookingId, tenantId },
+    });
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.instructorId !== instructorId) {
+      throw new ForbiddenException('You can only update your own meetings');
+    }
+    if (booking.status === BookingStatus.CANCELLED) {
+      throw new BadRequestException('This booking was cancelled');
+    }
+    if (!hasEnded(booking, await this.campusNow(tenantId))) {
+      throw new BadRequestException(
+        'You can record the outcome once the meeting has ended',
+      );
+    }
+
+    booking.status =
+      outcome === BookingOutcome.NO_SHOW
+        ? BookingStatus.NO_SHOW
+        : BookingStatus.COMPLETED;
+    await this.bookingRepo.save(booking);
+    return this.findBookingById(booking.id, tenantId);
+  }
+
+  /**
+   * Daily: past BOOKED meetings the instructor never marked roll to COMPLETED
+   * after AUTO_COMPLETE_AFTER_DAYS.
+   *
+   * WHY cron, not lazy-on-read: reads stay side-effect free, and the status is
+   * right for analytics (FEAT-023 feedback, utilization) whether or not anyone
+   * opens the schedule page. One UPDATE a day is negligible.
+   * Cross-tenant on purpose (system job, no user context). The cutoff uses the
+   * UTC date; with a 3-day grace a +/-1 day zone difference doesn't matter.
+   */
+  @Cron('15 3 * * *', { name: 'booking-auto-complete' })
+  async autoCompletePastBookings(today: Date = new Date()): Promise<number> {
+    const cutoff = formatDate(addDays(today, -AUTO_COMPLETE_AFTER_DAYS));
+    const result = await this.bookingRepo.update(
+      { status: BookingStatus.BOOKED, date: LessThan(cutoff) },
+      { status: BookingStatus.COMPLETED },
+    );
+    return result.affected ?? 0;
   }
 
   // ─── Busy blocks (FEAT-019) ────────────────────────────────────────────────
