@@ -37,29 +37,22 @@ export function BulkMoveDialog({
 }: BulkMoveDialogProps) {
   const [targetSectionId, setTargetSectionId] = useState('');
 
-  const { data: sectionsData } = useQuery<{
-    adminSections: {
-      id: string;
-      course: { code: string; title: string };
-      instructor: { firstName: string; lastName: string };
-    }[];
-  }>(ADMIN_SECTIONS_QUERY, { skip: !open });
+  const { data: sectionsData } = useQuery(ADMIN_SECTIONS_QUERY, {
+    skip: !open,
+  });
 
-  const [bulkMove, { loading }] = useMutation<{ bulkMoveEnrollments: number }>(
-    BULK_MOVE_ENROLLMENTS_MUTATION,
-    {
-      onCompleted: (data) => {
-        const count = data.bulkMoveEnrollments;
-        toast.success(
-          `${count} enrollment${count !== 1 ? 's' : ''} moved successfully`,
-        );
-        setTargetSectionId('');
-        onOpenChange(false);
-        onSuccess();
-      },
-      onError: (err) => toast.error(err.message),
+  const [bulkMove, { loading }] = useMutation(BULK_MOVE_ENROLLMENTS_MUTATION, {
+    onCompleted: (data) => {
+      const count = data.bulkMoveEnrollments;
+      toast.success(
+        `${count} enrollment${count !== 1 ? 's' : ''} moved successfully`,
+      );
+      setTargetSectionId('');
+      onOpenChange(false);
+      onSuccess();
     },
-  );
+    onError: (err) => toast.error(err.message),
+  });
 
   const sections = sectionsData?.adminSections ?? [];
 

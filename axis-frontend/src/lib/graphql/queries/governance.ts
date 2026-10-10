@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const AI_GOVERNANCE_CONFIG_QUERY = gql`
+export const AI_GOVERNANCE_CONFIG_QUERY = graphql(`
   query AiGovernanceConfig {
     aiGovernanceConfig {
       enabled
@@ -20,9 +20,9 @@ export const AI_GOVERNANCE_CONFIG_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const AI_AUDIT_LOGS_QUERY = gql`
+export const AI_AUDIT_LOGS_QUERY = graphql(`
   query AiAuditLogs($filters: AuditLogFilterInput) {
     aiAuditLogs(filters: $filters) {
       entries {
@@ -45,9 +45,9 @@ export const AI_AUDIT_LOGS_QUERY = gql`
       hasMore
     }
   }
-`;
+`);
 
-export const AI_USAGE_TREND_QUERY = gql`
+export const AI_USAGE_TREND_QUERY = graphql(`
   query AiUsageTrend($days: Int) {
     aiUsageTrend(days: $days) {
       dailyUsage {
@@ -61,4 +61,4 @@ export const AI_USAGE_TREND_QUERY = gql`
       totalCostUsd
     }
   }
-`;
+`);

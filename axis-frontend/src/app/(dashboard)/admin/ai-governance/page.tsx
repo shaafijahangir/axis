@@ -12,6 +12,11 @@ import {
   UPDATE_TOOL_PERMISSION_MUTATION,
   RESET_TOOL_PERMISSION_MUTATION,
 } from '@/lib/graphql/mutations/governance';
+import type {
+  AiGovernanceConfigQuery,
+  AiUsageTrendQuery,
+  GovernanceActionType,
+} from '@/lib/graphql/__generated__/graphql';
 import {
   Card,
   CardContent,
@@ -48,78 +53,24 @@ import {
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
-type ActionType = 'auto' | 'suggest' | 'blocked';
-
-interface ToolPermission {
-  toolName: string;
-  description: string;
-  defaultActionType: ActionType;
-  effectiveActionType: ActionType;
-  isOverridden: boolean;
-  requiredPermissions: string[];
-}
-
-interface GovernanceConfig {
-  enabled: boolean;
-  effectiveMaxRequestsPerMinute: number;
-  effectiveMaxTokensPerDay: number;
-  monthlyBudgetUsd: number | null;
-  currentMonthCostUsd: number;
-  currentDayTokensUsed: number;
-  totalToolOverrides: number;
-  toolPermissions: ToolPermission[];
-}
-
-interface AuditLogEntry {
-  id: string;
-  userId: string;
-  userFirstName: string;
-  userLastName: string;
-  userEmail: string;
-  agentType: string;
-  conversationId: string;
-  inputTokens: number;
-  outputTokens: number;
-  estimatedCostUsd: number;
-  model: string;
-  createdAt: string;
-}
-
-interface AuditLogPage {
-  entries: AuditLogEntry[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  hasMore: boolean;
-}
-
-interface DailyUsagePoint {
-  date: string;
-  requests: number;
-  tokens: number;
-  costUsd: number;
-}
-
-interface UsageTrend {
-  dailyUsage: DailyUsagePoint[];
-  totalRequests: number;
-  totalTokens: number;
-  totalCostUsd: number;
-}
+type ActionType = GovernanceActionType;
+type GovernanceConfig = AiGovernanceConfigQuery['aiGovernanceConfig'];
+type ToolPermission = GovernanceConfig['toolPermissions'][number];
+type UsageTrend = AiUsageTrendQuery['aiUsageTrend'];
 
 // ─── Helper Components ──────────────────────────────────────────────────
 
 function ActionTypeBadge({ type }: { type: ActionType }) {
   const styles: Record<ActionType, string> = {
-    auto: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    suggest:
+    AUTO: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    SUGGEST:
       'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    blocked: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    BLOCKED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
   };
   const labels: Record<ActionType, string> = {
-    auto: 'Auto',
-    suggest: 'Suggest',
-    blocked: 'Blocked',
+    AUTO: 'Auto',
+    SUGGEST: 'Suggest',
+    BLOCKED: 'Blocked',
   };
 
   return (
@@ -264,9 +215,9 @@ function ToolPermissionsSection({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="auto">Auto</SelectItem>
-                        <SelectItem value="suggest">Suggest</SelectItem>
-                        <SelectItem value="blocked">Blocked</SelectItem>
+                        <SelectItem value="AUTO">Auto</SelectItem>
+                        <SelectItem value="SUGGEST">Suggest</SelectItem>
+                        <SelectItem value="BLOCKED">Blocked</SelectItem>
                       </SelectContent>
                     </Select>
                   </td>
@@ -536,9 +487,7 @@ function AuditLogsSection() {
   const [page, setPage] = useState(1);
   const [agentFilter, setAgentFilter] = useState<string>('all');
 
-  const { data, loading } = useQuery<{
-    aiAuditLogs: AuditLogPage;
-  }>(AI_AUDIT_LOGS_QUERY, {
+  const { data, loading } = useQuery(AI_AUDIT_LOGS_QUERY, {
     variables: {
       filters: {
         page,
@@ -699,15 +648,14 @@ export default function AiGovernancePage() {
     loading: configLoading,
     error: configError,
     refetch: refetchConfig,
-  } = useQuery<{ aiGovernanceConfig: GovernanceConfig }>(
-    AI_GOVERNANCE_CONFIG_QUERY,
-    { fetchPolicy: 'cache-and-network' },
-  );
+  } = useQuery(AI_GOVERNANCE_CONFIG_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
-  const { data: trendData } = useQuery<{ aiUsageTrend: UsageTrend }>(
-    AI_USAGE_TREND_QUERY,
-    { variables: { days: 30 }, fetchPolicy: 'cache-and-network' },
-  );
+  const { data: trendData } = useQuery(AI_USAGE_TREND_QUERY, {
+    variables: { days: 30 },
+    fetchPolicy: 'cache-and-network',
+  });
 
   const [updateConfig] = useMutation(UPDATE_AI_GOVERNANCE_CONFIG_MUTATION, {
     onCompleted: () => refetchConfig(),
@@ -748,20 +696,9 @@ export default function AiGovernancePage() {
     );
   }
 
-  // GraphQL returns enum key names (uppercase: "AUTO", "SUGGEST", "BLOCKED").
-  // Normalize to lowercase so SelectItem values and ActionTypeBadge keys match.
-  const rawConfig = configData?.aiGovernanceConfig;
-  const config = rawConfig
-    ? {
-        ...rawConfig,
-        toolPermissions: rawConfig.toolPermissions.map((t) => ({
-          ...t,
-          defaultActionType: t.defaultActionType.toLowerCase() as ActionType,
-          effectiveActionType:
-            t.effectiveActionType.toLowerCase() as ActionType,
-        })),
-      }
-    : null;
+  // GraphQL returns enum NAMES ("AUTO", "SUGGEST", "BLOCKED") — the typed
+  // query keys badges and select values on them directly (BUG-015).
+  const config = configData?.aiGovernanceConfig;
   if (!config) return null;
 
   const trend = trendData?.aiUsageTrend;
@@ -781,11 +718,8 @@ export default function AiGovernancePage() {
     actionType: ActionType,
   ) => {
     try {
-      // GraphQL mutation enum values must be key names (uppercase).
       await updateToolPermission({
-        variables: {
-          input: { toolName, actionType: actionType.toUpperCase() },
-        },
+        variables: { input: { toolName, actionType } },
       });
     } catch (err) {
       const message =

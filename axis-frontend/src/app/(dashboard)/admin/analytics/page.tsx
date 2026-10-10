@@ -21,69 +21,6 @@ import {
   DollarSign,
 } from 'lucide-react';
 
-interface AdminDashboard {
-  tenantStats: {
-    totalUsers: number;
-    activeUsers: number;
-    totalCourses: number;
-    activeSections: number;
-    totalEnrollments: number;
-    activeEnrollments: number;
-  };
-  userStats: {
-    totalUsers: number;
-    activeUsers: number;
-    newUsersThisMonth: number;
-    roleDistribution: Array<{ role: string; count: number }>;
-  };
-  gradeStats: {
-    averageScore: number;
-    medianScore: number | null;
-    totalSubmissions: number;
-    gradedSubmissions: number;
-    ungradedSubmissions: number;
-    distribution: Array<{ grade: string; count: number; percentage: number }>;
-  };
-  submissionMetrics: {
-    totalAssignments: number;
-    totalSubmissions: number;
-    submissionRate: number;
-    pendingGrading: number;
-    avgGradingTurnaroundHours: number | null;
-  };
-  aiUsageSummary: {
-    totalConversations: number;
-    totalMessages: number;
-    totalTokens: number;
-    totalCostUsd: number;
-    uniqueUsers: number;
-  };
-  aiAgentUsage: Array<{
-    agentType: string;
-    conversations: number;
-    messages: number;
-    totalTokens: number;
-    costUsd: number;
-  }>;
-  topCourses: Array<{
-    courseId: string;
-    courseCode: string;
-    courseTitle: string;
-    sections: number;
-    enrollments: number;
-    averageGrade: number | null;
-  }>;
-  atRiskStudents: Array<{
-    userId: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    averageScore: number;
-    missedAssignments: number;
-    enrolledSections: number;
-  }>;
-}
-
 function StatCard({
   title,
   value,
@@ -252,10 +189,9 @@ function LoadingSkeleton() {
 }
 
 export default function AdminAnalyticsPage() {
-  const { data, loading, error } = useQuery<{ adminDashboard: AdminDashboard }>(
-    ADMIN_DASHBOARD_QUERY,
-    { fetchPolicy: 'cache-and-network' },
-  );
+  const { data, loading, error } = useQuery(ADMIN_DASHBOARD_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   if (loading && !data) {
     return (

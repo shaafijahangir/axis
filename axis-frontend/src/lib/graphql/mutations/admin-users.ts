@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const ADMIN_CREATE_USER_MUTATION = gql`
+export const ADMIN_CREATE_USER_MUTATION = graphql(`
   mutation AdminCreateUser($input: AdminCreateUserInput!) {
     adminCreateUser(input: $input) {
       id
@@ -13,9 +13,9 @@ export const ADMIN_CREATE_USER_MUTATION = gql`
       homeroomTeacherId
     }
   }
-`;
+`);
 
-export const ADMIN_UPDATE_USER_MUTATION = gql`
+export const ADMIN_UPDATE_USER_MUTATION = graphql(`
   mutation AdminUpdateUser($id: String!, $input: AdminUpdateUserInput!) {
     adminUpdateUser(id: $id, input: $input) {
       id
@@ -28,22 +28,22 @@ export const ADMIN_UPDATE_USER_MUTATION = gql`
       homeroomTeacherId
     }
   }
-`;
+`);
 
-export const DEACTIVATE_USER_MUTATION = gql`
+export const DEACTIVATE_USER_MUTATION = graphql(`
   mutation DeactivateUser($id: String!) {
     deactivateUser(id: $id) {
       id
       status
     }
   }
-`;
+`);
 
-export const ACTIVATE_USER_MUTATION = gql`
+export const ACTIVATE_USER_MUTATION = graphql(`
   mutation ActivateUser($id: String!) {
     activateUser(id: $id) {
       id
       status
     }
   }
-`;
+`);

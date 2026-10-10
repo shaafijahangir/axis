@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const UPDATE_ENROLLMENT_POLICY_MUTATION = gql`
+export const UPDATE_ENROLLMENT_POLICY_MUTATION = graphql(`
   mutation UpdateEnrollmentPolicy($input: UpdateEnrollmentPolicyInput!) {
     updateEnrollmentPolicy(input: $input) {
       prerequisiteEnforcement
@@ -13,4 +13,4 @@ export const UPDATE_ENROLLMENT_POLICY_MUTATION = gql`
       waitlistConfirmationHours
     }
   }
-`;
+`);

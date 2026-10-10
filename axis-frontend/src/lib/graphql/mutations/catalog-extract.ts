@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const EXTRACT_CATALOG_FROM_DOCUMENT_MUTATION = gql`
+export const EXTRACT_CATALOG_FROM_DOCUMENT_MUTATION = graphql(`
   mutation ExtractCatalogFromDocument(
     $fileBase64: String!
     $mimeType: String!
@@ -41,9 +41,9 @@ export const EXTRACT_CATALOG_FROM_DOCUMENT_MUTATION = gql`
       estimatedCostUsd
     }
   }
-`;
+`);
 
-export const BATCH_CREATE_COURSES_MUTATION = gql`
+export const BATCH_CREATE_COURSES_MUTATION = graphql(`
   mutation BatchCreateCourses($courses: [BatchCourseItem!]!) {
     batchCreateCourses(courses: $courses) {
       imported
@@ -55,4 +55,4 @@ export const BATCH_CREATE_COURSES_MUTATION = gql`
       }
     }
   }
-`;
+`);

@@ -52,9 +52,9 @@ export function TermsTable() {
   const [editTerm, setEditTerm] = useState<AcademicTerm | null>(null);
   const [deleteTerm, setDeleteTerm] = useState<AcademicTerm | null>(null);
 
-  const { data, loading, refetch } = useQuery<{
-    academicTerms: AcademicTerm[];
-  }>(ACADEMIC_TERMS_QUERY, { fetchPolicy: 'cache-and-network' });
+  const { data, loading, refetch } = useQuery(ACADEMIC_TERMS_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   const [removeTerm, { loading: removing }] = useMutation(
     REMOVE_ACADEMIC_TERM_MUTATION,

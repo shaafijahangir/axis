@@ -31,49 +31,22 @@ import {
   BATCH_CREATE_COURSES_MUTATION,
 } from '@/lib/graphql/mutations/catalog-extract';
 import { CREATE_DEGREE_PROGRAM_MUTATION } from '@/lib/graphql/mutations/catalog';
+import type {
+  DegreeProgramType,
+  ExtractCatalogFromDocumentMutation,
+} from '@/lib/graphql/__generated__/graphql';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type ExtractionFlag = {
-  entityType: string;
-  entityCode: string;
-  field: string;
-  message: string;
-};
+type ExtractionResult =
+  ExtractCatalogFromDocumentMutation['extractCatalogFromDocument'];
 
-type ExtractedCourse = {
-  code: string;
-  title: string;
-  credits?: number;
-  department?: string;
-  category?: string;
-  courseLevel?: number;
-  description?: string;
-  offeredSemesters: string[];
-  prerequisiteCodes: string[];
-  corequisiteCodes: string[];
-  confidence: number;
-  flagged: boolean;
-};
-
-type ExtractedProgram = {
-  name: string;
-  code: string;
-  programType?: string;
-  department?: string;
-  totalCreditsRequired?: number;
-  expectedDurationSemesters?: number;
-  confidence: number;
-  flagged: boolean;
-};
-
-type ExtractionResult = {
-  courses: ExtractedCourse[];
-  programs: ExtractedProgram[];
-  flags: ExtractionFlag[];
-  inputTokens: number;
-  outputTokens: number;
-  estimatedCostUsd: number;
+// BUG-015: programType arrives as the enum NAME ('MAJOR'), never 'major'.
+const PROGRAM_TYPE_LABELS: Record<DegreeProgramType, string> = {
+  MAJOR: 'Major',
+  MINOR: 'Minor',
+  CERTIFICATE: 'Certificate',
+  DIPLOMA: 'Diploma',
 };
 
 type ImportSummary = {
@@ -553,8 +526,8 @@ function ReviewStep({
                     </TableCell>
                     <TableCell>
                       {prog.programType ? (
-                        <Badge variant="outline" className="capitalize">
-                          {prog.programType}
+                        <Badge variant="outline">
+                          {PROGRAM_TYPE_LABELS[prog.programType]}
                         </Badge>
                       ) : (
                         '—'
@@ -727,9 +700,7 @@ export default function DocumentImportPage() {
         const { data } = await extractMutation({
           variables: { fileBase64, mimeType },
         });
-        const result = (
-          data as { extractCatalogFromDocument: ExtractionResult } | null
-        )?.extractCatalogFromDocument;
+        const result = data?.extractCatalogFromDocument;
         if (!result) throw new Error('No extraction result returned');
         setExtractionResult(result);
         setSelectedCourses(new Set(result.courses.map((c) => c.code)));
@@ -777,11 +748,7 @@ export default function DocumentImportPage() {
             })),
           },
         });
-        const batchResult = (
-          data as {
-            batchCreateCourses: { imported: number; errors: unknown[] };
-          } | null
-        )?.batchCreateCourses;
+        const batchResult = data?.batchCreateCourses;
         if (batchResult) {
           summary.coursesImported = batchResult.imported;
           summary.courseErrors = batchResult.errors.length;
@@ -802,10 +769,11 @@ export default function DocumentImportPage() {
             input: {
               name: prog.name,
               code: prog.code,
-              programType: prog.programType,
+              // CreateDegreeProgramInput has no programType or
+              // expectedDurationSemesters field — sending them failed GraphQL
+              // validation, so every program import errored.
               department: prog.department,
               totalCreditsRequired: prog.totalCreditsRequired ?? 0,
-              expectedDurationSemesters: prog.expectedDurationSemesters,
               requirements: [],
             },
           },

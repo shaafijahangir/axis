@@ -16,6 +16,7 @@ import {
   DEACTIVATE_USER_MUTATION,
   ACTIVATE_USER_MUTATION,
 } from '@/lib/graphql/mutations/admin-users';
+import type { UserStatus } from '@/lib/graphql/__generated__/graphql';
 
 interface DeactivateUserDialogProps {
   open: boolean;
@@ -24,7 +25,7 @@ interface DeactivateUserDialogProps {
     id: string;
     firstName: string;
     lastName: string;
-    status: string;
+    status: UserStatus;
   } | null;
   onSuccess: () => void;
 }
@@ -35,7 +36,7 @@ export function DeactivateUserDialog({
   user,
   onSuccess,
 }: DeactivateUserDialogProps) {
-  const isActive = user?.status === 'active';
+  const isActive = user?.status === 'ACTIVE';
 
   const [deactivate, { loading: deactivating }] = useMutation(
     DEACTIVATE_USER_MUTATION,

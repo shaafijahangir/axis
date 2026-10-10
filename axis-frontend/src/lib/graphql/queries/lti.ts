@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const LTI_TOOL_CONFIGURATION_QUERY = gql`
+export const LTI_TOOL_CONFIGURATION_QUERY = graphql(`
   query LtiToolConfiguration {
     ltiToolConfiguration {
       issuer
@@ -12,9 +12,9 @@ export const LTI_TOOL_CONFIGURATION_QUERY = gql`
       scopes
     }
   }
-`;
+`);
 
-export const LTI_PLATFORMS_QUERY = gql`
+export const LTI_PLATFORMS_QUERY = graphql(`
   query LtiPlatforms {
     ltiPlatforms {
       id
@@ -27,9 +27,9 @@ export const LTI_PLATFORMS_QUERY = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const LTI_PLATFORM_QUERY = gql`
+export const LTI_PLATFORM_QUERY = graphql(`
   query LtiPlatform($id: String!) {
     ltiPlatform(id: $id) {
       id
@@ -45,9 +45,9 @@ export const LTI_PLATFORM_QUERY = gql`
       updatedAt
     }
   }
-`;
+`);
 
-export const LTI_DEPLOYMENTS_QUERY = gql`
+export const LTI_DEPLOYMENTS_QUERY = graphql(`
   query LtiDeployments($platformId: String!) {
     ltiDeployments(platformId: $platformId) {
       id
@@ -60,9 +60,9 @@ export const LTI_DEPLOYMENTS_QUERY = gql`
       updatedAt
     }
   }
-`;
+`);
 
-export const LTI_UNLINKED_CONTEXTS_QUERY = gql`
+export const LTI_UNLINKED_CONTEXTS_QUERY = graphql(`
   query LtiUnlinkedContexts {
     ltiUnlinkedContexts {
       id
@@ -77,4 +77,4 @@ export const LTI_UNLINKED_CONTEXTS_QUERY = gql`
       createdAt
     }
   }
-`;
+`);

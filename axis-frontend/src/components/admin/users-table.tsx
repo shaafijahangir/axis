@@ -10,6 +10,11 @@ import {
 import { useQuery } from '@apollo/client/react';
 import { MoreHorizontal, Plus, Search } from 'lucide-react';
 import { ADMIN_USERS_QUERY } from '@/lib/graphql/queries/admin-users';
+import type {
+  AdminUsersQuery,
+  UserRole,
+  UserStatus,
+} from '@/lib/graphql/__generated__/graphql';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,41 +44,17 @@ import { CreateUserDialog } from './create-user-dialog';
 import { EditUserDialog } from './edit-user-dialog';
 import { DeactivateUserDialog } from './deactivate-user-dialog';
 import { LinkParentDialog } from './link-parent-dialog';
+import {
+  USER_ROLE_LABELS,
+  USER_ROLE_OPTIONS,
+  USER_STATUS_LABELS,
+  USER_STATUS_OPTIONS,
+  USER_STATUS_VARIANT,
+} from './enum-labels';
 
-interface AdminUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  roles: string[];
-  status: string;
-  lastLoginAt: string | null;
-  createdAt: string;
-  gradeLevel?: number | null;
-  homeroomTeacherId?: string | null;
-  homeroomTeacher?: { id: string; firstName: string; lastName: string } | null;
-}
-
-interface AdminUsersData {
-  adminUsers: {
-    users: AdminUser[];
-    totalCount: number;
-    page: number;
-    pageSize: number;
-  };
-}
+type AdminUser = AdminUsersQuery['adminUsers']['users'][number];
 
 const columnHelper = createColumnHelper<AdminUser>();
-
-const STATUS_VARIANT: Record<
-  string,
-  'default' | 'secondary' | 'destructive' | 'outline'
-> = {
-  active: 'default',
-  inactive: 'destructive',
-  suspended: 'destructive',
-  pending: 'outline',
-};
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return 'Never';
@@ -87,8 +68,8 @@ function formatDate(dateStr: string | null): string {
 export function UsersTable() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<UserStatus | 'all'>('all');
   const [gradeFilter, setGradeFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const pageSize = 20;
@@ -123,10 +104,10 @@ export function UsersTable() {
     },
   };
 
-  const { data, loading, refetch } = useQuery<AdminUsersData>(
-    ADMIN_USERS_QUERY,
-    { variables: filterVariables, fetchPolicy: 'cache-and-network' },
-  );
+  const { data, loading, refetch } = useQuery(ADMIN_USERS_QUERY, {
+    variables: filterVariables,
+    fetchPolicy: 'cache-and-network',
+  });
 
   const handleRefetch = useCallback(() => {
     refetch();
@@ -154,12 +135,8 @@ export function UsersTable() {
       cell: (info) => (
         <div className="flex flex-wrap gap-1">
           {info.getValue().map((role) => (
-            <Badge
-              key={role}
-              variant="secondary"
-              className="text-xs capitalize"
-            >
-              {role}
+            <Badge key={role} variant="secondary" className="text-xs">
+              {USER_ROLE_LABELS[role]}
             </Badge>
           ))}
         </div>
@@ -168,11 +145,8 @@ export function UsersTable() {
     columnHelper.accessor('status', {
       header: 'Status',
       cell: (info) => (
-        <Badge
-          variant={STATUS_VARIANT[info.getValue()] ?? 'outline'}
-          className="capitalize"
-        >
-          {info.getValue()}
+        <Badge variant={USER_STATUS_VARIANT[info.getValue()]}>
+          {USER_STATUS_LABELS[info.getValue()]}
         </Badge>
       ),
     }),
@@ -181,7 +155,7 @@ export function UsersTable() {
       header: 'Grade · Homeroom',
       cell: ({ row }) => {
         const u = row.original;
-        if (!u.roles.includes('student') || u.gradeLevel == null) {
+        if (!u.roles.includes('STUDENT') || u.gradeLevel == null) {
           return <span className="text-xs text-muted-foreground">—</span>;
         }
         const homeroom = u.homeroomTeacher
@@ -221,7 +195,7 @@ export function UsersTable() {
             <DropdownMenuItem onClick={() => setEditUser(row.original)}>
               Edit
             </DropdownMenuItem>
-            {row.original.roles.includes('student') && (
+            {row.original.roles.includes('STUDENT') && (
               <DropdownMenuItem
                 onClick={() => setLinkParentTarget(row.original)}
               >
@@ -231,10 +205,10 @@ export function UsersTable() {
             <DropdownMenuItem
               onClick={() => setDeactivateUser(row.original)}
               className={
-                row.original.status === 'active' ? 'text-destructive' : ''
+                row.original.status === 'ACTIVE' ? 'text-destructive' : ''
               }
             >
-              {row.original.status === 'active' ? 'Deactivate' : 'Activate'}
+              {row.original.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -265,29 +239,36 @@ export function UsersTable() {
               className="pl-8"
             />
           </div>
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <Select
+            value={roleFilter}
+            onValueChange={(v) => setRoleFilter(v as UserRole | 'all')}
+          >
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="Role" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="student">Student</SelectItem>
-              <SelectItem value="instructor">Instructor</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="ta">TA</SelectItem>
-              <SelectItem value="parent">Parent</SelectItem>
+              {USER_ROLE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as UserStatus | 'all')}
+          >
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="suspended">Suspended</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
+              {USER_STATUS_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={gradeFilter} onValueChange={setGradeFilter}>
