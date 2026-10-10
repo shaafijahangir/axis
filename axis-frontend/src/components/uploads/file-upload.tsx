@@ -10,25 +10,24 @@ import {
   REQUEST_UPLOAD_MUTATION,
   CONFIRM_UPLOAD_MUTATION,
 } from '@/lib/graphql/mutations/uploads';
+import type {
+  FileUploadFieldsFragment,
+  UploadContext as ApiUploadContext,
+} from '@/lib/graphql/__generated__/graphql';
 
-export type UploadContext =
-  | 'assignment_submission'
-  | 'assignment_instructions'
-  | 'profile_picture'
-  | 'course_content'
-  | 'import_document';
+/**
+ * BUG-015: `UploadContext` is a GraphQL enum, so the API only accepts the enum
+ * NAME (`ASSIGNMENT_SUBMISSION`). The lowercase spelling is still accepted as a
+ * prop for existing callers (assignment forms) and normalized at the API
+ * boundary by `toApiUploadContext` — it never reaches the wire.
+ */
+export type UploadContext = ApiUploadContext | Lowercase<`${ApiUploadContext}`>;
 
-export interface UploadedFile {
-  id: string;
-  key: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
-  context: UploadContext;
-  contextId: string | null;
-  confirmed: boolean;
-  createdAt: string;
+export function toApiUploadContext(context: UploadContext): ApiUploadContext {
+  return context.toUpperCase() as ApiUploadContext;
 }
+
+export type UploadedFile = FileUploadFieldsFragment;
 
 interface FileUploadProps {
   context: UploadContext;
@@ -51,22 +50,22 @@ interface PendingFile {
   result?: UploadedFile;
 }
 
-const DEFAULT_ACCEPT: Record<UploadContext, string> = {
-  assignment_submission:
+const DEFAULT_ACCEPT: Record<`${ApiUploadContext}`, string> = {
+  ASSIGNMENT_SUBMISSION:
     '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mp3,.wav,.zip',
-  assignment_instructions:
+  ASSIGNMENT_INSTRUCTIONS:
     '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.webp,.zip',
-  profile_picture: '.jpg,.jpeg,.png,.webp,.gif',
-  course_content: '.pdf,.jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mp3,.wav,.txt',
-  import_document: '.pdf,.txt,.csv,.xlsx',
+  PROFILE_PICTURE: '.jpg,.jpeg,.png,.webp,.gif',
+  COURSE_CONTENT: '.pdf,.jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mp3,.wav,.txt',
+  IMPORT_DOCUMENT: '.pdf,.txt,.csv,.xlsx',
 };
 
-const MAX_SIZE_LABEL: Record<UploadContext, string> = {
-  assignment_submission: '50 MB',
-  assignment_instructions: '50 MB',
-  profile_picture: '5 MB',
-  course_content: '100 MB',
-  import_document: '20 MB',
+const MAX_SIZE_LABEL: Record<`${ApiUploadContext}`, string> = {
+  ASSIGNMENT_SUBMISSION: '50 MB',
+  ASSIGNMENT_INSTRUCTIONS: '50 MB',
+  PROFILE_PICTURE: '5 MB',
+  COURSE_CONTENT: '100 MB',
+  IMPORT_DOCUMENT: '20 MB',
 };
 
 function formatBytes(bytes: number): string {
@@ -76,7 +75,7 @@ function formatBytes(bytes: number): string {
 }
 
 export function FileUpload({
-  context,
+  context: contextProp,
   contextId,
   onUploadComplete,
   maxFiles = 10,
@@ -85,21 +84,13 @@ export function FileUpload({
   disabled = false,
   className,
 }: FileUploadProps) {
+  const context = toApiUploadContext(contextProp);
   const [isDragging, setIsDragging] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [requestUpload] = useMutation<{
-    requestUpload: {
-      fileId: string;
-      uploadUrl: string;
-      key: string;
-      expiresIn: number;
-    };
-  }>(REQUEST_UPLOAD_MUTATION);
-  const [confirmUpload] = useMutation<{ confirmUpload: UploadedFile }>(
-    CONFIRM_UPLOAD_MUTATION,
-  );
+  const [requestUpload] = useMutation(REQUEST_UPLOAD_MUTATION);
+  const [confirmUpload] = useMutation(CONFIRM_UPLOAD_MUTATION);
 
   const updateFile = useCallback(
     (index: number, patch: Partial<PendingFile>) => {

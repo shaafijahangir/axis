@@ -17,7 +17,11 @@ import {
   FILE_DOWNLOAD_URL_QUERY,
 } from '@/lib/graphql/queries/uploads';
 import { DELETE_FILE_MUTATION } from '@/lib/graphql/mutations/uploads';
-import type { UploadContext, UploadedFile } from './file-upload';
+import {
+  toApiUploadContext,
+  type UploadContext,
+  type UploadedFile,
+} from './file-upload';
 
 interface FileAttachmentListProps {
   context: UploadContext;
@@ -54,9 +58,10 @@ function FileRow({
   allowDelete?: boolean;
   onDeleted: (id: string) => void;
 }) {
-  const [getDownloadUrl, { loading: downloading }] = useLazyQuery<{
-    fileDownloadUrl: { url: string; expiresIn: number };
-  }>(FILE_DOWNLOAD_URL_QUERY, { fetchPolicy: 'no-cache' });
+  const [getDownloadUrl, { loading: downloading }] = useLazyQuery(
+    FILE_DOWNLOAD_URL_QUERY,
+    { fetchPolicy: 'no-cache' },
+  );
   const [deleteFile, { loading: deleting }] = useMutation(DELETE_FILE_MUTATION);
 
   const handleDownload = async () => {
@@ -130,10 +135,8 @@ export function FileAttachmentList({
   allowDelete = false,
   className,
 }: FileAttachmentListProps) {
-  const { data, loading, refetch } = useQuery<{
-    contextFiles: UploadedFile[];
-  }>(CONTEXT_FILES_QUERY, {
-    variables: { context, contextId },
+  const { data, loading, refetch } = useQuery(CONTEXT_FILES_QUERY, {
+    variables: { context: toApiUploadContext(context), contextId },
     skip: !contextId,
   });
 

@@ -22,24 +22,6 @@ interface Participant {
   lastName: string;
 }
 
-interface LastMessage {
-  id: string;
-  content: string;
-  senderId: string;
-  createdAt: string;
-  sender: { id: string; firstName: string; lastName: string };
-}
-
-interface ConversationItem {
-  id: string;
-  title: string | null;
-  lastMessage: LastMessage | null;
-  unreadCount: number;
-  otherParticipants: Participant[];
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface ConversationListProps {
   activeConversationId: string | null;
   onSelectConversation: (id: string) => void;
@@ -85,9 +67,7 @@ export function ConversationList({
   const { isConnected } = useSocketConnection();
 
   // Fetch conversations - use polling only when socket is disconnected
-  const { data, loading, refetch } = useQuery<{
-    myConversations: ConversationItem[];
-  }>(MY_CONVERSATIONS_QUERY, {
+  const { data, loading, refetch } = useQuery(MY_CONVERSATIONS_QUERY, {
     // Only poll if socket is not connected (fallback)
     pollInterval: isConnected ? 0 : 10_000,
     fetchPolicy: 'network-only',

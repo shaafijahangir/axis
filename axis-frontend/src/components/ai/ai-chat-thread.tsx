@@ -12,29 +12,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AI_CONVERSATION_MESSAGES_QUERY } from '@/lib/graphql/queries/ai';
 import { SEND_AI_MESSAGE_MUTATION } from '@/lib/graphql/mutations/ai';
-import { AiMessageBubble, MessageRole } from './ai-message-bubble';
+import { AiMessageBubble } from './ai-message-bubble';
 import { AiThinkingIndicator } from './ai-thinking-indicator';
 import { cn } from '@/lib/utils';
+import type { AiConversationMessagesQuery } from '@/lib/graphql/__generated__/graphql';
 
-interface Message {
-  id: string;
-  conversationId: string;
-  role: MessageRole;
-  content: string;
-  toolCalls: Record<string, unknown>[] | null;
-  toolResults: Record<string, unknown>[] | null;
-  tokenCount: number;
-  createdAt: string;
-}
-
-interface AgentResponse {
-  conversationId: string;
-  responseText: string;
-  toolsUsed: string[];
-  totalInputTokens: number;
-  totalOutputTokens: number;
-  turns: number;
-}
+type Message = AiConversationMessagesQuery['aiMessages'][number];
 
 interface AiChatThreadProps {
   conversationId: string;
@@ -81,17 +64,15 @@ export function AiChatThread({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
-  const { data, loading, refetch } = useQuery<{
-    aiMessages: Message[];
-  }>(AI_CONVERSATION_MESSAGES_QUERY, {
+  const { data, loading, refetch } = useQuery(AI_CONVERSATION_MESSAGES_QUERY, {
     variables: { conversationId },
     pollInterval: 5000,
     fetchPolicy: 'network-only',
   });
 
-  const [sendMessage, { loading: sending }] = useMutation<{
-    sendMessage: AgentResponse;
-  }>(SEND_AI_MESSAGE_MUTATION);
+  const [sendMessage, { loading: sending }] = useMutation(
+    SEND_AI_MESSAGE_MUTATION,
+  );
 
   const {
     register,
@@ -277,7 +258,7 @@ export function AiChatThread({
       {/* Screen-reader announcement for new AI responses */}
       <div aria-live="polite" aria-atomic="false" className="sr-only">
         {messages.length > 0 &&
-          messages[messages.length - 1].role === 'assistant' && (
+          messages[messages.length - 1].role === 'ASSISTANT' && (
             <span>
               {agentLabel} responded:{' '}
               {messages[messages.length - 1].content.slice(0, 200)}

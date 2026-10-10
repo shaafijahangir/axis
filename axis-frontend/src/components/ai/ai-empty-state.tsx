@@ -6,13 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AVAILABLE_AGENTS_QUERY } from '@/lib/graphql/queries/ai';
 import { AiAgentSelector } from './ai-agent-selector';
 
-interface Agent {
-  type: string;
-  displayName: string;
-  description: string;
-  allowedRoles: string[];
-}
-
 interface AiEmptyStateProps {
   onSelectAgent: (agentType: string) => void;
   disabled?: boolean;
@@ -23,9 +16,7 @@ interface AiEmptyStateProps {
  * Displays available agents and prompts the user to start a chat.
  */
 export function AiEmptyState({ onSelectAgent, disabled }: AiEmptyStateProps) {
-  const { data, loading } = useQuery<{ availableAgents: Agent[] }>(
-    AVAILABLE_AGENTS_QUERY,
-  );
+  const { data, loading } = useQuery(AVAILABLE_AGENTS_QUERY);
 
   const agents = data?.availableAgents ?? [];
 

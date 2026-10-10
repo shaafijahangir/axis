@@ -20,16 +20,9 @@ import {
   MARK_NOTIFICATION_READ_MUTATION,
   MARK_ALL_NOTIFICATIONS_READ_MUTATION,
 } from '@/lib/graphql/mutations/notifications';
+import type { MyNotificationsQuery } from '@/lib/graphql/__generated__/graphql';
 
-interface AppNotification {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  data: string | null;
-  read: boolean;
-  createdAt: string;
-}
+type AppNotification = MyNotificationsQuery['myNotifications'][number];
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -45,35 +38,32 @@ export function NotificationBell() {
   const router = useRouter();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { data: countData, refetch: refetchCount } = useQuery<{
-    unreadNotificationCount: number;
-  }>(UNREAD_NOTIFICATION_COUNT_QUERY, { fetchPolicy: 'network-only' });
+  const { data: countData, refetch: refetchCount } = useQuery(
+    UNREAD_NOTIFICATION_COUNT_QUERY,
+    { fetchPolicy: 'network-only' },
+  );
 
-  const { data: notifData, refetch: refetchNotifs } = useQuery<{
-    myNotifications: AppNotification[];
-  }>(MY_NOTIFICATIONS_QUERY, {
-    variables: { limit: 20, offset: 0 },
-    fetchPolicy: 'no-cache',
-  });
+  const { data: notifData, refetch: refetchNotifs } = useQuery(
+    MY_NOTIFICATIONS_QUERY,
+    {
+      variables: { limit: 20, offset: 0 },
+      fetchPolicy: 'no-cache',
+    },
+  );
 
-  const [markRead] = useMutation<{
-    markNotificationRead: { id: string; read: boolean };
-  }>(MARK_NOTIFICATION_READ_MUTATION, {
+  const [markRead] = useMutation(MARK_NOTIFICATION_READ_MUTATION, {
     onCompleted: () => {
       void refetchCount();
       void refetchNotifs();
     },
   });
 
-  const [markAllRead] = useMutation<{ markAllNotificationsRead: boolean }>(
-    MARK_ALL_NOTIFICATIONS_READ_MUTATION,
-    {
-      onCompleted: () => {
-        void refetchCount();
-        void refetchNotifs();
-      },
+  const [markAllRead] = useMutation(MARK_ALL_NOTIFICATIONS_READ_MUTATION, {
+    onCompleted: () => {
+      void refetchCount();
+      void refetchNotifs();
     },
-  );
+  });
 
   // Poll for new notifications every 30 seconds
   useEffect(() => {

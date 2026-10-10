@@ -19,28 +19,13 @@ import {
   START_QUIZ_MUTATION,
   SUBMIT_QUIZ_MUTATION,
 } from '@/lib/graphql/mutations/quiz';
+import type {
+  StudentQuizQuestionsQuery,
+  SubmitQuizMutation,
+} from '@/lib/graphql/__generated__/graphql';
 
-interface QuizOption {
-  text: string;
-}
-
-interface QuizQuestion {
-  id: string;
-  questionText: string;
-  questionType: string;
-  options: QuizOption[] | null;
-  points: number;
-  order: number;
-}
-
-interface QuizResult {
-  id: string;
-  attempt: number;
-  submittedAt: string;
-  autoScore: number | null;
-  score: number | null;
-  gradedAt: string | null;
-}
+type QuizQuestion = StudentQuizQuestionsQuery['studentQuizQuestions'][number];
+type QuizResult = SubmitQuizMutation['submitQuiz'];
 
 interface QuizDeliveryProps {
   assignmentId: string;
@@ -81,9 +66,7 @@ export function QuizDelivery({
       ? maxAttempts - existingAttempts
       : null;
 
-  const { data: questionsData } = useQuery<{
-    studentQuizQuestions: QuizQuestion[];
-  }>(STUDENT_QUIZ_QUESTIONS_QUERY, {
+  const { data: questionsData } = useQuery(STUDENT_QUIZ_QUESTIONS_QUERY, {
     variables: { assignmentId },
     skip: quizState === 'intro',
   });
@@ -93,29 +76,33 @@ export function QuizDelivery({
     [questionsData?.studentQuizQuestions],
   );
 
-  const [startQuiz, { loading: startLoading }] = useMutation<{
-    startQuiz: { id: string; startedAt: string; attempt: number };
-  }>(START_QUIZ_MUTATION, {
-    onCompleted: (data) => {
-      setSubmissionId(data.startQuiz.id);
-      setStartedAt(new Date(data.startQuiz.startedAt));
-      if (timeLimitMinutes) {
-        setTimeLeft(timeLimitMinutes * 60);
-      }
-      setQuizState('taking');
+  const [startQuiz, { loading: startLoading }] = useMutation(
+    START_QUIZ_MUTATION,
+    {
+      onCompleted: (data) => {
+        setSubmissionId(data.startQuiz.id);
+        setStartedAt(
+          data.startQuiz.startedAt ? new Date(data.startQuiz.startedAt) : null,
+        );
+        if (timeLimitMinutes) {
+          setTimeLeft(timeLimitMinutes * 60);
+        }
+        setQuizState('taking');
+      },
     },
-  });
+  );
 
-  const [submitQuiz, { loading: submitLoading }] = useMutation<{
-    submitQuiz: QuizResult;
-  }>(SUBMIT_QUIZ_MUTATION, {
-    onCompleted: (data) => {
-      setResult(data.submitQuiz);
-      setQuizState('submitted');
-      onSubmitted();
+  const [submitQuiz, { loading: submitLoading }] = useMutation(
+    SUBMIT_QUIZ_MUTATION,
+    {
+      onCompleted: (data) => {
+        setResult(data.submitQuiz);
+        setQuizState('submitted');
+        onSubmitted();
+      },
+      onError: (err) => setSubmitError(err.message),
     },
-    onError: (err) => setSubmitError(err.message),
-  });
+  );
 
   // Countdown timer
   useEffect(() => {
@@ -215,7 +202,7 @@ export function QuizDelivery({
   // ── Result screen ─────────────────────────────────────────────────────────
   if (quizState === 'submitted' && result) {
     const hasShortAnswer = questions.some(
-      (q) => q.questionType === 'short_answer',
+      (q) => q.questionType === 'SHORT_ANSWER',
     );
 
     return (
@@ -395,7 +382,7 @@ function QuestionView({
           </Badge>
         </div>
 
-        {question.questionType === 'short_answer' ? (
+        {question.questionType === 'SHORT_ANSWER' ? (
           <textarea
             className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             rows={4}

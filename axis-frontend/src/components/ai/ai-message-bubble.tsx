@@ -2,20 +2,15 @@
 
 import { cn } from '@/lib/utils';
 import { Bot, User } from 'lucide-react';
+import type { MessageRole } from '@/lib/graphql/__generated__/graphql';
 import { AiToolIndicator } from './ai-tool-indicator';
-
-export type MessageRole =
-  | 'user'
-  | 'assistant'
-  | 'system'
-  | 'tool_call'
-  | 'tool_result';
 
 interface AiMessageBubbleProps {
   role: MessageRole;
   content: string;
-  toolCalls?: Record<string, unknown>[] | null;
-  toolResults?: Record<string, unknown>[] | null;
+  /** JSON-encoded array — the API exposes the jsonb column as `String`. */
+  toolCalls?: string | null;
+  toolResults?: string | null;
   createdAt?: Date;
   isLatest?: boolean;
 }
@@ -32,12 +27,13 @@ export function AiMessageBubble({
   createdAt,
 }: AiMessageBubbleProps) {
   // Don't render tool_call or tool_result messages directly - they're shown via indicators
-  if (role === 'tool_call' || role === 'tool_result' || role === 'system') {
+  if (role === 'TOOL_CALL' || role === 'TOOL_RESULT' || role === 'SYSTEM') {
     return null;
   }
 
-  const isUser = role === 'user';
-  const hasTools = toolCalls && toolCalls.length > 0;
+  const isUser = role === 'USER';
+  const parsedToolCalls = parseToolCalls(toolCalls);
+  const hasTools = parsedToolCalls.length > 0;
 
   return (
     <div
@@ -72,7 +68,7 @@ export function AiMessageBubble({
         </div>
 
         {/* Tool indicator for assistant messages */}
-        {!isUser && hasTools && <AiToolIndicator toolCalls={toolCalls} />}
+        {!isUser && hasTools && <AiToolIndicator toolCalls={parsedToolCalls} />}
 
         {/* Timestamp */}
         {createdAt && (
@@ -91,4 +87,26 @@ export function AiMessageBubble({
       </div>
     </div>
   );
+}
+
+/**
+ * The API returns `toolCalls` as a JSON string. Parse defensively: a malformed
+ * or non-array payload just hides the tool indicator instead of crashing the
+ * whole thread.
+ */
+function parseToolCalls(
+  raw: string | null | undefined,
+): Record<string, unknown>[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter(
+          (c): c is Record<string, unknown> =>
+            typeof c === 'object' && c !== null,
+        )
+      : [];
+  } catch {
+    return [];
+  }
 }
