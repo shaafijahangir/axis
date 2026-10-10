@@ -94,6 +94,25 @@ export class TenantResolver {
     return await this.tenantService.count();
   }
 
+  // ─── Timezone ─────────────────────────────────────────────────────────
+
+  /** The caller's tenant IANA timezone (schedule times are wall-clock in it). */
+  @Query(() => String)
+  @UseGuards(JwtAuthGuard)
+  async tenantTimezone(@CurrentUser() user: User): Promise<string> {
+    return this.tenantService.getTimezone(user.tenantId);
+  }
+
+  @Mutation(() => String)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async updateTenantTimezone(
+    @CurrentUser() user: User,
+    @Args('timezone') timezone: string,
+  ): Promise<string> {
+    return this.tenantService.updateTimezone(user.tenantId, timezone);
+  }
+
   // ─── Enrollment Policy ────────────────────────────────────────────────
 
   @Query(() => EnrollmentPolicy)

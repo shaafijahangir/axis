@@ -21,6 +21,7 @@ import {
   SectionStatus,
 } from '../../database/entities/course-section.entity';
 import { NexusEvents } from '../ai/events/ai-events';
+import { TenantService } from '../../tenant/tenant.service';
 import {
   createMockRepository,
   MockRepository,
@@ -137,6 +138,12 @@ describe('OfficeHoursService', () => {
         { provide: getRepositoryToken(CourseSection), useValue: sectionRepo },
         { provide: DataSource, useValue: dataSource },
         { provide: EventEmitter2, useValue: eventEmitter },
+        {
+          provide: TenantService,
+          useValue: {
+            getTimezone: jest.fn().mockResolvedValue('America/Vancouver'),
+          },
+        },
       ],
     }).compile();
 

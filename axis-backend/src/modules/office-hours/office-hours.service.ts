@@ -28,6 +28,14 @@ import {
   SectionStatus,
 } from '../../database/entities/course-section.entity';
 import { NexusEvents } from '../ai/events/ai-events';
+import { TenantService } from '../../tenant/tenant.service';
+import { zonedNow } from '../../tenant/tenant-time';
+
+/** Campus wall-clock "now": calendar date + minutes since midnight. */
+interface CampusNow {
+  date: string;
+  minutes: number;
+}
 
 /** Maps an office-hours day enum to JS `getUTCDay()` (0=Sun … 6=Sat). */
 const DAY_INDEX: Record<OfficeHourDay, number> = {
@@ -112,7 +120,17 @@ export class OfficeHoursService {
     private readonly sectionRepo: Repository<CourseSection>,
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tenantService: TenantService,
   ) {}
+
+  /**
+   * "Now" on the tenant's campus clock. Schedule times are wall-clock in the
+   * tenant's timezone, so past/future checks must compare against campus
+   * time — not the server's (Render runs UTC, 7–8h ahead of Pacific).
+   */
+  private async campusNow(tenantId: string): Promise<CampusNow> {
+    return zonedNow(await this.tenantService.getTimezone(tenantId));
+  }
 
   // ─── Blocks: instructor management ─────────────────────────────────────────
 
@@ -237,8 +255,8 @@ export class OfficeHoursService {
     tenantId: string,
     input: AvailableSlotsInput,
   ): Promise<AvailableSlot[]> {
-    const today = new Date();
-    const todayStr = formatDate(today);
+    const now = await this.campusNow(tenantId);
+    const todayStr = now.date;
     const startStr = input.startDate ?? todayStr;
     let endStr = input.endDate ?? formatDate(addDays(parseDate(todayStr), 14));
 
@@ -292,8 +310,8 @@ export class OfficeHoursService {
       ),
     );
 
-    // "Now" as a local wall-clock minute count, to hide slots already past today.
-    const nowMinutes = today.getHours() * 60 + today.getMinutes();
+    // "Now" as a campus wall-clock minute count, to hide slots already past today.
+    const nowMinutes = now.minutes;
 
     const slots: AvailableSlot[] = [];
     for (
@@ -365,6 +383,7 @@ export class OfficeHoursService {
     studentId: string,
     input: BookSlotInput,
   ): Promise<Booking> {
+    const now = await this.campusNow(tenantId);
     const saved = await this.dataSource.manager.transaction(async (manager) => {
       const block = await manager.findOne(OfficeHourBlock, {
         where: { id: input.blockId, tenantId },
@@ -377,7 +396,12 @@ export class OfficeHoursService {
         );
       }
 
-      const endTime = this.validateSlot(block, input.date, input.startTime);
+      const endTime = this.validateSlot(
+        block,
+        input.date,
+        input.startTime,
+        now,
+      );
 
       const existing = await manager.findOne(Booking, {
         where: {
@@ -469,7 +493,7 @@ export class OfficeHoursService {
         tenantId,
         studentId,
         status: BookingStatus.BOOKED,
-        date: MoreThanOrEqual(formatDate(new Date())),
+        date: MoreThanOrEqual((await this.campusNow(tenantId)).date),
       },
       relations: ['block', 'instructor'],
       order: { date: 'ASC', startTime: 'ASC' },
@@ -486,7 +510,7 @@ export class OfficeHoursService {
         tenantId,
         instructorId,
         status: BookingStatus.BOOKED,
-        date: MoreThanOrEqual(formatDate(new Date())),
+        date: MoreThanOrEqual((await this.campusNow(tenantId)).date),
       },
       relations: ['block', 'student'],
       order: { date: 'ASC', startTime: 'ASC' },
@@ -688,6 +712,7 @@ export class OfficeHoursService {
     block: OfficeHourBlock,
     date: string,
     startTime: string,
+    now: CampusNow,
   ): string {
     if (DAY_INDEX[block.dayOfWeek] !== parseDate(date).getUTCDay()) {
       throw new BadRequestException(
@@ -708,10 +733,7 @@ export class OfficeHoursService {
       throw new BadRequestException('That time is not a valid slot start');
     }
 
-    const now = new Date();
-    const todayStr = formatDate(now);
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    if (date < todayStr || (date === todayStr && start <= nowMinutes)) {
+    if (date < now.date || (date === now.date && start <= now.minutes)) {
       throw new BadRequestException('That time is in the past');
     }
 

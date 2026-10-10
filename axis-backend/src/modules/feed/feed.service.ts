@@ -16,6 +16,8 @@ import { ContentService } from '../content/content.service';
 import { DiscussionsService } from '../discussions/discussions.service';
 import { OfficeHoursService } from '../office-hours/office-hours.service';
 import { Booking } from '../office-hours/entities/booking.entity';
+import { TenantService } from '../../tenant/tenant.service';
+import { formatInZone, wallClockToInstant } from '../../tenant/tenant-time';
 import { OfficeHourLocationType } from '../office-hours/entities/office-hour-block.entity';
 import {
   FeedItem,
@@ -30,18 +32,18 @@ import { TimelineEntry, TimelineEntryType } from './dto/timeline.types';
 // ─── FEAT-020: appointment helpers ────────────────────────────────────────
 
 /**
- * Booking date ("YYYY-MM-DD") + startTime ("HH:MM:SS") → a Date in server
- * time. Booking times are wall-clock with no timezone column, so this is only
- * correct when server and campus share a timezone — a known, systemic
- * limitation of the schedule model (slots are generated the same way).
+ * Booking date ("YYYY-MM-DD") + startTime ("HH:MM:SS") are wall-clock in the
+ * tenant's campus timezone → the real instant. (Parsing them with `new Date()`
+ * used the server's zone — UTC on Render — and put an 11:00 PT meeting at
+ * 04:00 PT in the browser.)
  */
-function appointmentStart(booking: Booking): Date {
-  return new Date(`${booking.date}T${booking.startTime.slice(0, 5)}:00`);
+function appointmentStart(booking: Booking, tz: string): Date {
+  return wallClockToInstant(booking.date, booking.startTime, tz);
 }
 
-/** "Wed, Jul 22 · 11:00 AM" */
-function formatAppointmentTime(start: Date): string {
-  return start.toLocaleString('en-US', {
+/** "Wed, Jul 22, 11:00 AM" on the campus clock. */
+function formatAppointmentTime(start: Date, tz: string): string {
+  return formatInZone(start, tz, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -79,6 +81,7 @@ export class FeedService {
     private contentService: ContentService,
     private discussionsService: DiscussionsService,
     private officeHoursService: OfficeHoursService,
+    private tenantService: TenantService,
   ) {}
 
   // ─── Student Feed ─────────────────────────────────────────────────────
@@ -260,9 +263,10 @@ export class FeedService {
       _tenantId,
       userId,
     );
+    const studentTz = await this.tenantService.getTimezone(_tenantId);
     const weekAhead = Date.now() + 7 * 24 * 60 * 60 * 1000;
     for (const booking of myBookings) {
-      const start = appointmentStart(booking);
+      const start = appointmentStart(booking, studentTz);
       if (start.getTime() > weekAhead) continue;
 
       const prof = booking.instructor
@@ -272,7 +276,7 @@ export class FeedService {
         type: FeedItemType.APPOINTMENT,
         id: `appointment-${booking.id}`,
         title: `Office hours with ${prof}`,
-        subtitle: `${formatAppointmentTime(start)} · ${appointmentLocation(booking)}`,
+        subtitle: `${formatAppointmentTime(start, studentTz)} · ${appointmentLocation(booking)}`,
         body: booking.note ?? undefined,
         location: appointmentLocation(booking),
         dueAt: start,
@@ -300,9 +304,10 @@ export class FeedService {
       _tenantId,
       userId,
     );
+    const instructorTz = await this.tenantService.getTimezone(_tenantId);
     const twoDaysAhead = Date.now() + 48 * 60 * 60 * 1000;
     for (const booking of bookings) {
-      const start = appointmentStart(booking);
+      const start = appointmentStart(booking, instructorTz);
       if (start.getTime() > twoDaysAhead) continue;
 
       const student = booking.student
@@ -312,7 +317,7 @@ export class FeedService {
         type: InstructorFeedItemType.APPOINTMENT,
         id: `appointment-${booking.id}`,
         title: `${student} — office hours`,
-        subtitle: `${formatAppointmentTime(start)} · ${appointmentLocation(booking)}${booking.note ? ` · “${booking.note}”` : ''}`,
+        subtitle: `${formatAppointmentTime(start, instructorTz)} · ${appointmentLocation(booking)}${booking.note ? ` · “${booking.note}”` : ''}`,
         location: appointmentLocation(booking),
         dueAt: start,
         timestamp: start,
