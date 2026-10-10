@@ -11,13 +11,21 @@ export class AcademicTerm extends TenantScopedEntity {
   @Column()
   name: string;
 
-  @Field()
+  /**
+   * Calendar dates, "YYYY-MM-DD" (Postgres `date`). WHY string, not Date:
+   * node-postgres returns `date` columns as strings, and exposing them as the
+   * GraphQL DateTime scalar failed to serialize ("DateTime.serialize(
+   * \"2026-09-02\") returned null"), breaking every academicTerms query. A
+   * term boundary is a calendar day with no timezone, so a date-only string
+   * is also the honest type — same as Booking.date and Attendance.date.
+   */
+  @Field(() => String)
   @Column({ type: 'date' })
-  startDate: Date;
+  startDate: string;
 
-  @Field()
+  @Field(() => String)
   @Column({ type: 'date' })
-  endDate: Date;
+  endDate: string;
 
   @Field()
   @Column({ default: false })

@@ -58,8 +58,8 @@ export class AcademicTermsService {
     const term = this.termsRepository.create({
       tenantId,
       name: input.name,
-      startDate: new Date(input.startDate),
-      endDate: new Date(input.endDate),
+      startDate: input.startDate.slice(0, 10),
+      endDate: input.endDate.slice(0, 10),
       isCurrent: input.isCurrent ?? false,
     });
 
@@ -84,9 +84,9 @@ export class AcademicTermsService {
     const updateData: Partial<AcademicTerm> = {};
     if (input.name !== undefined) updateData.name = input.name;
     if (input.startDate !== undefined)
-      updateData.startDate = new Date(input.startDate);
+      updateData.startDate = input.startDate.slice(0, 10);
     if (input.endDate !== undefined)
-      updateData.endDate = new Date(input.endDate);
+      updateData.endDate = input.endDate.slice(0, 10);
     if (input.isCurrent !== undefined) updateData.isCurrent = input.isCurrent;
 
     await this.termsRepository.update(id, updateData);
