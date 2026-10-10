@@ -591,25 +591,17 @@ export default function CatalogImportPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importing, setImporting] = useState(false);
 
-  const [importCourses] = useMutation<{
-    importCoursesFromCsv: ImportResult;
-  }>(IMPORT_COURSES_FROM_CSV_MUTATION);
+  const [importCourses] = useMutation(IMPORT_COURSES_FROM_CSV_MUTATION);
 
-  const [importPrograms] = useMutation<{
-    importProgramsFromCsv: ImportResult;
-  }>(IMPORT_PROGRAMS_FROM_CSV_MUTATION);
+  const [importPrograms] = useMutation(IMPORT_PROGRAMS_FROM_CSV_MUTATION);
 
-  const [importRequirements] = useMutation<{
-    importRequirementsFromCsv: ImportResult;
-  }>(IMPORT_REQUIREMENTS_FROM_CSV_MUTATION);
+  const [importRequirements] = useMutation(
+    IMPORT_REQUIREMENTS_FROM_CSV_MUTATION,
+  );
 
-  const [importUsers] = useMutation<{
-    importUsersFromCsv: ImportResult;
-  }>(IMPORT_USERS_FROM_CSV_MUTATION);
+  const [importUsers] = useMutation(IMPORT_USERS_FROM_CSV_MUTATION);
 
-  const [importEnrollments] = useMutation<{
-    importEnrollmentsFromCsv: ImportResult;
-  }>(IMPORT_ENROLLMENTS_FROM_CSV_MUTATION);
+  const [importEnrollments] = useMutation(IMPORT_ENROLLMENTS_FROM_CSV_MUTATION);
 
   const handleImport = async () => {
     if (!importType) return;

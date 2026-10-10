@@ -26,20 +26,20 @@ import {
   ADMIN_USERS_LIST_QUERY,
 } from '@/lib/graphql/queries/admin-academics';
 import { ADMIN_ENROLL_MUTATION } from '@/lib/graphql/mutations/admin-academics';
+import type { EnrollmentRole } from '@/lib/graphql/__generated__/graphql';
+import { ENROLLMENT_ROLE_LABELS, ENROLLMENT_ROLE_OPTIONS } from './enum-labels';
 
 const enrollSchema = z.object({
   userId: z.string().min(1, 'User is required'),
   sectionId: z.string().min(1, 'Section is required'),
-  role: z.string().optional(),
+  role: z
+    .custom<EnrollmentRole>(
+      (v) => typeof v === 'string' && v in ENROLLMENT_ROLE_LABELS,
+    )
+    .optional(),
 });
 
 type EnrollFormValues = z.infer<typeof enrollSchema>;
-
-const ROLE_OPTIONS = [
-  { value: 'student', label: 'Student' },
-  { value: 'ta', label: 'TA' },
-  { value: 'observer', label: 'Observer' },
-];
 
 interface EnrollUserDialogProps {
   open: boolean;
@@ -60,29 +60,14 @@ export function EnrollUserDialog({
     watch,
   } = useForm<EnrollFormValues>({
     resolver: zodResolver(enrollSchema),
-    defaultValues: { role: 'student' },
+    defaultValues: { role: 'STUDENT' },
   });
 
-  const { data: usersData } = useQuery<{
-    adminUsers: {
-      users: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        email: string;
-      }[];
-    };
-  }>(ADMIN_USERS_LIST_QUERY, {
+  const { data: usersData } = useQuery(ADMIN_USERS_LIST_QUERY, {
     variables: { filter: { pageSize: 200 } },
   });
 
-  const { data: sectionsData } = useQuery<{
-    adminSections: {
-      id: string;
-      course: { code: string; title: string };
-      instructor: { firstName: string; lastName: string };
-    }[];
-  }>(ADMIN_SECTIONS_QUERY);
+  const { data: sectionsData } = useQuery(ADMIN_SECTIONS_QUERY);
 
   const [enroll, { loading }] = useMutation(ADMIN_ENROLL_MUTATION, {
     onCompleted: () => {
@@ -166,14 +151,14 @@ export function EnrollUserDialog({
           <div className="space-y-2">
             <Label>Role</Label>
             <Select
-              value={watch('role') ?? 'student'}
-              onValueChange={(val) => setValue('role', val)}
+              value={watch('role') ?? 'STUDENT'}
+              onValueChange={(val) => setValue('role', val as EnrollmentRole)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                {ROLE_OPTIONS.map((r) => (
+                {ENROLLMENT_ROLE_OPTIONS.map((r) => (
                   <SelectItem key={r.value} value={r.value}>
                     {r.label}
                   </SelectItem>

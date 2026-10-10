@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const CUSTOM_AGENTS_QUERY = gql`
+export const CUSTOM_AGENTS_QUERY = graphql(`
   query CustomAgents {
     customAgents {
       id
@@ -24,9 +24,9 @@ export const CUSTOM_AGENTS_QUERY = gql`
       updatedAt
     }
   }
-`;
+`);
 
-export const CUSTOM_AGENT_QUERY = gql`
+export const CUSTOM_AGENT_QUERY = graphql(`
   query CustomAgent($id: String!) {
     customAgent(id: $id) {
       id
@@ -45,9 +45,9 @@ export const CUSTOM_AGENT_QUERY = gql`
       updatedAt
     }
   }
-`;
+`);
 
-export const AVAILABLE_TOOLS_QUERY = gql`
+export const AVAILABLE_TOOLS_QUERY = graphql(`
   query AvailableTools {
     availableTools {
       name
@@ -56,4 +56,4 @@ export const AVAILABLE_TOOLS_QUERY = gql`
       requiredPermissions
     }
   }
-`;
+`);

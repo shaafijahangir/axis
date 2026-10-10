@@ -39,25 +39,16 @@ interface Props {
   onChange: (value: K12FieldsValue) => void;
 }
 
-interface InstructorOption {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
-
 export function K12StudentFields({ value, onChange }: Props) {
   const [teacherSearch, setTeacherSearch] = useState('');
 
   // Only query when the search box is non-empty to avoid loading every
   // instructor on first render. Limit to 20 — the picker is for narrowing,
   // not browsing the full instructor list.
-  const { data, loading } = useQuery<{
-    adminUsers: { users: InstructorOption[] };
-  }>(ADMIN_USERS_QUERY, {
+  const { data, loading } = useQuery(ADMIN_USERS_QUERY, {
     variables: {
       filter: {
-        role: 'instructor',
+        role: 'INSTRUCTOR',
         search: teacherSearch || undefined,
         pageSize: 20,
         page: 1,

@@ -28,14 +28,6 @@ import { LINK_STUDENT_TO_PARENT_MUTATION } from '@/lib/graphql/mutations/parent'
 
 type RelationshipValue = 'PARENT' | 'GUARDIAN' | 'OTHER';
 
-interface AdminUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  roles: string[];
-}
-
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -53,12 +45,10 @@ export function LinkParentDialog({
   const [selectedParentId, setSelectedParentId] = useState('');
   const [relationship, setRelationship] = useState<RelationshipValue>('PARENT');
 
-  const { data, loading } = useQuery<{
-    adminUsers: { users: AdminUser[] };
-  }>(ADMIN_USERS_QUERY, {
+  const { data, loading } = useQuery(ADMIN_USERS_QUERY, {
     variables: {
       filter: {
-        role: 'parent',
+        role: 'PARENT',
         search: search || undefined,
         pageSize: 20,
         page: 1,

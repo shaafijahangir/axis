@@ -24,48 +24,41 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ADMIN_UPDATE_USER_MUTATION } from '@/lib/graphql/mutations/admin-users';
+import type {
+  AdminUsersQuery,
+  UserRole,
+  UserStatus,
+} from '@/lib/graphql/__generated__/graphql';
+import {
+  USER_ROLE_LABELS,
+  USER_ROLE_OPTIONS,
+  USER_STATUS_LABELS,
+  USER_STATUS_OPTIONS,
+} from './enum-labels';
 import {
   K12StudentFields,
   EMPTY_K12_FIELDS,
   type K12FieldsValue,
 } from './k12-student-fields';
 
-const ROLE_OPTIONS = [
-  { value: 'STUDENT', label: 'Student' },
-  { value: 'INSTRUCTOR', label: 'Instructor' },
-  { value: 'ADMIN', label: 'Admin' },
-  { value: 'TA', label: 'TA' },
-  { value: 'PARENT', label: 'Parent' },
-] as const;
-
-const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'Active' },
-  { value: 'INACTIVE', label: 'Inactive' },
-  { value: 'SUSPENDED', label: 'Suspended' },
-  { value: 'PENDING', label: 'Pending' },
-] as const;
-
 const editUserSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
-  roles: z.array(z.string()).min(1, 'At least one role is required'),
-  status: z.string(),
+  roles: z
+    .array(
+      z.custom<UserRole>((v) => typeof v === 'string' && v in USER_ROLE_LABELS),
+    )
+    .min(1, 'At least one role is required'),
+  status: z.custom<UserStatus>(
+    (v) => typeof v === 'string' && v in USER_STATUS_LABELS,
+    'Select a status',
+  ),
 });
 
 type EditUserFormValues = z.infer<typeof editUserSchema>;
 
-interface AdminUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  roles: string[];
-  status: string;
-  gradeLevel?: number | null;
-  homeroomTeacherId?: string | null;
-  homeroomTeacher?: { id: string; firstName: string; lastName: string } | null;
-}
+type AdminUser = AdminUsersQuery['adminUsers']['users'][number];
 
 interface EditUserDialogProps {
   open: boolean;
@@ -95,9 +88,7 @@ export function EditUserDialog({
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const selectedRoles = watch('roles');
-  // SPRINT-3: roles can be stored lowercase from the server but the role
-  // chips use uppercase. Compare case-insensitively to be safe.
-  const isStudent = selectedRoles?.some((r) => r.toLowerCase() === 'student');
+  const isStudent = selectedRoles?.includes('STUDENT') ?? false;
 
   useEffect(() => {
     if (user) {
@@ -149,7 +140,7 @@ export function EditUserDialog({
     });
   };
 
-  const toggleRole = (role: string) => {
+  const toggleRole = (role: UserRole) => {
     const current = selectedRoles || [];
     const updated = current.includes(role)
       ? current.filter((r) => r !== role)
@@ -199,14 +190,14 @@ export function EditUserDialog({
             <Select
               value={watch('status')}
               onValueChange={(val) =>
-                setValue('status', val, { shouldValidate: true })
+                setValue('status', val as UserStatus, { shouldValidate: true })
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
+                {USER_STATUS_OPTIONS.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
                   </SelectItem>
@@ -217,7 +208,7 @@ export function EditUserDialog({
           <div className="space-y-2">
             <Label>Roles</Label>
             <div className="flex flex-wrap gap-2">
-              {ROLE_OPTIONS.map((role) => (
+              {USER_ROLE_OPTIONS.map((role) => (
                 <button
                   key={role.value}
                   type="button"

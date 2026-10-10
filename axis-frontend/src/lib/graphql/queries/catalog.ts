@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const CATALOG_COURSES_QUERY = gql`
+export const CATALOG_COURSES_QUERY = graphql(`
   query CatalogCourses($filters: CatalogFilterInput) {
     catalogCourses(filters: $filters) {
       items {
@@ -20,9 +20,9 @@ export const CATALOG_COURSES_QUERY = gql`
       total
     }
   }
-`;
+`);
 
-export const CATALOG_COURSE_QUERY = gql`
+export const CATALOG_COURSE_QUERY = graphql(`
   query CatalogCourse($id: String!) {
     catalogCourse(id: $id) {
       id
@@ -38,15 +38,15 @@ export const CATALOG_COURSE_QUERY = gql`
       corequisiteCourseIds
     }
   }
-`;
+`);
 
-export const DEPARTMENT_LIST_QUERY = gql`
+export const DEPARTMENT_LIST_QUERY = graphql(`
   query DepartmentList {
     departmentList
   }
-`;
+`);
 
-export const DEGREE_PROGRAMS_ADMIN_QUERY = gql`
+export const DEGREE_PROGRAMS_ADMIN_QUERY = graphql(`
   query DegreeProgramsAdmin {
     degreePrograms {
       id
@@ -63,9 +63,9 @@ export const DEGREE_PROGRAMS_ADMIN_QUERY = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const DEGREE_PROGRAM_QUERY = gql`
+export const DEGREE_PROGRAM_QUERY = graphql(`
   query DegreeProgram($id: String!) {
     degreeProgram(id: $id) {
       id
@@ -81,4 +81,4 @@ export const DEGREE_PROGRAM_QUERY = gql`
       requirements
     }
   }
-`;
+`);

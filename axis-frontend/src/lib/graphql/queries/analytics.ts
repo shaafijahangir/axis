@@ -1,11 +1,11 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
 /**
  * Admin analytics dashboard queries.
  * All queries are admin-only and tenant-scoped.
  */
 
-export const ADMIN_DASHBOARD_QUERY = gql`
+export const ADMIN_DASHBOARD_QUERY = graphql(`
   query AdminDashboard {
     adminDashboard {
       tenantStats {
@@ -77,9 +77,9 @@ export const ADMIN_DASHBOARD_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const TENANT_STATS_QUERY = gql`
+export const TENANT_STATS_QUERY = graphql(`
   query TenantStats {
     tenantStats {
       totalUsers
@@ -90,9 +90,9 @@ export const TENANT_STATS_QUERY = gql`
       activeEnrollments
     }
   }
-`;
+`);
 
-export const USER_STATS_QUERY = gql`
+export const USER_STATS_QUERY = graphql(`
   query UserStats {
     userStats {
       totalUsers
@@ -104,9 +104,9 @@ export const USER_STATS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const GRADE_STATS_QUERY = gql`
+export const GRADE_STATS_QUERY = graphql(`
   query GradeStats {
     gradeStats {
       averageScore
@@ -121,9 +121,9 @@ export const GRADE_STATS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const AI_USAGE_SUMMARY_QUERY = gql`
+export const AI_USAGE_SUMMARY_QUERY = graphql(`
   query AiUsageSummary {
     aiUsageSummary {
       totalConversations
@@ -133,9 +133,9 @@ export const AI_USAGE_SUMMARY_QUERY = gql`
       uniqueUsers
     }
   }
-`;
+`);
 
-export const AT_RISK_STUDENTS_QUERY = gql`
+export const AT_RISK_STUDENTS_QUERY = graphql(`
   query AtRiskStudents($threshold: Int, $limit: Int) {
     atRiskStudents(threshold: $threshold, limit: $limit) {
       userId
@@ -147,4 +147,4 @@ export const AT_RISK_STUDENTS_QUERY = gql`
       enrolledSections
     }
   }
-`;
+`);

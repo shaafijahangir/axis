@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const CREATE_LTI_PLATFORM_MUTATION = gql`
+export const CREATE_LTI_PLATFORM_MUTATION = graphql(`
   mutation CreateLtiPlatform($input: CreateLtiPlatformInput!) {
     createLtiPlatform(input: $input) {
       id
@@ -14,9 +14,9 @@ export const CREATE_LTI_PLATFORM_MUTATION = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const UPDATE_LTI_PLATFORM_MUTATION = gql`
+export const UPDATE_LTI_PLATFORM_MUTATION = graphql(`
   mutation UpdateLtiPlatform($input: UpdateLtiPlatformInput!) {
     updateLtiPlatform(input: $input) {
       id
@@ -28,15 +28,15 @@ export const UPDATE_LTI_PLATFORM_MUTATION = gql`
       updatedAt
     }
   }
-`;
+`);
 
-export const DELETE_LTI_PLATFORM_MUTATION = gql`
+export const DELETE_LTI_PLATFORM_MUTATION = graphql(`
   mutation DeleteLtiPlatform($id: String!) {
     deleteLtiPlatform(id: $id)
   }
-`;
+`);
 
-export const CREATE_LTI_DEPLOYMENT_MUTATION = gql`
+export const CREATE_LTI_DEPLOYMENT_MUTATION = graphql(`
   mutation CreateLtiDeployment($input: CreateLtiDeploymentInput!) {
     createLtiDeployment(input: $input) {
       id
@@ -47,9 +47,9 @@ export const CREATE_LTI_DEPLOYMENT_MUTATION = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const LINK_LTI_CONTEXT_MUTATION = gql`
+export const LINK_LTI_CONTEXT_MUTATION = graphql(`
   mutation LinkLtiContext($input: LinkLtiContextInput!) {
     linkLtiContext(input: $input) {
       id
@@ -58,9 +58,9 @@ export const LINK_LTI_CONTEXT_MUTATION = gql`
       isLinked
     }
   }
-`;
+`);
 
-export const UNLINK_LTI_CONTEXT_MUTATION = gql`
+export const UNLINK_LTI_CONTEXT_MUTATION = graphql(`
   mutation UnlinkLtiContext($contextId: String!) {
     unlinkLtiContext(contextId: $contextId) {
       id
@@ -69,4 +69,4 @@ export const UNLINK_LTI_CONTEXT_MUTATION = gql`
       isLinked
     }
   }
-`;
+`);

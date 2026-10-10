@@ -25,6 +25,11 @@ import {
 } from '@/components/ui/select';
 import { ADMIN_USERS_LIST_QUERY } from '@/lib/graphql/queries/admin-academics';
 import { UPDATE_SECTION_MUTATION } from '@/lib/graphql/mutations/admin-academics';
+import type {
+  AdminSectionsQuery,
+  SectionStatus,
+} from '@/lib/graphql/__generated__/graphql';
+import { SECTION_STATUS_LABELS, SECTION_STATUS_OPTIONS } from './enum-labels';
 import {
   ScheduleFields,
   EMPTY_SCHEDULE,
@@ -36,25 +41,16 @@ import {
 const editSectionSchema = z.object({
   location: z.string().optional(),
   capacity: z.number().min(1).optional(),
-  status: z.string(),
+  status: z.custom<SectionStatus>(
+    (v) => typeof v === 'string' && v in SECTION_STATUS_LABELS,
+    'Select a status',
+  ),
   instructorId: z.string().min(1, 'Instructor is required'),
 });
 
 type EditSectionFormValues = z.infer<typeof editSectionSchema>;
 
-interface AdminSection {
-  id: string;
-  instructorId: string;
-  location: string | null;
-  capacity: number | null;
-  status: string;
-  schedule?: string | null;
-  meetingDays?: string[] | null;
-  startTime?: string | null;
-  endTime?: string | null;
-  room?: string | null;
-  course: { code: string; title: string };
-}
+type AdminSection = AdminSectionsQuery['adminSections'][number];
 
 interface EditSectionDialogProps {
   open: boolean;
@@ -62,13 +58,6 @@ interface EditSectionDialogProps {
   section: AdminSection | null;
   onSuccess: () => void;
 }
-
-const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'active', label: 'Active' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
-];
 
 /**
  * SPRINT-1: Migrate a section's schedule into ScheduleFieldsValue.
@@ -128,17 +117,8 @@ export function EditSectionDialog({
     resolver: zodResolver(editSectionSchema),
   });
 
-  const { data: usersData } = useQuery<{
-    adminUsers: {
-      users: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        roles: string[];
-      }[];
-    };
-  }>(ADMIN_USERS_LIST_QUERY, {
-    variables: { filter: { role: 'instructor', pageSize: 100 } },
+  const { data: usersData } = useQuery(ADMIN_USERS_LIST_QUERY, {
+    variables: { filter: { role: 'INSTRUCTOR', pageSize: 100 } },
   });
 
   useEffect(() => {
@@ -222,14 +202,16 @@ export function EditSectionDialog({
             <Select
               value={watch('status')}
               onValueChange={(val) =>
-                setValue('status', val, { shouldValidate: true })
+                setValue('status', val as SectionStatus, {
+                  shouldValidate: true,
+                })
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
+                {SECTION_STATUS_OPTIONS.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
                   </SelectItem>
