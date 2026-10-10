@@ -39,11 +39,14 @@ interface AcademicTerm {
   createdAt: string;
 }
 
+/** "YYYY-MM-DD" calendar date. Formatted in UTC: `new Date('2026-09-02')` is
+ * UTC midnight, which a Pacific browser would otherwise show as Sep 1. */
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
