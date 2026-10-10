@@ -32,6 +32,7 @@ import {
   formatTime12h,
   type OfficeHourLocationType,
 } from '@/lib/office-hours';
+import { AddToCalendarButton } from './add-to-calendar-button';
 
 // ─── Types (GraphQL shapes) ───────────────────────────────────────────────────
 
@@ -211,6 +212,10 @@ export function BookOfficeHoursDialog({
               />
             </div>
             <DialogFooter>
+              <AddToCalendarButton
+                bookingId={confirmed.id}
+                date={confirmed.date}
+              />
               <Button onClick={() => handleOpenChange(false)}>Done</Button>
             </DialogFooter>
           </>
