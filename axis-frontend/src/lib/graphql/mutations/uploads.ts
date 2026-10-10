@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const FILE_UPLOAD_FIELDS = gql`
+export const FILE_UPLOAD_FIELDS = graphql(`
   fragment FileUploadFields on FileUpload {
     id
     key
@@ -13,9 +13,9 @@ export const FILE_UPLOAD_FIELDS = gql`
     confirmed
     createdAt
   }
-`;
+`);
 
-export const REQUEST_UPLOAD_MUTATION = gql`
+export const REQUEST_UPLOAD_MUTATION = graphql(`
   mutation RequestUpload($input: RequestUploadInput!) {
     requestUpload(input: $input) {
       fileId
@@ -24,28 +24,26 @@ export const REQUEST_UPLOAD_MUTATION = gql`
       expiresIn
     }
   }
-`;
+`);
 
-export const CONFIRM_UPLOAD_MUTATION = gql`
-  ${FILE_UPLOAD_FIELDS}
+export const CONFIRM_UPLOAD_MUTATION = graphql(`
   mutation ConfirmUpload($input: ConfirmUploadInput!) {
     confirmUpload(input: $input) {
       ...FileUploadFields
     }
   }
-`;
+`);
 
-export const ATTACH_UPLOAD_MUTATION = gql`
-  ${FILE_UPLOAD_FIELDS}
+export const ATTACH_UPLOAD_MUTATION = graphql(`
   mutation AttachUpload($input: AttachUploadInput!) {
     attachUpload(input: $input) {
       ...FileUploadFields
     }
   }
-`;
+`);
 
-export const DELETE_FILE_MUTATION = gql`
+export const DELETE_FILE_MUTATION = graphql(`
   mutation DeleteFile($fileId: String!) {
     deleteFile(fileId: $fileId)
   }
-`;
+`);

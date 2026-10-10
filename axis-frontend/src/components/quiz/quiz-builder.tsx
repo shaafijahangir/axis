@@ -29,22 +29,17 @@ import {
   DELETE_QUIZ_QUESTION_MUTATION,
   UPDATE_QUIZ_SETTINGS_MUTATION,
 } from '@/lib/graphql/mutations/quiz';
-
-type QuestionType = 'multiple_choice' | 'true_false' | 'short_answer';
+import type {
+  QuestionType,
+  QuizQuestionsQuery,
+} from '@/lib/graphql/__generated__/graphql';
 
 interface QuizOption {
   text: string;
-  isCorrect?: boolean;
+  isCorrect?: boolean | null;
 }
 
-interface QuizQuestion {
-  id: string;
-  questionText: string;
-  questionType: QuestionType;
-  options: QuizOption[] | null;
-  points: number;
-  order: number;
-}
+type QuizQuestion = QuizQuestionsQuery['quizQuestions'][number];
 
 interface QuizBuilderProps {
   assignmentId: string;
@@ -76,7 +71,7 @@ export function QuizBuilder({
 
   // New question form state
   const [questionType, setQuestionType] =
-    useState<QuestionType>('multiple_choice');
+    useState<QuestionType>('MULTIPLE_CHOICE');
   const [questionText, setQuestionText] = useState('');
   const [points, setPoints] = useState('1');
   const [options, setOptions] = useState<QuizOption[]>(DEFAULT_MCQ_OPTIONS);
@@ -92,9 +87,9 @@ export function QuizBuilder({
     displayMode ?? 'all_at_once',
   );
 
-  const { data, loading, refetch } = useQuery<{
-    quizQuestions: QuizQuestion[];
-  }>(QUIZ_QUESTIONS_QUERY, { variables: { assignmentId } });
+  const { data, loading, refetch } = useQuery(QUIZ_QUESTIONS_QUERY, {
+    variables: { assignmentId },
+  });
 
   const [addQuestion, { loading: addLoading }] = useMutation(
     ADD_QUIZ_QUESTION_MUTATION,
@@ -118,14 +113,14 @@ export function QuizBuilder({
     setShowAddForm(false);
     setQuestionText('');
     setPoints('1');
-    setQuestionType('multiple_choice');
+    setQuestionType('MULTIPLE_CHOICE');
     setOptions(DEFAULT_MCQ_OPTIONS);
   };
 
   const handleTypeChange = (t: QuestionType) => {
     setQuestionType(t);
-    if (t === 'multiple_choice') setOptions(DEFAULT_MCQ_OPTIONS);
-    else if (t === 'true_false') setOptions(DEFAULT_TF_OPTIONS);
+    if (t === 'MULTIPLE_CHOICE') setOptions(DEFAULT_MCQ_OPTIONS);
+    else if (t === 'TRUE_FALSE') setOptions(DEFAULT_TF_OPTIONS);
     else setOptions([]);
   };
 
@@ -151,7 +146,10 @@ export function QuizBuilder({
     const pts = parseFloat(points);
     if (isNaN(pts) || pts < 0) return;
 
-    const sanitizedOptions = questionType === 'short_answer' ? null : options;
+    const sanitizedOptions =
+      questionType === 'SHORT_ANSWER'
+        ? null
+        : options.map((o) => ({ text: o.text, isCorrect: !!o.isCorrect }));
 
     addQuestion({
       variables: {
@@ -289,11 +287,11 @@ export function QuizBuilder({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="multiple_choice">
+                    <SelectItem value="MULTIPLE_CHOICE">
                       Multiple Choice
                     </SelectItem>
-                    <SelectItem value="true_false">True / False</SelectItem>
-                    <SelectItem value="short_answer">Short Answer</SelectItem>
+                    <SelectItem value="TRUE_FALSE">True / False</SelectItem>
+                    <SelectItem value="SHORT_ANSWER">Short Answer</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -319,7 +317,7 @@ export function QuizBuilder({
             </div>
 
             {/* Options for MCQ / TF */}
-            {questionType !== 'short_answer' && (
+            {questionType !== 'SHORT_ANSWER' && (
               <div className="space-y-2">
                 <Label className="text-xs">
                   Options{' '}
@@ -346,14 +344,14 @@ export function QuizBuilder({
                       onChange={(e) =>
                         handleOptionTextChange(i, e.target.value)
                       }
-                      readOnly={questionType === 'true_false'}
+                      readOnly={questionType === 'TRUE_FALSE'}
                     />
                   </div>
                 ))}
               </div>
             )}
 
-            {questionType === 'short_answer' && (
+            {questionType === 'SHORT_ANSWER' && (
               <p className="text-sm text-muted-foreground">
                 Students will type a free-text answer. You&apos;ll grade this
                 manually after submission.
@@ -411,9 +409,9 @@ interface QuestionCardProps {
 
 function QuestionCard({ question, index, onDelete }: QuestionCardProps) {
   const typeLabels: Record<QuestionType, string> = {
-    multiple_choice: 'MCQ',
-    true_false: 'T/F',
-    short_answer: 'Short Answer',
+    MULTIPLE_CHOICE: 'MCQ',
+    TRUE_FALSE: 'T/F',
+    SHORT_ANSWER: 'Short Answer',
   };
 
   return (
@@ -451,7 +449,7 @@ function QuestionCard({ question, index, onDelete }: QuestionCardProps) {
               ))}
             </div>
           )}
-          {question.questionType === 'short_answer' && (
+          {question.questionType === 'SHORT_ANSWER' && (
             <p className="text-xs text-muted-foreground italic">
               Free-text answer — graded manually
             </p>

@@ -16,15 +16,6 @@ import { MY_AI_CONVERSATIONS_QUERY } from '@/lib/graphql/queries/ai';
 import { formatRelativeTime } from '@/lib/utils/relative-time';
 import { cn } from '@/lib/utils';
 
-interface Conversation {
-  id: string;
-  agentType: string;
-  courseId: string | null;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface AiConversationListProps {
   activeConversationId: string | null;
   onSelectConversation: (id: string, agentType: string) => void;
@@ -96,10 +87,10 @@ export function AiConversationList({
   onSelectConversation,
   onNewConversation,
 }: AiConversationListProps) {
-  const { data, loading } = useQuery<{ myAiConversations: Conversation[] }>(
-    MY_AI_CONVERSATIONS_QUERY,
-    { pollInterval: 10_000, fetchPolicy: 'network-only' },
-  );
+  const { data, loading } = useQuery(MY_AI_CONVERSATIONS_QUERY, {
+    pollInterval: 10_000,
+    fetchPolicy: 'network-only',
+  });
 
   const conversations = data?.myAiConversations ?? [];
 
@@ -150,7 +141,7 @@ export function AiConversationList({
           </div>
         ) : (
           <div className="space-y-1 p-2">
-            {conversations.map((conv: Conversation) => {
+            {conversations.map((conv) => {
               const Icon = getAgentIcon(conv.agentType);
               const isActive = conv.id === activeConversationId;
 

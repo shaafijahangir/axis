@@ -16,30 +16,29 @@ import {
   MARK_NOTIFICATION_READ_MUTATION,
   MARK_ALL_NOTIFICATIONS_READ_MUTATION,
 } from '@/lib/graphql/mutations/notifications';
-
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  data?: Record<string, unknown> | null;
-  read: boolean;
-  createdAt: string;
-}
+import type { NotificationType } from '@/lib/graphql/__generated__/graphql';
 
 const PAGE_SIZE = 20;
 
-function typeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    grade_posted: 'Grade',
-    assignment_created: 'Assignment',
-    enrollment_confirmed: 'Enrollment',
-    due_reminder: 'Reminder',
-    new_message: 'Message',
-    announcement: 'Announcement',
-  };
-  return labels[type] ?? type;
-}
+/**
+ * BUG-015: the API returns NotificationType enum NAMES (`SUBMISSION_GRADED`),
+ * never the lowercase DB values. Keyed by the generated union so a missing or
+ * mis-cased member is a compile error, not a raw `submission_graded` badge.
+ */
+const TYPE_LABELS: Record<NotificationType, string> = {
+  ANNOUNCEMENT: 'Announcement',
+  ASSIGNMENT_CREATED: 'Assignment',
+  BOOKING_CANCELLED: 'Booking',
+  BOOKING_CONFIRMED: 'Booking',
+  BOOKING_REMINDER: 'Reminder',
+  DISCUSSION_MENTION: 'Mention',
+  DISCUSSION_REPLY: 'Discussion',
+  DUE_DATE_REMINDER: 'Reminder',
+  ENROLLMENT_CONFIRMED: 'Enrollment',
+  NEW_MESSAGE: 'Message',
+  SUBMISSION_GRADED: 'Grade',
+  SYSTEM: 'System',
+};
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -59,16 +58,17 @@ function formatRelative(iso: string): string {
 export default function NotificationsPage() {
   const [offset, setOffset] = useState(0);
 
-  const { data, loading, fetchMore, refetch } = useQuery<{
-    myNotifications: Notification[];
-  }>(MY_NOTIFICATIONS_QUERY, {
-    variables: { limit: PAGE_SIZE, offset: 0 },
-    fetchPolicy: 'cache-and-network',
-  });
+  const { data, loading, fetchMore, refetch } = useQuery(
+    MY_NOTIFICATIONS_QUERY,
+    {
+      variables: { limit: PAGE_SIZE, offset: 0 },
+      fetchPolicy: 'cache-and-network',
+    },
+  );
 
-  const { data: countData, refetch: refetchCount } = useQuery<{
-    unreadNotificationCount: number;
-  }>(UNREAD_NOTIFICATION_COUNT_QUERY);
+  const { data: countData, refetch: refetchCount } = useQuery(
+    UNREAD_NOTIFICATION_COUNT_QUERY,
+  );
 
   const [markRead] = useMutation(MARK_NOTIFICATION_READ_MUTATION, {
     onCompleted: () => void refetchCount(),
@@ -191,7 +191,7 @@ export default function NotificationsPage() {
                         {n.title}
                       </span>
                       <Badge variant="outline" className="text-xs">
-                        {typeLabel(n.type)}
+                        {TYPE_LABELS[n.type]}
                       </Badge>
                     </div>
                     <p className="mt-0.5 text-sm text-muted-foreground line-clamp-2">

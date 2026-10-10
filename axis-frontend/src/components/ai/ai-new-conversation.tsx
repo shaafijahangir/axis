@@ -14,22 +14,6 @@ import { START_AI_CONVERSATION_MUTATION } from '@/lib/graphql/mutations/ai';
 import { AiAgentSelector } from './ai-agent-selector';
 import { cn } from '@/lib/utils';
 
-interface Agent {
-  type: string;
-  displayName: string;
-  description: string;
-  allowedRoles: string[];
-}
-
-interface AgentResponse {
-  conversationId: string;
-  responseText: string;
-  toolsUsed: string[];
-  totalInputTokens: number;
-  totalOutputTokens: number;
-  turns: number;
-}
-
 interface AiNewConversationProps {
   onConversationStarted: (conversationId: string, agentType: string) => void;
   onBack?: () => void;
@@ -77,13 +61,11 @@ export function AiNewConversation({
     }
   }, [selectedAgent]);
 
-  const { data, loading: agentsLoading } = useQuery<{
-    availableAgents: Agent[];
-  }>(AVAILABLE_AGENTS_QUERY);
+  const { data, loading: agentsLoading } = useQuery(AVAILABLE_AGENTS_QUERY);
 
-  const [startConversation, { loading: starting }] = useMutation<{
-    startConversation: AgentResponse;
-  }>(START_AI_CONVERSATION_MUTATION);
+  const [startConversation, { loading: starting }] = useMutation(
+    START_AI_CONVERSATION_MUTATION,
+  );
 
   const {
     register,
