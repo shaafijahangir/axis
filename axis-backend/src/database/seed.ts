@@ -67,6 +67,38 @@ const IDS = {
   booking_alex: '80000000-0000-0000-0000-000000000005',
 };
 
+interface SeedTerm {
+  name: string;
+  startDate: string;
+  endDate: string;
+}
+
+/**
+ * UVic-style terms (Spring Jan–Apr, Summer May–Aug, Fall Sep–Dec) derived
+ * from `now`, so the demo's current term always contains today.
+ *
+ * WHY: hardcoded dates went stale twice ("Spring 2026", then "Summer 2026"
+ * ended 2026-08-21) and the live demo showed a finished term.
+ */
+function demoTerms(now: Date): { current: SeedTerm; past: SeedTerm } {
+  const seasons = [
+    { name: 'Spring', start: '01-05', end: '04-30' },
+    { name: 'Summer', start: '05-04', end: '08-21' },
+    { name: 'Fall', start: '09-02', end: '12-18' },
+  ];
+  const year = now.getFullYear();
+  const idx = Math.floor(now.getMonth() / 4); // Jan–Apr 0, May–Aug 1, Sep–Dec 2
+  const term = (i: number, y: number): SeedTerm => ({
+    name: `${seasons[i].name} ${y}`,
+    startDate: `${y}-${seasons[i].start}`,
+    endDate: `${y}-${seasons[i].end}`,
+  });
+  return {
+    current: term(idx, year),
+    past: idx === 0 ? term(2, year - 1) : term(idx - 1, year),
+  };
+}
+
 async function seed() {
   const ds = new DataSource({
     type: 'postgres',
@@ -95,6 +127,7 @@ async function seed() {
   try {
     const passwordHash = await bcrypt.hash('password123', 10);
     const now = new Date();
+    const terms = demoTerms(now);
 
     // ─── 1. Tenant ─────────────────────────────────────────────
     await qr.query(
@@ -212,10 +245,9 @@ async function seed() {
       [
         IDS.currentTerm,
         IDS.tenant,
-        // UVic-style term naming; dates span "now" so the demo term is live.
-        'Summer 2026',
-        '2026-05-04',
-        '2026-08-21',
+        terms.current.name,
+        terms.current.startDate,
+        terms.current.endDate,
         now,
         now,
       ],
@@ -227,9 +259,9 @@ async function seed() {
       [
         IDS.pastTerm,
         IDS.tenant,
-        'Spring 2026',
-        '2026-01-05',
-        '2026-04-30',
+        terms.past.name,
+        terms.past.startDate,
+        terms.past.endDate,
         now,
         now,
       ],
