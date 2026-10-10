@@ -9,24 +9,25 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import type { EnrollmentStatus } from '@/lib/graphql/__generated__/graphql';
 
-interface ParentEnrollmentItem {
-  enrollmentId: string;
-  sectionId: string;
-  courseCode: string;
-  courseTitle: string;
-  location?: string;
-  instructorName?: string;
-  status: string;
-  termName?: string;
-}
+// BUG-015: the API returns enum NAMES (ACTIVE), so map to human labels here.
+const ENROLLMENT_STATUS_LABELS: Record<EnrollmentStatus, string> = {
+  ACTIVE: 'Active',
+  COMPLETED: 'Completed',
+  DROPPED: 'Dropped',
+  PENDING: 'Pending',
+  REJECTED: 'Rejected',
+  WAITLISTED: 'Waitlisted',
+  WITHDRAWN: 'Withdrawn',
+};
 
 export default function ParentStudentClassesPage() {
   const { studentId } = useParams<{ studentId: string }>();
 
-  const { data, loading } = useQuery<{
-    parentStudentEnrollments: ParentEnrollmentItem[];
-  }>(PARENT_STUDENT_ENROLLMENTS_QUERY, { variables: { studentId } });
+  const { data, loading } = useQuery(PARENT_STUDENT_ENROLLMENTS_QUERY, {
+    variables: { studentId },
+  });
 
   const enrollments = data?.parentStudentEnrollments ?? [];
 
@@ -91,10 +92,10 @@ export default function ParentStudentClassesPage() {
                     </div>
                   </div>
                   <Badge
-                    variant={e.status === 'active' ? 'default' : 'outline'}
-                    className="shrink-0 capitalize"
+                    variant={e.status === 'ACTIVE' ? 'default' : 'outline'}
+                    className="shrink-0"
                   >
-                    {e.status}
+                    {ENROLLMENT_STATUS_LABELS[e.status]}
                   </Badge>
                 </div>
               </CardContent>

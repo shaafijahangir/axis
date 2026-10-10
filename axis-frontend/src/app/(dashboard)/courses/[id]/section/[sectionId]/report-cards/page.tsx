@@ -19,21 +19,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import type { SectionReportCardsQuery } from '@/lib/graphql/__generated__/graphql';
 
-interface ReportCardSummary {
-  id: string;
-  studentId: string;
-  studentFirstName: string;
-  studentLastName: string;
-  studentEmail: string;
-  status: 'DRAFT' | 'PUBLISHED';
-  teacherComment?: string;
-  finalGrade?: string;
-  gradeSummary?: string;
-  attendanceSummary?: string;
-  publishedAt?: string;
-  createdAt: string;
-}
+type ReportCardSummary = SectionReportCardsQuery['sectionReportCards'][number];
 
 interface GradeSummary {
   totalEarned: number;
@@ -48,7 +36,7 @@ interface AttendanceSummary {
   attendanceRate: number;
 }
 
-function parseJson<T>(s?: string): T | null {
+function parseJson<T>(s: string | null): T | null {
   if (!s) return null;
   try {
     return JSON.parse(s) as T;
@@ -71,9 +59,7 @@ export default function ReportCardsPage() {
     { variables: { id: sectionId } },
   );
 
-  const { data, loading, refetch } = useQuery<{
-    sectionReportCards: ReportCardSummary[];
-  }>(SECTION_REPORT_CARDS_QUERY, {
+  const { data, loading, refetch } = useQuery(SECTION_REPORT_CARDS_QUERY, {
     variables: { sectionId },
     fetchPolicy: 'cache-and-network',
   });
