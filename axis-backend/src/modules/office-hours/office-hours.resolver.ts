@@ -110,6 +110,24 @@ export class OfficeHoursResolver {
     );
   }
 
+  /**
+   * FEAT-024: RFC 5545 .ics text for a booking ("Add to calendar").
+   * No @Roles — the booking's student or instructor; the service enforces it.
+   * Returned as a string (not a REST download) per the GraphQL-only rule;
+   * the client wraps it in a text/calendar Blob.
+   */
+  @Query(() => String)
+  async bookingCalendarInvite(
+    @CurrentUser() user: User,
+    @Args('bookingId', ParseUUIDPipe) bookingId: string,
+  ): Promise<string> {
+    return this.officeHoursService.getBookingCalendarInvite(
+      user.tenantId,
+      user.id,
+      bookingId,
+    );
+  }
+
   // ─── Mutations ───────────────────────────────────────────────────────────
 
   /** FEAT-022: mark a past meeting completed or no-show (owner only). */

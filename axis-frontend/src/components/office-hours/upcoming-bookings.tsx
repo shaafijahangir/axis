@@ -26,6 +26,7 @@ import {
   formatTime12h,
   type OfficeHourLocationType,
 } from '@/lib/office-hours';
+import { AddToCalendarButton } from './add-to-calendar-button';
 
 // ─── Types (GraphQL shapes) ───────────────────────────────────────────────────
 
@@ -151,39 +152,48 @@ export function UpcomingBookings({ viewer }: UpcomingBookingsProps) {
                     </p>
                   )}
                 </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Cancel booking"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {formatDateShort(booking.date)} at{' '}
-                        {formatTime12h(booking.startTime)} with {personName}.
-                        The slot opens up for others.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Keep booking</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() =>
-                          void cancelBooking({
-                            variables: { bookingId: booking.id },
-                          })
-                        }
+                <div className="flex shrink-0 items-center gap-1">
+                  <AddToCalendarButton
+                    bookingId={booking.id}
+                    date={booking.date}
+                    compact
+                  />
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Cancel booking"
                       >
-                        Cancel booking
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Cancel this booking?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {formatDateShort(booking.date)} at{' '}
+                          {formatTime12h(booking.startTime)} with {personName}.
+                          The slot opens up for others.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Keep booking</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() =>
+                            void cancelBooking({
+                              variables: { bookingId: booking.id },
+                            })
+                          }
+                        >
+                          Cancel booking
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </CardContent>
             </Card>
           );
