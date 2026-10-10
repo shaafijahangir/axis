@@ -30,45 +30,20 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
+import type {
+  CareersQuery,
+  CareerSkillGapQuery,
+} from '@/lib/graphql/__generated__/graphql';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
-interface CareerProfile {
-  id: string;
-  title: string;
-  category: string;
-  description: string | null;
-  medianSalaryMin: number | null;
-  medianSalaryMax: number | null;
-  requiredSkills: string[];
-  recommendedDegreeIds: string[];
-  recommendedCourseIds: string[];
-  isActive: boolean;
-}
+type CareerProfile = CareersQuery['careers'][number];
+type CareerSkillGap = CareerSkillGapQuery['careerSkillGap'];
 
-interface DegreeProfile {
-  id: string;
-  status: string;
-  degreeProgram: { name: string; code: string };
-}
-
-interface SkillGapCourse {
-  courseId: string;
-  code: string;
-  title: string;
-  credits: number;
-  status: 'completed' | 'in_progress' | 'missing';
-}
-
-interface CareerSkillGap {
-  careerId: string;
-  careerTitle: string;
-  readinessPercent: number;
-  completedCount: number;
-  inProgressCount: number;
-  missingCount: number;
-  courses: SkillGapCourse[];
-}
+// SkillGapCourse.status is a plain String in the schema (not a GraphQL enum),
+// so it arrives as the backend literal � lowercase. Source of truth:
+// axis-backend/src/modules/planner/dto/career.types.ts (SkillGapCourse.status).
+type SkillGapStatus = 'completed' | 'in_progress' | 'missing';
 
 // ─── Readiness Ring ─────────────────────────────────────────────────────
 
@@ -125,7 +100,7 @@ function ReadinessRing({
 
 function SkillGapPanel({ gap }: { gap: CareerSkillGap; onClose: () => void }) {
   const statusMeta: Record<
-    SkillGapCourse['status'],
+    SkillGapStatus,
     { icon: React.ReactNode; label: string; className: string }
   > = {
     completed: {
@@ -145,11 +120,7 @@ function SkillGapPanel({ gap }: { gap: CareerSkillGap; onClose: () => void }) {
     },
   };
 
-  const groups: SkillGapCourse['status'][] = [
-    'completed',
-    'in_progress',
-    'missing',
-  ];
+  const groups: SkillGapStatus[] = ['completed', 'in_progress', 'missing'];
 
   return (
     <div className="space-y-4">
@@ -310,30 +281,31 @@ export default function CareersPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // Data queries
-  const { data: careersData, loading: careersLoading } = useQuery<{
-    careers: CareerProfile[];
-  }>(CAREERS_QUERY, {
-    variables: selectedCategory !== 'all' ? { category: selectedCategory } : {},
+  const { data: careersData, loading: careersLoading } = useQuery(
+    CAREERS_QUERY,
+    {
+      variables:
+        selectedCategory !== 'all' ? { category: selectedCategory } : {},
+      fetchPolicy: 'cache-and-network',
+    },
+  );
+
+  const { data: categoriesData } = useQuery(CAREER_CATEGORIES_QUERY, {
+    fetchPolicy: 'cache-first',
+  });
+
+  const { data: profilesData } = useQuery(MY_DEGREE_PROFILES_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
 
-  const { data: categoriesData } = useQuery<{ careerCategories: string[] }>(
-    CAREER_CATEGORIES_QUERY,
-    { fetchPolicy: 'cache-first' },
+  const [fetchSkillGap, { data: gapData, loading: gapLoading }] = useLazyQuery(
+    CAREER_SKILL_GAP_QUERY,
   );
-
-  const { data: profilesData } = useQuery<{
-    myDegreeProfiles: DegreeProfile[];
-  }>(MY_DEGREE_PROFILES_QUERY, { fetchPolicy: 'cache-and-network' });
-
-  const [fetchSkillGap, { data: gapData, loading: gapLoading }] = useLazyQuery<{
-    careerSkillGap: CareerSkillGap;
-  }>(CAREER_SKILL_GAP_QUERY);
 
   const careers = careersData?.careers ?? [];
   const categories = categoriesData?.careerCategories ?? [];
   const activeProfile = profilesData?.myDegreeProfiles?.find(
-    (p) => p.status === 'active',
+    (p) => p.status === 'ACTIVE',
   );
 
   const handleAnalyse = (career: CareerProfile) => {

@@ -51,66 +51,16 @@ import {
   Briefcase,
 } from 'lucide-react';
 import Link from 'next/link';
+import type {
+  DegreeProgramsQuery,
+  DegreeProgressQuery,
+} from '@/lib/graphql/__generated__/graphql';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
-interface DegreeProgram {
-  id: string;
-  name: string;
-  code: string;
-  department: string | null;
-  description: string | null;
-  totalCreditsRequired: number;
-  status: string;
-}
-
-interface DegreeProfile {
-  id: string;
-  userId: string;
-  degreeProgramId: string;
-  degreeProgram: {
-    id: string;
-    name: string;
-    code: string;
-    department: string | null;
-    totalCreditsRequired: number;
-  };
-  enrollmentYear: number;
-  expectedGraduationYear: number | null;
-  completedCourseIds: string[];
-  currentCourseIds: string[];
-  status: string;
-}
-
-interface RequirementProgress {
-  groupName: string;
-  type: string;
-  creditsRequired: number;
-  creditsCompleted: number;
-  coursesRequired: number;
-  coursesCompleted: number;
-  fulfilled: boolean;
-  completedCourseIds: string[];
-  remainingCourseIds: string[];
-}
-
-interface DegreeProgress {
-  overallPercentage: number;
-  totalCreditsRequired: number;
-  totalCreditsCompleted: number;
-  creditsRemaining: number;
-  estimatedSemestersRemaining: number;
-  requirementProgress: RequirementProgress[];
-}
-
-interface EligibleCourse {
-  id: string;
-  code: string;
-  title: string;
-  credits: number;
-  fulfillsRequirement: string;
-  prerequisitesMet: boolean;
-}
+type DegreeProgram = DegreeProgramsQuery['degreePrograms'][number];
+type RequirementProgress =
+  DegreeProgressQuery['degreeProgress']['requirementProgress'][number];
 
 // ─── Progress Ring ──────────────────────────────────────────────────────
 
@@ -327,39 +277,38 @@ export default function PlannerPage() {
     data: profilesData,
     loading: profilesLoading,
     refetch: refetchProfiles,
-  } = useQuery<{ myDegreeProfiles: DegreeProfile[] }>(
-    MY_DEGREE_PROFILES_QUERY,
-    { fetchPolicy: 'cache-and-network' },
-  );
+  } = useQuery(MY_DEGREE_PROFILES_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
-  const { data: programsData } = useQuery<{
-    degreePrograms: DegreeProgram[];
-  }>(DEGREE_PROGRAMS_QUERY, { fetchPolicy: 'cache-first' });
+  const { data: programsData } = useQuery(DEGREE_PROGRAMS_QUERY, {
+    fetchPolicy: 'cache-first',
+  });
 
   const activeProfile = profilesData?.myDegreeProfiles?.find(
     (p) => p.status === 'ACTIVE',
   );
 
-  const { data: progressData, loading: progressLoading } = useQuery<{
-    degreeProgress: DegreeProgress;
-  }>(DEGREE_PROGRESS_QUERY, {
-    variables: { profileId: activeProfile?.id },
-    skip: !activeProfile,
-    fetchPolicy: 'cache-and-network',
-  });
+  const { data: progressData, loading: progressLoading } = useQuery(
+    DEGREE_PROGRESS_QUERY,
+    {
+      variables: { profileId: activeProfile?.id ?? '' },
+      skip: !activeProfile,
+      fetchPolicy: 'cache-and-network',
+    },
+  );
 
-  const { data: eligibleData, loading: eligibleLoading } = useQuery<{
-    eligibleCourses: EligibleCourse[];
-  }>(ELIGIBLE_COURSES_QUERY, {
-    variables: { profileId: activeProfile?.id },
-    skip: !activeProfile,
-    fetchPolicy: 'cache-and-network',
-  });
+  const { data: eligibleData, loading: eligibleLoading } = useQuery(
+    ELIGIBLE_COURSES_QUERY,
+    {
+      variables: { profileId: activeProfile?.id ?? '' },
+      skip: !activeProfile,
+      fetchPolicy: 'cache-and-network',
+    },
+  );
 
   const [fetchSimulation, { data: simulationData, loading: simulating }] =
-    useLazyQuery<{ simulateMajorChange: DegreeProgress }>(
-      SIMULATE_MAJOR_CHANGE_QUERY,
-    );
+    useLazyQuery(SIMULATE_MAJOR_CHANGE_QUERY);
 
   const [createProfile, { loading: creating }] = useMutation(
     CREATE_STUDENT_PROFILE_MUTATION,
@@ -662,7 +611,7 @@ export default function PlannerPage() {
                     .filter(
                       (p) =>
                         p.id !== activeProfile.degreeProgramId &&
-                        p.status === 'active',
+                        p.status === 'ACTIVE',
                     )
                     .map((p) => (
                       <SelectItem key={p.id} value={p.id}>

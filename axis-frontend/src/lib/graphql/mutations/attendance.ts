@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const MARK_ATTENDANCE_MUTATION = gql`
+export const MARK_ATTENDANCE_MUTATION = graphql(`
   mutation MarkAttendance($input: MarkAttendanceInput!) {
     markAttendance(input: $input) {
       date
@@ -14,4 +14,4 @@ export const MARK_ATTENDANCE_MUTATION = gql`
       }
     }
   }
-`;
+`);

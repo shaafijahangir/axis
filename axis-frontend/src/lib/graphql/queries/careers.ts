@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const CAREERS_QUERY = gql`
+export const CAREERS_QUERY = graphql(`
   query Careers($category: String) {
     careers(category: $category) {
       id
@@ -16,9 +16,9 @@ export const CAREERS_QUERY = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const CAREER_QUERY = gql`
+export const CAREER_QUERY = graphql(`
   query Career($id: String!) {
     career(id: $id) {
       id
@@ -34,15 +34,15 @@ export const CAREER_QUERY = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const CAREER_CATEGORIES_QUERY = gql`
+export const CAREER_CATEGORIES_QUERY = graphql(`
   query CareerCategories {
     careerCategories
   }
-`;
+`);
 
-export const CAREER_SKILL_GAP_QUERY = gql`
+export const CAREER_SKILL_GAP_QUERY = graphql(`
   query CareerSkillGap($careerId: String!, $profileId: String!) {
     careerSkillGap(careerId: $careerId, profileId: $profileId) {
       careerId
@@ -60,4 +60,4 @@ export const CAREER_SKILL_GAP_QUERY = gql`
       }
     }
   }
-`;
+`);

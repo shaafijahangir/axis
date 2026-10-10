@@ -5,6 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { ArrowLeft, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import type { ParentStudentReportCardsQuery } from '@/lib/graphql/__generated__/graphql';
 import { PARENT_STUDENT_REPORT_CARDS_QUERY } from '@/lib/graphql/queries/parent';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -16,19 +17,6 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-
-interface ParentReportCard {
-  id: string;
-  courseCode: string;
-  courseTitle: string;
-  termName: string;
-  status: string;
-  finalGrade?: string;
-  teacherComment?: string;
-  gradeSummary?: string;
-  attendanceSummary?: string;
-  publishedAt?: string;
-}
 
 interface GradeSummary {
   totalEarned: number;
@@ -44,6 +32,9 @@ interface AttendanceSummary {
   excused: number;
   attendanceRate: number;
 }
+
+type ParentReportCard =
+  ParentStudentReportCardsQuery['parentStudentReportCards'][number];
 
 function ReportCardItem({ card }: { card: ParentReportCard }) {
   const [expanded, setExpanded] = useState(false);
@@ -171,9 +162,9 @@ function ReportCardItem({ card }: { card: ParentReportCard }) {
 export default function ParentStudentReportCardsPage() {
   const { studentId } = useParams<{ studentId: string }>();
 
-  const { data, loading } = useQuery<{
-    parentStudentReportCards: ParentReportCard[];
-  }>(PARENT_STUDENT_REPORT_CARDS_QUERY, { variables: { studentId } });
+  const { data, loading } = useQuery(PARENT_STUDENT_REPORT_CARDS_QUERY, {
+    variables: { studentId },
+  });
 
   const cards = data?.parentStudentReportCards ?? [];
 

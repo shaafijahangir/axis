@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const GENERATE_REPORT_CARDS_MUTATION = gql`
+export const GENERATE_REPORT_CARDS_MUTATION = graphql(`
   mutation GenerateReportCards($sectionId: String!) {
     generateReportCards(sectionId: $sectionId) {
       id
@@ -16,9 +16,9 @@ export const GENERATE_REPORT_CARDS_MUTATION = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const UPDATE_REPORT_CARD_MUTATION = gql`
+export const UPDATE_REPORT_CARD_MUTATION = graphql(`
   mutation UpdateReportCard($input: UpdateReportCardInput!) {
     updateReportCard(input: $input) {
       id
@@ -27,9 +27,9 @@ export const UPDATE_REPORT_CARD_MUTATION = gql`
       status
     }
   }
-`;
+`);
 
-export const PUBLISH_REPORT_CARDS_MUTATION = gql`
+export const PUBLISH_REPORT_CARDS_MUTATION = graphql(`
   mutation PublishReportCards($sectionId: String!) {
     publishReportCards(sectionId: $sectionId) {
       id
@@ -37,4 +37,4 @@ export const PUBLISH_REPORT_CARDS_MUTATION = gql`
       publishedAt
     }
   }
-`;
+`);

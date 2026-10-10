@@ -39,45 +39,16 @@ import {
   DEPARTMENT_LIST_QUERY,
 } from '@/lib/graphql/queries/student-catalog';
 import { EnrollDialog } from '@/components/courses/enroll-dialog';
+import type {
+  CourseCatalogQuery,
+  CourseCategory,
+  EnrollmentMode,
+} from '@/lib/graphql/__generated__/graphql';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface CatalogInstructor {
-  id: string;
-  firstName: string;
-  lastName: string;
-}
-
-interface CatalogSection {
-  id: string;
-  schedule: string | null;
-  location: string | null;
-  capacity: number | null;
-  enrolledCount: number;
-  seatsAvailable: number | null;
-  enrollmentMode: 'open' | 'invite_only';
-  termId: string;
-  termName: string;
-  instructor: CatalogInstructor;
-}
-
-interface CatalogCourse {
-  id: string;
-  code: string;
-  title: string;
-  description: string | null;
-  credits: number | null;
-  department: string | null;
-  category: string | null;
-  courseLevel: number | null;
-  prerequisiteCourseIds: string[];
-  sections: CatalogSection[];
-}
-
-interface StudentCatalogPage {
-  total: number;
-  items: CatalogCourse[];
-}
+type CatalogCourse = CourseCatalogQuery['courseCatalog']['items'][number];
+type CatalogSection = CatalogCourse['sections'][number];
 
 interface Schedule {
   days?: string[];
@@ -121,21 +92,29 @@ function seatColor(section: CatalogSection): string {
   return 'text-green-600 dark:text-green-500';
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  core: 'Core',
-  elective: 'Elective',
-  general_education: 'Gen Ed',
-  lab: 'Lab',
-  seminar: 'Seminar',
+// BUG-015: the API returns (and the CourseCategory filter input expects) enum
+// NAMES — `CORE`, not the DB value `core`. Typed against the generated union so
+// a wrong-case key fails to compile.
+const CATEGORY_LABELS: Record<CourseCategory, string> = {
+  CORE: 'Core',
+  ELECTIVE: 'Elective',
+  GENERAL_EDUCATION: 'Gen Ed',
+  LAB: 'Lab',
+  SEMINAR: 'Seminar',
 };
 
-const CATEGORY_OPTIONS = [
-  { value: 'core', label: 'Core' },
-  { value: 'elective', label: 'Elective' },
-  { value: 'general_education', label: 'Gen Ed' },
-  { value: 'lab', label: 'Lab' },
-  { value: 'seminar', label: 'Seminar' },
-];
+const CATEGORY_OPTIONS = (
+  Object.entries(CATEGORY_LABELS) as [CourseCategory, string][]
+).map(([value, label]) => ({ value, label }));
+
+// EnrollDialog (components/courses/enroll-dialog.tsx) still hand-types
+// `enrollmentMode` in lowercase. Translate at the boundary so its invite-code
+// field shows for invite-only sections; delete this map once that component
+// migrates to the generated EnrollmentMode type (BUG-015).
+const ENROLL_DIALOG_MODE: Record<EnrollmentMode, 'open' | 'invite_only'> = {
+  OPEN: 'open',
+  INVITE_ONLY: 'invite_only',
+};
 
 const LEVEL_OPTIONS = [
   { value: '100', label: '100-level (Intro)' },
@@ -161,6 +140,8 @@ function CourseDetailDialog({
   onEnroll: (section: CatalogSection) => void;
 }) {
   if (!course) return null;
+  // Nullable in the schema (Course.prerequisiteCourseIds: [String!]).
+  const prereqCount = course.prerequisiteCourseIds?.length ?? 0;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -179,7 +160,7 @@ function CourseDetailDialog({
           <div className="flex flex-wrap gap-2">
             {course.category && (
               <Badge variant="secondary">
-                {CATEGORY_LABELS[course.category] ?? course.category}
+                {CATEGORY_LABELS[course.category]}
               </Badge>
             )}
             {course.credits != null && (
@@ -201,12 +182,12 @@ function CourseDetailDialog({
           )}
 
           {/* Prerequisites */}
-          {course.prerequisiteCourseIds.length > 0 && (
+          {prereqCount > 0 && (
             <div>
               <p className="text-sm font-medium mb-1">Prerequisites</p>
               <p className="text-sm text-muted-foreground">
-                {course.prerequisiteCourseIds.length} prerequisite
-                {course.prerequisiteCourseIds.length !== 1 ? 's' : ''} required
+                {prereqCount} prerequisite
+                {prereqCount !== 1 ? 's' : ''} required
               </p>
             </div>
           )}
@@ -235,7 +216,7 @@ function CourseDetailDialog({
                           {section.instructor.firstName}{' '}
                           {section.instructor.lastName}
                         </span>
-                        {section.enrollmentMode === 'invite_only' && (
+                        {section.enrollmentMode === 'INVITE_ONLY' && (
                           <Badge
                             variant="secondary"
                             className="text-xs flex items-center gap-1"
@@ -355,7 +336,9 @@ function FilterDialog({
               <Select
                 value={filters.category ?? 'all'}
                 onValueChange={(v) =>
-                  onFiltersChange({ category: v === 'all' ? undefined : v })
+                  onFiltersChange({
+                    category: v === 'all' ? undefined : (v as CourseCategory),
+                  })
                 }
               >
                 <SelectTrigger id="cat-filter">
@@ -476,7 +459,7 @@ function CourseCard({
               </span>
               {course.category && (
                 <Badge variant="secondary" className="text-xs">
-                  {CATEGORY_LABELS[course.category] ?? course.category}
+                  {CATEGORY_LABELS[course.category]}
                 </Badge>
               )}
               {course.courseLevel != null && (
@@ -558,7 +541,7 @@ function CourseCard({
 interface FilterState {
   search: string;
   department?: string;
-  category?: string;
+  category?: CourseCategory;
   courseLevel?: string;
   hasSeats?: boolean;
 }
@@ -595,17 +578,14 @@ export default function CourseCatalogPage() {
     offset: page * PAGE_SIZE,
   };
 
-  const { data, loading, error } = useQuery<{
-    courseCatalog: StudentCatalogPage;
-  }>(COURSE_CATALOG_QUERY, {
+  const { data, loading, error } = useQuery(COURSE_CATALOG_QUERY, {
     variables: { filters: graphqlFilters },
     fetchPolicy: 'cache-and-network',
   });
 
-  const { data: deptData } = useQuery<{ departmentList: string[] }>(
-    DEPARTMENT_LIST_QUERY,
-    { fetchPolicy: 'cache-first' },
-  );
+  const { data: deptData } = useQuery(DEPARTMENT_LIST_QUERY, {
+    fetchPolicy: 'cache-first',
+  });
 
   const updateFilters = useCallback((partial: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...partial }));
@@ -783,7 +763,15 @@ export default function CourseCatalogPage() {
         courseName={enrollTarget?.course.title ?? ''}
         courseCode={enrollTarget?.course.code ?? ''}
         courseId={enrollTarget?.course.id}
-        section={enrollTarget?.section ?? null}
+        section={
+          enrollTarget
+            ? {
+                ...enrollTarget.section,
+                enrollmentMode:
+                  ENROLL_DIALOG_MODE[enrollTarget.section.enrollmentMode],
+              }
+            : null
+        }
         open={enrollTarget !== null}
         onClose={() => setEnrollTarget(null)}
       />
