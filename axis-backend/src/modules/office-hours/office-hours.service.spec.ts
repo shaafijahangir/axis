@@ -791,4 +791,73 @@ describe('OfficeHoursService', () => {
       );
     });
   });
+
+  // ─── getBookingCalendarInvite (FEAT-024) ───────────────────────────────────
+
+  describe('getBookingCalendarInvite', () => {
+    const now = new Date('2026-10-10T00:00:00Z');
+    const booking = {
+      id: 'booking-001',
+      tenantId,
+      studentId,
+      instructorId,
+      date: '2026-10-14',
+      startTime: '11:00:00',
+      endTime: '11:15:00',
+      status: BookingStatus.BOOKED,
+      note: 'Recursion',
+      block: makeBlock(),
+      instructor: { firstName: 'Sarah', lastName: 'Chen' },
+      student: { firstName: 'Alex', lastName: 'Rivera' },
+    };
+
+    it('returns a tenant-zoned ICS for the owning student', async () => {
+      bookingRepo.findOne!.mockResolvedValue(booking);
+
+      const ics = await service.getBookingCalendarInvite(
+        tenantId,
+        studentId,
+        'booking-001',
+        now,
+      );
+
+      expect(bookingRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'booking-001', tenantId } }),
+      );
+      expect(ics).toContain('\r\nUID:booking-booking-001@axis\r\n');
+      // 11:00 America/Vancouver (PDT, −7) on Oct 14 → 18:00Z.
+      expect(ics).toContain('\r\nDTSTART:20261014T180000Z\r\n');
+      expect(ics).toContain('\r\nSUMMARY:Office hours with Sarah Chen\r\n');
+      expect(ics).toContain('\r\nLOCATION:ECS 618\r\n');
+    });
+
+    it('returns the instructor-side invite for the owning instructor', async () => {
+      bookingRepo.findOne!.mockResolvedValue(booking);
+      const ics = await service.getBookingCalendarInvite(
+        tenantId,
+        instructorId,
+        'booking-001',
+        now,
+      );
+      expect(ics).toContain('\r\nSUMMARY:Office hours: Alex Rivera\r\n');
+    });
+
+    it('rejects anyone who is not the student or instructor', async () => {
+      bookingRepo.findOne!.mockResolvedValue(booking);
+      await expect(
+        service.getBookingCalendarInvite(
+          tenantId,
+          'someone-else',
+          'booking-001',
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('404s a booking outside the caller’s tenant', async () => {
+      bookingRepo.findOne!.mockResolvedValue(null);
+      await expect(
+        service.getBookingCalendarInvite(tenantId, studentId, 'booking-001'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
 });
