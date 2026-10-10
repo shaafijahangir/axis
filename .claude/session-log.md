@@ -26,7 +26,14 @@
   - `fix/comms-enum-case` — 2 real commits + 1 WIP (comms/quiz codegen + enum case), unverified.
   - `fix/admin-enum-case` — WIP only (40 files), unverified.
   - `fix/login-hydration` — WIP only (4 files), root cause not confirmed.
-  Resume each: typecheck, drive pages, then PR.
+  **All 4 resumed by the orchestrator and merged the same day** (#67 student + backend validators, #68 comms, #69 admin, #71 login). Plus #70 (term dates).
+- **Real bugs found while verifying** (all live on the demo before):
+  - Student course catalog never loaded; attendance Save and admin bulk enroll always failed → BUG-016 (undecorated input fields vs forbidNonWhitelisted).
+  - Admin Terms list always empty → BUG-017 (date column as DateTime).
+  - The "7 flaky e2e" on every CI run were the **login rate limit** (10/min/IP; the suite logs in every ~0.5s) — not timing. AUTH_RATE_LIMIT env, CI sets 1000. e2e: 7 flaky / 8.4 min → 0 flaky / 1.4 min.
+  - Login submitted natively before hydration ("/login?", fields wiped) — real for slow connections; button now waits for hydration.
+- Agent hygiene issues caught in review: a Windows-1252 byte in catalog/page.tsx broke compilation; scratch scripts committed in WIP. Always scan agent branches for encoding + stray files.
+- #69's squash title on main reads "wip(frontend): …" (GitHub used the single commit's message); not rewritten.
 
 ### Lessons encoded
 - **BC is on permanent UTC-7 since 2026** (no fall-back on Nov 1; tzdata 2026b+). CI's Node has it, the local Node (tzdata 2025b) does not, so Vancouver-in-November tests disagree between machines. Never hardcode offsets; test DST with America/New_York.

@@ -272,7 +272,7 @@
 - **Acceptance:** ✓ `pnpm build` runs both projects in parallel. ✓ Cached builds are instant. ✓ 101 tests pass.
 
 ### ARCH-007: GraphQL codegen for end-to-end type safety
-- **Status:** `IN_PROGRESS` (2026-10-10 — PR refactor/graphql-codegen-typed: feed, courses, assignments, grades queries migrated to typed `graphql()`; 22 call sites lost their hand-written generics. CI already runs `pnpm codegen`, which validates every operation (gql or graphql) against `schema.gql`. Migration exposed BUG-015 below. Remaining: the other ~25 query/mutation files.)
+- **Status:** `IN_PROGRESS` (2026-10-10 — #64, #67, #68, #69: feed, courses, assignments, grades, planner, catalog, parent, report cards, attendance, gradebook, messaging, notifications, quiz, AI, profile and all admin queries are on typed `graphql()`. CI runs `pnpm codegen`, which validates every operation against `schema.gql`. Remaining untyped: mutations/{announcements,assignments,courses,custom-agents,enrollment,feed-engagement,office-hours}.ts, queries/{office-hours,timeline}.ts.)
 - **Problem:** Frontend re-types every GraphQL response by hand. `useQuery(ADMIN_USERS_QUERY)` returns `any`; field renames in `schema.gql` produce runtime failures the compiler never catches. The backend already emits a 2,257-line `schema.gql` with 222 types — we just don't consume it.
 - **Approach:** `@graphql-codegen/cli` + `@graphql-codegen/client-preset` (the current Apollo Client 4 standard).
   - `codegen.ts` reads `../axis-backend/src/schema.gql` (local file, no network round-trip).
@@ -1443,10 +1443,22 @@
 - **Acceptance:** Prof with no fixed hours still shows a "Request a meeting" path; accepting a request creates a normal booking.
 
 ### BUG-015: Frontend compares GraphQL enums in lowercase
-- **Status:** `IN_PROGRESS` (core screens fixed in the ARCH-007 PR: home feeds, quiz/exam pages, section enrollment widget, /courses, course detail Enroll, roster, enrollment settings)
+- **Status:** `IN_PROGRESS` (fixed across feeds, quiz, enrollment, /courses, roster, admin, planner/catalog/parent and comms surfaces — #64, #67–#69. Remaining: components still fed by the untyped files listed under ARCH-007, e.g. `components/courses/enroll-dialog.tsx` (hand-typed lowercase `enrollmentMode`; catalog translates at the boundary).)
 - **Priority:** HIGH — the API returns enum NAMES (`QUIZ`, `ACTIVE`, `DEADLINE`, `OPEN`), not stored values. Components written against lowercase silently mis-rendered: every home-feed card showed as "Course update", quiz builder / Start Quiz never appeared, Enroll was always disabled.
 - **Rule:** never hand-type an enum union — import it from `@/lib/graphql/__generated__/graphql`, and the compiler rejects the wrong case.
-- **Remaining:** lowercase enum literals still in files not yet on typed queries (grep `'(active|pending|student|open|...)'`): admin dialogs (enroll-user, bulk-enroll, edit-section, users-table…), courses/catalog, planner pages, parent classes. Audit each as its queries migrate (ARCH-007).
+- **Remaining:** audit as the last untyped files migrate (ARCH-007).
+
+### BUG-016: Inputs without class-validator decorators rejected by the global pipe
+- **Status:** `DONE` (2026-10-10 — #67). The global ValidationPipe uses `whitelist` + `forbidNonWhitelisted`, so any undecorated input field is rejected ("property X should not exist"). Broke: student course catalog (never loaded), attendance Save, admin bulk enroll. A scan of every `@InputType` found these 3 (+ unused `BatchProgramItem`). Rule: every `@Field` on an `@InputType` needs a validator. Regression specs mirror the pipe options.
+
+### BUG-017: AcademicTerm dates failed DateTime serialization
+- **Status:** `DONE` (2026-10-10 — #70). `date` columns come back from node-postgres as "YYYY-MM-DD" strings; typed as `Date` they were exposed as DateTime and every `academicTerms` query errored (admin Terms showed "0 terms", live too). Now `String` date-only, like Booking.date. Format date-only strings with `timeZone: 'UTC'` in the browser or they shift a day west of UTC.
+
+### FOLLOW-UPS found 2026-10-10 (not started)
+- **Quiz with no questions:** `startQuiz` creates a new attempt on every click and the UI shows "Loading questions..." forever. Reject in `startQuiz`; add an empty state. Seeded "Quiz 1: Python Basics" has 0 questions.
+- **`departmentList` forbidden for students:** the catalog's department filter is always empty for the role that uses it.
+- **docker-compose MinIO:** still `minio/minio` + `minio/mc` (removed from Docker Hub). CI moved to Chainguard in #65; local `pnpm infra:up` on a fresh machine will fail to pull.
+- **No parent account in the seed:** parent pages can't be exercised end to end.
 
 ### BUG-014: Student feed deep-links use sectionId in the courseId slot
 - **Status:** `DONE` (2026-07-17 — PR fix/feed-deeplinks; `courseId` added to FeedItem AND InstructorFeedItem DTOs (instructor deep-links are the obvious next need), populated from the course relation in both feeds, feed-card href now `/courses/{courseId}/section/{sectionId}/...`. Regression tests assert courseId ≠ sectionId.)
