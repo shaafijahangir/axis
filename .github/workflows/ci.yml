@@ -153,13 +153,18 @@ jobs:
 
       # MinIO can't be a GitHub Actions service container because services
       # don't accept command args (`server /data`). Run it manually.
+      #
+      # WHY Chainguard images: minio/minio and minio/mc are gone from Docker
+      # Hub (and anonymous Quay pulls), and the dl.min.io mc binary returns
+      # 410 — all verified 2026-10-10. cgr.dev/chainguard/{minio,minio-client}
+      # are public, maintained builds (entrypoints `minio` and `mc`).
       - name: Start MinIO + create bucket
         run: |
           docker run -d --name axis-ci-minio \
             -p 9000:9000 \
             -e MINIO_ROOT_USER=axisdev \
             -e MINIO_ROOT_PASSWORD=axisdev123 \
-            minio/minio:latest server /data
+            cgr.dev/chainguard/minio:latest server /data
           # Wait for MinIO to be live
           for i in {1..30}; do
             if curl -fsS http://localhost:9000/minio/health/live >/dev/null 2>&1; then
@@ -167,11 +172,10 @@ jobs:
             fi
             sleep 1
           done
-          # Create the bucket
-          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
-          chmod +x /tmp/mc
-          /tmp/mc alias set local http://localhost:9000 axisdev axisdev123
-          /tmp/mc mb local/axis || true
+          # Create the bucket (MC_HOST_<alias> configures mc without a config file)
+          docker run --rm --network host \
+            -e MC_HOST_local=http://axisdev:axisdev123@localhost:9000 \
+            cgr.dev/chainguard/minio-client:latest mb --ignore-existing local/axis
 
       # NEXT_PUBLIC_* vars are inlined into the bundle at BUILD time —
       # setting them on the `start` step is too late.

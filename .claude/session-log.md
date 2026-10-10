@@ -5,6 +5,33 @@
 
 ---
 
+## Session 58 — Demo revival (Neon) + booking TZ + FEAT-022 + codegen bug sweep
+
+**Date:** 2026-10-09/10
+**Goal:** Shaafi asked what's high priority besides tests. Found the live demo API down; fixed that, then cooked the next code items.
+**Status:** Demo live again. 4 PRs open (#62–#65), none merged.
+
+### What happened
+- **Demo was down:** Render free Postgres expired (~2026-08-15, as GTM §8.4 predicted). Web 200, API timed out. Moved the DB to **Neon** (free plan, project `axis-demo`, aws-us-west-2, branch "Expires: Never"). Migrations 4/4 + seed run against Neon; Render env vars repointed (direct host, not `-pooler`). Verified live: 4/4 logins 201, current term Fall 2026, student feed 26 items. Creds live in `~/.axis-neon-db.env` (never committed).
+- **Why Neon over Supabase/D1:** D1 is SQLite (Axis needs Postgres enums/JSONB). Supabase pauses idle free projects after 7 days; Axis only needs plain Postgres. Neither Neon nor Render has a Canadian region (checked) — GTM §6 decision still owed before real student data.
+- **PR #62 chore/neon-db:** render.yaml drops the expired DB (DATABASE_* now dashboard-managed); seed terms derived from the date (hardcoded "Summer 2026" had ended).
+- **PR #63 feat/booking-ops:** booking timezone pass (tenant `settings.timezone`, `tenant-time.ts`) + FEAT-022 (utilization badges, Recent Meetings with Completed/No-show, daily auto-complete cron).
+- **PR #64 refactor/graphql-codegen-typed:** ARCH-007 step 2. Typed queries exposed **BUG-015**: the API returns enum NAMES (`QUIZ`, `ACTIVE`, `DEADLINE`) but components compared lowercase. On the live demo every home-feed card said "Course update", the quiz UI never rendered, Enroll was always disabled. Core screens fixed; remaining files listed in BACKLOG.
+- **PR #65 fix/minio-image:** CI e2e broken on every PR — minio/minio removed from Docker Hub, dl.min.io mc returns 410. Switched CI to cgr.dev/chainguard images.
+
+### Lessons encoded
+- **BC is on permanent UTC-7 since 2026** (no fall-back on Nov 1; tzdata 2026b+). CI's Node has it, the local Node (tzdata 2025b) does not, so Vancouver-in-November tests disagree between machines. Never hardcode offsets; test DST with America/New_York.
+- **Python on Windows writes CRLF** in text mode. Use `newline=''` when scripting edits, or prettier/lint-staged will churn whole files.
+- Background workers in `acceptEdits` stalled on their first shell prompt; the orchestrator did the work inline instead.
+
+### Open / owed
+- Shaafi: review/merge #65 first (unblocks e2e), then #62, #63, #64. Revoke the old Render API key (still owed from Session 56).
+- docker-compose.yml still references minio/minio (fresh `pnpm infra:up` will fail to pull) — not changed, Docker wasn't running to test.
+- Local Playwright suite is login-flaky on main too (4/7 sampled failures reproduce on untouched main).
+- `next build` fails inside nested `.claude/worktrees` (Turbopack resolves from the parent repo); CI build is the check.
+
+---
+
 ## Session 57b — FEAT-021: Professor Card + Directory Fields
 
 **Date:** 2026-07-18
