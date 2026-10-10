@@ -1,5 +1,6 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
 import {
+  ArrayMaxSize,
   ArrayUnique,
   IsArray,
   IsEnum,
@@ -107,7 +108,16 @@ export class BulkEnrollInput {
   @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   sectionId: string;
 
+  // WHY: without validators the global pipe (forbidNonWhitelisted) rejected
+  // `userIds` — "property userIds should not exist" — so bulk enroll always
+  // failed.
   @Field(() => [String])
+  @IsArray()
+  @ArrayMaxSize(500)
+  @ArrayUnique()
+  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, {
+    each: true,
+  })
   userIds: string[];
 
   @Field(() => EnrollmentRole, { nullable: true })
