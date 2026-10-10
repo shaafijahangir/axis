@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-const GRADUATION_PLAN_FIELDS = gql`
+export const GRADUATION_PLAN_FIELDS = graphql(`
   fragment GraduationPlanFields on GraduationPlanResult {
     id
     profileId
@@ -46,18 +46,17 @@ const GRADUATION_PLAN_FIELDS = gql`
       }
     }
   }
-`;
+`);
 
-export const MY_GRADUATION_PLANS_QUERY = gql`
-  ${GRADUATION_PLAN_FIELDS}
+export const MY_GRADUATION_PLANS_QUERY = graphql(`
   query MyGraduationPlans($profileId: String!) {
     myGraduationPlans(profileId: $profileId) {
       ...GraduationPlanFields
     }
   }
-`;
+`);
 
-export const GET_TUITION_CONFIG_QUERY = gql`
+export const GET_TUITION_CONFIG_QUERY = graphql(`
   query GetTuitionConfig {
     getTuitionConfig {
       perCreditCost
@@ -72,9 +71,9 @@ export const GET_TUITION_CONFIG_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const GET_FINANCIAL_AID_CONFIG_QUERY = gql`
+export const GET_FINANCIAL_AID_CONFIG_QUERY = graphql(`
   query GetFinancialAidConfig {
     getFinancialAidConfig {
       fullTimeThreshold
@@ -82,4 +81,4 @@ export const GET_FINANCIAL_AID_CONFIG_QUERY = gql`
       maxTimeframePercent
     }
   }
-`;
+`);

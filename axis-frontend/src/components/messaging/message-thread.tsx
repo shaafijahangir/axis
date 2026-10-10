@@ -39,14 +39,6 @@ interface Message {
   sender: MessageSender;
 }
 
-interface MessagesData {
-  conversationMessages: {
-    messages: Message[];
-    totalCount: number;
-    hasMore: boolean;
-  };
-}
-
 interface Participant {
   id: string;
   firstName: string;
@@ -109,7 +101,7 @@ export function MessageThread({
   const { setTyping } = useTypingIndicator(conversationId);
   const { markAsRead: markAsReadSocket } = useMarkAsRead();
 
-  const { data, loading, fetchMore, refetch } = useQuery<MessagesData>(
+  const { data, loading, fetchMore, refetch } = useQuery(
     CONVERSATION_MESSAGES_QUERY,
     {
       variables: { conversationId, limit: 50 },

@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const ACADEMIC_TERMS_QUERY = gql`
+export const ACADEMIC_TERMS_QUERY = graphql(`
   query AcademicTerms {
     academicTerms {
       id
@@ -11,9 +11,9 @@ export const ACADEMIC_TERMS_QUERY = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const ACADEMIC_TERM_QUERY = gql`
+export const ACADEMIC_TERM_QUERY = graphql(`
   query AcademicTerm($id: String!) {
     academicTerm(id: $id) {
       id
@@ -23,9 +23,9 @@ export const ACADEMIC_TERM_QUERY = gql`
       isCurrent
     }
   }
-`;
+`);
 
-export const CURRENT_TERM_QUERY = gql`
+export const CURRENT_TERM_QUERY = graphql(`
   query CurrentTerm {
     currentTerm {
       id
@@ -34,9 +34,9 @@ export const CURRENT_TERM_QUERY = gql`
       endDate
     }
   }
-`;
+`);
 
-export const ADMIN_SECTIONS_QUERY = gql`
+export const ADMIN_SECTIONS_QUERY = graphql(`
   query AdminSections {
     adminSections {
       id
@@ -63,9 +63,9 @@ export const ADMIN_SECTIONS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const ADMIN_ENROLLMENTS_QUERY = gql`
+export const ADMIN_ENROLLMENTS_QUERY = graphql(`
   query AdminEnrollments($sectionId: String) {
     adminEnrollments(sectionId: $sectionId) {
       id
@@ -91,9 +91,9 @@ export const ADMIN_ENROLLMENTS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const ADMIN_USERS_LIST_QUERY = gql`
+export const ADMIN_USERS_LIST_QUERY = graphql(`
   query AdminUsersList($filter: UsersFilterInput) {
     adminUsers(filter: $filter) {
       users {
@@ -108,4 +108,4 @@ export const ADMIN_USERS_LIST_QUERY = gql`
       pageSize
     }
   }
-`;
+`);

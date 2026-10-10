@@ -56,35 +56,20 @@ import {
   CREATE_DEGREE_PROGRAM_MUTATION,
   UPDATE_DEGREE_PROGRAM_MUTATION,
 } from '@/lib/graphql/mutations/catalog';
+import type {
+  CatalogCoursesQuery,
+  CourseCategory,
+  DegreeProgramStatus,
+  DegreeProgramType,
+  DegreeProgramsAdminQuery,
+} from '@/lib/graphql/__generated__/graphql';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type CourseCategory =
-  | 'core'
-  | 'elective'
-  | 'general_education'
-  | 'lab'
-  | 'seminar';
-
-interface Course {
-  id: string;
-  code: string;
-  title: string;
-  description?: string;
-  credits?: number;
-  departmentId?: string;
-  category?: CourseCategory;
-  courseLevel?: number;
-  offeredSemesters?: string[];
-  prerequisiteCourseIds?: string[];
-  corequisiteCourseIds?: string[];
-  createdAt?: string;
-}
-
-interface CatalogPage {
-  items: Course[];
-  total: number;
-}
+// BUG-015: enums cross GraphQL as their NAMES ('CORE', 'ACTIVE'); the
+// generated unions keep labels, filters and mutation inputs in that form.
+type Course = CatalogCoursesQuery['catalogCourses']['items'][number];
+type DegreeProgram = DegreeProgramsAdminQuery['degreePrograms'][number];
 
 interface RequirementGroup {
   name: string;
@@ -95,52 +80,51 @@ interface RequirementGroup {
   description?: string;
 }
 
-interface DegreeProgram {
-  id: string;
-  name: string;
-  code: string;
-  department?: string;
-  description?: string;
-  programType?: string;
-  totalCreditsRequired: number;
-  expectedDurationSemesters?: number;
-  catalogYear?: string;
-  status: string;
-  requirements: string; // JSON string
-  createdAt?: string;
-}
-
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const CATEGORIES: { value: CourseCategory; label: string }[] = [
-  { value: 'core', label: 'Core' },
-  { value: 'elective', label: 'Elective' },
-  { value: 'general_education', label: 'General Education' },
-  { value: 'lab', label: 'Lab' },
-  { value: 'seminar', label: 'Seminar' },
+  { value: 'CORE', label: 'Core' },
+  { value: 'ELECTIVE', label: 'Elective' },
+  { value: 'GENERAL_EDUCATION', label: 'General Education' },
+  { value: 'LAB', label: 'Lab' },
+  { value: 'SEMINAR', label: 'Seminar' },
 ];
 
 const SEMESTERS = ['Fall', 'Spring', 'Summer'];
 const LEVELS = [100, 200, 300, 400, 500];
-const PROGRAM_TYPES = ['major', 'minor', 'certificate', 'diploma'];
-const PROGRAM_STATUSES = ['draft', 'active', 'archived'];
+const PROGRAM_TYPE_LABELS: Record<DegreeProgramType, string> = {
+  MAJOR: 'Major',
+  MINOR: 'Minor',
+  CERTIFICATE: 'Certificate',
+  DIPLOMA: 'Diploma',
+};
+const PROGRAM_STATUS_LABELS: Record<DegreeProgramStatus, string> = {
+  DRAFT: 'Draft',
+  ACTIVE: 'Active',
+  ARCHIVED: 'Archived',
+};
+const PROGRAM_STATUS_COLORS: Record<DegreeProgramStatus, string> = {
+  ACTIVE: 'bg-green-100 text-green-800',
+  DRAFT: 'bg-yellow-100 text-yellow-800',
+  ARCHIVED: 'bg-gray-100 text-gray-800',
+};
 const REQ_TYPES = ['core', 'elective', 'general_education', 'concentration'];
 const PAGE_SIZE = 20;
 
 // ─── Category badge ──────────────────────────────────────────────────────────
 
-function CategoryBadge({ category }: { category?: string }) {
-  const colors: Record<string, string> = {
-    core: 'bg-blue-100 text-blue-800',
-    elective: 'bg-purple-100 text-purple-800',
-    general_education: 'bg-green-100 text-green-800',
-    lab: 'bg-orange-100 text-orange-800',
-    seminar: 'bg-pink-100 text-pink-800',
+function CategoryBadge({ category }: { category: CourseCategory | null }) {
+  const colors: Record<CourseCategory, string> = {
+    CORE: 'bg-blue-100 text-blue-800',
+    ELECTIVE: 'bg-purple-100 text-purple-800',
+    GENERAL_EDUCATION: 'bg-green-100 text-green-800',
+    LAB: 'bg-orange-100 text-orange-800',
+    SEMINAR: 'bg-pink-100 text-pink-800',
   };
   if (!category) return null;
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[category] ?? 'bg-muted text-muted-foreground'}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[category]}`}
     >
       {CATEGORIES.find((c) => c.value === category)?.label ?? category}
     </span>
@@ -155,7 +139,7 @@ interface CourseFormState {
   description: string;
   credits: string;
   departmentId: string;
-  category: string;
+  category: CourseCategory | '';
   courseLevel: string;
   offeredSemesters: string[];
   prerequisiteCourseIds: string[];
@@ -333,7 +317,10 @@ function CourseDialog({
               <Select
                 value={form.category || 'none'}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, category: v === 'none' ? '' : v }))
+                  setForm((f) => ({
+                    ...f,
+                    category: v === 'none' ? '' : (v as CourseCategory),
+                  }))
                 }
               >
                 <SelectTrigger id="course-category">
@@ -605,11 +592,11 @@ interface ProgramFormState {
   code: string;
   department: string;
   description: string;
-  programType: string;
+  programType: DegreeProgramType;
   totalCreditsRequired: string;
   expectedDurationSemesters: string;
   catalogYear: string;
-  status: string;
+  status: DegreeProgramStatus;
   requirements: RequirementGroup[];
 }
 
@@ -618,11 +605,11 @@ const emptyProgramForm = (): ProgramFormState => ({
   code: '',
   department: '',
   description: '',
-  programType: 'major',
+  programType: 'MAJOR',
   totalCreditsRequired: '120',
   expectedDurationSemesters: '8',
   catalogYear: '',
-  status: 'draft',
+  status: 'DRAFT',
   requirements: [],
 });
 
@@ -638,7 +625,7 @@ function programToForm(p: DegreeProgram): ProgramFormState {
     code: p.code,
     department: p.department ?? '',
     description: p.description ?? '',
-    programType: p.programType ?? 'major',
+    programType: p.programType ?? 'MAJOR',
     totalCreditsRequired: p.totalCreditsRequired.toString(),
     expectedDurationSemesters: p.expectedDurationSemesters?.toString() ?? '8',
     catalogYear: p.catalogYear ?? '',
@@ -714,16 +701,24 @@ function ProgramDialog({
               <Select
                 value={form.programType}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, programType: v }))
+                  setForm((f) => ({
+                    ...f,
+                    programType: v as DegreeProgramType,
+                  }))
                 }
               >
                 <SelectTrigger id="prog-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PROGRAM_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {(
+                    Object.entries(PROGRAM_TYPE_LABELS) as [
+                      DegreeProgramType,
+                      string,
+                    ][]
+                  ).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -788,15 +783,22 @@ function ProgramDialog({
               <Label htmlFor="prog-status">Status</Label>
               <Select
                 value={form.status}
-                onValueChange={(v) => setForm((f) => ({ ...f, status: v }))}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, status: v as DegreeProgramStatus }))
+                }
               >
                 <SelectTrigger id="prog-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PROGRAM_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                  {(
+                    Object.entries(PROGRAM_STATUS_LABELS) as [
+                      DegreeProgramStatus,
+                      string,
+                    ][]
+                  ).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -896,7 +898,7 @@ function DeleteDialog({
 function CoursesTab() {
   const [search, setSearch] = useState('');
   const [department, setDepartment] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState<CourseCategory | ''>('');
   const [level, setLevel] = useState('');
   const [page, setPage] = useState(0);
 
@@ -915,20 +917,18 @@ function CoursesTab() {
     offset: page * PAGE_SIZE,
   };
 
-  const { data, loading, refetch } = useQuery<{ catalogCourses: CatalogPage }>(
-    CATALOG_COURSES_QUERY,
-    { variables: { filters }, fetchPolicy: 'cache-and-network' },
-  );
+  const { data, loading, refetch } = useQuery(CATALOG_COURSES_QUERY, {
+    variables: { filters },
+    fetchPolicy: 'cache-and-network',
+  });
 
   // Load all courses for prerequisite picker (no filters, high limit)
-  const { data: allCoursesData } = useQuery<{ catalogCourses: CatalogPage }>(
-    CATALOG_COURSES_QUERY,
-    { variables: { filters: { limit: 500 } }, fetchPolicy: 'cache-first' },
-  );
+  const { data: allCoursesData } = useQuery(CATALOG_COURSES_QUERY, {
+    variables: { filters: { limit: 500 } },
+    fetchPolicy: 'cache-first',
+  });
 
-  const { data: deptData } = useQuery<{ departmentList: string[] }>(
-    DEPARTMENT_LIST_QUERY,
-  );
+  const { data: deptData } = useQuery(DEPARTMENT_LIST_QUERY);
 
   const [createCourse] = useMutation(CREATE_CATALOG_COURSE_MUTATION);
   const [updateCourse] = useMutation(UPDATE_CATALOG_COURSE_MUTATION);
@@ -1030,7 +1030,7 @@ function CoursesTab() {
         <Select
           value={category || 'all'}
           onValueChange={(v) => {
-            setCategory(v === 'all' ? '' : v);
+            setCategory(v === 'all' ? '' : (v as CourseCategory));
             setPage(0);
           }}
         >
@@ -1107,7 +1107,7 @@ function CoursesTab() {
                 </TableCell>
               </TableRow>
             ) : (
-              courses.map((course: Course) => (
+              courses.map((course) => (
                 <TableRow key={course.id}>
                   <TableCell className="font-mono text-sm">
                     {course.code}
@@ -1228,27 +1228,21 @@ function DegreeProgramsTab() {
   );
   const [saving, setSaving] = useState(false);
 
-  const { data, loading, refetch } = useQuery<{
-    degreePrograms: DegreeProgram[];
-  }>(DEGREE_PROGRAMS_ADMIN_QUERY, { fetchPolicy: 'cache-and-network' });
+  const { data, loading, refetch } = useQuery(DEGREE_PROGRAMS_ADMIN_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   // Need all courses for the requirement group editor
-  const { data: allCoursesData } = useQuery<{ catalogCourses: CatalogPage }>(
-    CATALOG_COURSES_QUERY,
-    { variables: { filters: { limit: 500 } }, fetchPolicy: 'cache-first' },
-  );
+  const { data: allCoursesData } = useQuery(CATALOG_COURSES_QUERY, {
+    variables: { filters: { limit: 500 } },
+    fetchPolicy: 'cache-first',
+  });
 
   const [createProgram] = useMutation(CREATE_DEGREE_PROGRAM_MUTATION);
   const [updateProgram] = useMutation(UPDATE_DEGREE_PROGRAM_MUTATION);
 
   const programs = data?.degreePrograms ?? [];
   const allCourses = allCoursesData?.catalogCourses.items ?? [];
-
-  const statusColors: Record<string, string> = {
-    active: 'bg-green-100 text-green-800',
-    draft: 'bg-yellow-100 text-yellow-800',
-    archived: 'bg-gray-100 text-gray-800',
-  };
 
   const handleSave = async (form: ProgramFormState, id?: string) => {
     setSaving(true);
@@ -1340,7 +1334,7 @@ function DegreeProgramsTab() {
                 </TableCell>
               </TableRow>
             ) : (
-              programs.map((p: DegreeProgram) => (
+              programs.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
                     <div>
@@ -1353,8 +1347,8 @@ function DegreeProgramsTab() {
                     </div>
                   </TableCell>
                   <TableCell className="font-mono text-sm">{p.code}</TableCell>
-                  <TableCell className="text-sm capitalize">
-                    {p.programType ?? '—'}
+                  <TableCell className="text-sm">
+                    {p.programType ? PROGRAM_TYPE_LABELS[p.programType] : '—'}
                   </TableCell>
                   <TableCell className="text-sm">
                     {p.totalCreditsRequired} cr.
@@ -1364,9 +1358,9 @@ function DegreeProgramsTab() {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusColors[p.status] ?? 'bg-muted text-muted-foreground'}`}
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PROGRAM_STATUS_COLORS[p.status]}`}
                     >
-                      {p.status}
+                      {PROGRAM_STATUS_LABELS[p.status]}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">

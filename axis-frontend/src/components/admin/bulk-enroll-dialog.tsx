@@ -24,6 +24,8 @@ import {
   ADMIN_USERS_LIST_QUERY,
 } from '@/lib/graphql/queries/admin-academics';
 import { BULK_ENROLL_MUTATION } from '@/lib/graphql/mutations/admin-academics';
+import type { EnrollmentRole } from '@/lib/graphql/__generated__/graphql';
+import { ENROLLMENT_ROLE_OPTIONS } from './enum-labels';
 
 interface BulkEnrollDialogProps {
   open: boolean;
@@ -38,38 +40,21 @@ export function BulkEnrollDialog({
 }: BulkEnrollDialogProps) {
   const [sectionId, setSectionId] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-  const [role, setRole] = useState('student');
+  const [role, setRole] = useState<EnrollmentRole>('STUDENT');
 
-  const { data: usersData } = useQuery<{
-    adminUsers: {
-      users: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        email: string;
-      }[];
-    };
-  }>(ADMIN_USERS_LIST_QUERY, {
+  const { data: usersData } = useQuery(ADMIN_USERS_LIST_QUERY, {
     variables: { filter: { pageSize: 200 } },
   });
 
-  const { data: sectionsData } = useQuery<{
-    adminSections: {
-      id: string;
-      course: { code: string; title: string };
-      instructor: { firstName: string; lastName: string };
-    }[];
-  }>(ADMIN_SECTIONS_QUERY);
+  const { data: sectionsData } = useQuery(ADMIN_SECTIONS_QUERY);
 
-  const [bulkEnroll, { loading }] = useMutation<{
-    bulkEnroll: { id: string }[];
-  }>(BULK_ENROLL_MUTATION, {
+  const [bulkEnroll, { loading }] = useMutation(BULK_ENROLL_MUTATION, {
     onCompleted: (data) => {
       const count = data.bulkEnroll.length;
       toast.success(`${count} user${count !== 1 ? 's' : ''} enrolled`);
       setSectionId('');
       setSelectedUserIds([]);
-      setRole('student');
+      setRole('STUDENT');
       onOpenChange(false);
       onSuccess();
     },
@@ -127,14 +112,19 @@ export function BulkEnrollDialog({
           </div>
           <div className="space-y-2">
             <Label>Role</Label>
-            <Select value={role} onValueChange={setRole}>
+            <Select
+              value={role}
+              onValueChange={(v) => setRole(v as EnrollmentRole)}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="student">Student</SelectItem>
-                <SelectItem value="ta">TA</SelectItem>
-                <SelectItem value="observer">Observer</SelectItem>
+                {ENROLLMENT_ROLE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

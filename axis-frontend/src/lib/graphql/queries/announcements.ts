@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const SCHOOL_ANNOUNCEMENTS_QUERY = gql`
+export const SCHOOL_ANNOUNCEMENTS_QUERY = graphql(`
   query SchoolAnnouncements($grade: Int) {
     schoolAnnouncements(grade: $grade) {
       id
@@ -18,10 +18,10 @@ export const SCHOOL_ANNOUNCEMENTS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
 /** SPRINT-4: Paginated admin list for /admin/announcements. */
-export const ADMIN_ANNOUNCEMENTS_QUERY = gql`
+export const ADMIN_ANNOUNCEMENTS_QUERY = graphql(`
   query AdminAnnouncements(
     $scope: AnnouncementScope
     $page: Int
@@ -57,13 +57,13 @@ export const ADMIN_ANNOUNCEMENTS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
 /**
  * SPRINT-4: Drives the live "Visible to N students" preview in the
  * composer. Cheap enough to call on every scope/target change.
  */
-export const ANNOUNCEMENT_RECIPIENT_COUNT_QUERY = gql`
+export const ANNOUNCEMENT_RECIPIENT_COUNT_QUERY = graphql(`
   query AnnouncementRecipientCount(
     $scope: AnnouncementScope!
     $targetGrade: Int
@@ -75,4 +75,4 @@ export const ANNOUNCEMENT_RECIPIENT_COUNT_QUERY = gql`
       sectionId: $sectionId
     )
   }
-`;
+`);

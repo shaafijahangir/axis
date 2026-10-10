@@ -22,28 +22,11 @@ import { EnrollUserDialog } from './enroll-user-dialog';
 import { BulkEnrollDialog } from './bulk-enroll-dialog';
 import { CsvBulkEnrollDialog } from './csv-bulk-enroll-dialog';
 import { BulkMoveDialog } from './bulk-move-dialog';
-
-interface AdminEnrollment {
-  id: string;
-  userId: string;
-  sectionId: string;
-  role: string;
-  status: string;
-  enrolledAt: string;
-  finalGrade: string | null;
-  user: { id: string; firstName: string; lastName: string; email: string };
-  section: { id: string; course: { id: string; code: string; title: string } };
-}
-
-const STATUS_VARIANT: Record<
-  string,
-  'default' | 'secondary' | 'destructive' | 'outline'
-> = {
-  active: 'default',
-  completed: 'secondary',
-  dropped: 'destructive',
-  withdrawn: 'outline',
-};
+import {
+  ENROLLMENT_ROLE_LABELS,
+  ENROLLMENT_STATUS_LABELS,
+  ENROLLMENT_STATUS_VARIANT,
+} from './enum-labels';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -60,21 +43,22 @@ export function EnrollmentsTable() {
   const [moveOpen, setMoveOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const { data, loading, refetch } = useQuery<{
-    adminEnrollments: AdminEnrollment[];
-  }>(ADMIN_ENROLLMENTS_QUERY, { fetchPolicy: 'cache-and-network' });
-
-  const [bulkDrop, { loading: dropping }] = useMutation<{
-    bulkDropEnrollments: number;
-  }>(BULK_DROP_ENROLLMENTS_MUTATION, {
-    onCompleted: (data) => {
-      const count = data.bulkDropEnrollments;
-      toast.success(`${count} enrollment${count !== 1 ? 's' : ''} dropped`);
-      setSelectedIds(new Set());
-      refetch();
-    },
-    onError: (err) => toast.error(err.message),
+  const { data, loading, refetch } = useQuery(ADMIN_ENROLLMENTS_QUERY, {
+    fetchPolicy: 'cache-and-network',
   });
+
+  const [bulkDrop, { loading: dropping }] = useMutation(
+    BULK_DROP_ENROLLMENTS_MUTATION,
+    {
+      onCompleted: (data) => {
+        const count = data.bulkDropEnrollments;
+        toast.success(`${count} enrollment${count !== 1 ? 's' : ''} dropped`);
+        setSelectedIds(new Set());
+        refetch();
+      },
+      onError: (err) => toast.error(err.message),
+    },
+  );
 
   const enrollments = useMemo(
     () => data?.adminEnrollments ?? [],
@@ -246,16 +230,15 @@ export function EnrollmentsTable() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {enrollment.role}
+                    <Badge variant="outline">
+                      {ENROLLMENT_ROLE_LABELS[enrollment.role]}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={STATUS_VARIANT[enrollment.status] ?? 'outline'}
-                      className="capitalize"
+                      variant={ENROLLMENT_STATUS_VARIANT[enrollment.status]}
                     >
-                      {enrollment.status}
+                      {ENROLLMENT_STATUS_LABELS[enrollment.status]}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">

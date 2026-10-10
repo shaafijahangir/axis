@@ -9,20 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
-interface ReportCardSummary {
-  id: string;
-  courseCode: string;
-  courseTitle: string;
-  termName: string;
-  status: 'DRAFT' | 'PUBLISHED';
-  teacherComment?: string;
-  finalGrade?: string;
-  gradeSummary?: string;
-  attendanceSummary?: string;
-  publishedAt?: string;
-  createdAt: string;
-}
-
 interface GradeSummary {
   totalEarned: number;
   totalPossible: number;
@@ -38,7 +24,7 @@ interface AttendanceSummary {
   attendanceRate: number;
 }
 
-function parseJson<T>(s?: string): T | null {
+function parseJson<T>(s: string | null): T | null {
   if (!s) return null;
   try {
     return JSON.parse(s) as T;
@@ -63,9 +49,7 @@ function formatDate(iso: string): string {
 }
 
 export default function ReportCardsPage() {
-  const { data, loading, error } = useQuery<{
-    myReportCards: ReportCardSummary[];
-  }>(MY_REPORT_CARDS_QUERY);
+  const { data, loading, error } = useQuery(MY_REPORT_CARDS_QUERY);
 
   const cards = data?.myReportCards ?? [];
 

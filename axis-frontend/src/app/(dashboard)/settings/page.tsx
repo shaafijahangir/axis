@@ -168,13 +168,9 @@ export default function SettingsPage() {
     [UserRole.INSTRUCTOR, UserRole.ADMIN].includes(r),
   );
 
-  const { data, loading } = useQuery<{
-    myNotificationPreferences: NotificationPreferences;
-  }>(MY_NOTIFICATION_PREFERENCES_QUERY);
+  const { data, loading } = useQuery(MY_NOTIFICATION_PREFERENCES_QUERY);
 
-  const [updatePrefs] = useMutation<{
-    updateNotificationPreferences: NotificationPreferences;
-  }>(UPDATE_NOTIFICATION_PREFERENCES_MUTATION, {
+  const [updatePrefs] = useMutation(UPDATE_NOTIFICATION_PREFERENCES_MUTATION, {
     refetchQueries: [MY_NOTIFICATION_PREFERENCES_QUERY],
   });
 
@@ -245,7 +241,7 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     id={`pref-${item.key}`}
-                    checked={prefs ? prefs[item.key] : true}
+                    checked={prefs?.[item.key] ?? true}
                     onCheckedChange={(checked) =>
                       handleToggle(item.key, checked)
                     }

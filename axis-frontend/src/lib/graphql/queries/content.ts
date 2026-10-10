@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const SECTION_CONTENTS_QUERY = gql`
+export const SECTION_CONTENTS_QUERY = graphql(`
   query SectionContents($sectionId: String!) {
     sectionContents(sectionId: $sectionId) {
       id
@@ -17,9 +17,9 @@ export const SECTION_CONTENTS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const CONTENT_QUERY = gql`
+export const CONTENT_QUERY = graphql(`
   query Content($id: String!) {
     content(id: $id) {
       id
@@ -37,4 +37,4 @@ export const CONTENT_QUERY = gql`
       }
     }
   }
-`;
+`);

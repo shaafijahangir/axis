@@ -74,21 +74,10 @@ export function CreateSectionDialog({
 
   const { data: coursesData } = useQuery(COURSES_QUERY);
 
-  const { data: termsData } = useQuery<{
-    academicTerms: { id: string; name: string }[];
-  }>(ACADEMIC_TERMS_QUERY);
+  const { data: termsData } = useQuery(ACADEMIC_TERMS_QUERY);
 
-  const { data: usersData } = useQuery<{
-    adminUsers: {
-      users: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        roles: string[];
-      }[];
-    };
-  }>(ADMIN_USERS_LIST_QUERY, {
-    variables: { filter: { role: 'instructor', pageSize: 100 } },
+  const { data: usersData } = useQuery(ADMIN_USERS_LIST_QUERY, {
+    variables: { filter: { role: 'INSTRUCTOR', pageSize: 100 } },
   });
 
   const [createSection, { loading }] = useMutation(

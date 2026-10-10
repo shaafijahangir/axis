@@ -9,18 +9,6 @@ import { MessageThread } from '@/components/messaging/message-thread';
 import { EmptyState } from '@/components/messaging/empty-state';
 import { MY_CONVERSATIONS_QUERY } from '@/lib/graphql/queries/messaging';
 
-interface Participant {
-  id: string;
-  firstName: string;
-  lastName: string;
-}
-
-interface ConversationItem {
-  id: string;
-  title: string | null;
-  otherParticipants: Participant[];
-}
-
 /**
  * WHY: Two-panel messaging layout with URL-driven conversation selection.
  * PATTERN: Desktop shows both panels side by side; mobile toggles between
@@ -37,10 +25,10 @@ export default function MessagesPage() {
     !!conversationIdFromUrl,
   );
 
-  const { data } = useQuery<{ myConversations: ConversationItem[] }>(
-    MY_CONVERSATIONS_QUERY,
-    { pollInterval: 10_000, fetchPolicy: 'network-only' },
-  );
+  const { data } = useQuery(MY_CONVERSATIONS_QUERY, {
+    pollInterval: 10_000,
+    fetchPolicy: 'network-only',
+  });
 
   const conversations = useMemo(
     () => data?.myConversations ?? [],

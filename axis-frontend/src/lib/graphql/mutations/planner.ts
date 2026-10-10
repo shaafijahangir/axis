@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const CREATE_STUDENT_PROFILE_MUTATION = gql`
+export const CREATE_STUDENT_PROFILE_MUTATION = graphql(`
   mutation CreateStudentDegreeProfile($input: CreateStudentProfileInput!) {
     createStudentDegreeProfile(input: $input) {
       id
@@ -11,9 +11,9 @@ export const CREATE_STUDENT_PROFILE_MUTATION = gql`
       status
     }
   }
-`;
+`);
 
-export const UPDATE_STUDENT_PROFILE_MUTATION = gql`
+export const UPDATE_STUDENT_PROFILE_MUTATION = graphql(`
   mutation UpdateStudentDegreeProfile($input: UpdateStudentProfileInput!) {
     updateStudentDegreeProfile(input: $input) {
       id
@@ -23,4 +23,4 @@ export const UPDATE_STUDENT_PROFILE_MUTATION = gql`
       notes
     }
   }
-`;
+`);

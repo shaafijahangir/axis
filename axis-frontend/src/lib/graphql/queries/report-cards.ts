@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const SECTION_REPORT_CARDS_QUERY = gql`
+export const SECTION_REPORT_CARDS_QUERY = graphql(`
   query SectionReportCards($sectionId: String!) {
     sectionReportCards(sectionId: $sectionId) {
       id
@@ -22,9 +22,9 @@ export const SECTION_REPORT_CARDS_QUERY = gql`
       createdAt
     }
   }
-`;
+`);
 
-export const MY_REPORT_CARDS_QUERY = gql`
+export const MY_REPORT_CARDS_QUERY = graphql(`
   query MyReportCards {
     myReportCards {
       id
@@ -40,4 +40,4 @@ export const MY_REPORT_CARDS_QUERY = gql`
       createdAt
     }
   }
-`;
+`);

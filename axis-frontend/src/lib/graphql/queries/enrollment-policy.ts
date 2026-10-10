@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const ENROLLMENT_POLICY_QUERY = gql`
+export const ENROLLMENT_POLICY_QUERY = graphql(`
   query EnrollmentPolicy {
     enrollmentPolicy {
       prerequisiteEnforcement
@@ -13,4 +13,4 @@ export const ENROLLMENT_POLICY_QUERY = gql`
       waitlistConfirmationHours
     }
   }
-`;
+`);

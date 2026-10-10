@@ -15,18 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-interface LinkedStudent {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  linkId: string;
-}
-
 export default function ParentHomePage() {
-  const { data, loading } = useQuery<{ myLinkedStudents: LinkedStudent[] }>(
-    MY_LINKED_STUDENTS_QUERY,
-  );
+  const { data, loading } = useQuery(MY_LINKED_STUDENTS_QUERY);
 
   const students = data?.myLinkedStudents ?? [];
 

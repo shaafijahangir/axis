@@ -1,11 +1,15 @@
 import { InputType, ObjectType, Field, Float, Int } from '@nestjs/graphql';
+import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsDateString,
   IsEnum,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import { AttendanceStatus } from '../../../database/entities/attendance.entity';
 
@@ -36,7 +40,14 @@ export class MarkAttendanceInput {
   @IsDateString()
   date: string;
 
+  // WHY: without validators the global pipe (forbidNonWhitelisted) rejected
+  // `records` outright — "property records should not exist" — so Save on
+  // the attendance page always failed.
   @Field(() => [AttendanceRecordInput])
+  @IsArray()
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => AttendanceRecordInput)
   records: AttendanceRecordInput[];
 }
 

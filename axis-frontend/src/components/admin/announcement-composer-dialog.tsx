@@ -41,11 +41,6 @@ import { ADMIN_SECTIONS_QUERY } from '@/lib/graphql/queries/admin-academics';
 type Scope = 'SCHOOL_WIDE' | 'GRADE' | 'SECTION';
 type Priority = 'NORMAL' | 'URGENT';
 
-interface AdminSectionOption {
-  id: string;
-  course: { code: string; title: string };
-}
-
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -60,9 +55,9 @@ export function AnnouncementComposerDialog({ open, onOpenChange }: Props) {
   const [priority, setPriority] = useState<Priority>('NORMAL');
   const [pinned, setPinned] = useState(false);
 
-  const { data: sectionsData } = useQuery<{
-    adminSections: AdminSectionOption[];
-  }>(ADMIN_SECTIONS_QUERY, { skip: scope !== 'SECTION' });
+  const { data: sectionsData } = useQuery(ADMIN_SECTIONS_QUERY, {
+    skip: scope !== 'SECTION',
+  });
 
   const recipientVars = {
     scope,

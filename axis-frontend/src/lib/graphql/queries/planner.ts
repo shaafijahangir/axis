@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const DEGREE_PROGRAMS_QUERY = gql`
+export const DEGREE_PROGRAMS_QUERY = graphql(`
   query DegreePrograms {
     degreePrograms {
       id
@@ -13,9 +13,9 @@ export const DEGREE_PROGRAMS_QUERY = gql`
       status
     }
   }
-`;
+`);
 
-export const MY_DEGREE_PROFILES_QUERY = gql`
+export const MY_DEGREE_PROFILES_QUERY = graphql(`
   query MyDegreeProfiles {
     myDegreeProfiles {
       id
@@ -36,9 +36,9 @@ export const MY_DEGREE_PROFILES_QUERY = gql`
       notes
     }
   }
-`;
+`);
 
-export const DEGREE_PROGRESS_QUERY = gql`
+export const DEGREE_PROGRESS_QUERY = graphql(`
   query DegreeProgress($profileId: String!) {
     degreeProgress(profileId: $profileId) {
       overallPercentage
@@ -59,9 +59,9 @@ export const DEGREE_PROGRESS_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const ELIGIBLE_COURSES_QUERY = gql`
+export const ELIGIBLE_COURSES_QUERY = graphql(`
   query EligibleCourses($profileId: String!) {
     eligibleCourses(profileId: $profileId) {
       id
@@ -72,11 +72,11 @@ export const ELIGIBLE_COURSES_QUERY = gql`
       prerequisitesMet
     }
   }
-`;
+`);
 
 // ─── ENROLL-006: Prerequisite check ─────────────────────────────────────────
 
-export const COURSE_PREREQUISITES_QUERY = gql`
+export const COURSE_PREREQUISITES_QUERY = graphql(`
   query CoursePrerequisites($courseId: String!) {
     coursePrerequisites(courseId: $courseId) {
       courseId
@@ -92,9 +92,9 @@ export const COURSE_PREREQUISITES_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const SIMULATE_MAJOR_CHANGE_QUERY = gql`
+export const SIMULATE_MAJOR_CHANGE_QUERY = graphql(`
   query SimulateMajorChange($profileId: String!, $targetProgramId: String!) {
     simulateMajorChange(
       profileId: $profileId
@@ -117,4 +117,4 @@ export const SIMULATE_MAJOR_CHANGE_QUERY = gql`
       }
     }
   }
-`;
+`);

@@ -327,8 +327,8 @@ export async function createTestApp(): Promise<TestContext> {
     const term = termRepo.create({
       tenantId: tenant.id,
       name: `Term ${id}`,
-      startDate: new Date('2025-01-01'),
-      endDate: new Date('2025-05-31'),
+      startDate: '2025-01-01',
+      endDate: '2025-05-31',
       isCurrent: true,
     });
     return termRepo.save(term);

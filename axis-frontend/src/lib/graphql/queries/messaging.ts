@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const MY_CONVERSATIONS_QUERY = gql`
+export const MY_CONVERSATIONS_QUERY = graphql(`
   query MyConversations {
     myConversations {
       id
@@ -26,9 +26,9 @@ export const MY_CONVERSATIONS_QUERY = gql`
       updatedAt
     }
   }
-`;
+`);
 
-export const CONVERSATION_MESSAGES_QUERY = gql`
+export const CONVERSATION_MESSAGES_QUERY = graphql(`
   query ConversationMessages(
     $conversationId: String!
     $cursor: String
@@ -54,9 +54,9 @@ export const CONVERSATION_MESSAGES_QUERY = gql`
       hasMore
     }
   }
-`;
+`);
 
-export const MY_CONTACTS_QUERY = gql`
+export const MY_CONTACTS_QUERY = graphql(`
   query MyContacts {
     myContacts {
       id
@@ -67,10 +67,10 @@ export const MY_CONTACTS_QUERY = gql`
       relationship
     }
   }
-`;
+`);
 
-export const UNREAD_COUNT_QUERY = gql`
+export const UNREAD_COUNT_QUERY = graphql(`
   query UnreadMessageCount {
     unreadMessageCount
   }
-`;
+`);

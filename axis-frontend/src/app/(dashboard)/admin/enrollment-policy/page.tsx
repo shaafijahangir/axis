@@ -34,22 +34,17 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { ENROLLMENT_POLICY_QUERY } from '@/lib/graphql/queries/enrollment-policy';
 import { UPDATE_ENROLLMENT_POLICY_MUTATION } from '@/lib/graphql/mutations/enrollment-policy';
+import type {
+  EnrollmentPolicyQuery,
+  PrerequisiteEnforcement,
+} from '@/lib/graphql/__generated__/graphql';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
-interface EnrollmentPolicy {
-  prerequisiteEnforcement: string;
-  creditHourLimitPerTerm: number | null;
-  enrollmentWindowStart: string | null;
-  enrollmentWindowEnd: string | null;
-  waitlistEnabled: boolean;
-  waitlistMaxSize: number | null;
-  waitlistAutoPromote: boolean;
-  waitlistConfirmationHours: number;
-}
+type EnrollmentPolicy = EnrollmentPolicyQuery['enrollmentPolicy'];
 
 interface PolicyForm {
-  prerequisiteEnforcement: 'strict' | 'warn' | 'off';
+  prerequisiteEnforcement: PrerequisiteEnforcement;
   creditHourLimitPerTerm: string;
   enrollmentWindowStart: string;
   enrollmentWindowEnd: string;
@@ -60,7 +55,7 @@ interface PolicyForm {
 }
 
 const EMPTY_FORM: PolicyForm = {
-  prerequisiteEnforcement: 'warn',
+  prerequisiteEnforcement: 'WARN',
   creditHourLimitPerTerm: '18',
   enrollmentWindowStart: '',
   enrollmentWindowEnd: '',
@@ -72,10 +67,9 @@ const EMPTY_FORM: PolicyForm = {
 
 function policyToForm(policy: EnrollmentPolicy): PolicyForm {
   return {
-    prerequisiteEnforcement: policy.prerequisiteEnforcement.toLowerCase() as
-      | 'strict'
-      | 'warn'
-      | 'off',
+    // BUG-015: the API returns the enum NAME ('WARN') and the mutation only
+    // accepts names, so the form keeps the value as-is end to end.
+    prerequisiteEnforcement: policy.prerequisiteEnforcement,
     creditHourLimitPerTerm:
       policy.creditHourLimitPerTerm != null
         ? String(policy.creditHourLimitPerTerm)
@@ -97,22 +91,22 @@ function policyToForm(policy: EnrollmentPolicy): PolicyForm {
 // ─── Enforcement Mode Descriptions ──────────────────────────────────────
 
 const ENFORCEMENT_META: Record<
-  'strict' | 'warn' | 'off',
+  PrerequisiteEnforcement,
   { label: string; description: string; icon: React.ReactNode }
 > = {
-  strict: {
+  STRICT: {
     label: 'Strict — Block enrollment',
     description:
       'Students cannot enroll if prerequisites are not met. Recommended for programs with strict sequencing requirements.',
     icon: <ShieldCheck className="h-4 w-4 text-red-500" />,
   },
-  warn: {
+  WARN: {
     label: 'Warn — Log but allow',
     description:
       'Enrollment proceeds, but the missing prerequisite is logged. Suitable for flexible programs, transfer students, and late admits.',
     icon: <AlertTriangle className="h-4 w-4 text-yellow-500" />,
   },
-  off: {
+  OFF: {
     label: 'Off — No prerequisite checking',
     description:
       'Prerequisites are not enforced at all. Use for open enrollment institutions or when prerequisite data is incomplete.',
@@ -127,10 +121,9 @@ export default function EnrollmentPolicyPage() {
   const [saved, setSaved] = useState(false);
   const initializedRef = useRef(false);
 
-  const { data, loading } = useQuery<{ enrollmentPolicy: EnrollmentPolicy }>(
-    ENROLLMENT_POLICY_QUERY,
-    { fetchPolicy: 'cache-and-network' },
-  );
+  const { data, loading } = useQuery(ENROLLMENT_POLICY_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   useEffect(() => {
     if (data?.enrollmentPolicy && !initializedRef.current) {
@@ -140,14 +133,15 @@ export default function EnrollmentPolicyPage() {
     }
   }, [data]);
 
-  const [updatePolicy, { loading: saving }] = useMutation<{
-    updateEnrollmentPolicy: EnrollmentPolicy;
-  }>(UPDATE_ENROLLMENT_POLICY_MUTATION, {
-    onCompleted: () => {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+  const [updatePolicy, { loading: saving }] = useMutation(
+    UPDATE_ENROLLMENT_POLICY_MUTATION,
+    {
+      onCompleted: () => {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      },
     },
-  });
+  );
 
   const handleSave = async () => {
     const creditLimit = form.creditHourLimitPerTerm
@@ -182,7 +176,7 @@ export default function EnrollmentPolicyPage() {
   };
 
   const selectedMeta =
-    ENFORCEMENT_META[form.prerequisiteEnforcement] ?? ENFORCEMENT_META['warn'];
+    ENFORCEMENT_META[form.prerequisiteEnforcement] ?? ENFORCEMENT_META.WARN;
 
   return (
     <div className="container max-w-2xl py-6 space-y-6">
@@ -233,7 +227,7 @@ export default function EnrollmentPolicyPage() {
                   onValueChange={(val) =>
                     setForm((f) => ({
                       ...f,
-                      prerequisiteEnforcement: val as 'strict' | 'warn' | 'off',
+                      prerequisiteEnforcement: val as PrerequisiteEnforcement,
                     }))
                   }
                 >
@@ -243,7 +237,7 @@ export default function EnrollmentPolicyPage() {
                   <SelectContent>
                     {(
                       Object.entries(ENFORCEMENT_META) as [
-                        'strict' | 'warn' | 'off',
+                        PrerequisiteEnforcement,
                         (typeof ENFORCEMENT_META)[keyof typeof ENFORCEMENT_META],
                       ][]
                     ).map(([key, meta]) => (

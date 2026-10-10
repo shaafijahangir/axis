@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const SECTION_ATTENDANCE_QUERY = gql`
+export const SECTION_ATTENDANCE_QUERY = graphql(`
   query SectionAttendance($sectionId: String!, $date: String!) {
     sectionAttendance(sectionId: $sectionId, date: $date) {
       date
@@ -14,9 +14,9 @@ export const SECTION_ATTENDANCE_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const MY_ATTENDANCE_SUMMARIES_QUERY = gql`
+export const MY_ATTENDANCE_SUMMARIES_QUERY = graphql(`
   query MyAttendanceSummaries {
     myAttendanceSummaries {
       userId
@@ -31,9 +31,9 @@ export const MY_ATTENDANCE_SUMMARIES_QUERY = gql`
       attendanceRate
     }
   }
-`;
+`);
 
-export const SECTION_ATTENDANCE_SUMMARIES_QUERY = gql`
+export const SECTION_ATTENDANCE_SUMMARIES_QUERY = graphql(`
   query SectionAttendanceSummaries($sectionId: String!) {
     sectionAttendanceSummaries(sectionId: $sectionId) {
       userId
@@ -47,4 +47,4 @@ export const SECTION_ATTENDANCE_SUMMARIES_QUERY = gql`
       attendanceRate
     }
   }
-`;
+`);

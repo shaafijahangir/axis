@@ -69,112 +69,20 @@ import {
 import { GENERATE_GRADUATION_PLAN_MUTATION } from '@/lib/graphql/mutations/graduation-planner';
 import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
+import type {
+  GenerateGraduationPlanMutation,
+  MyDegreeProfilesQuery,
+  MyGraduationPlansQuery,
+} from '@/lib/graphql/__generated__/graphql';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface DegreeProfile {
-  id: string;
-  status: string;
-  degreeProgram: {
-    id: string;
-    name: string;
-    code: string;
-    totalCreditsRequired: number;
-  };
-}
-
-interface PlannedCourse {
-  courseId: string;
-  code: string;
-  title: string;
-  credits: number;
-  fulfillsRequirement: string;
-  availabilityWarning?: string | null;
-}
-
-interface SemesterAidStatus {
-  isFullTime: boolean;
-  isHalfTime: boolean;
-  aidWarning?: string | null;
-  sapWarning?: string | null;
-}
-
-interface PlannedSemester {
-  termKey: string;
-  term: string;
-  year: number;
-  courses: PlannedCourse[];
-  totalCredits: number;
-  cumulativeCredits: number;
-  completionPercentage: number;
-  estimatedCost?: number | null;
-  estimatedCumulativeCost?: number | null;
-  aidStatus?: SemesterAidStatus | null;
-}
-
-interface FinancialAidConfig {
-  fullTimeThreshold?: number | null;
-  halfTimeThreshold?: number | null;
-  maxTimeframePercent?: number | null;
-}
-
-interface GraduationPlanConstraints {
-  maxCreditsPerSemester: number;
-  startTerm: string;
-  startYear: number;
-  includeSummer: boolean;
-  excludedTermKeys: string[];
-}
-
-interface DiffCourse {
-  courseId: string;
-  code: string;
-  title: string;
-  termKey: string;
-}
-
-interface MovedCourse {
-  courseId: string;
-  code: string;
-  title: string;
-  fromTermKey: string;
-  toTermKey: string;
-}
-
-interface PlanDiff {
-  semestersAdded: number;
-  semestersRemoved: number;
-  graduationDateChange?: string | null;
-  added: DiffCourse[];
-  removed: DiffCourse[];
-  moved: MovedCourse[];
-}
-
-interface GraduationPlan {
-  id: string;
-  profileId: string;
-  status: string;
-  totalSemesters: number;
-  estimatedGraduationTerm: string;
-  estimatedGraduationYear: number;
-  totalCreditsPlanned: number;
-  totalCreditsCompleted: number;
-  overallCompletionPercentage: number;
-  estimatedTotalCost?: number | null;
-  constraints: GraduationPlanConstraints;
-  semesters: PlannedSemester[];
-  diff?: PlanDiff | null;
-  createdAt: string;
-}
-
-interface TuitionConfig {
-  perCreditCost?: number | null;
-  flatRateMin?: number | null;
-  flatRateMax?: number | null;
-  flatRateCost?: number | null;
-  summerPerCreditCost?: number | null;
-  fees?: Array<{ name: string; amount: number; type: string }> | null;
-}
+type DegreeProfile = MyDegreeProfilesQuery['myDegreeProfiles'][number];
+type GraduationPlan = MyGraduationPlansQuery['myGraduationPlans'][number];
+type PlannedSemester = GraduationPlan['semesters'][number];
+type PlanDiff = NonNullable<
+  GenerateGraduationPlanMutation['generateGraduationPlan']['diff']
+>;
 
 interface PlanControls {
   maxCredits: number;
@@ -812,21 +720,24 @@ export default function RoadmapPage() {
   const [planDiff, setPlanDiff] = useState<PlanDiff | null>(null);
 
   // ── Load tuition config (GRAD-003) ────────────────────────────────
-  const { data: tuitionData } = useQuery<{
-    getTuitionConfig: TuitionConfig | null;
-  }>(GET_TUITION_CONFIG_QUERY, { fetchPolicy: 'cache-and-network' });
+  const { data: tuitionData } = useQuery(GET_TUITION_CONFIG_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
   const tuitionConfig = tuitionData?.getTuitionConfig ?? null;
 
   // ── Load financial aid config (GRAD-004) ───────────────────────────
-  const { data: aidData } = useQuery<{
-    getFinancialAidConfig: FinancialAidConfig | null;
-  }>(GET_FINANCIAL_AID_CONFIG_QUERY, { fetchPolicy: 'cache-and-network' });
+  const { data: aidData } = useQuery(GET_FINANCIAL_AID_CONFIG_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
   const aidConfig = aidData?.getFinancialAidConfig ?? null;
 
   // ── Load active profile ────────────────────────────────────────────
-  const { data: profilesData, loading: profilesLoading } = useQuery<{
-    myDegreeProfiles: DegreeProfile[];
-  }>(MY_DEGREE_PROFILES_QUERY, { fetchPolicy: 'cache-and-network' });
+  const { data: profilesData, loading: profilesLoading } = useQuery(
+    MY_DEGREE_PROFILES_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+    },
+  );
 
   const activeProfile = profilesData?.myDegreeProfiles?.find(
     (p) => p.status === 'ACTIVE',
@@ -837,23 +748,20 @@ export default function RoadmapPage() {
     data: plansData,
     loading: plansLoading,
     refetch: refetchPlans,
-  } = useQuery<{ myGraduationPlans: GraduationPlan[] }>(
-    MY_GRADUATION_PLANS_QUERY,
-    {
-      variables: { profileId: activeProfile?.id },
-      skip: !activeProfile,
-      fetchPolicy: 'cache-and-network',
-    },
-  );
+  } = useQuery(MY_GRADUATION_PLANS_QUERY, {
+    variables: { profileId: activeProfile?.id ?? '' },
+    skip: !activeProfile,
+    fetchPolicy: 'cache-and-network',
+  });
 
   const activePlan = plansData?.myGraduationPlans?.find(
-    (p) => p.status === 'active',
+    (p) => p.status === 'ACTIVE',
   );
 
   // ── Generate mutation ──────────────────────────────────────────────
-  const [generatePlan, { loading: generating }] = useMutation<{
-    generateGraduationPlan: GraduationPlan;
-  }>(GENERATE_GRADUATION_PLAN_MUTATION);
+  const [generatePlan, { loading: generating }] = useMutation(
+    GENERATE_GRADUATION_PLAN_MUTATION,
+  );
 
   // ── Refs for debounced auto-regen (avoids stale closures) ─────────
   //

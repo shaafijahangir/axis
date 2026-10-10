@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
 /**
  * WHY a real GraphQL fragment (not a JS template-string concat): codegen's
@@ -6,7 +6,7 @@ import { gql } from '@apollo/client';
  * interpolation. Native fragments also give us deduplicated cache normalisation
  * and let the generated types name the shape once.
  */
-const IMPORT_RESULT_FRAGMENT = gql`
+export const IMPORT_RESULT_FRAGMENT = graphql(`
   fragment ImportResultFields on ImportResult {
     imported
     success
@@ -16,49 +16,44 @@ const IMPORT_RESULT_FRAGMENT = gql`
       message
     }
   }
-`;
+`);
 
-export const IMPORT_COURSES_FROM_CSV_MUTATION = gql`
+export const IMPORT_COURSES_FROM_CSV_MUTATION = graphql(`
   mutation ImportCoursesFromCsv($csvData: String!) {
     importCoursesFromCsv(csvData: $csvData) {
       ...ImportResultFields
     }
   }
-  ${IMPORT_RESULT_FRAGMENT}
-`;
+`);
 
-export const IMPORT_PROGRAMS_FROM_CSV_MUTATION = gql`
+export const IMPORT_PROGRAMS_FROM_CSV_MUTATION = graphql(`
   mutation ImportProgramsFromCsv($csvData: String!) {
     importProgramsFromCsv(csvData: $csvData) {
       ...ImportResultFields
     }
   }
-  ${IMPORT_RESULT_FRAGMENT}
-`;
+`);
 
-export const IMPORT_REQUIREMENTS_FROM_CSV_MUTATION = gql`
+export const IMPORT_REQUIREMENTS_FROM_CSV_MUTATION = graphql(`
   mutation ImportRequirementsFromCsv($csvData: String!) {
     importRequirementsFromCsv(csvData: $csvData) {
       ...ImportResultFields
     }
   }
-  ${IMPORT_RESULT_FRAGMENT}
-`;
+`);
 
-export const IMPORT_USERS_FROM_CSV_MUTATION = gql`
+export const IMPORT_USERS_FROM_CSV_MUTATION = graphql(`
   mutation ImportUsersFromCsv($csvData: String!) {
     importUsersFromCsv(csvData: $csvData) {
       ...ImportResultFields
     }
   }
-  ${IMPORT_RESULT_FRAGMENT}
-`;
+`);
 
-export const IMPORT_ENROLLMENTS_FROM_CSV_MUTATION = gql`
+export const IMPORT_ENROLLMENTS_FROM_CSV_MUTATION = graphql(`
   mutation ImportEnrollmentsFromCsv($csvData: String!) {
     importEnrollmentsFromCsv(csvData: $csvData) {
       ...ImportResultFields
     }
   }
-  ${IMPORT_RESULT_FRAGMENT}
-`;
+`);

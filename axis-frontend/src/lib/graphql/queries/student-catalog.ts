@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const COURSE_CATALOG_QUERY = gql`
+export const COURSE_CATALOG_QUERY = graphql(`
   query CourseCatalog($filters: StudentCatalogFilter) {
     courseCatalog(filters: $filters) {
       total
@@ -33,10 +33,10 @@ export const COURSE_CATALOG_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-export const DEPARTMENT_LIST_QUERY = gql`
+export const DEPARTMENT_LIST_QUERY = graphql(`
   query DepartmentList {
     departmentList
   }
-`;
+`);

@@ -5,14 +5,14 @@
 type AcademicTerm {
   createdAt: DateTime!
   dropDeadline: DateTime
-  endDate: DateTime!
+  endDate: String!
   enrollmentWindowEnd: DateTime
   enrollmentWindowStart: DateTime
   id: String!
   isCurrent: Boolean!
   name: String!
   settings: String
-  startDate: DateTime!
+  startDate: String!
   tenantId: String!
   updatedAt: DateTime!
   withdrawDeadline: DateTime

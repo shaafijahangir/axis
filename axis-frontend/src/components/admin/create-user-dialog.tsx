@@ -17,26 +17,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ADMIN_CREATE_USER_MUTATION } from '@/lib/graphql/mutations/admin-users';
+import type { UserRole } from '@/lib/graphql/__generated__/graphql';
+import { USER_ROLE_LABELS, USER_ROLE_OPTIONS } from './enum-labels';
 import {
   K12StudentFields,
   EMPTY_K12_FIELDS,
   type K12FieldsValue,
 } from './k12-student-fields';
 
-const ROLE_OPTIONS = [
-  { value: 'STUDENT', label: 'Student' },
-  { value: 'INSTRUCTOR', label: 'Instructor' },
-  { value: 'ADMIN', label: 'Admin' },
-  { value: 'TA', label: 'TA' },
-  { value: 'PARENT', label: 'Parent' },
-] as const;
-
 const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  roles: z.array(z.string()).min(1, 'At least one role is required'),
+  roles: z
+    .array(
+      z.custom<UserRole>((v) => typeof v === 'string' && v in USER_ROLE_LABELS),
+    )
+    .min(1, 'At least one role is required'),
 });
 
 type CreateUserFormValues = z.infer<typeof createUserSchema>;
@@ -68,8 +66,7 @@ export function CreateUserDialog({
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const selectedRoles = watch('roles');
-  // SPRINT-3: case-insensitive match — chips use uppercase, server returns lowercase
-  const isStudent = selectedRoles?.some((r) => r.toLowerCase() === 'student');
+  const isStudent = selectedRoles?.includes('STUDENT') ?? false;
 
   const [createUser, { loading }] = useMutation(ADMIN_CREATE_USER_MUTATION, {
     onCompleted: () => {
@@ -96,7 +93,7 @@ export function CreateUserDialog({
     });
   };
 
-  const toggleRole = (role: string) => {
+  const toggleRole = (role: UserRole) => {
     const current = selectedRoles || [];
     const updated = current.includes(role)
       ? current.filter((r) => r !== role)
@@ -153,7 +150,7 @@ export function CreateUserDialog({
           <div className="space-y-2">
             <Label>Roles</Label>
             <div className="flex flex-wrap gap-2">
-              {ROLE_OPTIONS.map((role) => (
+              {USER_ROLE_OPTIONS.map((role) => (
                 <button
                   key={role.value}
                   type="button"

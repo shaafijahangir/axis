@@ -10,16 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import type { ParentStudentGradesQuery } from '@/lib/graphql/__generated__/graphql';
 
-interface ParentGradeItem {
-  assignmentId: string;
-  assignmentTitle: string;
-  courseCode: string;
-  pointsPossible: number;
-  score?: number;
-  gradedAt?: string;
-  dueAt?: string;
-}
+type ParentGradeItem = ParentStudentGradesQuery['parentStudentGrades'][number];
 
 function scoreColor(pct: number): string {
   if (pct >= 90) return 'text-green-600';
@@ -30,9 +23,9 @@ function scoreColor(pct: number): string {
 export default function ParentStudentGradesPage() {
   const { studentId } = useParams<{ studentId: string }>();
 
-  const { data, loading } = useQuery<{
-    parentStudentGrades: ParentGradeItem[];
-  }>(PARENT_STUDENT_GRADES_QUERY, { variables: { studentId } });
+  const { data, loading } = useQuery(PARENT_STUDENT_GRADES_QUERY, {
+    variables: { studentId },
+  });
 
   const grades = data?.parentStudentGrades ?? [];
 

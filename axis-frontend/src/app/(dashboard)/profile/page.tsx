@@ -22,20 +22,6 @@ import { UPDATE_PROFILE_MUTATION } from '@/lib/graphql/mutations/user';
 import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
 
-interface MeData {
-  me: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    roles: string[];
-    /** FEAT-021: directory fields (instructors). */
-    title?: string | null;
-    officeLocation?: string | null;
-    createdAt: string;
-  };
-}
-
 function roleLabel(role: string): string {
   return role.charAt(0) + role.slice(1).toLowerCase();
 }
@@ -43,7 +29,7 @@ function roleLabel(role: string): string {
 export default function ProfilePage() {
   const { user: storeUser, setUser } = useAuthStore();
 
-  const { data, loading } = useQuery<MeData>(ME_QUERY);
+  const { data, loading } = useQuery(ME_QUERY);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -70,9 +56,7 @@ export default function ProfilePage() {
     }
   }, [data?.me]);
 
-  const [updateProfile] = useMutation<{
-    updateProfile: { id: string; firstName: string; lastName: string };
-  }>(UPDATE_PROFILE_MUTATION, {
+  const [updateProfile] = useMutation(UPDATE_PROFILE_MUTATION, {
     refetchQueries: [ME_QUERY],
   });
 

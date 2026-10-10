@@ -10,6 +10,7 @@ import {
   CREATE_LTI_PLATFORM_MUTATION,
   DELETE_LTI_PLATFORM_MUTATION,
 } from '@/lib/graphql/mutations/lti';
+import type { LtiPlatformStatus } from '@/lib/graphql/__generated__/graphql';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -47,27 +48,6 @@ import {
   Link as LinkIcon,
 } from 'lucide-react';
 
-interface LtiPlatformInfo {
-  id: string;
-  name: string;
-  issuer: string;
-  clientId: string;
-  status: string;
-  deploymentCount: number;
-  userCount: number;
-  createdAt: string;
-}
-
-interface LtiToolConfiguration {
-  issuer: string;
-  clientId: string;
-  oidcLoginUrl: string;
-  launchUrl: string;
-  jwksUrl: string;
-  deepLinkUrl: string;
-  scopes: string[];
-}
-
 export default function LtiIntegrationsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -83,12 +63,8 @@ export default function LtiIntegrationsPage() {
     data: platformsData,
     loading: platformsLoading,
     refetch,
-  } = useQuery<{
-    ltiPlatforms: LtiPlatformInfo[];
-  }>(LTI_PLATFORMS_QUERY);
-  const { data: configData } = useQuery<{
-    ltiToolConfiguration: LtiToolConfiguration;
-  }>(LTI_TOOL_CONFIGURATION_QUERY);
+  } = useQuery(LTI_PLATFORMS_QUERY);
+  const { data: configData } = useQuery(LTI_TOOL_CONFIGURATION_QUERY);
 
   const [createPlatform, { loading: creating }] = useMutation(
     CREATE_LTI_PLATFORM_MUTATION,
@@ -112,9 +88,8 @@ export default function LtiIntegrationsPage() {
     onCompleted: () => refetch(),
   });
 
-  const platforms: LtiPlatformInfo[] = platformsData?.ltiPlatforms || [];
-  const toolConfig: LtiToolConfiguration | undefined =
-    configData?.ltiToolConfiguration;
+  const platforms = platformsData?.ltiPlatforms ?? [];
+  const toolConfig = configData?.ltiToolConfiguration;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,16 +112,15 @@ export default function LtiIntegrationsPage() {
     navigator.clipboard.writeText(text);
   };
 
-  const getStatusBadge = (status: string) => {
+  // BUG-015: the API returns enum NAMES ('ACTIVE'), not the DB values.
+  const getStatusBadge = (status: LtiPlatformStatus) => {
     switch (status) {
-      case 'active':
+      case 'ACTIVE':
         return <Badge className="bg-green-500">Active</Badge>;
-      case 'pending':
+      case 'PENDING':
         return <Badge className="bg-yellow-500">Pending</Badge>;
-      case 'inactive':
+      case 'INACTIVE':
         return <Badge className="bg-gray-500">Inactive</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
     }
   };
 

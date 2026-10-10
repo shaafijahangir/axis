@@ -13,17 +13,7 @@ import { CourseHeader } from '@/components/courses/course-header';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-
-type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
-
-interface AttendanceRecord {
-  id: string;
-  userId: string;
-  firstName: string;
-  lastName: string;
-  status: AttendanceStatus;
-  notes?: string;
-}
+import type { AttendanceStatus } from '@/lib/graphql/__generated__/graphql';
 
 const STATUS_OPTIONS: {
   value: AttendanceStatus;
@@ -77,9 +67,7 @@ export default function AttendancePage() {
     { variables: { id: sectionId } },
   );
 
-  const { data, loading, refetch } = useQuery<{
-    sectionAttendance: { date: string; records: AttendanceRecord[] };
-  }>(SECTION_ATTENDANCE_QUERY, {
+  const { data, loading, refetch } = useQuery(SECTION_ATTENDANCE_QUERY, {
     variables: { sectionId, date },
     fetchPolicy: 'cache-and-network',
   });

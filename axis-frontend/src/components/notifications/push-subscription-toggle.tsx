@@ -32,9 +32,7 @@ export function PushSubscriptionToggle() {
     return 'idle';
   });
 
-  const { data: vapidData } = useQuery<{
-    vapidPublicKey: { publicKey: string | null };
-  }>(VAPID_PUBLIC_KEY_QUERY);
+  const { data: vapidData } = useQuery(VAPID_PUBLIC_KEY_QUERY);
 
   const [registerToken] = useMutation(REGISTER_DEVICE_TOKEN_MUTATION);
 

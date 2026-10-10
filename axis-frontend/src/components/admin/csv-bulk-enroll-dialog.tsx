@@ -26,6 +26,23 @@ import {
   ADMIN_USERS_LIST_QUERY,
 } from '@/lib/graphql/queries/admin-academics';
 import { BULK_ENROLL_MUTATION } from '@/lib/graphql/mutations/admin-academics';
+import type { EnrollmentRole } from '@/lib/graphql/__generated__/graphql';
+import { ENROLLMENT_ROLE_LABELS, ENROLLMENT_ROLE_OPTIONS } from './enum-labels';
+
+/**
+ * BUG-015: CSV authors write roles in any case ("student", "TA"); the API's
+ * EnrollmentRole enum only accepts the UPPER_CASE names. Normalise, and fall
+ * back to the dialog's default role for blanks or unknown values.
+ */
+function parseEnrollmentRole(
+  raw: string | undefined,
+  fallback: EnrollmentRole,
+): EnrollmentRole {
+  const upper = raw?.trim().toUpperCase();
+  return upper && upper in ENROLLMENT_ROLE_LABELS
+    ? (upper as EnrollmentRole)
+    : fallback;
+}
 
 interface CsvBulkEnrollDialogProps {
   open: boolean;
@@ -35,7 +52,7 @@ interface CsvBulkEnrollDialogProps {
 
 interface ParsedRow {
   email: string;
-  role: string;
+  role: EnrollmentRole;
   userId: string | null;
   userName: string | null;
   /** 'match' | 'not_found' */
@@ -105,34 +122,20 @@ export function CsvBulkEnrollDialog({
 }: CsvBulkEnrollDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sectionId, setSectionId] = useState('');
-  const [defaultRole, setDefaultRole] = useState('student');
+  const [defaultRole, setDefaultRole] = useState<EnrollmentRole>('STUDENT');
   const [parsedRows, setParsedRows] = useState<ParsedRow[] | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
 
-  const { data: sectionsData } = useQuery<{
-    adminSections: {
-      id: string;
-      course: { code: string; title: string };
-    }[];
-  }>(ADMIN_SECTIONS_QUERY, { skip: !open });
+  const { data: sectionsData } = useQuery(ADMIN_SECTIONS_QUERY, {
+    skip: !open,
+  });
 
-  const { data: usersData } = useQuery<{
-    adminUsers: {
-      users: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        email: string;
-      }[];
-    };
-  }>(ADMIN_USERS_LIST_QUERY, {
+  const { data: usersData } = useQuery(ADMIN_USERS_LIST_QUERY, {
     variables: { filter: { pageSize: 1000 } },
     skip: !open,
   });
 
-  const [bulkEnroll, { loading }] = useMutation<{
-    bulkEnroll: { id: string }[];
-  }>(BULK_ENROLL_MUTATION, {
+  const [bulkEnroll, { loading }] = useMutation(BULK_ENROLL_MUTATION, {
     onCompleted: (data) => {
       const count = data.bulkEnroll.length;
       toast.success(`${count} user${count !== 1 ? 's' : ''} enrolled`);
@@ -144,7 +147,7 @@ export function CsvBulkEnrollDialog({
 
   const handleClose = useCallback(() => {
     setSectionId('');
-    setDefaultRole('student');
+    setDefaultRole('STUDENT');
     setParsedRows(null);
     setParseError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -186,10 +189,10 @@ export function CsvBulkEnrollDialog({
         const dataRows = rows.slice(1).filter((r) => r.some((c) => c.trim()));
         const parsed: ParsedRow[] = dataRows.map((row) => {
           const email = row[emailIdx]?.trim().toLowerCase() ?? '';
-          const role =
-            roleIdx >= 0 && row[roleIdx]?.trim()
-              ? row[roleIdx].trim().toLowerCase()
-              : defaultRole;
+          const role = parseEnrollmentRole(
+            roleIdx >= 0 ? row[roleIdx] : undefined,
+            defaultRole,
+          );
           const user = userByEmail.get(email);
           return {
             email,
@@ -261,14 +264,19 @@ export function CsvBulkEnrollDialog({
             </div>
             <div className="space-y-2">
               <Label>Default Role</Label>
-              <Select value={defaultRole} onValueChange={setDefaultRole}>
+              <Select
+                value={defaultRole}
+                onValueChange={(v) => setDefaultRole(v as EnrollmentRole)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="ta">TA</SelectItem>
-                  <SelectItem value="observer">Observer</SelectItem>
+                  {ENROLLMENT_ROLE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -366,8 +374,8 @@ export function CsvBulkEnrollDialog({
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                        <td className="px-3 py-1.5 capitalize text-xs">
-                          {row.role}
+                        <td className="px-3 py-1.5 text-xs">
+                          {ENROLLMENT_ROLE_LABELS[row.role]}
                         </td>
                         <td className="px-3 py-1.5">
                           {row.status === 'match' ? (

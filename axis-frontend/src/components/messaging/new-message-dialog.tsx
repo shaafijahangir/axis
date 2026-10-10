@@ -39,22 +39,20 @@ export function NewMessageDialog({
   const [messageText, setMessageText] = useState('');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
-  const { data, loading } = useQuery<{ myContacts: Contact[] }>(
-    MY_CONTACTS_QUERY,
-    { skip: !open },
-  );
+  const { data, loading } = useQuery(MY_CONTACTS_QUERY, { skip: !open });
 
-  const [sendMessage, { loading: sending }] = useMutation<{
-    sendMessage: { id: string; conversationId: string };
-  }>(SEND_MESSAGE_MUTATION, {
-    onCompleted: (result) => {
-      onConversationCreated(result.sendMessage.conversationId);
-      setSelectedContact(null);
-      setMessageText('');
-      setSearch('');
-      onOpenChange(false);
+  const [sendMessage, { loading: sending }] = useMutation(
+    SEND_MESSAGE_MUTATION,
+    {
+      onCompleted: (result) => {
+        onConversationCreated(result.sendMessage.conversationId);
+        setSelectedContact(null);
+        setMessageText('');
+        setSearch('');
+        onOpenChange(false);
+      },
     },
-  });
+  );
 
   const contacts = useMemo(() => data?.myContacts ?? [], [data?.myContacts]);
   const filtered = useMemo(() => {

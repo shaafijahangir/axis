@@ -6,6 +6,8 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ADMIN_SECTIONS_QUERY } from '@/lib/graphql/queries/admin-academics';
 import { REMOVE_SECTION_MUTATION } from '@/lib/graphql/mutations/admin-academics';
+import type { AdminSectionsQuery } from '@/lib/graphql/__generated__/graphql';
+import { SECTION_STATUS_LABELS, SECTION_STATUS_VARIANT } from './enum-labels';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,41 +32,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CreateSectionDialog } from './create-section-dialog';
 import { EditSectionDialog } from './edit-section-dialog';
 
-interface AdminSection {
-  id: string;
-  courseId: string;
-  termId: string;
-  instructorId: string;
-  location: string | null;
-  capacity: number | null;
-  status: string;
-  schedule?: string | null;
-  meetingDays?: string[] | null;
-  startTime?: string | null;
-  endTime?: string | null;
-  room?: string | null;
-  course: { id: string; code: string; title: string };
-  instructor: { id: string; firstName: string; lastName: string };
-}
-
-const STATUS_VARIANT: Record<
-  string,
-  'default' | 'secondary' | 'destructive' | 'outline'
-> = {
-  active: 'default',
-  draft: 'outline',
-  completed: 'secondary',
-  cancelled: 'destructive',
-};
+type AdminSection = AdminSectionsQuery['adminSections'][number];
 
 export function SectionsTable() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editSection, setEditSection] = useState<AdminSection | null>(null);
   const [deleteSection, setDeleteSection] = useState<AdminSection | null>(null);
 
-  const { data, loading, refetch } = useQuery<{
-    adminSections: AdminSection[];
-  }>(ADMIN_SECTIONS_QUERY, { fetchPolicy: 'cache-and-network' });
+  const { data, loading, refetch } = useQuery(ADMIN_SECTIONS_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   const [removeSection, { loading: removing }] = useMutation(
     REMOVE_SECTION_MUTATION,
@@ -143,11 +120,8 @@ export function SectionsTable() {
                   <TableCell>{section.location ?? '—'}</TableCell>
                   <TableCell>{section.capacity ?? '—'}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={STATUS_VARIANT[section.status] ?? 'outline'}
-                      className="capitalize"
-                    >
-                      {section.status}
+                    <Badge variant={SECTION_STATUS_VARIANT[section.status]}>
+                      {SECTION_STATUS_LABELS[section.status]}
                     </Badge>
                   </TableCell>
                   <TableCell>

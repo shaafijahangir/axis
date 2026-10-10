@@ -1,5 +1,16 @@
 import { InputType, Field, Float, Int, ObjectType } from '@nestjs/graphql';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { CourseCategory } from '../../../database/entities/course.entity';
+import { MAX_PAGE_SIZE } from '../../../common/pagination';
 import { EnrollmentMode } from '../../../database/entities/course-section.entity';
 
 /**
@@ -109,34 +120,64 @@ export class StudentCatalogPage {
   total: number;
 }
 
+/**
+ * WHY the validators: the global ValidationPipe runs with whitelist +
+ * forbidNonWhitelisted, which rejects every property that has no
+ * class-validator decorator. Without them this input failed with
+ * "property search should not exist" for every field (even `{}`, because
+ * GraphQL applies the limit/offset defaults) and the student catalog never
+ * loaded.
+ */
 @InputType()
 export class StudentCatalogFilter {
   /** Full-text search on course code, title, or instructor name (ILIKE). */
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
   search?: string;
 
   /** Filter by specific term. Defaults to the current academic term. */
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   termId?: string;
 
   /** Filter by department identifier. */
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   department?: string;
 
   @Field(() => CourseCategory, { nullable: true })
+  @IsOptional()
+  @IsEnum(CourseCategory)
   category?: CourseCategory;
 
   /** Filter by course level (100, 200, 300, 400…). */
   @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
   courseLevel?: number;
 
   /** When true, only return sections with at least one seat available. */
   @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
   hasSeats?: boolean;
 
   @Field(() => Int, { nullable: true, defaultValue: 20 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_PAGE_SIZE)
   limit?: number;
 
   @Field(() => Int, { nullable: true, defaultValue: 0 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
   offset?: number;
 }

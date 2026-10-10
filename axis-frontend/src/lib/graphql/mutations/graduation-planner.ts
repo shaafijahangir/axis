@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-const GRADUATION_PLAN_FIELDS = gql`
+export const GRAD_PLAN_FIELDS = graphql(`
   fragment GradPlanFields on GraduationPlanResult {
     id
     profileId
@@ -69,27 +69,25 @@ const GRADUATION_PLAN_FIELDS = gql`
       }
     }
   }
-`;
+`);
 
-export const GENERATE_GRADUATION_PLAN_MUTATION = gql`
-  ${GRADUATION_PLAN_FIELDS}
+export const GENERATE_GRADUATION_PLAN_MUTATION = graphql(`
   mutation GenerateGraduationPlan($input: GenerateGraduationPlanInput!) {
     generateGraduationPlan(input: $input) {
       ...GradPlanFields
     }
   }
-`;
+`);
 
-export const ACTIVATE_GRADUATION_PLAN_MUTATION = gql`
-  ${GRADUATION_PLAN_FIELDS}
+export const ACTIVATE_GRADUATION_PLAN_MUTATION = graphql(`
   mutation ActivateGraduationPlan($planId: String!) {
     activateGraduationPlan(planId: $planId) {
       ...GradPlanFields
     }
   }
-`;
+`);
 
-export const UPDATE_TUITION_CONFIG_MUTATION = gql`
+export const UPDATE_TUITION_CONFIG_MUTATION = graphql(`
   mutation UpdateTuitionConfig($config: TuitionConfigInput!) {
     updateTuitionConfig(config: $config) {
       perCreditCost
@@ -104,15 +102,15 @@ export const UPDATE_TUITION_CONFIG_MUTATION = gql`
       }
     }
   }
-`;
+`);
 
-export const CLEAR_TUITION_CONFIG_MUTATION = gql`
+export const CLEAR_TUITION_CONFIG_MUTATION = graphql(`
   mutation ClearTuitionConfig {
     clearTuitionConfig
   }
-`;
+`);
 
-export const UPDATE_FINANCIAL_AID_CONFIG_MUTATION = gql`
+export const UPDATE_FINANCIAL_AID_CONFIG_MUTATION = graphql(`
   mutation UpdateFinancialAidConfig($config: FinancialAidConfigInput!) {
     updateFinancialAidConfig(config: $config) {
       fullTimeThreshold
@@ -120,10 +118,10 @@ export const UPDATE_FINANCIAL_AID_CONFIG_MUTATION = gql`
       maxTimeframePercent
     }
   }
-`;
+`);
 
-export const CLEAR_FINANCIAL_AID_CONFIG_MUTATION = gql`
+export const CLEAR_FINANCIAL_AID_CONFIG_MUTATION = graphql(`
   mutation ClearFinancialAidConfig {
     clearFinancialAidConfig
   }
-`;
+`);
