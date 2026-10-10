@@ -17,8 +17,8 @@ import { MY_ENROLLMENTS_QUERY } from '@/lib/graphql/queries/courses';
 
 interface Section {
   id: string;
-  location?: string;
-  capacity?: number;
+  location?: string | null;
+  capacity?: number | null;
   status: string;
   instructor?: {
     id: string;
@@ -74,7 +74,7 @@ export function SectionList({
             <TableCell>{section.capacity ?? '-'}</TableCell>
             <TableCell>
               <Badge variant="outline" className="capitalize">
-                {section.status}
+                {section.status.toLowerCase()}
               </Badge>
             </TableCell>
             <TableCell>
@@ -89,7 +89,7 @@ export function SectionList({
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={loading || section.status !== 'active'}
+                  disabled={loading || section.status !== 'ACTIVE'}
                   onClick={() =>
                     enrollStudent({ variables: { sectionId: section.id } })
                   }

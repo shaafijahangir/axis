@@ -25,19 +25,6 @@ type EnrollmentStatus =
   | 'WAITLISTED'
   | 'REJECTED';
 
-interface EnrollmentData {
-  id: string;
-  role: string;
-  status: string;
-  enrolledAt: string;
-  user: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-}
-
 interface SectionRosterProps {
   sectionId: string;
 }
@@ -121,9 +108,9 @@ export function SectionRoster({ sectionId }: SectionRosterProps) {
   const { user } = useAuthStore();
   const isAdmin = user?.roles.includes(UserRole.ADMIN);
 
-  const { data, loading, refetch } = useQuery<{
-    sectionEnrollments: EnrollmentData[];
-  }>(SECTION_ENROLLMENTS_QUERY, { variables: { sectionId } });
+  const { data, loading, refetch } = useQuery(SECTION_ENROLLMENTS_QUERY, {
+    variables: { sectionId },
+  });
 
   if (loading) {
     return (
@@ -177,9 +164,9 @@ export function SectionRoster({ sectionId }: SectionRosterProps) {
                 {rUser.email}
               </p>
             </div>
-            {enrollment.role !== 'student' && (
+            {enrollment.role !== 'STUDENT' && (
               <Badge variant="secondary" className="text-xs capitalize">
-                {enrollment.role}
+                {enrollment.role.toLowerCase()}
               </Badge>
             )}
             {/* Admin: force-status select; others: read-only badge for non-active */}
@@ -190,9 +177,10 @@ export function SectionRoster({ sectionId }: SectionRosterProps) {
                 onChanged={() => refetch()}
               />
             ) : (
-              enrollment.status !== 'active' && (
-                <Badge variant="outline" className="text-xs capitalize">
-                  {enrollment.status}
+              enrollment.status !== 'ACTIVE' && (
+                <Badge variant="outline" className="text-xs">
+                  {STATUS_LABELS[enrollment.status.toLowerCase()] ??
+                    enrollment.status}
                 </Badge>
               )
             )}

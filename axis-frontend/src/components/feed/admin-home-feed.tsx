@@ -16,15 +16,13 @@ import { SendSchoolAnnouncementDialog } from '@/components/announcements/send-sc
 
 export function AdminHomeFeed() {
   const { user } = useAuthStore();
-  const { data: courseData, loading: courseLoading } = useQuery<{
-    courseCount: number;
-  }>(COURSE_COUNT_QUERY);
-  const { data: sectionData, loading: sectionLoading } = useQuery<{
-    sectionCount: number;
-  }>(SECTION_COUNT_QUERY);
-  const { data: enrollmentData, loading: enrollmentLoading } = useQuery<{
-    enrollmentCount: number;
-  }>(ENROLLMENT_COUNT_QUERY);
+  const { data: courseData, loading: courseLoading } =
+    useQuery(COURSE_COUNT_QUERY);
+  const { data: sectionData, loading: sectionLoading } =
+    useQuery(SECTION_COUNT_QUERY);
+  const { data: enrollmentData, loading: enrollmentLoading } = useQuery(
+    ENROLLMENT_COUNT_QUERY,
+  );
   const { data: userData, loading: userLoading } = useQuery<{
     userCount: number;
   }>(USER_COUNT_QUERY);

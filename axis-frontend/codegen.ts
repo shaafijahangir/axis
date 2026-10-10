@@ -38,6 +38,9 @@ const config: CodegenConfig = {
         // Make every nullable field actually `T | null` (not `T | null | undefined`)
         // so consumers can branch on a single sentinel.
         avoidOptionals: { field: true },
+        // The backend serializes DateTime as an ISO-8601 string (graphql-scalars
+        // default for NestJS code-first). Without this, every date is `unknown`.
+        scalars: { DateTime: 'string' },
       },
     },
   },

@@ -49,12 +49,6 @@ interface ScheduleSection {
   instructor: { firstName: string; lastName: string };
 }
 
-interface EnrollmentItem {
-  id: string;
-  status: string;
-  section: ScheduleSection;
-}
-
 interface OfficeHourBlockItem {
   id: string;
   dayOfWeek: OfficeHourDay;
@@ -484,9 +478,7 @@ function ScheduleLegend({
 // ─── Student view ─────────────────────────────────────────────────────────────
 
 function StudentSchedule() {
-  const { data, loading } = useQuery<{ myEnrollments: EnrollmentItem[] }>(
-    MY_ENROLLMENTS_QUERY,
-  );
+  const { data, loading } = useQuery(MY_ENROLLMENTS_QUERY);
   const sections =
     data?.myEnrollments
       .filter((e) => (e.status ?? '').toUpperCase() === 'ACTIVE')
@@ -510,9 +502,8 @@ function StudentSchedule() {
  * cards for office hours and busy times.
  */
 function InstructorSchedule() {
-  const { data: sectionsData, loading: sectionsLoading } = useQuery<{
-    mySections: ScheduleSection[];
-  }>(MY_SECTIONS_QUERY);
+  const { data: sectionsData, loading: sectionsLoading } =
+    useQuery(MY_SECTIONS_QUERY);
   const { data: ohData, loading: ohLoading } = useQuery<{
     myOfficeHourBlocks: OfficeHourBlockItem[];
   }>(MY_OFFICE_HOUR_BLOCKS_QUERY);

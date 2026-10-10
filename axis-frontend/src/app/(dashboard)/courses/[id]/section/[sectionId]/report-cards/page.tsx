@@ -57,13 +57,6 @@ function parseJson<T>(s?: string): T | null {
   }
 }
 
-interface SectionData {
-  id: string;
-  location?: string;
-  course: { id: string; code: string; title: string };
-  instructor: { firstName: string; lastName: string };
-}
-
 export default function ReportCardsPage() {
   const params = useParams();
   const courseId = params.id as string;
@@ -73,9 +66,10 @@ export default function ReportCardsPage() {
   const [draftComment, setDraftComment] = useState('');
   const [draftGrade, setDraftGrade] = useState('');
 
-  const { data: sectionData, loading: sectionLoading } = useQuery<{
-    section: SectionData;
-  }>(SECTION_QUERY, { variables: { id: sectionId } });
+  const { data: sectionData, loading: sectionLoading } = useQuery(
+    SECTION_QUERY,
+    { variables: { id: sectionId } },
+  );
 
   const { data, loading, refetch } = useQuery<{
     sectionReportCards: ReportCardSummary[];

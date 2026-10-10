@@ -16,6 +16,7 @@
 | GraphQL types | PascalCase | `Assignment`, `UserRole` |
 | Enum values | UPPER_CASE (TypeScript) | `UserRole.STUDENT`, `AssignmentType.QUIZ` |
 | Enum DB values | lowercase | `'student'`, `'quiz'` |
+| Enum values over GraphQL | the enum NAME, UPPER_CASE | API returns `"QUIZ"`, never `"quiz"`. Frontend imports enum types from `@/lib/graphql/__generated__/graphql` — never hand-types a lowercase union (BUG-015) |
 
 ---
 

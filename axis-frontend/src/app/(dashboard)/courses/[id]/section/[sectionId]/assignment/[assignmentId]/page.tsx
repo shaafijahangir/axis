@@ -16,39 +16,10 @@ import { SubmissionHistory } from '@/components/assignments/submission-history';
 import { SubmissionGradingList } from '@/components/assignments/submission-grading-list';
 import { QuizBuilder } from '@/components/quiz/quiz-builder';
 import { QuizDelivery } from '@/components/quiz/quiz-delivery';
-import {
-  AttachmentList,
-  type AttachmentItem,
-} from '@/components/uploads/attachment-list';
+import { AttachmentList } from '@/components/uploads/attachment-list';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/auth.store';
 import { UserRole } from '@/types/auth';
-
-interface AssignmentData {
-  id: string;
-  sectionId: string;
-  title: string;
-  description?: string;
-  type: string;
-  pointsPossible: number;
-  dueAt?: string;
-  unlockAt?: string;
-  lockAt?: string;
-  maxAttempts?: number | null;
-  timeLimitMinutes?: number | null;
-  displayMode?: string | null;
-  attachments?: AttachmentItem[];
-}
-
-interface SubmissionData {
-  id: string;
-  attempt: number;
-  content?: string;
-  submittedAt?: string;
-  score?: number;
-  gradedAt?: string;
-  feedback?: string;
-}
 
 export default function AssignmentPage() {
   const params = useParams();
@@ -66,23 +37,25 @@ export default function AssignmentPage() {
     [UserRole.INSTRUCTOR, UserRole.TA, UserRole.ADMIN].includes(r),
   );
 
-  const { data: assignmentData, loading: assignmentLoading } = useQuery<{
-    assignment: AssignmentData;
-  }>(ASSIGNMENT_QUERY, { variables: { id: assignmentId } });
+  const { data: assignmentData, loading: assignmentLoading } = useQuery(
+    ASSIGNMENT_QUERY,
+    { variables: { id: assignmentId } },
+  );
 
   const {
     data: submissionsData,
     loading: submissionsLoading,
     refetch: refetchSubmissions,
-  } = useQuery<{
-    mySubmissions: SubmissionData[];
-  }>(MY_SUBMISSIONS_QUERY, {
+  } = useQuery(MY_SUBMISSIONS_QUERY, {
     variables: { assignmentId },
     skip: isGrader === true,
   });
 
   const assignment = assignmentData?.assignment;
-  const isQuizType = assignment?.type === 'quiz' || assignment?.type === 'exam';
+  // The API returns the GraphQL enum NAME ("QUIZ"), not the stored value
+  // ("quiz"). Comparing against lowercase silently hid the quiz builder and
+  // quiz delivery; typed codegen now makes that comparison a compile error.
+  const isQuizType = assignment?.type === 'QUIZ' || assignment?.type === 'EXAM';
   const existingAttempts = submissionsData?.mySubmissions?.length ?? 0;
 
   if (assignmentLoading) {
@@ -123,7 +96,7 @@ export default function AssignmentPage() {
       <AssignmentDetail
         title={assignment.title}
         description={assignment.description}
-        type={assignment.type}
+        type={assignment.type.toLowerCase()}
         pointsPossible={assignment.pointsPossible}
         dueAt={assignment.dueAt}
         unlockAt={assignment.unlockAt}

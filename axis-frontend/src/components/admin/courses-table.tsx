@@ -41,10 +41,9 @@ export function CoursesTable() {
   const [editCourse, setEditCourse] = useState<Course | null>(null);
   const [deleteCourse, setDeleteCourse] = useState<Course | null>(null);
 
-  const { data, loading, refetch } = useQuery<{ courses: Course[] }>(
-    COURSES_QUERY,
-    { fetchPolicy: 'cache-and-network' },
-  );
+  const { data, loading, refetch } = useQuery(COURSES_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   const [removeCourse, { loading: removing }] = useMutation(
     REMOVE_COURSE_MUTATION,
