@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const CREATE_CAREER_MUTATION = gql`
+export const CREATE_CAREER_MUTATION = graphql(`
   mutation CreateCareer($input: CreateCareerInput!) {
     createCareer(input: $input) {
       id
@@ -15,9 +15,9 @@ export const CREATE_CAREER_MUTATION = gql`
       isActive
     }
   }
-`;
+`);
 
-export const UPDATE_CAREER_MUTATION = gql`
+export const UPDATE_CAREER_MUTATION = graphql(`
   mutation UpdateCareer($input: UpdateCareerInput!) {
     updateCareer(input: $input) {
       id
@@ -32,10 +32,10 @@ export const UPDATE_CAREER_MUTATION = gql`
       isActive
     }
   }
-`;
+`);
 
-export const DELETE_CAREER_MUTATION = gql`
+export const DELETE_CAREER_MUTATION = graphql(`
   mutation DeleteCareer($id: String!) {
     deleteCareer(id: $id)
   }
-`;
+`);

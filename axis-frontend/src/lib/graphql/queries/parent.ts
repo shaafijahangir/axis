@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const MY_LINKED_STUDENTS_QUERY = gql`
+export const MY_LINKED_STUDENTS_QUERY = graphql(`
   query MyLinkedStudents {
     myLinkedStudents {
       id
@@ -10,9 +10,9 @@ export const MY_LINKED_STUDENTS_QUERY = gql`
       linkId
     }
   }
-`;
+`);
 
-export const PARENT_STUDENT_ENROLLMENTS_QUERY = gql`
+export const PARENT_STUDENT_ENROLLMENTS_QUERY = graphql(`
   query ParentStudentEnrollments($studentId: String!) {
     parentStudentEnrollments(studentId: $studentId) {
       enrollmentId
@@ -25,9 +25,9 @@ export const PARENT_STUDENT_ENROLLMENTS_QUERY = gql`
       termName
     }
   }
-`;
+`);
 
-export const PARENT_STUDENT_GRADES_QUERY = gql`
+export const PARENT_STUDENT_GRADES_QUERY = graphql(`
   query ParentStudentGrades($studentId: String!) {
     parentStudentGrades(studentId: $studentId) {
       assignmentId
@@ -39,9 +39,9 @@ export const PARENT_STUDENT_GRADES_QUERY = gql`
       dueAt
     }
   }
-`;
+`);
 
-export const PARENT_STUDENT_REPORT_CARDS_QUERY = gql`
+export const PARENT_STUDENT_REPORT_CARDS_QUERY = graphql(`
   query ParentStudentReportCards($studentId: String!) {
     parentStudentReportCards(studentId: $studentId) {
       id
@@ -56,4 +56,4 @@ export const PARENT_STUDENT_REPORT_CARDS_QUERY = gql`
       publishedAt
     }
   }
-`;
+`);

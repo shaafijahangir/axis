@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { graphql } from '@/lib/graphql/__generated__';
 
-export const SECTION_GRADEBOOK_QUERY = gql`
+export const SECTION_GRADEBOOK_QUERY = graphql(`
   query SectionGradebook($sectionId: String!) {
     sectionGradebook(sectionId: $sectionId) {
       assignments {
@@ -31,4 +31,4 @@ export const SECTION_GRADEBOOK_QUERY = gql`
       classAverage
     }
   }
-`;
+`);
