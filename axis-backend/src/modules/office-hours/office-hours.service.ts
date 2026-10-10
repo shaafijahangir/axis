@@ -40,6 +40,11 @@ import {
 import { NexusEvents } from '../ai/events/ai-events';
 import { TenantService } from '../../tenant/tenant.service';
 import { zonedNow } from '../../tenant/tenant-time';
+import {
+  buildIcsCalendar,
+  bookingToIcsEvent,
+  InviteViewer,
+} from './booking-ics';
 
 /** Campus wall-clock "now": calendar date + minutes since midnight. */
 interface CampusNow {
@@ -554,6 +559,31 @@ export class OfficeHoursService {
     });
     if (!booking) throw new NotFoundException('Booking not found');
     return booking;
+  }
+
+  /**
+   * FEAT-024: RFC 5545 calendar invite (.ics text) for one booking.
+   * Only the booking's student or instructor may export it — same ownership
+   * rule as cancelBooking. Tenant-scoped via findBookingById.
+   */
+  async getBookingCalendarInvite(
+    tenantId: string,
+    userId: string,
+    bookingId: string,
+    now: Date = new Date(),
+  ): Promise<string> {
+    const booking = await this.findBookingById(bookingId, tenantId);
+    const viewer: InviteViewer | null =
+      booking.studentId === userId
+        ? 'student'
+        : booking.instructorId === userId
+          ? 'instructor'
+          : null;
+    if (!viewer) {
+      throw new ForbiddenException('You cannot export this booking');
+    }
+    const timeZone = await this.tenantService.getTimezone(tenantId);
+    return buildIcsCalendar(bookingToIcsEvent(booking, viewer, timeZone, now));
   }
 
   // ─── Instructor booking ops (FEAT-022) ─────────────────────────────────────
