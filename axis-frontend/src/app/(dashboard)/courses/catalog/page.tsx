@@ -93,7 +93,7 @@ function seatColor(section: CatalogSection): string {
 }
 
 // BUG-015: the API returns (and the CourseCategory filter input expects) enum
-// NAMES — `CORE`, not the DB value `core`. Typed against the generated union so
+// NAMES â€” `CORE`, not the DB value `core`. Typed against the generated union so
 // a wrong-case key fails to compile.
 const CATEGORY_LABELS: Record<CourseCategory, string> = {
   CORE: 'Core',
