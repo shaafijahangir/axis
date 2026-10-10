@@ -9,7 +9,7 @@
 
 **Date:** 2026-10-09/10
 **Goal:** Shaafi asked what's high priority besides tests. Found the live demo API down; fixed that, then cooked the next code items.
-**Status:** Demo live again. 4 PRs open (#62–#65), none merged.
+**Status:** MERGED 2026-10-10 (#65 → #62 → #63 → #64, squash). main CI green on db26837; Render web + api deployed. Verified on merged main: 390/390 backend tests, frontend typecheck 0, all changed pages driven as student/instructor/admin with zero console errors; live API returns the 11:00 PT booking as 18:00Z and utilization 1/4, 0/3.
 
 ### What happened
 - **Demo was down:** Render free Postgres expired (~2026-08-15, as GTM §8.4 predicted). Web 200, API timed out. Moved the DB to **Neon** (free plan, project `axis-demo`, aws-us-west-2, branch "Expires: Never"). Migrations 4/4 + seed run against Neon; Render env vars repointed (direct host, not `-pooler`). Verified live: 4/4 logins 201, current term Fall 2026, student feed 26 items. Creds live in `~/.axis-neon-db.env` (never committed).
@@ -25,7 +25,8 @@
 - Background workers in `acceptEdits` stalled on their first shell prompt; the orchestrator did the work inline instead.
 
 ### Open / owed
-- Shaafi: review/merge #65 first (unblocks e2e), then #62, #63, #64. Revoke the old Render API key (still owed from Session 56).
+- Shaafi: revoke the old Render API key (still owed from Session 56).
+- #64 CI e2e exposed a11y contrast on the now-visible feed due labels (amber-600 3.2:1) — fixed to amber-700/emerald-700 before merge.
 - docker-compose.yml still references minio/minio (fresh `pnpm infra:up` will fail to pull) — not changed, Docker wasn't running to test.
 - Local Playwright suite is login-flaky on main too (4/7 sampled failures reproduce on untouched main).
 - `next build` fails inside nested `.claude/worktrees` (Turbopack resolves from the parent repo); CI build is the check.
