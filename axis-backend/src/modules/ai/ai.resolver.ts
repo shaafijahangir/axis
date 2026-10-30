@@ -1,5 +1,5 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
+import { NotFoundException, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { User, UserRole } from '../../database/entities/user.entity';
@@ -131,10 +131,22 @@ export class AiResolver {
     });
   }
 
+  /**
+   * Owner only. Instructors read student transcripts through
+   * `sectionTutorTranscript`, which checks section staff access.
+   */
   @Query(() => [AiMessage])
   async aiMessages(
+    @CurrentUser() user: User,
     @Args('conversationId') conversationId: string,
   ): Promise<AiMessage[]> {
+    const conversation = await this.conversationRepo.findOne({
+      where: { id: conversationId, userId: user.id, tenantId: user.tenantId },
+      select: ['id'],
+    });
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
     return this.messageRepo.find({
       where: { conversationId },
       order: { createdAt: 'ASC' },

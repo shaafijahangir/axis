@@ -39,6 +39,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { LtiModule } from './modules/lti/lti.module';
 import { PlannerModule } from './modules/planner/planner.module';
 import { CatalogExtractModule } from './modules/catalog-extract/catalog-extract.module';
+import { TutorInsightsModule } from './modules/tutor-insights/tutor-insights.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { DiscussionsModule } from './modules/discussions/discussions.module';
@@ -146,6 +147,7 @@ import { depthLimit } from './graphql/depth-limit.validation';
     LtiModule,
     PlannerModule,
     CatalogExtractModule,
+    TutorInsightsModule,
     UploadsModule,
     NotificationsModule,
     DiscussionsModule,

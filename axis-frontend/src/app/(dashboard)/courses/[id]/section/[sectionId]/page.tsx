@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
 import {
   BarChart3,
+  Bot,
   Plus,
   Users,
   MessageSquare,
@@ -189,6 +190,12 @@ export default function SectionTimelinePage() {
               >
                 <FileText className="mr-1 h-4 w-4" />
                 Report Cards
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/courses/${courseId}/section/${sectionId}/ai-tutor`}>
+                <Bot className="mr-1 h-4 w-4" />
+                AI Tutor
               </Link>
             </Button>
             <ExtendDeadlineDialog

@@ -5,6 +5,22 @@
 
 ---
 
+## Session 59 — Competitor research + FEAT-027 Tutor Mission Control
+
+**Date:** 2026-10-29/30
+**Goal:** Shaafi asked for competitor research (COMPETITORS.md), then "steal #1": SchoolAI Mission Control.
+**Status:** Branch `feat/tutor-mission-control`, PR open for review.
+
+### What happened
+- **COMPETITORS.md:** 4 parallel researchers (institutional LMS, course creators, AI native apps, corporate + teacher AI). Ranked top 10 to steal, feature catalogue with Have/Partial/Missing.
+- **FEAT-027 built:** `tutor-insights` module + AI Tutor page + Study Coach course picker with a visibility note. See BACKLOG FEAT-027.
+- **SEC-009 found and fixed:** any user could read (`aiMessages`) or post into (`continueConversation`) any AI conversation.
+- **Verified:** 16 new unit tests, full backend suite, frontend typecheck and lint, new e2e spec (3 UI tests pass; live test needs credit), and 8 access probes against the running API (other instructor, student, other student all blocked; owner and right instructor allowed).
+- **Blocked:** Anthropic account out of credit, so Study Coach replies and Find gaps were not seen working on a real model. Error now reaches the teacher as one plain sentence.
+- **Found, not fixed:** BUG-018 (timestamps 1 hour off app wide).
+
+---
+
 ## Session 58 — Demo revival (Neon) + booking TZ + FEAT-022 + codegen bug sweep
 
 **Date:** 2026-10-09/10

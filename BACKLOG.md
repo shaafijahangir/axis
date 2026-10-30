@@ -1442,6 +1442,20 @@
 - **Priority:** LOW — shaafilook.md §4: "'By appointment via email' as a fallback option". A block type with no fixed slots: student sends a structured request (proposed times + topic), instructor accepts one → becomes a booking. Keeps the last email workflow inside Axis instead of outside it.
 - **Acceptance:** Prof with no fixed hours still shows a "Request a meeting" path; accepting a request creates a normal booking.
 
+### FEAT-027: Tutor Mission Control (instructor view of Study Coach)
+- **Status:** `DONE` (2026-10-30, branch `feat/tutor-mission-control`, PR open)
+- **Why:** COMPETITORS.md #1 (after SchoolAI Mission Control). Study Coach chats were invisible to instructors.
+- **Built:** `tutor-insights` module. `sectionTutorActivity` (per student: chats, messages, deterministic "needs attention" from confusion and answer-seeking phrases in the last 7 days), `sectionTutorTranscript` (full student/tutor turns, no tool traffic), `analyzeSectionTutorGaps` (one Haiku call, students pseudonymized as S1..Sn, gated by governance rate limit and budgets, usage logged). Page at `/courses/[id]/section/[sectionId]/ai-tutor`, polls every 15 s. Students tie a Study Coach chat to a course from a picker that states who can read it.
+- **Not yet verified live:** Study Coach replies and Find gaps on a real model run; the Anthropic account was out of credit on 2026-10-30. Run `E2E_LIVE_AI=1 pnpm --filter axis-frontend test:e2e e2e/10-tutor-mission-control.spec.ts` once topped up.
+- **Next:** class misconceptions view on the instructor home feed; push gap groups into section groups.
+
+### SEC-009: AI conversations readable and writable by any user
+- **Status:** `DONE` (2026-10-30, with FEAT-027). `aiMessages` took a bare `conversationId` with no owner or tenant check, and `continueConversation` loaded the conversation by id alone, so any logged-in user could read or post into anyone's chat. Both now require `userId` + `tenantId`. Verified against the running API with a second student.
+
+### BUG-018: Timestamps render 1 hour off
+- **Status:** `TODO`
+- **Found:** 2026-10-30. A message created at 23:00 PDT comes back from the API as 08:00Z (should be 06:00Z); the backend logger prints local time 1 hour behind the machine clock; the seeded AI chat shows "06:57 PM" for 02:57Z (19:57 PDT). Affects every `createdAt` shown in the UI (AI Tutor shows "in about 1 hour"). Likely `timestamp without time zone` columns written from a Node process whose TZ resolution disagrees with Postgres (UTC). Unverified root cause; reproduce before fixing.
+
 ### BUG-015: Frontend compares GraphQL enums in lowercase
 - **Status:** `IN_PROGRESS` (fixed across feeds, quiz, enrollment, /courses, roster, admin, planner/catalog/parent and comms surfaces — #64, #67–#69. Remaining: components still fed by the untyped files listed under ARCH-007, e.g. `components/courses/enroll-dialog.tsx` (hand-typed lowercase `enrollmentMode`; catalog translates at the boundary).)
 - **Priority:** HIGH — the API returns enum NAMES (`QUIZ`, `ACTIVE`, `DEADLINE`, `OPEN`), not stored values. Components written against lowercase silently mis-rendered: every home-feed card showed as "Course update", quiz builder / Start Quiz never appeared, Enroll was always disabled.

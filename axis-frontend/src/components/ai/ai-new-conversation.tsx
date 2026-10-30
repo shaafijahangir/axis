@@ -10,6 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AVAILABLE_AGENTS_QUERY } from '@/lib/graphql/queries/ai';
+import { MY_ENROLLMENTS_QUERY } from '@/lib/graphql/queries/courses';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { START_AI_CONVERSATION_MUTATION } from '@/lib/graphql/mutations/ai';
 import { AiAgentSelector } from './ai-agent-selector';
 import { cn } from '@/lib/utils';
@@ -25,6 +33,9 @@ const messageSchema = z.object({
 });
 
 type MessageFormData = z.infer<typeof messageSchema>;
+
+/** Select value for "not about a specific course" (Radix forbids ''). */
+const GENERAL_COURSE = 'general';
 
 /**
  * Returns a label for an agent type.
@@ -63,6 +74,21 @@ export function AiNewConversation({
 
   const { data, loading: agentsLoading } = useQuery(AVAILABLE_AGENTS_QUERY);
 
+  // Study Coach chats can be tied to a course so the course's instructor
+  // sees them in the AI Tutor view. Optional; "general" stays private.
+  const isStudyCoach = selectedAgent === 'study-coach';
+  const { data: enrollmentData } = useQuery(MY_ENROLLMENTS_QUERY, {
+    skip: !isStudyCoach,
+  });
+  const courseOptions = Array.from(
+    new Map(
+      (enrollmentData?.myEnrollments ?? [])
+        .filter((e) => e.status === 'ACTIVE' && e.section?.course)
+        .map((e) => [e.section.course.id, e.section.course]),
+    ).values(),
+  );
+  const [courseId, setCourseId] = useState<string>(GENERAL_COURSE);
+
   const [startConversation, { loading: starting }] = useMutation(
     START_AI_CONVERSATION_MUTATION,
   );
@@ -86,6 +112,9 @@ export function AiNewConversation({
           input: {
             agentType: selectedAgent,
             message: formData.message,
+            ...(isStudyCoach && courseId !== GENERAL_COURSE
+              ? { courseId }
+              : {}),
           },
         },
       });
@@ -175,6 +204,44 @@ export function AiNewConversation({
                   ? "Ask about your courses, assignments, or study strategies. I'll guide you without giving direct answers."
                   : "Ask about grading, feedback, or student performance. I'll help you provide better feedback."}
               </p>
+
+              {isStudyCoach && courseOptions.length > 0 && (
+                <div className="mt-4 text-left">
+                  <label
+                    htmlFor="study-coach-course"
+                    className="text-sm font-medium"
+                  >
+                    Which course is this about?
+                  </label>
+                  <Select value={courseId} onValueChange={setCourseId}>
+                    <SelectTrigger
+                      id="study-coach-course"
+                      className="mt-1"
+                      aria-label="Course"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={GENERAL_COURSE}>
+                        General (private to you)
+                      </SelectItem>
+                      {courseOptions.map((course) => (
+                        <SelectItem key={course.id} value={course.id}>
+                          {course.code} · {course.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p
+                    className="mt-1 text-xs text-muted-foreground"
+                    data-testid="study-coach-visibility-note"
+                  >
+                    {courseId === GENERAL_COURSE
+                      ? 'Only you can see this chat.'
+                      : "Your instructor can read chats tied to this course, so they can help where you're stuck."}
+                  </p>
+                </div>
+              )}
 
               {/* Change agent */}
               <Button
