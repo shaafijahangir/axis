@@ -80,6 +80,7 @@ Every feature is a NestJS module under `src/modules/`. Modules are self-containe
 | **messaging** | DMs, conversations, unread tracking | resolver, service, gateway (Socket.IO) |
 | **ai** | Agentic AI engine (see AI section below) | 20+ files across agents/, tools/, providers/, events/ |
 | **planner** | AI course planner, degree profiles | resolver, service |
+| **tutor-insights** | Instructor view of Study Coach per section: activity, transcripts, AI gap grouping (FEAT-027) | resolver, service |
 | **analytics** | Platform analytics for admin | resolver, service |
 | **academic-terms** | Term management | resolver, service |
 | **lti** | LTI 1.3 integration | controller, resolver, service, 5 entities |
