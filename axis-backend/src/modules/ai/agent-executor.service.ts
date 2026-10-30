@@ -177,8 +177,13 @@ export class AgentExecutorService {
   async continueConversation(
     params: ContinueConversationParams,
   ): Promise<AgentExecutionResult> {
+    // Owner + tenant scoped: a caller can only continue their own conversation.
     const conversation = await this.conversationRepository.findOne({
-      where: { id: params.conversationId },
+      where: {
+        id: params.conversationId,
+        userId: params.userId,
+        tenantId: params.tenantId,
+      },
     });
     if (!conversation) {
       throw new Error(`Conversation not found: "${params.conversationId}"`);
