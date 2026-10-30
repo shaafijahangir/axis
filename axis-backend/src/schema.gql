@@ -1327,6 +1327,7 @@ type Mutation {
   adminForceEnrollmentStatus(enrollmentId: String!, status: EnrollmentStatus!): Enrollment!
   adminUpdateEnrollment(id: String!, input: AdminUpdateEnrollmentInput!): Enrollment!
   adminUpdateUser(id: String!, input: AdminUpdateUserInput!): User!
+  analyzeSectionTutorGaps(sectionId: String!): TutorGapAnalysis!
   approveEnrollment(enrollmentId: String!): Enrollment!
   attachUpload(input: AttachUploadInput!): FileUpload!
   batchCreateCourses(courses: [BatchCourseItem!]!): ImportResult!
@@ -1761,6 +1762,8 @@ type Query {
   sectionGradebook(sectionId: String!): SectionGradebook!
   sectionReportCards(sectionId: String!): [ReportCardSummary!]!
   sectionTimeline(sectionId: String!): [TimelineEntry!]!
+  sectionTutorActivity(sectionId: String!): [TutorStudentActivity!]!
+  sectionTutorTranscript(conversationId: String!, sectionId: String!): [TutorTranscriptMessage!]!
   simulateMajorChange(profileId: String!, targetProgramId: String!): DegreeProgress!
   studentDegreeProfile(id: String!): StudentDegreeProfile!
   studentFeed: [FeedItem!]!
@@ -2156,6 +2159,45 @@ type TuitionFeeResult {
   amount: Float!
   name: String!
   type: String!
+}
+
+type TutorConversationSummary {
+  id: String!
+  lastActiveAt: DateTime!
+  studentMessageCount: Int!
+  title: String!
+}
+
+type TutorGapAnalysis {
+  analyzedMessageCount: Int!
+  generatedAt: DateTime!
+  groups: [TutorGapGroup!]!
+  strengths: [String!]!
+}
+
+type TutorGapGroup {
+  studentIds: [String!]!
+  studentNames: [String!]!
+  summary: String!
+  topic: String!
+}
+
+type TutorStudentActivity {
+  attentionReasons: [String!]!
+  conversationCount: Int!
+  conversations: [TutorConversationSummary!]!
+  lastActiveAt: DateTime
+  needsAttention: Boolean!
+  studentId: String!
+  studentMessageCount: Int!
+  studentName: String!
+}
+
+type TutorTranscriptMessage {
+  content: String!
+  createdAt: DateTime!
+  id: String!
+  speaker: String!
 }
 
 input UpdateAcademicTermInput {
