@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, IsNull } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Course, CourseCategory } from '../../database/entities/course.entity';
 import {
@@ -403,12 +403,12 @@ export class CsvImportService {
         continue;
       }
 
-      const totalCreditsRequired = parseInt(creditsRaw, 10);
+      const totalCreditsRequired = parseFloat(creditsRaw);
       if (isNaN(totalCreditsRequired)) {
         errors.push({
           row: rowNum,
           field: 'total_credits',
-          message: `"${creditsRaw}" is not a valid integer`,
+          message: `"${creditsRaw}" is not a valid number`,
         });
         continue;
       }
@@ -456,7 +456,11 @@ export class CsvImportService {
     await this.dataSource.transaction(async (manager) => {
       for (const data of rowData) {
         const existing = await manager.findOne(DegreeProgram, {
-          where: { code: data.code, tenantId },
+          where: {
+            code: data.code,
+            tenantId,
+            catalogYear: data.catalogYear ?? IsNull(),
+          },
         });
 
         if (existing) {

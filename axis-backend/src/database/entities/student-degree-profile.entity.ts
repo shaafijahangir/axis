@@ -4,6 +4,21 @@ import { TenantScopedEntity } from './base.entity';
 import { User } from './user.entity';
 import { DegreeProgram } from './degree-program.entity';
 
+/** One completed course with the grade earned (UVic letter scale or COM/CR). */
+export interface CompletedCourseRecord {
+  courseId: string;
+  grade: string | null;
+}
+
+@ObjectType('CompletedCourse')
+export class CompletedCourseType implements CompletedCourseRecord {
+  @Field()
+  courseId: string;
+
+  @Field(() => String, { nullable: true })
+  grade: string | null;
+}
+
 export enum DegreeProfileStatus {
   ACTIVE = 'active',
   ON_LEAVE = 'on_leave',
@@ -61,6 +76,15 @@ export class StudentDegreeProfile extends TenantScopedEntity {
   @Column({ type: 'int' })
   enrollmentYear: number;
 
+  /**
+   * Calendar year whose rules the student follows. Null = enrollmentYear.
+   * WHY separate: UVic lets a student opt into a later calendar, so the
+   * rule year can differ from the entry year.
+   */
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'int', nullable: true })
+  catalogYear: number | null;
+
   @Field(() => Int, { nullable: true })
   @Column({ type: 'int', nullable: true })
   expectedGraduationYear: number | null;
@@ -72,6 +96,18 @@ export class StudentDegreeProfile extends TenantScopedEntity {
   @Field(() => [String])
   @Column({ type: 'jsonb', default: [] })
   completedCourseIds: string[];
+
+  /**
+   * Completed courses with grades. completedCourseIds stays the membership
+   * list (backward compat); this adds the grade so requirement groups can
+   * enforce a minimum grade. Courses missing here are treated as ungraded.
+   *
+   * WHY JSONB (not a table): same access pattern as completedCourseIds —
+   * always loaded as a set with the profile, never queried per course.
+   */
+  @Field(() => [CompletedCourseType])
+  @Column({ type: 'jsonb', default: [] })
+  completedCourses: CompletedCourseRecord[];
 
   /**
    * Course IDs the student is currently enrolled in this term.

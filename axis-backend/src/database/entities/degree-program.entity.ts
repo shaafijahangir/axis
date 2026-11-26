@@ -1,5 +1,11 @@
 import { Entity, Column, Index } from 'typeorm';
-import { ObjectType, Field, Int, registerEnumType } from '@nestjs/graphql';
+import {
+  ObjectType,
+  Field,
+  Int,
+  Float,
+  registerEnumType,
+} from '@nestjs/graphql';
 import { TenantScopedEntity } from './base.entity';
 
 /**
@@ -31,6 +37,12 @@ export interface RequirementGroup {
 
   /** Optional description for students */
   description?: string;
+
+  /**
+   * Lowest letter grade that counts toward this group (UVic scale, e.g. 'C').
+   * Null/absent = any passing grade. COM/CR always count as a pass.
+   */
+  minGrade?: string | null;
 }
 
 export enum DegreeProgramType {
@@ -69,7 +81,13 @@ registerEnumType(DegreeProgramStatus, {
 @ObjectType()
 @Entity('degree_programs')
 @Index(['tenantId'])
-@Index(['tenantId', 'code'], { unique: true })
+@Index(
+  'IDX_degree_programs_tenant_code_catalog',
+  ['tenantId', 'code', 'catalogYear'],
+  {
+    unique: true,
+  },
+)
 export class DegreeProgram extends TenantScopedEntity {
   @Field()
   @Column({ type: 'varchar', length: 200 })
@@ -101,8 +119,17 @@ export class DegreeProgram extends TenantScopedEntity {
   })
   programType: DegreeProgramType;
 
-  @Field(() => Int)
-  @Column({ type: 'int' })
+  /** Decimal because UVic-style units come in halves (60.0, 1.5). */
+  @Field(() => Float)
+  @Column({
+    type: 'decimal',
+    precision: 6,
+    scale: 2,
+    transformer: {
+      to: (v: number) => v,
+      from: (v: string | null) => (v === null ? v : Number(v)),
+    },
+  })
   totalCreditsRequired: number;
 
   /**
@@ -118,6 +145,10 @@ export class DegreeProgram extends TenantScopedEntity {
    * ONBOARD-001: Which catalog year this program definition applies to.
    * WHY: Degree requirements change between catalog years. A student
    * follows the requirements from their enrollment year.
+   *
+   * VERSIONING: one row per (code, catalogYear). Starts with the 4-digit
+   * year ("2026" or "2026-2027"); the planner matches it to a student's
+   * entry year (see resolveProgramVersion).
    */
   @Field({ nullable: true })
   @Column({ type: 'varchar', length: 9, nullable: true })

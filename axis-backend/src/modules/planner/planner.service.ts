@@ -20,6 +20,7 @@ import {
   PrerequisiteStatus,
   PrerequisiteStatusType,
 } from './dto/planner.types';
+import { meetsMinGrade } from './grade-scale';
 
 /**
  * Service for degree planning and progress calculation.
@@ -121,16 +122,32 @@ export class PlannerService {
     tenantId: string,
     input: CreateStudentProfileInput,
   ): Promise<StudentDegreeProfile> {
-    // Verify degree program exists
-    await this.findDegreeProgramOrFail(input.degreeProgramId, tenantId);
+    // Verify degree program exists, then switch to the version for the
+    // student's catalog year (same code, matching catalogYear).
+    const requested = await this.findDegreeProgramOrFail(
+      input.degreeProgramId,
+      tenantId,
+    );
+    const version = await this.resolveProgramVersion(
+      tenantId,
+      requested,
+      input.catalogYear ?? input.enrollmentYear,
+    );
 
     const profile = this.profileRepo.create({
       tenantId,
       userId: input.userId,
-      degreeProgramId: input.degreeProgramId,
+      degreeProgramId: version.id,
       enrollmentYear: input.enrollmentYear,
+      catalogYear: input.catalogYear ?? null,
       expectedGraduationYear: input.expectedGraduationYear ?? null,
-      completedCourseIds: input.completedCourseIds ?? [],
+      completedCourseIds: input.completedCourses
+        ? input.completedCourses.map((c) => c.courseId)
+        : (input.completedCourseIds ?? []),
+      completedCourses: (input.completedCourses ?? []).map((c) => ({
+        courseId: c.courseId,
+        grade: c.grade ?? null,
+      })),
       currentCourseIds: [],
     });
     return this.profileRepo.save(profile);
@@ -145,6 +162,15 @@ export class PlannerService {
     if (input.completedCourseIds !== undefined) {
       profile.completedCourseIds = input.completedCourseIds;
     }
+    if (input.completedCourses !== undefined) {
+      profile.completedCourses = input.completedCourses.map((c) => ({
+        courseId: c.courseId,
+        grade: c.grade ?? null,
+      }));
+      profile.completedCourseIds = profile.completedCourses.map(
+        (c) => c.courseId,
+      );
+    }
     if (input.currentCourseIds !== undefined) {
       profile.currentCourseIds = input.currentCourseIds;
     }
@@ -153,6 +179,21 @@ export class PlannerService {
     }
     if (input.notes !== undefined) {
       profile.notes = input.notes;
+    }
+    if (input.catalogYear !== undefined) {
+      if (!profile.degreeProgram) {
+        throw new NotFoundException(
+          `Degree program for profile ${profile.id} not found`,
+        );
+      }
+      profile.catalogYear = input.catalogYear;
+      const version = await this.resolveProgramVersion(
+        tenantId,
+        profile.degreeProgram,
+        input.catalogYear,
+      );
+      profile.degreeProgramId = version.id;
+      profile.degreeProgram = version;
     }
 
     return this.profileRepo.save(profile);
@@ -205,86 +246,41 @@ export class PlannerService {
       );
     }
 
-    // Load completed courses with their credits
-    const completedCourses =
-      profile.completedCourseIds.length > 0
-        ? await this.courseRepo.find({
-            where: { id: In(profile.completedCourseIds) },
-          })
-        : [];
+    return this.computeProgress(profile, program);
+  }
 
-    const completedMap = new Map(completedCourses.map((c) => [c.id, c]));
-    const allCompletedIds = new Set(profile.completedCourseIds);
+  // ─── Catalog Year Versioning ──────────────────────────────────────────
 
-    // Calculate per-requirement-group progress
-    const requirementProgress: RequirementProgress[] = program.requirements.map(
-      (req: RequirementGroup) => {
-        const completedInGroup = req.courseIds.filter((id) =>
-          allCompletedIds.has(id),
-        );
-        const remainingInGroup = req.courseIds.filter(
-          (id) => !allCompletedIds.has(id),
-        );
-
-        // Sum credits for completed courses in this group
-        const creditsCompleted = completedInGroup.reduce((sum, id) => {
-          const course = completedMap.get(id);
-          return sum + (course ? Number(course.credits) || 0 : 0);
-        }, 0);
-
-        const coursesRequired = req.minCoursesRequired || req.courseIds.length;
-        const coursesCompleted = completedInGroup.length;
-
-        // A requirement is fulfilled if BOTH credit and course count thresholds are met
-        const creditsFulfilled = creditsCompleted >= req.creditsRequired;
-        const coursesFulfilled = coursesCompleted >= coursesRequired;
-
-        return {
-          groupName: req.name,
-          type: req.type,
-          creditsRequired: req.creditsRequired,
-          creditsCompleted: Math.round(creditsCompleted * 100) / 100,
-          coursesRequired,
-          coursesCompleted,
-          fulfilled: creditsFulfilled && coursesFulfilled,
-          completedCourseIds: completedInGroup,
-          remainingCourseIds: remainingInGroup,
-        };
-      },
+  /**
+   * Pick the version of a program (same code) whose catalogYear matches
+   * the given year. Fallback: latest version at or before the year, else
+   * the latest version. Programs without a parseable year sort last.
+   *
+   * WHY: a student is judged by the worksheet of the year they entered,
+   * not the current one.
+   */
+  async resolveProgramVersion(
+    tenantId: string,
+    program: DegreeProgram,
+    year: number,
+  ): Promise<DegreeProgram> {
+    const versions = await this.degreeProgramRepo.find({
+      where: { tenantId, code: program.code },
+    });
+    if (versions.length === 0) return program;
+    // Prefer ACTIVE versions; use the others only when none is active
+    const active = versions.filter(
+      (v) => v.status === DegreeProgramStatus.ACTIVE,
     );
-
-    // Sum total credits completed across all requirement groups
-    // (a course might satisfy only one group, so we sum group-level credits)
-    const totalCreditsCompleted = requirementProgress.reduce(
-      (sum, rp) => sum + rp.creditsCompleted,
-      0,
-    );
-
-    const creditsRemaining = Math.max(
-      0,
-      program.totalCreditsRequired - totalCreditsCompleted,
-    );
-    const overallPercentage =
-      program.totalCreditsRequired > 0
-        ? Math.min(
-            100,
-            (totalCreditsCompleted / program.totalCreditsRequired) * 100,
-          )
-        : 0;
-
-    const estimatedSemestersRemaining =
-      creditsRemaining > 0
-        ? Math.ceil(creditsRemaining / this.AVG_CREDITS_PER_SEMESTER)
-        : 0;
-
-    return {
-      overallPercentage: Math.round(overallPercentage * 10) / 10,
-      totalCreditsRequired: program.totalCreditsRequired,
-      totalCreditsCompleted: Math.round(totalCreditsCompleted * 100) / 100,
-      creditsRemaining,
-      requirementProgress,
-      estimatedSemestersRemaining,
-    };
+    const pool = active.length > 0 ? active : versions;
+    const dated = pool
+      .map((v) => ({ v, y: parseCatalogYear(v.catalogYear) }))
+      .filter((x): x is { v: DegreeProgram; y: number } => x.y !== null)
+      .sort((a, b) => b.y - a.y);
+    if (dated.length === 0) return program;
+    const exact = dated.find((x) => x.y === year);
+    const atOrBefore = dated.find((x) => x.y <= year);
+    return (exact ?? atOrBefore ?? dated[0]).v;
   }
 
   // ─── Course Eligibility ───────────────────────────────────────────────
@@ -370,76 +366,7 @@ export class PlannerService {
       tenantId,
     );
 
-    // Load completed courses
-    const completedCourses =
-      profile.completedCourseIds.length > 0
-        ? await this.courseRepo.find({
-            where: { id: In(profile.completedCourseIds) },
-          })
-        : [];
-
-    const completedMap = new Map(completedCourses.map((c) => [c.id, c]));
-    const allCompletedIds = new Set(profile.completedCourseIds);
-
-    // Calculate progress against target program
-    const requirementProgress: RequirementProgress[] =
-      targetProgram.requirements.map((req: RequirementGroup) => {
-        const completedInGroup = req.courseIds.filter((id) =>
-          allCompletedIds.has(id),
-        );
-        const remainingInGroup = req.courseIds.filter(
-          (id) => !allCompletedIds.has(id),
-        );
-
-        const creditsCompleted = completedInGroup.reduce((sum, id) => {
-          const course = completedMap.get(id);
-          return sum + (course ? Number(course.credits) || 0 : 0);
-        }, 0);
-
-        const coursesRequired = req.minCoursesRequired || req.courseIds.length;
-
-        return {
-          groupName: req.name,
-          type: req.type,
-          creditsRequired: req.creditsRequired,
-          creditsCompleted: Math.round(creditsCompleted * 100) / 100,
-          coursesRequired,
-          coursesCompleted: completedInGroup.length,
-          fulfilled:
-            creditsCompleted >= req.creditsRequired &&
-            completedInGroup.length >= coursesRequired,
-          completedCourseIds: completedInGroup,
-          remainingCourseIds: remainingInGroup,
-        };
-      });
-
-    const totalCreditsCompleted = requirementProgress.reduce(
-      (sum, rp) => sum + rp.creditsCompleted,
-      0,
-    );
-    const creditsRemaining = Math.max(
-      0,
-      targetProgram.totalCreditsRequired - totalCreditsCompleted,
-    );
-    const overallPercentage =
-      targetProgram.totalCreditsRequired > 0
-        ? Math.min(
-            100,
-            (totalCreditsCompleted / targetProgram.totalCreditsRequired) * 100,
-          )
-        : 0;
-
-    return {
-      overallPercentage: Math.round(overallPercentage * 10) / 10,
-      totalCreditsRequired: targetProgram.totalCreditsRequired,
-      totalCreditsCompleted: Math.round(totalCreditsCompleted * 100) / 100,
-      creditsRemaining,
-      requirementProgress,
-      estimatedSemestersRemaining:
-        creditsRemaining > 0
-          ? Math.ceil(creditsRemaining / this.AVG_CREDITS_PER_SEMESTER)
-          : 0,
-    };
+    return this.computeProgress(profile, targetProgram);
   }
 
   // ─── ENROLL-006: Public prerequisite check ────────────────────────────
@@ -547,6 +474,136 @@ export class PlannerService {
   // ─── Helpers ──────────────────────────────────────────────────────────
 
   /**
+   * Walk each requirement group and compute per-group and overall progress.
+   *
+   * WHY overall from groups: summing raw credits let surplus electives push
+   * the total to 100% while core groups were still unmet. Each group now
+   * contributes at most its own creditsRequired, so the percentage can't
+   * exceed true completion.
+   *
+   * A completed course counts toward a group only if its grade meets the
+   * group's minGrade (COM/CR pass; ungraded legacy records count).
+   */
+  private async computeProgress(
+    profile: StudentDegreeProfile,
+    program: DegreeProgram,
+  ): Promise<DegreeProgress> {
+    const requirements: RequirementGroup[] = program.requirements;
+    const totalCreditsRequired = Number(program.totalCreditsRequired);
+    const completedCourses =
+      profile.completedCourseIds.length > 0
+        ? await this.courseRepo.find({
+            where: { id: In(profile.completedCourseIds) },
+          })
+        : [];
+
+    const completedMap = new Map(completedCourses.map((c) => [c.id, c]));
+    const allCompletedIds = new Set(profile.completedCourseIds);
+    const gradeById = new Map(
+      (profile.completedCourses ?? []).map((cc) => [cc.courseId, cc.grade]),
+    );
+
+    let cappedCreditsTotal = 0;
+    let groupCreditsRequiredTotal = 0;
+
+    const requirementProgress: RequirementProgress[] = requirements.map(
+      (req: RequirementGroup) => {
+        const counts = (id: string) =>
+          allCompletedIds.has(id) &&
+          meetsMinGrade(gradeById.get(id) ?? null, req.minGrade ?? null);
+        const completedInGroup = req.courseIds.filter(counts);
+        const remainingInGroup = req.courseIds.filter((id) => !counts(id));
+
+        // Sum credits for completed courses in this group
+        const creditsCompleted = completedInGroup.reduce((sum, id) => {
+          const course = completedMap.get(id);
+          return sum + (course ? Number(course.credits) || 0 : 0);
+        }, 0);
+
+        const creditsRequired = Number(req.creditsRequired) || 0;
+        // minCoursesRequired 0 with credits set means credits only. With no
+        // credits either (old stored groups), fall back to "all in the list"
+        // so an empty threshold never passes silently.
+        const coursesRequired =
+          req.minCoursesRequired == null ||
+          (req.minCoursesRequired === 0 && creditsRequired <= 0)
+            ? req.courseIds.length
+            : req.minCoursesRequired;
+        const coursesCompleted = completedInGroup.length;
+
+        // A requirement is fulfilled if BOTH credit and course count thresholds are met
+        const creditsFulfilled = creditsCompleted >= creditsRequired;
+        const coursesFulfilled = coursesCompleted >= coursesRequired;
+
+        cappedCreditsTotal += Math.min(creditsCompleted, creditsRequired);
+        groupCreditsRequiredTotal += creditsRequired;
+
+        return {
+          groupName: req.name,
+          type: req.type,
+          creditsRequired,
+          creditsCompleted: Math.round(creditsCompleted * 100) / 100,
+          coursesRequired,
+          coursesCompleted,
+          fulfilled: creditsFulfilled && coursesFulfilled,
+          completedCourseIds: completedInGroup,
+          remainingCourseIds: remainingInGroup,
+        };
+      },
+    );
+
+    // Sum total credits completed across all requirement groups
+    // (a course might satisfy only one group, so we sum group-level credits)
+    const totalCreditsCompleted = requirementProgress.reduce(
+      (sum, rp) => sum + rp.creditsCompleted,
+      0,
+    );
+
+    // Remaining is what the groups still need, so surplus credits in one
+    // group can't hide a gap in another.
+    const creditsRemaining = Math.max(
+      0,
+      Math.max(totalCreditsRequired, groupCreditsRequiredTotal) -
+        cappedCreditsTotal,
+    );
+    const overallPercentage =
+      groupCreditsRequiredTotal > 0
+        ? Math.min(100, (cappedCreditsTotal / groupCreditsRequiredTotal) * 100)
+        : 0;
+
+    const estimatedSemestersRemaining =
+      creditsRemaining > 0
+        ? Math.ceil(creditsRemaining / this.AVG_CREDITS_PER_SEMESTER)
+        : 0;
+
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+    const countedCredits = round2(cappedCreditsTotal);
+    const rawCredits = round2(totalCreditsCompleted);
+
+    const ruleYear = parseCatalogYear(program.catalogYear);
+    const entryYear = profile.catalogYear ?? profile.enrollmentYear ?? null;
+    const catalogFallback =
+      ruleYear !== null && entryYear !== null && ruleYear !== entryYear;
+
+    return {
+      overallPercentage: Math.round(overallPercentage * 10) / 10,
+      totalCreditsRequired,
+      totalCreditsCompleted: rawCredits,
+      countedCredits,
+      extraCredits: round2(Math.max(0, rawCredits - countedCredits)),
+      creditsRemaining: round2(creditsRemaining),
+      ruleYear,
+      entryYear,
+      catalogFallback,
+      catalogNotice: catalogFallback
+        ? `Using ${ruleYear} rules; your entry year ${entryYear} worksheet is not on file.`
+        : null,
+      requirementProgress,
+      estimatedSemestersRemaining,
+    };
+  }
+
+  /**
    * Check if a course's prerequisites are satisfied by completed courses.
    * Prerequisites are stored as JSONB on the Course entity.
    *
@@ -573,4 +630,12 @@ export class PlannerService {
 
     return metCount >= minRequired;
   }
+}
+
+/** Leading 4-digit year of a catalogYear string ("2026-2027" -> 2026). */
+export function parseCatalogYear(
+  catalogYear: string | null | undefined,
+): number | null {
+  const m = /^\s*(\d{4})/.exec(catalogYear ?? '');
+  return m ? Number(m[1]) : null;
 }

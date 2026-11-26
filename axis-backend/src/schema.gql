@@ -445,6 +445,16 @@ type CatalogSection {
   termName: String!
 }
 
+type CompletedCourse {
+  courseId: String!
+  grade: String
+}
+
+input CompletedCourseInput {
+  courseId: String!
+  grade: String
+}
+
 input ConfirmUploadInput {
   fileId: String!
 }
@@ -648,7 +658,7 @@ input CreateDegreeProgramInput {
   description: String
   name: String!
   requirements: [RequirementGroupInput!]!
-  totalCreditsRequired: Int!
+  totalCreditsRequired: Float!
 }
 
 input CreateDiscussionInput {
@@ -701,7 +711,9 @@ input CreateSectionInput {
 }
 
 input CreateStudentProfileInput {
+  catalogYear: Int
   completedCourseIds: [String!]
+  completedCourses: [CompletedCourseInput!]
   degreeProgramId: String!
   enrollmentYear: Int!
   expectedGraduationYear: Int
@@ -782,7 +794,7 @@ type DegreeProgram {
   requirements: String!
   status: DegreeProgramStatus!
   tenantId: String!
-  totalCreditsRequired: Int!
+  totalCreditsRequired: Float!
   updatedAt: DateTime!
 }
 
@@ -802,12 +814,18 @@ enum DegreeProgramType {
 }
 
 type DegreeProgress {
-  creditsRemaining: Int!
+  catalogFallback: Boolean!
+  catalogNotice: String
+  countedCredits: Float!
+  creditsRemaining: Float!
+  entryYear: Int
   estimatedSemestersRemaining: Int!
+  extraCredits: Float!
   overallPercentage: Float!
   requirementProgress: [RequirementProgress!]!
-  totalCreditsCompleted: Int!
-  totalCreditsRequired: Int!
+  ruleYear: Int
+  totalCreditsCompleted: Float!
+  totalCreditsRequired: Float!
 }
 
 enum DevicePlatform {
@@ -1872,9 +1890,10 @@ input RequestUploadInput {
 
 input RequirementGroupInput {
   courseIds: [String!]!
-  creditsRequired: Int!
+  creditsRequired: Float!
   description: String
   minCoursesRequired: Int!
+  minGrade: String
   name: String!
   type: String!
 }
@@ -1883,8 +1902,8 @@ type RequirementProgress {
   completedCourseIds: [String!]!
   coursesCompleted: Int!
   coursesRequired: Int!
-  creditsCompleted: Int!
-  creditsRequired: Int!
+  creditsCompleted: Float!
+  creditsRequired: Float!
   fulfilled: Boolean!
   groupName: String!
   remainingCourseIds: [String!]!
@@ -1984,7 +2003,9 @@ type StudentCourseGrades {
 }
 
 type StudentDegreeProfile {
+  catalogYear: Int
   completedCourseIds: [String!]!
+  completedCourses: [CompletedCourse!]!
   createdAt: DateTime!
   currentCourseIds: [String!]!
   degreeProgram: DegreeProgram!
@@ -2273,7 +2294,7 @@ input UpdateDegreeProgramInput {
   name: String
   requirements: [RequirementGroupInput!]
   status: DegreeProgramStatus
-  totalCreditsRequired: Int
+  totalCreditsRequired: Float
 }
 
 input UpdateEnrollmentPolicyInput {
@@ -2362,7 +2383,9 @@ input UpdateSectionInput {
 }
 
 input UpdateStudentProfileInput {
+  catalogYear: Int
   completedCourseIds: [String!]
+  completedCourses: [CompletedCourseInput!]
   currentCourseIds: [String!]
   expectedGraduationYear: Int
   id: String!

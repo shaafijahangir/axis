@@ -10,6 +10,8 @@ import {
   IsString,
   IsOptional,
   IsInt,
+  IsNumber,
+  ValidateNested,
   IsArray,
   Min,
   Max,
@@ -17,6 +19,7 @@ import {
   MinLength,
   IsEnum,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { DegreeProgramStatus } from '../../../database/entities/degree-program.entity';
 
 // ─── Degree Program DTOs ────────────────────────────────────────────────
@@ -31,8 +34,8 @@ export class RequirementGroupInput {
   @IsString()
   type: string;
 
-  @Field(() => Int)
-  @IsInt()
+  @Field(() => Float)
+  @IsNumber()
   @Min(0)
   creditsRequired: number;
 
@@ -50,6 +53,12 @@ export class RequirementGroupInput {
   @IsOptional()
   @IsString()
   description?: string;
+
+  /** Lowest letter grade that counts toward this group, e.g. 'C'. Null = any pass. */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  minGrade?: string | null;
 }
 
 @InputType()
@@ -76,8 +85,8 @@ export class CreateDegreeProgramInput {
   @IsString()
   description?: string;
 
-  @Field(() => Int)
-  @IsInt()
+  @Field(() => Float)
+  @IsNumber()
   @Min(1)
   @Max(500)
   totalCreditsRequired: number;
@@ -113,9 +122,9 @@ export class UpdateDegreeProgramInput {
   @IsString()
   description?: string;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => Float, { nullable: true })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   totalCreditsRequired?: number;
 
   @Field(() => [RequirementGroupInput], { nullable: true })
@@ -132,6 +141,19 @@ export class UpdateDegreeProgramInput {
 // ─── Student Degree Profile DTOs ────────────────────────────────────────
 
 @InputType()
+export class CompletedCourseInput {
+  @Field()
+  @IsString()
+  courseId: string;
+
+  /** UVic letter grade (A+..F) or COM/CR; null when not recorded. */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  grade?: string | null;
+}
+
+@InputType()
 export class CreateStudentProfileInput {
   @Field()
   @IsString()
@@ -145,6 +167,12 @@ export class CreateStudentProfileInput {
   @IsInt()
   enrollmentYear: number;
 
+  /** Calendar year whose rules apply; defaults to enrollmentYear. */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  catalogYear?: number;
+
   @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()
@@ -154,6 +182,14 @@ export class CreateStudentProfileInput {
   @IsOptional()
   @IsArray()
   completedCourseIds?: string[];
+
+  /** Completed courses with grades; when set, completedCourseIds is derived from it. */
+  @Field(() => [CompletedCourseInput], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CompletedCourseInput)
+  completedCourses?: CompletedCourseInput[];
 }
 
 @InputType()
@@ -167,6 +203,14 @@ export class UpdateStudentProfileInput {
   @IsArray()
   completedCourseIds?: string[];
 
+  /** Completed courses with grades; when set, completedCourseIds is derived from it. */
+  @Field(() => [CompletedCourseInput], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CompletedCourseInput)
+  completedCourses?: CompletedCourseInput[];
+
   @Field(() => [String], { nullable: true })
   @IsOptional()
   @IsArray()
@@ -176,6 +220,12 @@ export class UpdateStudentProfileInput {
   @IsOptional()
   @IsInt()
   expectedGraduationYear?: number;
+
+  /** Changing it re-picks the program version for that year. */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  catalogYear?: number;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -193,10 +243,10 @@ export class RequirementProgress {
   @Field()
   type: string;
 
-  @Field(() => Int)
+  @Field(() => Float)
   creditsRequired: number;
 
-  @Field(() => Int)
+  @Field(() => Float)
   creditsCompleted: number;
 
   @Field(() => Int)
@@ -220,14 +270,39 @@ export class DegreeProgress {
   @Field(() => Float)
   overallPercentage: number;
 
-  @Field(() => Int)
+  @Field(() => Float)
   totalCreditsRequired: number;
 
-  @Field(() => Int)
+  /** Raw credits across groups, surplus included. */
+  @Field(() => Float)
   totalCreditsCompleted: number;
 
-  @Field(() => Int)
+  /** Credits counted toward the degree (each group capped); drives the %. */
+  @Field(() => Float)
+  countedCredits: number;
+
+  /** Raw minus counted: units that don't count toward any requirement. */
+  @Field(() => Float)
+  extraCredits: number;
+
+  @Field(() => Float)
   creditsRemaining: number;
+
+  /** Year of the worksheet being applied (from the program's catalogYear). */
+  @Field(() => Int, { nullable: true })
+  ruleYear: number | null;
+
+  /** Year the student follows: profile.catalogYear ?? enrollmentYear. */
+  @Field(() => Int, { nullable: true })
+  entryYear: number | null;
+
+  /** True when ruleYear != entryYear (that year's worksheet isn't on file). */
+  @Field()
+  catalogFallback: boolean;
+
+  /** Human-readable fallback note, null when the exact year is applied. */
+  @Field(() => String, { nullable: true })
+  catalogNotice: string | null;
 
   @Field(() => [RequirementProgress])
   requirementProgress: RequirementProgress[];
