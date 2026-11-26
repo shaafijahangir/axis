@@ -44,6 +44,12 @@ export const DEGREE_PROGRESS_QUERY = graphql(`
       overallPercentage
       totalCreditsRequired
       totalCreditsCompleted
+      countedCredits
+      extraCredits
+      ruleYear
+      entryYear
+      catalogFallback
+      catalogNotice
       creditsRemaining
       estimatedSemestersRemaining
       requirementProgress {

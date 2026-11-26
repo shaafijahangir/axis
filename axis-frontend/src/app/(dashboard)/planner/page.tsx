@@ -157,7 +157,13 @@ function RequirementCard({ req }: { req: RequirementProgress }) {
             </Badge>
           </div>
           <span className="text-sm font-semibold tabular-nums">
-            {req.creditsCompleted}/{req.creditsRequired} cr
+            {Math.min(req.creditsCompleted, req.creditsRequired)}/
+            {req.creditsRequired} cr
+            {req.creditsCompleted > req.creditsRequired && (
+              <span className="ml-1 text-xs font-normal text-muted-foreground">
+                +{req.creditsCompleted - req.creditsRequired} extra
+              </span>
+            )}
           </span>
         </div>
         {/* Progress bar */}
@@ -171,7 +177,8 @@ function RequirementCard({ req }: { req: RequirementProgress }) {
         </div>
         <div className="flex justify-between mt-1">
           <span className="text-xs text-muted-foreground">
-            {req.coursesCompleted}/{req.coursesRequired} courses
+            {req.coursesRequired > 0 &&
+              `${Math.min(req.coursesCompleted, req.coursesRequired)}/${req.coursesRequired} courses`}
           </span>
           <span className="text-xs text-muted-foreground">
             {percentage.toFixed(0)}%
@@ -427,6 +434,21 @@ export default function PlannerPage() {
             {activeProfile.degreeProgram.department &&
               ` — ${activeProfile.degreeProgram.department}`}
           </p>
+          {progress?.ruleYear != null && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Rules applied: {progress.ruleYear} worksheet
+              {progress.entryYear != null &&
+                ` (entry year ${progress.entryYear})`}
+            </p>
+          )}
+          {progress?.catalogFallback && progress.catalogNotice && (
+            <p
+              role="status"
+              className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
+            >
+              {progress.catalogNotice}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Link href="/planner/careers">
@@ -471,14 +493,22 @@ export default function PlannerPage() {
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <BookOpen className="h-4 w-4" aria-hidden="true" />
-                <span className="text-xs font-medium">Credits Completed</span>
+                <span className="text-xs font-medium">
+                  Credits Toward Degree
+                </span>
               </div>
               <p className="text-2xl font-bold tabular-nums">
-                {progress.totalCreditsCompleted}
+                {progress.countedCredits}
                 <span className="text-sm font-normal text-muted-foreground">
                   /{progress.totalCreditsRequired}
                 </span>
               </p>
+              {progress.extraCredits > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  +{progress.extraCredits} units not counting toward
+                  requirements
+                </p>
+              )}
             </CardContent>
           </Card>
 
