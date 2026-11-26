@@ -154,13 +154,13 @@ async function seedUvic() {
 
     // ─── Courses (upsert by code, so demo rows like CSC 110 are reused) ───
     for (const [code, title, units] of COURSES) {
-      const [row] = await qr.query(
+      const [row] = (await qr.query(
         `INSERT INTO courses (id, "tenantId", code, title, credits, "departmentId", "courseLevel", settings, "createdAt", "updatedAt")
          VALUES (gen_random_uuid(),$1,$2,$3,$4,$5,$6,'{}',$7,$7)
          ON CONFLICT ("tenantId", code) DO UPDATE SET title=$3, credits=$4, "courseLevel"=$6
          RETURNING id`,
         [TENANT, code, title, units, code.split(' ')[0], level(code), now],
-      );
+      )) as { id: string }[];
       id[code] = row.id;
     }
     console.log(`  ${COURSES.length} UVic courses upserted.`);
@@ -330,10 +330,10 @@ async function seedUvic() {
     // place to the fictional demo student (idempotent cleanup).
     // A user already holding the demo email on another id would break the
     // unique email index: update that row instead of inserting a new one.
-    const byEmail: { id: string }[] = await qr.query(
+    const byEmail = (await qr.query(
       `SELECT id FROM users WHERE lower(email)=lower('demo.cs@Axis.demo') AND id<>$1 LIMIT 1`,
       [IDS.student],
-    );
+    )) as { id: string }[];
     const studentId = byEmail[0]?.id ?? IDS.student;
     await qr.query(
       `INSERT INTO users (id, "tenantId", email, "passwordHash", "firstName", "lastName", roles, profile, preferences, status, "createdAt", "updatedAt")

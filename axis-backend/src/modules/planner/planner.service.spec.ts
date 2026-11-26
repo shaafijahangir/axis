@@ -294,8 +294,10 @@ describe('PlannerService catalog year versioning', () => {
 
   it('creates a profile on the version for the entry year', async () => {
     programRepo.findOne!.mockResolvedValue(prog('v2026', '2026-2027'));
-    profileRepo.create!.mockImplementation((x) => x);
-    profileRepo.save!.mockImplementation(async (x) => x);
+    profileRepo.create!.mockImplementation((x: unknown) => x as never);
+    profileRepo.save!.mockImplementation((x: unknown) =>
+      Promise.resolve(x as never),
+    );
     const saved = await service.createStudentProfile(tenantId, {
       userId: 'u1',
       degreeProgramId: 'v2026',

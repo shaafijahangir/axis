@@ -26,9 +26,9 @@ export class DegreeProgramCatalogVersions1784840000000 implements MigrationInter
   public async down(queryRunner: QueryRunner): Promise<void> {
     // The old (tenantId, code) index cannot hold several catalog versions.
     // Refuse rather than delete program rows (profiles point at them).
-    const dupes: { tenantId: string; code: string }[] = await queryRunner.query(
+    const dupes = (await queryRunner.query(
       `SELECT "tenantId", "code" FROM "degree_programs" GROUP BY "tenantId", "code" HAVING COUNT(*) > 1`,
-    );
+    )) as { tenantId: string; code: string }[];
     if (dupes.length > 0) {
       throw new Error(
         `Cannot revert DegreeProgramCatalogVersions: ${dupes.length} program code(s) have several catalog versions (${dupes
