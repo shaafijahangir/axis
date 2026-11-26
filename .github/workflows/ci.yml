@@ -16,7 +16,7 @@ jobs:
   # Runs on every PR. Fast (< 5 min on warm cache).
   # ──────────────────────────────────────────────────────────────────
   ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       postgres:
@@ -104,7 +104,7 @@ jobs:
   # flow can round-trip.
   # ──────────────────────────────────────────────────────────────────
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: ci
 
     services:
